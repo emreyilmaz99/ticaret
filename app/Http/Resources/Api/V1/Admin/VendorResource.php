@@ -8,11 +8,28 @@ class VendorResource extends JsonResource
 {
     public function toArray($request): array
     {
+        $primaryAddress = $this->addresses->first();
+        $primaryBank = $this->bankAccounts->first();
+
         return [
             'id' => $this->id,
-            'name' => $this->name,
+            'storeName' => $this->name, // Using name as storeName
+            'owner' => $this->name, // Using name as owner for now
             'email' => $this->email,
+            'phone' => $this->phone ?? null, // If phone column exists later
+            'status' => $this->status ?? 'active', // Default to active if no status column
+            'revenue' => $this->payouts_sum_amount ? '₺' . number_format($this->payouts_sum_amount, 2) : '₺0.00',
+            'rating' => $this->rating_avg ?? 0,
+            'products' => 0, // Mock for now
+            'joinDate' => $this->created_at?->format('d M Y'),
+            'address' => $primaryAddress ? $primaryAddress->address_line . ', ' . $primaryAddress->city : '',
+            'bankName' => $primaryBank ? $primaryBank->bank_name : '',
+            'iban' => $primaryBank ? $primaryBank->iban : '',
+            'commissionRate' => $this->commission_rate ?? 0,
+            'adminNotes' => $this->metadata['admin_notes'] ?? '',
             'roles' => $this->whenLoaded('roles', fn() => $this->roles->pluck('name')),
+            'addresses' => $this->whenLoaded('addresses'),
+            'bank_accounts' => $this->whenLoaded('bankAccounts'),
             'created_at' => $this->created_at?->toIso8601String(),
         ];
     }

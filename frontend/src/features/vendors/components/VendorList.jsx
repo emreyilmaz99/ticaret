@@ -1,53 +1,77 @@
 import React, { useState } from 'react';
 import { FaSearch, FaFilter, FaStore, FaStar, FaEdit, FaBan, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
-import { useQuery } from '@tanstack/react-query';
-
-// Mock Data (Backend hazır olana kadar tasarım için)
-const MOCK_VENDORS = Array.from({ length: 45 }, (_, i) => ({
-  id: i + 1,
-  storeName: `Mağaza ${i + 1}`,
-  owner: `Satıcı ${i + 1}`,
-  email: `satici${i + 1}@ornek.com`,
-  status: i % 5 === 0 ? 'banned' : i % 3 === 0 ? 'pending' : 'active',
-  revenue: `₺${(Math.random() * 100000).toFixed(2)}`,
-  rating: (Math.random() * 5).toFixed(1),
-  products: Math.floor(Math.random() * 500),
-  joinDate: '12 Kas 2024'
-}));
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import VendorEditModal from './VendorEditModal';
+import { getVendors } from '../api/vendorApi';
 
 const VendorList = () => {
-  // React Query ile Veri Çekme (Şimdilik Mock Data'yı Promise ile simüle ediyoruz)
-  // İleride buraya gerçek API çağrısı gelecek: getVendors()
-  const { data: vendors = [], isLoading } = useQuery({
-    queryKey: ['vendors'],
-    queryFn: async () => {
-      // Simüle edilmiş ağ gecikmesi (Gerçek API gelince kaldırılacak)
-      // await new Promise(resolve => setTimeout(resolve, 500)); 
-      return MOCK_VENDORS;
-    },
-    staleTime: 1000 * 60 * 5, // 5 dakika boyunca taze kabul et
-  });
-
-  const [searchTerm, setSearchTerm] = useState('');
-  const [activeTab, setActiveTab] = useState('all'); // all, active, pending, banned
+  const queryClient = useQueryClient();
+  
+  // Modal State
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedVendor, setSelectedVendor] = useState(null);
   
   // Sayfalama State'leri
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  // Filtreleme Mantığı
+  // React Query ile Veri Çekme
+  const { data: responseData, isLoading } = useQuery({
+    queryKey: ['vendors', currentPage],
+    queryFn: async () => {
+      const response = await getVendors({ page: currentPage, per_page: itemsPerPage });
+      return response.data; // { data: [...], meta: ... }
+    },
+    keepPreviousData: true,
+    staleTime: 1000 * 60 * 5, // 5 dakika boyunca taze kabul et
+  });
+
+  const vendors = responseData?.data || [];
+  const meta = responseData?.meta || {};
+
+  const [searchTerm, setSearchTerm] = useState('');
+  const [activeTab, setActiveTab] = useState('all'); // all, active, pending, banned
+
+  // Edit İşlemleri
+  const handleEditClick = (vendor) => {
+    setSelectedVendor(vendor);
+    setIsEditModalOpen(true);
+  };
+
+  const handleSaveVendor = (id, updatedData) => {
+    // Burada normalde API çağrısı yapılır: await updateVendor(id, updatedData);
+    // Şimdilik React Query cache'ini güncelleyerek simüle ediyoruz.
+    
+    queryClient.setQueryData(['vendors', currentPage], (oldData) => {
+      if (!oldData) return oldData;
+      return {
+        ...oldData,
+        data: oldData.data.map(v => v.id === id ? { ...v, ...updatedData } : v)
+      };
+    });
+
+    setIsEditModalOpen(false);
+    setSelectedVendor(null);
+    // Opsiyonel: Başarı mesajı gösterilebilir (Toast notification vb.)
+  };
+
+  // Filtreleme Mantığı (Client-side filtering on current page for now)
+  // Note: For full search, backend support is needed.
   const filteredVendors = vendors.filter(vendor => {
-    const matchesSearch = vendor.storeName.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          vendor.email.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = (vendor.storeName || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          (vendor.email || '').toLowerCase().includes(searchTerm.toLowerCase());
     const matchesTab = activeTab === 'all' ? true : vendor.status === activeTab;
     return matchesSearch && matchesTab;
   });
 
-  // Sayfalama Mantığı
-  const totalPages = Math.ceil(filteredVendors.length / itemsPerPage);
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = filteredVendors.slice(indexOfFirstItem, indexOfLastItem);
+  // Sayfalama Mantığı (Server-side)
+  const totalPages = meta.last_page || 1;
+  // Client-side pagination is NOT needed if we use server-side pagination.
+  // But filteredVendors is derived from the current page's vendors.
+  // So we just display filteredVendors.
+  const currentItems = filteredVendors; 
+  // Note: If we filter client-side on a paginated result, the page size might shrink.
+  // Ideally search should be server-side.
 
   // Sayfa Değiştirme
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
@@ -221,7 +245,11 @@ const VendorList = () => {
                 {/* İşlemler */}
                 <td style={{ padding: '16px 24px', textAlign: 'right' }}>
                   <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-                    <button title="Düzenle" style={{ padding: '8px', borderRadius: '6px', border: '1px solid #e2e8f0', backgroundColor: 'white', color: 'var(--text-muted)', cursor: 'pointer' }}>
+                    <button 
+                      onClick={() => handleEditClick(vendor)}
+                      title="Düzenle" 
+                      style={{ padding: '8px', borderRadius: '6px', border: '1px solid #e2e8f0', backgroundColor: 'white', color: 'var(--text-muted)', cursor: 'pointer' }}
+                    >
                       <FaEdit />
                     </button>
                     <button title="Yasakla" style={{ padding: '8px', borderRadius: '6px', border: '1px solid #fee2e2', backgroundColor: '#fff1f2', color: '#ef4444', cursor: 'pointer' }}>
@@ -245,7 +273,7 @@ const VendorList = () => {
           borderTop: '1px solid #e2e8f0'
         }}>
           <p style={{ fontSize: '14px', color: 'var(--text-muted)' }}>
-            Toplam <span style={{ fontWeight: '600', color: 'var(--text-main)' }}>{filteredVendors.length}</span> satıcıdan <span style={{ fontWeight: '600', color: 'var(--text-main)' }}>{filteredVendors.length > 0 ? indexOfFirstItem + 1 : 0}-{Math.min(indexOfLastItem, filteredVendors.length)}</span> arası gösteriliyor
+            Toplam <span style={{ fontWeight: '600', color: 'var(--text-main)' }}>{meta.total || 0}</span> satıcıdan <span style={{ fontWeight: '600', color: 'var(--text-main)' }}>{meta.from || 0}-{meta.to || 0}</span> arası gösteriliyor
           </p>
 
           <div style={{ display: 'flex', gap: '8px' }}>
@@ -266,24 +294,10 @@ const VendorList = () => {
               <FaChevronLeft size={12} />
             </button>
 
-            {Array.from({ length: totalPages }, (_, i) => (
-              <button
-                key={i + 1}
-                onClick={() => paginate(i + 1)}
-                style={{
-                  padding: '8px 12px',
-                  border: currentPage === i + 1 ? 'none' : '1px solid #e2e8f0',
-                  borderRadius: '6px',
-                  backgroundColor: currentPage === i + 1 ? 'var(--primary)' : 'white',
-                  color: currentPage === i + 1 ? 'white' : 'var(--text-main)',
-                  cursor: 'pointer',
-                  fontWeight: '600',
-                  fontSize: '14px'
-                }}
-              >
-                {i + 1}
-              </button>
-            ))}
+            {/* Simple pagination for now, can be improved to show range */}
+            <span style={{ display: 'flex', alignItems: 'center', padding: '0 12px', fontSize: '14px', fontWeight: '600' }}>
+              Sayfa {currentPage} / {totalPages}
+            </span>
 
             <button 
               onClick={() => paginate(currentPage + 1)}
@@ -304,6 +318,14 @@ const VendorList = () => {
           </div>
         </div>
       </div>
+
+      {/* Edit Modal */}
+      <VendorEditModal 
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        vendor={selectedVendor}
+        onSave={handleSaveVendor}
+      />
     </div>
   );
 };

@@ -33,7 +33,7 @@ class VendorController extends BaseAdminController
             return $this->error('Satıcı bulunamadı', 404);
         }
 
-        return $this->success(new VendorResource($vendor->load('roles')));
+        return $this->success(new VendorResource($vendor->load(['roles', 'addresses', 'bankAccounts'])));
     }
 
     public function store(\App\Http\Requests\Api\V1\Admin\StoreVendorRequest $request)

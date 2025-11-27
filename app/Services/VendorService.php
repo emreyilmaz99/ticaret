@@ -42,10 +42,18 @@ class VendorService extends BaseService
      */
     public function listForAdminResponse(int $perPage = 15)
     {
-        $paginator = $this->listOptimized($perPage);
+        // Use Eloquent to load relations and aggregates
+        $paginator = Vendor::with(['addresses' => function($q) {
+                $q->where('is_primary', true);
+            }, 'bankAccounts' => function($q) {
+                $q->where('is_primary', true);
+            }])
+            ->withSum('payouts', 'amount') // Calculate total revenue
+            ->latest()
+            ->paginate($perPage);
 
         $data = [
-            'data' => $paginator->items(),
+            'data' => \App\Http\Resources\Api\V1\Admin\VendorResource::collection($paginator),
             'meta' => [
                 'current_page' => $paginator->currentPage(),
                 'last_page' => $paginator->lastPage(),
@@ -75,7 +83,50 @@ class VendorService extends BaseService
 
     public function update(int $id, array $data)
     {
-        return $this->repo->update($id, $data);
+        return DB::transaction(function () use ($id, $data) {
+            // 1. Update basic info
+            $vendor = $this->repo->update($id, $data);
+
+            // 2. Sync Addresses if provided
+            if (isset($data['addresses']) && is_array($data['addresses'])) {
+                // Strategy: Delete all and recreate, or update existing?
+                // For simplicity in this "Edit Modal" context, we can update/create.
+                // But to handle deletions, "sync" logic is better.
+                // Let's assume the frontend sends the FULL list of desired state.
+                
+                // Get IDs of addresses to keep
+                $keepIds = collect($data['addresses'])->pluck('id')->filter()->toArray();
+                
+                // Delete removed addresses
+                VendorAddress::where('vendor_id', $id)->whereNotIn('id', $keepIds)->delete();
+
+                foreach ($data['addresses'] as $addrData) {
+                    if (isset($addrData['id'])) {
+                        VendorAddress::where('id', $addrData['id'])->where('vendor_id', $id)->update($addrData);
+                    } else {
+                        $addrData['vendor_id'] = $id;
+                        VendorAddress::create($addrData);
+                    }
+                }
+            }
+
+            // 3. Sync Bank Accounts if provided
+            if (isset($data['bank_accounts']) && is_array($data['bank_accounts'])) {
+                $keepIds = collect($data['bank_accounts'])->pluck('id')->filter()->toArray();
+                VendorBankAccount::where('vendor_id', $id)->whereNotIn('id', $keepIds)->delete();
+
+                foreach ($data['bank_accounts'] as $bankData) {
+                    if (isset($bankData['id'])) {
+                        VendorBankAccount::where('id', $bankData['id'])->where('vendor_id', $id)->update($bankData);
+                    } else {
+                        $bankData['vendor_id'] = $id;
+                        VendorBankAccount::create($bankData);
+                    }
+                }
+            }
+
+            return $vendor;
+        });
     }
 
     public function delete(int $id): bool

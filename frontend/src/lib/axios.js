@@ -11,7 +11,19 @@ const axiosInstance = axios.create({
 });
 
 axiosInstance.interceptors.request.use((config) => {
-  const token = localStorage.getItem('admin_token');
+  const url = config.url || '';
+  let token = null;
+
+  // URL'ye göre doğru token'ı seç
+  if (url.includes('/v1/vendor')) {
+    token = localStorage.getItem('vendor_token');
+  } else if (url.includes('/v1/admin')) {
+    token = localStorage.getItem('admin_token');
+  } else {
+    // Müşteri veya genel istekler için
+    token = localStorage.getItem('token'); 
+  }
+
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }

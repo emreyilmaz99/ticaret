@@ -17,6 +17,16 @@ import AdminLogin from './pages/admin/AdminLogin'; // Admin Girişi
 import Dashboard from './pages/admin/Dashboard';   // Admin Paneli
 import VendorsPage from './pages/admin/VendorsPage'; // Satıcı Yönetimi
 import AdminsPage from './pages/admin/AdminsPage'; // Yönetici Yönetimi
+import UsersPage from './pages/admin/UsersPage'; // Kullanıcı Yönetimi
+
+// 3. Satıcı Sayfaları
+import VendorLogin from './pages/vendor/VendorLogin';
+import VendorDashboard from './pages/vendor/VendorDashboard';
+import VendorProducts from './pages/vendor/VendorProducts';
+import VendorOrders from './pages/vendor/VendorOrders';
+import VendorFinance from './pages/vendor/VendorFinance';
+import VendorSettings from './pages/vendor/VendorSettings';
+import VendorLayout from './components/VendorLayout';
 
 function App() {
   return (
@@ -64,12 +74,26 @@ function App() {
               <Route path="/admin/dashboard" element={<Dashboard />} />
               <Route path="/admin/vendors" element={<VendorsPage />} />
               <Route path="/admin/admins" element={<AdminsPage />} />
+              <Route path="/admin/users" element={<UsersPage />} />
               
               {/* İleride eklenecekler buraya gelecek */}
               {/* <Route path="/admin/products" element={<ProductList />} /> */}
 
             </Route>
 
+          </Route>
+
+          {/* ======================================= */}
+          {/* 4. SATICI (VENDOR) BÖLÜMÜ               */}
+          {/* ======================================= */}
+          <Route path="/vendor/login" element={<VendorLogin />} />
+
+          <Route path="/vendor" element={<VendorLayout />}>
+             <Route path="dashboard" element={<VendorDashboard />} />
+             <Route path="products" element={<VendorProducts />} />
+             <Route path="orders" element={<VendorOrders />} />
+             <Route path="finance" element={<VendorFinance />} />
+             <Route path="settings" element={<VendorSettings />} />
           </Route>
 
         </Routes>
