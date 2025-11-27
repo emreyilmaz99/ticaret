@@ -16,7 +16,8 @@ class AdminService extends BaseService
 
     public function list(int $perPage = 15)
     {
-        return $this->repo->paginate($perPage);
+        // Eager load roles to ensure they are available in the resource
+        return $this->repo->paginateWithRoles($perPage);
     }
 
     public function find(int $id)

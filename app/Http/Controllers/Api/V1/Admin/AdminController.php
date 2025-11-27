@@ -20,9 +20,20 @@ class AdminController extends BaseAdminController
     {
         $perPage = (int) $request->query('per_page', 15);
 
-        $sr = $this->service->listForAdminResponse($perPage);
+        $paginator = $this->service->list($perPage);
 
-        return $this->fromServiceResponse($sr);
+        // Use Resource Collection to transform data (especially roles)
+        $collection = AdminResource::collection($paginator);
+
+        return $this->success([
+            'data' => $collection,
+            'meta' => [
+                'current_page' => $paginator->currentPage(),
+                'last_page' => $paginator->lastPage(),
+                'per_page' => $paginator->perPage(),
+                'total' => $paginator->total(),
+            ],
+        ]);
     }
 
     public function show(int $id)
