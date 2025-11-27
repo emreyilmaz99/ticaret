@@ -34,6 +34,7 @@ class Vendor extends Authenticatable
         'commission_rate',
         'settings',
         'metadata',
+        'status',
     ];
 
     protected $hidden = [
@@ -49,6 +50,7 @@ class Vendor extends Authenticatable
         'commission_rate' => 'decimal:2',
         'settings' => 'array',
         'metadata' => 'array',
+        'status' => 'string',
     ];
     
     public function setPasswordAttribute($value)
@@ -72,5 +74,31 @@ class Vendor extends Authenticatable
     public function payouts()
     {
         return $this->hasMany(\App\Models\VendorPayout::class);
+    }
+
+    // Vendor status constants
+    public const STATUS_PENDING = 'pending';
+    public const STATUS_ACTIVE = 'active';
+    public const STATUS_INACTIVE = 'inactive';
+    public const STATUS_BANNED = 'banned';
+
+    public static function statuses(): array
+    {
+        return [
+            self::STATUS_PENDING,
+            self::STATUS_ACTIVE,
+            self::STATUS_INACTIVE,
+            self::STATUS_BANNED,
+        ];
+    }
+
+    public function scopePending($query)
+    {
+        return $query->where('status', self::STATUS_PENDING);
+    }
+
+    public function scopeActive($query)
+    {
+        return $query->where('status', self::STATUS_ACTIVE);
     }
 }

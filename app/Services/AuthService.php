@@ -53,6 +53,15 @@ class AuthService
                 ->setData(null);
         }
 
+        // Reject vendors that are not active
+        if (property_exists($vendor, 'status') && $vendor->status !== Vendor::STATUS_ACTIVE) {
+            return (new ServiceResponse())
+                ->setSuccess(false)
+                ->setStatusCode(403)
+                ->setMessage('Vendor not active')
+                ->setData(['status' => $vendor->status]);
+        }
+
         $token = $vendor->createToken('vendor-token', ['vendor:*'])->plainTextToken;
 
         $payload = [

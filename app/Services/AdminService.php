@@ -4,6 +4,10 @@ namespace App\Services;
 
 use App\Repositories\AdminRepository;
 use App\Core\ServiceResponse;
+use App\Models\VendorPayout;
+use App\Models\Vendor;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class AdminService extends BaseService
 {
@@ -146,5 +150,71 @@ class AdminService extends BaseService
         $admin->syncPermissions($valid);
 
         return (new ServiceResponse())->setSuccess(true)->setStatusCode(200)->setMessage('Permissions updated')->setData(['permissions' => $admin->getAllPermissions()->pluck('name')]);
+    }
+
+    /**
+     * List vendor payouts for admin (paginated)
+     */
+    public function listVendorPayouts(int $perPage = 15)
+    {
+        $paginator = VendorPayout::with('vendor')->orderByDesc('created_at')->paginate($perPage);
+
+        $data = [
+            'data' => $paginator->items(),
+            'meta' => [
+                'current_page' => $paginator->currentPage(),
+                'last_page' => $paginator->lastPage(),
+                'per_page' => $paginator->perPage(),
+                'total' => $paginator->total(),
+            ],
+        ];
+
+        return (new ServiceResponse())->setSuccess(true)->setStatusCode(200)->setMessage('Payouts listed')->setData($data);
+    }
+
+    public function findPayout(int $id): ServiceResponse
+    {
+        $payout = VendorPayout::with('vendor')->find($id);
+        if (! $payout) {
+            return (new ServiceResponse())->setSuccess(false)->setStatusCode(404)->setMessage('Payout not found');
+        }
+
+        return (new ServiceResponse())->setSuccess(true)->setStatusCode(200)->setMessage('Payout fetched')->setData($payout);
+    }
+
+    /**
+     * Update payout status (approve/reject/processed)
+     */
+    public function updatePayoutStatus(int $payoutId, string $status, int $adminId): ServiceResponse
+    {
+        $allowed = ['pending', 'approved', 'rejected', 'processed'];
+        if (! in_array($status, $allowed)) {
+            return (new ServiceResponse())->setSuccess(false)->setStatusCode(422)->setMessage('Invalid status');
+        }
+
+        return DB::transaction(function () use ($payoutId, $status, $adminId) {
+            $payout = VendorPayout::with('vendor')->lockForUpdate()->find($payoutId);
+            if (! $payout) {
+                return (new ServiceResponse())->setSuccess(false)->setStatusCode(404)->setMessage('Payout not found');
+            }
+
+            // simple state change; admins may want to record reviewer/admin in audit later
+            $payout->status = $status;
+            if ($status === 'processed') {
+                $payout->processed_at = now();
+            }
+            $payout->save();
+
+            // Log admin action (no DB/audit table created per project request)
+            Log::info('admin updated payout status', [
+                'admin_id' => $adminId,
+                'vendor_id' => $payout->vendor_id,
+                'payout_id' => $payout->id,
+                'old_status' => $payout->getOriginal('status'),
+                'new_status' => $payout->status,
+            ]);
+
+            return (new ServiceResponse())->setSuccess(true)->setStatusCode(200)->setMessage('Payout updated')->setData($payout);
+        });
     }
 }
