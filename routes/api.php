@@ -23,6 +23,17 @@ Route::prefix('v1/admin')->group(function () {
         Route::get('vendors/{vendor}', [\App\Http\Controllers\Api\V1\Admin\VendorController::class, 'show']);
         Route::put('vendors/{vendor}', [\App\Http\Controllers\Api\V1\Admin\VendorController::class, 'update']);
         Route::delete('vendors/{vendor}', [\App\Http\Controllers\Api\V1\Admin\VendorController::class, 'destroy']);
+        // admin management
+        Route::get('admins', [\App\Http\Controllers\Api\V1\Admin\AdminController::class, 'index']);
+        Route::post('admins', [\App\Http\Controllers\Api\V1\Admin\AdminController::class, 'store']);
+        Route::get('admins/{admin}', [\App\Http\Controllers\Api\V1\Admin\AdminController::class, 'show']);
+        Route::put('admins/{admin}', [\App\Http\Controllers\Api\V1\Admin\AdminController::class, 'update']);
+        Route::delete('admins/{admin}', [\App\Http\Controllers\Api\V1\Admin\AdminController::class, 'destroy']);
+        // admin permission management (only super-admin)
+        Route::middleware(['role:super-admin'])->group(function () {
+            Route::get('admins/{admin}/permissions', [\App\Http\Controllers\Api\V1\Admin\AdminPermissionsController::class, 'index']);
+            Route::put('admins/{admin}/permissions', [\App\Http\Controllers\Api\V1\Admin\AdminPermissionsController::class, 'update']);
+        });
     });
 });
 

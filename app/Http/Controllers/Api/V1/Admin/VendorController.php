@@ -20,19 +20,10 @@ class VendorController extends BaseAdminController
     {
         $perPage = (int) $request->query('per_page', 15);
 
-        $paginator = $this->service->list($perPage);
+        // Use service that returns a ServiceResponse-compatible object
+        $serviceResponse = $this->service->listForAdminResponse($perPage);
 
-        $collection = VendorResource::collection($paginator->getCollection());
-
-        return $this->success([
-            'data' => $collection,
-            'meta' => [
-                'current_page' => $paginator->currentPage(),
-                'last_page' => $paginator->lastPage(),
-                'per_page' => $paginator->perPage(),
-                'total' => $paginator->total(),
-            ],
-        ]);
+        return $this->fromServiceResponse($serviceResponse);
     }
 
     public function show(int $id)

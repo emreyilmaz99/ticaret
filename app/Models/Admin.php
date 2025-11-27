@@ -18,6 +18,8 @@ class Admin extends Authenticatable
         'name',
         'email',
         'password',
+        'primary_role',
+        'is_active',
     ];
 
     protected $hidden = [
@@ -28,4 +30,23 @@ class Admin extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
     ];
+
+    public function setPasswordAttribute($value)
+    {
+        if ($value !== null && $value !== '') {
+            $this->attributes['password'] = bcrypt($value);
+        }
+    }
+
+    public const PRIMARY_ROLES = [
+        'super-admin',
+        'moderator',
+        'blog',
+    ];
+
+    public static function isValidPrimaryRole(?string $role): bool
+    {
+        if ($role === null) return true;
+        return in_array($role, self::PRIMARY_ROLES, true);
+    }
 }
