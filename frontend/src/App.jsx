@@ -15,6 +15,8 @@ import Login from './pages/Login'; // Müşteri Girişi (Dosya: src/pages/Login.
 // 2. Admin Sayfaları (Senin klasör yapına göre: src/pages/admin/...)
 import AdminLogin from './pages/admin/AdminLogin'; // Admin Girişi
 import Dashboard from './pages/admin/Dashboard';   // Admin Paneli
+import VendorsPage from './pages/admin/VendorsPage'; // Satıcı Yönetimi
+import AdminsPage from './pages/admin/AdminsPage'; // Yönetici Yönetimi
 
 function App() {
   return (
@@ -60,6 +62,8 @@ function App() {
               
               {/* İçerik: Dashboard */}
               <Route path="/admin/dashboard" element={<Dashboard />} />
+              <Route path="/admin/vendors" element={<VendorsPage />} />
+              <Route path="/admin/admins" element={<AdminsPage />} />
               
               {/* İleride eklenecekler buraya gelecek */}
               {/* <Route path="/admin/products" element={<ProductList />} /> */}

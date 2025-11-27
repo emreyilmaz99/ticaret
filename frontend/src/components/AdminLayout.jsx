@@ -4,13 +4,19 @@ import AdminSidebar from './AdminSidebar';
 
 const AdminLayout = () => {
   return (
-    <div style={{ display: 'flex' }}>
+    <div style={{ display: 'flex', backgroundColor: 'var(--bg-body)', minHeight: '100vh' }}>
       {/* Sol taraf: Sidebar */}
       <AdminSidebar />
 
       {/* Sağ taraf: İçerik Alanı */}
-      {/* Sidebar 250px olduğu için içeriği o kadar sağa itiyoruz */}
-      <div style={{ marginLeft: '250px', width: '100%', padding: '20px', backgroundColor: '#f4f6f9', minHeight: '100vh' }}>
+      {/* Sidebar 260px olduğu için içeriği o kadar sağa itiyoruz */}
+      <div style={{ 
+        marginLeft: '260px', 
+        width: '100%', 
+        padding: '32px', 
+        backgroundColor: 'var(--bg-body)', 
+        minHeight: '100vh' 
+      }}>
         <Outlet /> 
       </div>
     </div>

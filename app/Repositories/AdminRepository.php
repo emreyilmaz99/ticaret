@@ -12,4 +12,9 @@ class AdminRepository extends EloquentBaseRepository
     }
 
     // Add admin-specific helpers here (search by role, active filters, etc.)
+
+    public function paginateWithRoles(int $perPage = 15)
+    {
+        return $this->model->with('roles')->paginate($perPage);
+    }
 }
