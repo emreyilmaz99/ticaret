@@ -74,6 +74,12 @@ Route::prefix('v1/vendor')->group(function () {
     Route::middleware(['auth:sanctum', 'ability:vendor:*', EnsureVendor::class])->group(function () {
         Route::post('logout', [VendorAuthController::class, 'logout']);
         Route::get('me', [VendorAuthController::class, 'me']);
+        // vendor products (self-service)
+        Route::get('products', [\App\Http\Controllers\Api\V1\Vendor\ProductController::class, 'index']);
+        Route::post('products', [\App\Http\Controllers\Api\V1\Vendor\ProductController::class, 'store']);
+        Route::get('products/{product}', [\App\Http\Controllers\Api\V1\Vendor\ProductController::class, 'show']);
+        Route::put('products/{product}', [\App\Http\Controllers\Api\V1\Vendor\ProductController::class, 'update']);
+        Route::delete('products/{product}', [\App\Http\Controllers\Api\V1\Vendor\ProductController::class, 'destroy']);
         // vendor profile endpoints (self-service)
         Route::put('profile', [VendorProfileController::class, 'update']);
         Route::delete('profile', [VendorProfileController::class, 'destroy']);
