@@ -11,10 +11,17 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        // Repository bindings
-        $this->app->singleton(\App\Repositories\UserRepository::class, function ($app) {
+        // Repository bindings (bind interfaces to implementations)
+        $this->app->bind(\App\Repositories\Interfaces\UserRepositoryInterface::class, function ($app) {
             return new \App\Repositories\UserRepository(new \App\Models\User());
         });
+
+        $this->app->bind(\App\Repositories\Interfaces\VendorRepositoryInterface::class, function ($app) {
+            return new \App\Repositories\VendorRepository(new \App\Models\Vendor());
+        });
+
+        // Service bindings
+        $this->app->bind(\App\Interfaces\Services\AuthServiceInterface::class, \App\Services\AuthService::class);
     }
 
     /**
@@ -26,8 +33,8 @@ class AppServiceProvider extends ServiceProvider
         $router = $this->app->make(\Illuminate\Routing\Router::class);
         $router->aliasMiddleware('ability', \App\Http\Middleware\EnsureTokenAbility::class);
         // Register Spatie role/permission middleware aliases (used in routes)
-        $router->aliasMiddleware('role', \Spatie\Permission\Middlewares\RoleMiddleware::class);
-        $router->aliasMiddleware('permission', \Spatie\Permission\Middlewares\PermissionMiddleware::class);
-        $router->aliasMiddleware('role_or_permission', \Spatie\Permission\Middlewares\RoleOrPermissionMiddleware::class);
+        $router->aliasMiddleware('role', \Spatie\Permission\Middleware\RoleMiddleware::class);
+        $router->aliasMiddleware('permission', \Spatie\Permission\Middleware\PermissionMiddleware::class);
+        $router->aliasMiddleware('role_or_permission', \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class);
     }
 }
