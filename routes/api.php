@@ -49,5 +49,21 @@ Route::prefix('v1/vendor')->group(function () {
         // vendor profile endpoints (self-service)
         Route::put('profile', [\App\Http\Controllers\Api\V1\Vendor\ProfileController::class, 'update']);
         Route::delete('profile', [\App\Http\Controllers\Api\V1\Vendor\ProfileController::class, 'destroy']);
+
+        // vendor addresses
+        Route::get('addresses', [\App\Http\Controllers\Api\V1\Vendor\AddressController::class, 'index']);
+        Route::post('addresses', [\App\Http\Controllers\Api\V1\Vendor\AddressController::class, 'store']);
+        Route::put('addresses/{address}', [\App\Http\Controllers\Api\V1\Vendor\AddressController::class, 'update']);
+        Route::delete('addresses/{address}', [\App\Http\Controllers\Api\V1\Vendor\AddressController::class, 'destroy']);
+
+        // vendor bank accounts
+        Route::get('bank-accounts', [\App\Http\Controllers\Api\V1\Vendor\BankAccountController::class, 'index']);
+        Route::post('bank-accounts', [\App\Http\Controllers\Api\V1\Vendor\BankAccountController::class, 'store']);
+        Route::put('bank-accounts/{account}', [\App\Http\Controllers\Api\V1\Vendor\BankAccountController::class, 'update']);
+        Route::delete('bank-accounts/{account}', [\App\Http\Controllers\Api\V1\Vendor\BankAccountController::class, 'destroy']);
+
+        // vendor payouts
+        Route::get('payouts', [\App\Http\Controllers\Api\V1\Vendor\PayoutController::class, 'index']);
+        Route::post('payouts', [\App\Http\Controllers\Api\V1\Vendor\PayoutController::class, 'store']);
     });
 });
