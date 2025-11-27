@@ -27,4 +27,16 @@ class AdminAuthController extends BaseAdminController
             'admin' => new UserResource($admin->load('roles')),
         ], 'Logged in', 200);
     }
+
+    public function me()
+    {
+        $user = request()->user();
+
+        if ($user instanceof \App\Models\Admin) {
+            return $this->success(new UserResource($user->load('roles')));
+        }
+
+        // fallback: if user model hasRole admin
+        return $this->success(new UserResource($user->load('roles')));
+    }
 }
