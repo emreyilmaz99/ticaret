@@ -22,6 +22,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // Register router middleware aliases (ability middleware)
+        $router = $this->app->make(\Illuminate\Routing\Router::class);
+        $router->aliasMiddleware('ability', \App\Http\Middleware\EnsureTokenAbility::class);
     }
 }
