@@ -1,19 +1,73 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+
+// --- LAYOUTS (DÜZENLER) ---
 import Navbar from './components/Navbar';
+import AdminLayout from './components/AdminLayout'; // Sidebar yapısı burada
+
+// --- GÜVENLİK ---
+import AdminPrivateRoute from './components/AdminPrivateRoute'; 
+
+// --- SAYFALAR ---
+// 1. Müşteri Sayfaları
 import Home from './pages/Home';
-import './App.css'; // İçi boş olsa da dosya duruyorsa kalsın, hata vermesin.
+import Login from './pages/Login'; // Müşteri Girişi (Dosya: src/pages/Login.jsx)
+
+// 2. Admin Sayfaları (Senin klasör yapına göre: src/pages/admin/...)
+import AdminLogin from './pages/admin/AdminLogin'; // Admin Girişi
+import Dashboard from './pages/admin/Dashboard';   // Admin Paneli
 
 function App() {
   return (
     <Router>
       <div className="App">
-        {/* Navbar'ı en üste koyuyoruz, her sayfada görünecek */}
-        <Navbar />
-
-        {/* Sayfaların değişeceği alan */}
+        {/* Not: Navbar'ı buradan kaldırdık, aşağıda sadece müşteri sayfalarına ekledik */}
+        
         <Routes>
-          {/* '/' adresine gidilince Home sayfasını göster */}
-          <Route path="/" element={<Home />} />
+          
+          {/* ======================================= */}
+          {/* 1. MÜŞTERİ BÖLÜMÜ (Navbar GÖRÜNSÜN)     */}
+          {/* ======================================= */}
+          <Route path="/" element={
+            <>
+              <Navbar />
+              <Home />
+            </>
+          } />
+          
+          <Route path="/login" element={
+            <>
+              <Navbar />
+              <Login />
+            </>
+          } />
+
+
+          {/* ======================================= */}
+          {/* 2. ADMIN GİRİŞ (Sade Sayfa, Navbar YOK) */}
+          {/* ======================================= */}
+          <Route path="/admin/login" element={<AdminLogin />} />
+
+
+          {/* ======================================= */}
+          {/* 3. GÜVENLİ ADMIN PANELİ (Sidebar VAR)   */}
+          {/* ======================================= */}
+          
+          {/* AŞAMA 1: Güvenlik Kontrolü (Token var mı?) */}
+          <Route element={<AdminPrivateRoute />}>
+            
+            {/* AŞAMA 2: Tasarım Kontrolü (Sidebar gelsin) */}
+            <Route element={<AdminLayout />}>
+              
+              {/* İçerik: Dashboard */}
+              <Route path="/admin/dashboard" element={<Dashboard />} />
+              
+              {/* İleride eklenecekler buraya gelecek */}
+              {/* <Route path="/admin/products" element={<ProductList />} /> */}
+
+            </Route>
+
+          </Route>
+
         </Routes>
       </div>
     </Router>
