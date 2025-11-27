@@ -2,13 +2,13 @@
 
 namespace App\Services;
 
-use App\Repositories\UserRepository;
+use App\Repositories\VendorRepository;
 
-class UserService extends BaseService
+class VendorService extends BaseService
 {
-    protected UserRepository $repo;
+    protected VendorRepository $repo;
 
-    public function __construct(UserRepository $repo)
+    public function __construct(VendorRepository $repo)
     {
         $this->repo = $repo;
     }
@@ -21,6 +21,11 @@ class UserService extends BaseService
     public function find(int $id)
     {
         return $this->repo->find($id);
+    }
+
+    public function create(array $data)
+    {
+        return $this->repo->create($data);
     }
 
     public function update(int $id, array $data)

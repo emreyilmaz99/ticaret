@@ -1,30 +1,30 @@
 <?php
 
-namespace App\Http\Controllers\Api\V1\Admin;
+namespace App\Http\Controllers\Api\V1\Vendor;
 
-use App\Http\Controllers\Api\V1\Admin\BaseAdminController;
+use App\Http\Controllers\Api\V1\Vendor\BaseVendorController;
 use App\Http\Requests\Api\V1\Admin\LoginRequest;
 use App\Http\Resources\Api\V1\Admin\UserResource;
-use App\Models\Admin;
+use App\Models\Vendor;
 use Illuminate\Support\Facades\Hash;
 
-class AdminAuthController extends BaseAdminController
+class VendorAuthController extends BaseVendorController
 {
     public function login(LoginRequest $request)
     {
         $data = $request->validated();
 
-        $admin = Admin::where('email', $data['email'])->first();
+        $vendor = Vendor::where('email', $data['email'])->first();
 
-        if (! $admin || ! Hash::check($data['password'], $admin->password)) {
+        if (! $vendor || ! Hash::check($data['password'], $vendor->password)) {
             return $this->error('Invalid credentials', 401);
         }
 
-        $token = $admin->createToken('admin-token', ['admin:*'])->plainTextToken;
+        $token = $vendor->createToken('vendor-token', ['vendor:*'])->plainTextToken;
 
         return $this->success([
             'token' => $token,
-            'admin' => new UserResource($admin->load('roles')),
+            'vendor' => new UserResource($vendor->load('roles')),
         ], 'Logged in', 200);
     }
 
@@ -41,7 +41,13 @@ class AdminAuthController extends BaseAdminController
         if ($user && method_exists($user, 'currentAccessToken')) {
             $token = $user->currentAccessToken();
             if ($token) {
-                $token->delete();
+                try {
+                    if (method_exists($token, 'delete')) {
+                        $token->delete();
+                    }
+                } catch (\Throwable $e) {
+                    // ignore deletion error in environments where token model is not deletable
+                }
             }
         }
 
