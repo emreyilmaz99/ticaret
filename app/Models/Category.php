@@ -10,7 +10,7 @@ class Category extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $fillable = ['parent_id','name','slug','description','settings','sort_order'];
+    protected $fillable = ['parent_id','vendor_id','name','slug','description','settings','sort_order'];
 
     protected $casts = ['settings' => 'array'];
 
@@ -22,6 +22,11 @@ class Category extends Model
     public function parent()
     {
         return $this->belongsTo(Category::class, 'parent_id');
+    }
+
+    public function vendor()
+    {
+        return $this->belongsTo(\App\Models\Vendor::class, 'vendor_id');
     }
 
     public function children()

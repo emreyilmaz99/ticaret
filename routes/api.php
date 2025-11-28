@@ -99,6 +99,10 @@ Route::prefix('v1/vendor')->group(function () {
         // vendor payouts
         Route::get('payouts', [SelfVendorPayoutController::class, 'index']);
         Route::post('payouts', [SelfVendorPayoutController::class, 'store']);
+        // vendor categories (self-service)
+        Route::get('categories', [\App\Http\Controllers\Api\V1\Vendor\CategoryController::class, 'index']);
+        Route::post('categories', [\App\Http\Controllers\Api\V1\Vendor\CategoryController::class, 'store']);
+        Route::delete('categories/{id}', [\App\Http\Controllers\Api\V1\Vendor\CategoryController::class, 'destroy']);
         // onboarding completion (vendor marks their onboarding as finished)
         Route::post('onboarding/complete', [VendorProfileController::class, 'completeOnboarding']);
     });
@@ -106,3 +110,6 @@ Route::prefix('v1/vendor')->group(function () {
 
 // Public vendor profile by slug (public)
 Route::get('v1/vendors/{slug}', [PublicVendorController::class, 'show']);
+
+// units (public)
+Route::get('v1/units', [\App\Http\Controllers\Api\V1\Public\UnitsController::class, 'index']);

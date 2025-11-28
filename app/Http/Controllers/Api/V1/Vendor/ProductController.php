@@ -31,6 +31,11 @@ class ProductController extends Controller
     {
         $vendor = $request->user();
         $data = $request->validated();
+        // include files and complex fields
+        $data['images'] = $request->file('images');
+        $data['tags'] = $request->input('tags');
+        $data['variants'] = $request->input('variants');
+
         $product = $this->service->createForVendor($vendor, $data);
         return response()->json(['success' => true, 'data' => new ProductResource($product)], 201);
     }

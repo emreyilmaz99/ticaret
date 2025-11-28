@@ -30,6 +30,7 @@ import VendorOrders from './pages/vendor/VendorOrders';
 import VendorFinance from './pages/vendor/VendorFinance';
 import VendorSettings from './pages/vendor/VendorSettings';
 import VendorLayout from './components/VendorLayout';
+import VendorCategories from './pages/vendor/VendorCategories';
 
 function App() {
   return (
@@ -97,6 +98,7 @@ function App() {
           <Route path="/vendor" element={<VendorLayout />}>
              <Route path="dashboard" element={<VendorDashboard />} />
              <Route path="products" element={<VendorProducts />} />
+             <Route path="categories" element={<VendorCategories />} />
              <Route path="orders" element={<VendorOrders />} />
              <Route path="finance" element={<VendorFinance />} />
              <Route path="settings" element={<VendorSettings />} />

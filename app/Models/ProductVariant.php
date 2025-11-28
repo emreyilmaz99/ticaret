@@ -11,7 +11,7 @@ class ProductVariant extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'product_id','sku','title','price','stock','weight','length','width','height','metadata'
+        'product_id','sku','title','price','stock','unit_id','weight','length','width','height','metadata'
     ];
 
     protected $casts = [

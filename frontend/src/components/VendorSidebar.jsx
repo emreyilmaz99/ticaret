@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { FaHome, FaBox, FaShoppingBag, FaSignOutAlt, FaChartLine, FaStore, FaCog, FaWallet } from 'react-icons/fa';
+import { FaHome, FaBox, FaShoppingBag, FaSignOutAlt, FaChartLine, FaStore, FaCog, FaWallet, FaTags } from 'react-icons/fa';
 import { vendorLogout } from '../features/vendor/api/vendorAuthApi';
 
 const VendorSidebar = () => {
@@ -90,6 +90,10 @@ const VendorSidebar = () => {
 
         <Link to="/vendor/products" style={getLinkStyle('/vendor/products')}>
           <FaBox size={18} /> Ürünlerim
+        </Link>
+
+        <Link to="/vendor/categories" style={getLinkStyle('/vendor/categories')}>
+          <FaTags size={18} /> Kategoriler
         </Link>
 
         <Link to="/vendor/orders" style={getLinkStyle('/vendor/orders')}>
