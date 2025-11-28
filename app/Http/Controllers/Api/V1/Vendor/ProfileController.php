@@ -31,16 +31,13 @@ class ProfileController extends BaseVendorController
         // Password hashing is handled by the Vendor model mutator (`setPasswordAttribute`).
         // If a password is provided it will be hashed by the model when saved.
 
-        // Handle file uploads (logo, cover) if present
-        // Store on the 'public' disk under vendors/{id}/
+        // Pass uploaded file objects to the service to handle storage and processing there
         if ($request->hasFile('logo')) {
-            $logoPath = $request->file('logo')->store("vendors/{$vendor->getKey()}", 'public');
-            $data['logo_path'] = $logoPath;
+            $data['logo_file'] = $request->file('logo');
         }
 
         if ($request->hasFile('cover')) {
-            $coverPath = $request->file('cover')->store("vendors/{$vendor->getKey()}", 'public');
-            $data['cover_path'] = $coverPath;
+            $data['cover_file'] = $request->file('cover');
         }
 
         $updated = $this->service->update($vendor->getKey(), $data);

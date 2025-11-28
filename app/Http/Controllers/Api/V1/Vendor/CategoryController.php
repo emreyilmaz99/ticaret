@@ -3,18 +3,26 @@
 namespace App\Http\Controllers\Api\V1\Vendor;
 
 use App\Http\Controllers\Controller;
-use App\Models\Category;
+use App\Services\CategoryService;
+use App\Traits\ResponseHttp;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 
 class CategoryController extends Controller
 {
+    use ResponseHttp;
+
+    protected CategoryService $service;
+
+    public function __construct(CategoryService $service)
+    {
+        $this->service = $service;
+    }
     public function index(Request $request)
     {
         $vendor = $request->user();
         $perPage = (int) $request->query('per_page', 15);
-        $list = Category::where('vendor_id', $vendor->id)->orderBy('sort_order', 'asc')->paginate($perPage);
-        return response()->json(['success' => true, 'data' => $list], 200);
+        $sr = $this->service->listForVendor($vendor, $perPage);
+        return $this->fromServiceResponse($sr);
     }
 
     public function store(Request $request)
@@ -26,37 +34,14 @@ class CategoryController extends Controller
             'description' => 'nullable|string',
         ]);
 
-        $baseSlug = Str::slug($data['name']);
-        $slug = $baseSlug;
-        $i = 1;
-        // Generate a unique slug BEFORE creating the record to avoid DB unique constraint errors
-        while (Category::where('slug', $slug)->exists()) {
-            $slug = $baseSlug . '-' . $i;
-            $i++;
-        }
-
-        $category = Category::create([
-            'vendor_id' => $vendor->id,
-            'parent_id' => $data['parent_id'] ?? null,
-            'name' => $data['name'],
-            'slug' => $slug,
-            'description' => $data['description'] ?? null,
-        ]);
-
-        return response()->json(['success' => true, 'data' => $category], 201);
+        $sr = $this->service->createCategory($vendor, $data);
+        return $this->fromServiceResponse($sr);
     }
 
     public function destroy(Request $request, $id)
     {
         $vendor = $request->user();
-        $category = Category::find($id);
-        if (! $category) {
-            return response()->json(['success' => false, 'message' => 'Not found'], 404);
-        }
-        if ($category->vendor_id !== $vendor->id) {
-            return response()->json(['success' => false, 'message' => 'Forbidden'], 403);
-        }
-        $category->delete();
-        return response()->json(['success' => true], 204);
+        $sr = $this->service->deleteCategory($vendor, $id);
+        return $this->fromServiceResponse($sr);
     }
 }

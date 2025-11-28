@@ -22,6 +22,7 @@ class StoreProductRequest extends FormRequest
             'price' => ['nullable','numeric','min:0'],
             'sku' => ['nullable','string','max:100'],
             'is_featured' => ['nullable','boolean'],
+            'category_id' => ['nullable','exists:categories,id'],
             // extra fields for extended product creation
             'tags' => ['nullable','array'],
             'tags.*' => ['string'],

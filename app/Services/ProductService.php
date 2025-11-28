@@ -27,6 +27,15 @@ class ProductService
         // vendor-created products default to pending
         $data['status'] = $data['status'] ?? 'pending';
 
+        // sanitize category_id: convert empty string to null
+        if (array_key_exists('category_id', $data)) {
+            if ($data['category_id'] === '' || $data['category_id'] === null) {
+                $data['category_id'] = null;
+            } else {
+                $data['category_id'] = (int) $data['category_id'];
+            }
+        }
+
         // extract relations
         $tags = $data['tags'] ?? null;
         unset($data['tags']);
@@ -34,6 +43,11 @@ class ProductService
         unset($data['variants']);
         $images = $data['images'] ?? null;
         unset($data['images']);
+
+        // capture simple product defaults (price/stock/sku) so we can create a default variant later
+        $defaultPrice = $data['price'] ?? null;
+        $defaultStock = $data['stock'] ?? null;
+        $defaultSku = $data['sku'] ?? null;
 
         // create product
         // ensure slug exists and is unique
@@ -87,18 +101,32 @@ class ProductService
             }
         }
 
+        // If no variants were provided and this is a simple product, create a default variant
+        if ((empty($variants) || !is_array($variants)) && ($data['type'] ?? 'simple') === 'simple') {
+            $vData = [
+                'product_id' => $product->id,
+                'sku' => $defaultSku,
+                'title' => $product->name ?? 'Default',
+                'price' => $defaultPrice,
+                'stock' => isset($defaultStock) ? (int)$defaultStock : 0,
+            ];
+            // remove null values to let DB defaults apply
+            $vData = array_filter($vData, function ($val) { return $val !== null; });
+            ProductVariant::create($vData);
+        }
+
         // store images and create media records
         if (! empty($images) && is_array($images)) {
             foreach ($images as $file) {
                 if (! $file) continue;
                 $path = $file->store('products', 'public');
                 $url = Storage::url($path);
-                Media::create([
-                    'model_type' => Product::class,
-                    'model_id' => $product->id,
-                    'collection' => 'images',
+                // persist into product_photos table
+                \App\Models\ProductPhoto::create([
+                    'product_id' => $product->id,
                     'path' => $path,
                     'url' => $url,
+                    'alt' => $product->name ?? null,
                 ]);
             }
         }
@@ -110,7 +138,9 @@ class ProductService
     {
         // prevent changing vendor_id
         unset($data['vendor_id']);
-        return $this->repo->update($product, $data);
+        // update via repository (id-based repository interface)
+        $updated = $this->repo->update($product->id, $data);
+        return is_object($updated) ? $updated->refresh() : $this->repo->findById($product->id);
     }
 
     public function listForVendor(Vendor $vendor, int $perPage = 15)
@@ -120,6 +150,12 @@ class ProductService
 
     public function deleteForVendor(Vendor $vendor, Product $product): void
     {
-        $this->repo->delete($product);
+        // repository uses id-based delete signature
+        $this->repo->delete($product->id);
+    }
+
+    public function findForVendor(Vendor $vendor, $productId): ?Product
+    {
+        return $this->repo->findForVendor($vendor->id, $productId);
     }
 }

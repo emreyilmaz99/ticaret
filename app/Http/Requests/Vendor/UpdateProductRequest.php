@@ -22,6 +22,7 @@ class UpdateProductRequest extends FormRequest
             'price' => ['nullable','numeric','min:0'],
             'sku' => ['nullable','string','max:100'],
             'is_featured' => ['nullable','boolean'],
+            'category_id' => ['nullable','exists:categories,id'],
         ];
     }
 }

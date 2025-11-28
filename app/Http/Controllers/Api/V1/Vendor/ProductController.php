@@ -8,6 +8,7 @@ use App\Http\Requests\Vendor\UpdateProductRequest;
 use App\Http\Resources\ProductResource;
 use App\Models\Product;
 use App\Services\ProductService;
+use App\Traits\ResponseHttp;
 use Illuminate\Http\Request;
 
 class ProductController extends Controller
@@ -18,13 +19,21 @@ class ProductController extends Controller
     {
         $this->service = $service;
     }
+    
+    use ResponseHttp;
 
     public function index(Request $request)
     {
         $vendor = $request->user();
         $perPage = (int) $request->query('per_page', 15);
         $list = $this->service->listForVendor($vendor, $perPage);
-        return response()->json([ 'success' => true, 'data' => ProductResource::collection($list), 'meta' => [ 'pagination' => [ 'total' => $list->total(), 'per_page' => $list->perPage() ] ] ], 200);
+        $data = [
+            'data' => ProductResource::collection($list),
+            'meta' => [ 'pagination' => [ 'total' => $list->total(), 'per_page' => $list->perPage() ] ],
+        ];
+        $sr = new \App\Core\ServiceResponse();
+        $sr->setSuccess(true)->setStatusCode(200)->setMessage('OK')->setData($data);
+        return $this->fromServiceResponse($sr);
     }
 
     public function store(StoreProductRequest $request)
@@ -37,36 +46,50 @@ class ProductController extends Controller
         $data['variants'] = $request->input('variants');
 
         $product = $this->service->createForVendor($vendor, $data);
-        return response()->json(['success' => true, 'data' => new ProductResource($product)], 201);
+        $sr = new \App\Core\ServiceResponse();
+        $sr->setSuccess(true)->setStatusCode(201)->setMessage('Created')->setData(new ProductResource($product));
+        return $this->fromServiceResponse($sr);
     }
 
     public function show(Request $request, $id)
     {
         $vendor = $request->user();
-        $product = $this->service->listForVendor($vendor)->where('id', $id)->first();
+        $product = $this->service->findForVendor($vendor, $id);
         if (! $product) {
-            return response()->json(['success' => false, 'message' => 'Not found'], 404);
+            $sr = new \App\Core\ServiceResponse();
+            $sr->setSuccess(false)->setStatusCode(404)->setMessage('Not found');
+            return $this->fromServiceResponse($sr);
         }
-        return response()->json(['success' => true, 'data' => new ProductResource($product)], 200);
+        $sr = new \App\Core\ServiceResponse();
+        $sr->setSuccess(true)->setStatusCode(200)->setMessage('OK')->setData(new ProductResource($product));
+        return $this->fromServiceResponse($sr);
     }
 
     public function update(UpdateProductRequest $request, Product $product)
     {
         $vendor = $request->user();
         if ($product->vendor_id !== $vendor->id) {
-            return response()->json(['success' => false, 'message' => 'Forbidden'], 403);
+            $sr = new \App\Core\ServiceResponse();
+            $sr->setSuccess(false)->setStatusCode(403)->setMessage('Forbidden');
+            return $this->fromServiceResponse($sr);
         }
         $updated = $this->service->updateForVendor($vendor, $product, $request->validated());
-        return response()->json(['success' => true, 'data' => new ProductResource($updated)], 200);
+        $sr = new \App\Core\ServiceResponse();
+        $sr->setSuccess(true)->setStatusCode(200)->setMessage('Updated')->setData(new ProductResource($updated));
+        return $this->fromServiceResponse($sr);
     }
 
     public function destroy(Request $request, Product $product)
     {
         $vendor = $request->user();
         if ($product->vendor_id !== $vendor->id) {
-            return response()->json(['success' => false, 'message' => 'Forbidden'], 403);
+            $sr = new \App\Core\ServiceResponse();
+            $sr->setSuccess(false)->setStatusCode(403)->setMessage('Forbidden');
+            return $this->fromServiceResponse($sr);
         }
         $this->service->deleteForVendor($vendor, $product);
-        return response()->json(['success' => true], 204);
+        $sr = new \App\Core\ServiceResponse();
+        $sr->setSuccess(true)->setStatusCode(204)->setMessage('Deleted')->setData(null);
+        return $this->fromServiceResponse($sr);
     }
 }

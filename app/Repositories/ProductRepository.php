@@ -5,36 +5,26 @@ namespace App\Repositories;
 use App\Models\Product;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
-class ProductRepository
+class ProductRepository extends EloquentBaseRepository
 {
-    public function create(array $data): Product
+    public function __construct(Product $model)
     {
-        return Product::create($data);
-    }
-
-    public function update(Product $product, array $data): Product
-    {
-        $product->update($data);
-        return $product->refresh();
+        parent::__construct($model);
     }
 
     public function findForVendor(string $vendorId, $productId): ?Product
     {
-        return Product::where('id', $productId)->where('vendor_id', $vendorId)->first();
+        return $this->model->where('id', $productId)->where('vendor_id', $vendorId)->first();
     }
 
     public function findById($id): ?Product
     {
-        return Product::find($id);
+        return $this->model->find($id);
     }
 
     public function listForVendor(string $vendorId, int $perPage = 15): LengthAwarePaginator
     {
-        return Product::where('vendor_id', $vendorId)->orderByDesc('created_at')->paginate($perPage);
-    }
-
-    public function delete(Product $product): void
-    {
-        $product->delete();
+        // eager-load category so API resources can include category data without N+1
+        return $this->model->with(['photos','variants','tags','category'])->where('vendor_id', $vendorId)->orderByDesc('created_at')->paginate($perPage);
     }
 }

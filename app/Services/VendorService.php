@@ -8,6 +8,8 @@ use App\Models\VendorAddress;
 use App\Models\VendorBankAccount;
 use App\Models\VendorPayout;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 
 class VendorService extends BaseService
 {
@@ -84,6 +86,19 @@ class VendorService extends BaseService
     public function update(int $id, array $data)
     {
         return DB::transaction(function () use ($id, $data) {
+            // handle file uploads if provided as UploadedFile instances
+            if (! empty($data['logo_file']) && $data['logo_file'] instanceof UploadedFile) {
+                $path = $data['logo_file']->store("vendors/{$id}", 'public');
+                $data['logo_path'] = $path;
+                unset($data['logo_file']);
+            }
+
+            if (! empty($data['cover_file']) && $data['cover_file'] instanceof UploadedFile) {
+                $path = $data['cover_file']->store("vendors/{$id}", 'public');
+                $data['cover_path'] = $path;
+                unset($data['cover_file']);
+            }
+
             // 1. Update basic info
             $vendor = $this->repo->update($id, $data);
 

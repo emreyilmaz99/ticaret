@@ -15,7 +15,7 @@ class Product extends Model
     public $incrementing = false;
 
     protected $fillable = [
-        'id','vendor_id','sku','slug','name','short_description','description','type','status','is_featured',
+        'id','vendor_id','category_id','sku','slug','name','short_description','description','type','status','is_featured',
         'price','compare_at_price','weight','length','width','height','tax_class','commission_rate','settings','metadata'
     ];
 
@@ -28,6 +28,11 @@ class Product extends Model
     public function vendor()
     {
         return $this->belongsTo(Vendor::class);
+    }
+
+    public function category()
+    {
+        return $this->belongsTo(\App\Models\Category::class, 'category_id');
     }
 
     public function variants()
@@ -43,6 +48,11 @@ class Product extends Model
     public function media()
     {
         return $this->morphMany(Media::class, 'model');
+    }
+
+    public function photos()
+    {
+        return $this->hasMany(ProductPhoto::class)->orderBy('sort_order')->orderBy('id');
     }
 
     protected static function booted()

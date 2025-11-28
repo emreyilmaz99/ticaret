@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getVendorProducts, createVendorProduct, deleteVendorProduct, updateVendorProduct } from '../../features/vendor/api/productApi';
 import { getVendorCategories } from '../../features/vendor/api/categoryApi';
 import { getUnits } from '../../features/public/api/unitsApi';
+import axios from '../../lib/axios';
 
 const VendorProducts = () => {
   const qc = useQueryClient();
@@ -27,6 +28,30 @@ const VendorProducts = () => {
   });
   // normalize product list: API returns { success, data: <paginator|array>, meta }
   const products = rawData?.data?.data ?? rawData?.data ?? rawData ?? [];
+
+  // collect existing SKUs from loaded products and variants for dropdown
+  const skuSet = new Set();
+  products.forEach(p => {
+    if (p.sku) skuSet.add(p.sku);
+    if (p.variants && Array.isArray(p.variants)) {
+      p.variants.forEach(v => { if (v.sku) skuSet.add(v.sku); });
+    }
+  });
+  const skuOptions = Array.from(skuSet);
+
+  const backendOrigin = (axios.defaults.baseURL || '').replace(/\/api\/?$/i, '');
+  const toFullUrl = (u) => {
+    if (!u) return u;
+    if (u.startsWith('http://') || u.startsWith('https://')) return u;
+    if (u.startsWith('/')) return `${backendOrigin}${u}`;
+    return `${backendOrigin}/${u}`;
+  };
+
+  const getCategoryName = (id) => {
+    if (!id) return '';
+    const found = categories.find(c => String(c.id) === String(id));
+    return found ? found.name : '';
+  };
 
   const { data: categoriesDataRaw } = useQuery({ queryKey: ['vendorCategories'], queryFn: getVendorCategories });
   const categories = categoriesDataRaw?.data?.data ?? categoriesDataRaw?.data ?? [];
@@ -95,7 +120,7 @@ const VendorProducts = () => {
     e.preventDefault();
     const fd = new FormData();
     fd.append('name', form.name);
-    fd.append('category_id', form.category_id);
+    if (form.category_id) fd.append('category_id', form.category_id);
     // backend requires `type` (simple|variable|bundle)
     fd.append('type', form.type || 'simple');
     fd.append('price', form.price);
@@ -114,11 +139,20 @@ const VendorProducts = () => {
       tagsArr.forEach((t, i) => fd.append(`tags[${i}]`, t));
     }
 
-    // variants (if any) - send as JSON string per index
+    // variants (if any)
     if (variants.length) {
-      variants.forEach((v, i) => {
+      const sanitized = variants.map(v => ({
+        title: v.title || null,
+        sku: v.isCustom ? (v.sku_custom || null) : (v.sku || null),
+        price: v.price || null,
+        stock: typeof v.stock !== 'undefined' ? v.stock : 0,
+        unit_id: v.unit_id || null,
+      }));
+      sanitized.forEach((v, i) => {
         Object.keys(v).forEach((key) => {
-          fd.append(`variants[${i}][${key}]`, v[key]);
+          if (v[key] !== null && typeof v[key] !== 'undefined') {
+            fd.append(`variants[${i}][${key}]`, v[key]);
+          }
         });
       });
     }
@@ -146,8 +180,17 @@ const VendorProducts = () => {
       description: product.description || '',
       type: product.type || 'simple',
     });
-    // populate variants if present
-    setVariants(product.variants ?? []);
+    // populate variants if present — normalize to include isCustom / sku_custom
+    const normalized = (product.variants ?? []).map(v => ({
+      title: v.title ?? '',
+      sku: v.sku ?? '',
+      sku_custom: '',
+      isCustom: false,
+      price: v.price ?? '',
+      stock: v.stock ?? 0,
+      unit_id: v.unit_id ?? null,
+    }));
+    setVariants(normalized);
     setTagsText((product.tags || []).map(t => t.name).join(', '));
     setEditProductId(product.id);
     setIsEditOpen(true);
@@ -168,8 +211,14 @@ const VendorProducts = () => {
     const tagsArr = tagsText ? tagsText.split(',').map(t => t.trim()).filter(Boolean) : [];
     payload.tags = tagsArr;
 
-    // variants
-    payload.variants = variants;
+    // variants — sanitize to send only expected fields
+    payload.variants = variants.map(v => ({
+      title: v.title || null,
+      sku: v.isCustom ? (v.sku_custom || null) : (v.sku || null),
+      price: v.price || null,
+      stock: typeof v.stock !== 'undefined' ? v.stock : 0,
+      unit_id: v.unit_id || null,
+    }));
 
     updateMutation.mutate({ id: editProductId, payload });
   };
@@ -263,14 +312,14 @@ const VendorProducts = () => {
                   <tr key={product.id} style={{ borderBottom: index !== products.length - 1 ? '1px solid #f1f5f9' : 'none' }}>
                     <td style={{ padding: '16px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                        <img src={product.image || product.thumbnail || 'https://placehold.co/50'} alt={product.name} style={{ width: '48px', height: '48px', borderRadius: '8px', objectFit: 'cover', backgroundColor: '#f1f5f9' }} />
+                        <img src={toFullUrl(product.thumbnail || (product.photos && product.photos[0] && product.photos[0].url) || product.image) || 'https://placehold.co/50'} alt={product.name} style={{ width: '48px', height: '48px', borderRadius: '8px', objectFit: 'cover', backgroundColor: '#f1f5f9' }} />
                         <div>
                           <div style={{ fontWeight: '600', color: '#0f172a' }}>{product.name}</div>
                           <div style={{ fontSize: '12px', color: '#94a3b8' }}>ID: #{product.id}</div>
                         </div>
                       </div>
                     </td>
-                    <td style={{ padding: '16px', color: '#475569' }}>{product.category}</td>
+                    <td style={{ padding: '16px', color: '#475569' }}>{getCategoryName(product.category_id)}</td>
                     <td style={{ padding: '16px', fontWeight: '600', color: '#0f172a' }}>{product.price}</td>
                     <td style={{ padding: '16px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -332,12 +381,20 @@ const VendorProducts = () => {
               <div style={{ gridColumn: '1 / -1', marginTop: 12 }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
                   <strong>Varyantlar</strong>
-                  <button type="button" onClick={() => setVariants([...variants, { title: '', sku: '', price: '', stock: 0, unit_id: '' }])} style={{ padding: '6px 10px' }}>Varyant Ekle</button>
+                  <button type="button" onClick={() => setVariants([...variants, { title: '', sku: '', sku_custom: '', isCustom: false, price: '', stock: 0, unit_id: '' }])} style={{ padding: '6px 10px' }}>Varyant Ekle</button>
                 </div>
                 {variants.map((v, idx) => (
                   <div key={idx} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr 80px', gap: 8, marginBottom: 8 }}>
                     <input placeholder="Başlık" value={v.title} onChange={(e) => { const copy = [...variants]; copy[idx].title = e.target.value; setVariants(copy); }} style={{ padding: 8 }} />
-                    <input placeholder="SKU" value={v.sku} onChange={(e) => { const copy = [...variants]; copy[idx].sku = e.target.value; setVariants(copy); }} style={{ padding: 8 }} />
+                    {v.isCustom ? (
+                      <input placeholder="SKU" value={v.sku_custom} onChange={(e) => { const copy = [...variants]; copy[idx].sku_custom = e.target.value; setVariants(copy); }} style={{ padding: 8 }} />
+                    ) : (
+                      <select value={v.sku || ''} onChange={(e) => { const copy = [...variants]; const val = e.target.value; if (val === '__custom__') { copy[idx].isCustom = true; copy[idx].sku_custom = ''; copy[idx].sku = ''; } else { copy[idx].sku = val; copy[idx].isCustom = false; } setVariants(copy); }} style={{ padding: 8 }}>
+                        <option value="">SKU seçin</option>
+                        {skuOptions.map(s => <option key={s} value={s}>{s}</option>)}
+                        <option value="__custom__">Yeni SKU...</option>
+                      </select>
+                    )}
                     <input placeholder="Fiyat" value={v.price} onChange={(e) => { const copy = [...variants]; copy[idx].price = e.target.value; setVariants(copy); }} style={{ padding: 8 }} />
                     <select value={v.unit_id || ''} onChange={(e) => { const copy = [...variants]; copy[idx].unit_id = e.target.value; setVariants(copy); }} style={{ padding: 8 }}>
                       <option value="">Birim</option>
@@ -360,8 +417,27 @@ const VendorProducts = () => {
       {isViewOpen && viewProduct && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1200 }}>
           <div style={{ background: 'white', width: 640, borderRadius: 12, padding: 20 }}>
-            <h3 style={{ marginBottom: 8 }}>{viewProduct.name}</h3>
-            <div style={{ color: '#475569', marginBottom: 12 }}>ID: {viewProduct.id} • Tür: {viewProduct.type}</div>
+                <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+                  <div style={{ minWidth: 220 }}>
+                    {viewProduct.photos && viewProduct.photos.length ? (
+                      <img src={toFullUrl(viewProduct.thumbnail || viewProduct.photos[0].url)} alt={viewProduct.name} style={{ width: '100%', height: 220, objectFit: 'cover', borderRadius: 8 }} />
+                    ) : (
+                      <div style={{ width: '100%', height: 220, background: '#f1f5f9', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8' }}>No image</div>
+                    )}
+                    {viewProduct.photos && viewProduct.photos.length > 1 && (
+                      <div style={{ display: 'flex', gap: 8, marginTop: 8, overflowX: 'auto' }}>
+                        {viewProduct.photos.map((p, i) => (
+                          <img key={p.id || i} src={toFullUrl(p.url)} alt={p.alt || `photo-${i}`} style={{ width: 64, height: 64, objectFit: 'cover', borderRadius: 6, cursor: 'pointer', border: '1px solid #e6edf3' }} />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <h3 style={{ marginBottom: 8 }}>{viewProduct.name}</h3>
+                    <div style={{ color: '#475569', marginBottom: 12 }}>ID: {viewProduct.id} • Tür: {viewProduct.type}</div>
+                    <div style={{ color: '#475569', marginBottom: 8 }}>Kategori: {getCategoryName(viewProduct.category_id)}</div>
+                  </div>
+                </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <div>
                 <strong>Fiyat</strong>
@@ -410,12 +486,20 @@ const VendorProducts = () => {
               <div style={{ gridColumn: '1 / -1', marginTop: 12 }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
                   <strong>Varyantlar</strong>
-                  <button type="button" onClick={() => setVariants([...variants, { title: '', sku: '', price: '', stock: 0, unit_id: '' }])} style={{ padding: '6px 10px' }}>Varyant Ekle</button>
+                  <button type="button" onClick={() => setVariants([...variants, { title: '', sku: '', sku_custom: '', isCustom: false, price: '', stock: 0, unit_id: '' }])} style={{ padding: '6px 10px' }}>Varyant Ekle</button>
                 </div>
                 {variants.map((v, idx) => (
                   <div key={idx} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr 80px', gap: 8, marginBottom: 8 }}>
                     <input placeholder="Başlık" value={v.title} onChange={(e) => { const copy = [...variants]; copy[idx].title = e.target.value; setVariants(copy); }} style={{ padding: 8 }} />
-                    <input placeholder="SKU" value={v.sku} onChange={(e) => { const copy = [...variants]; copy[idx].sku = e.target.value; setVariants(copy); }} style={{ padding: 8 }} />
+                    {v.isCustom ? (
+                      <input placeholder="SKU" value={v.sku_custom} onChange={(e) => { const copy = [...variants]; copy[idx].sku_custom = e.target.value; setVariants(copy); }} style={{ padding: 8 }} />
+                    ) : (
+                      <select value={v.sku || ''} onChange={(e) => { const copy = [...variants]; const val = e.target.value; if (val === '__custom__') { copy[idx].isCustom = true; copy[idx].sku_custom = ''; copy[idx].sku = ''; } else { copy[idx].sku = val; copy[idx].isCustom = false; } setVariants(copy); }} style={{ padding: 8 }}>
+                        <option value="">SKU seçin</option>
+                        {skuOptions.map(s => <option key={s} value={s}>{s}</option>)}
+                        <option value="__custom__">Yeni SKU...</option>
+                      </select>
+                    )}
                     <input placeholder="Fiyat" value={v.price} onChange={(e) => { const copy = [...variants]; copy[idx].price = e.target.value; setVariants(copy); }} style={{ padding: 8 }} />
                     <select value={v.unit_id || ''} onChange={(e) => { const copy = [...variants]; copy[idx].unit_id = e.target.value; setVariants(copy); }} style={{ padding: 8 }}>
                       <option value="">Birim</option>
