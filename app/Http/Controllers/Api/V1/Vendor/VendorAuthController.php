@@ -30,19 +30,49 @@ class VendorAuthController extends BaseVendorController
 
     public function me()
     {
-        $user = request()->user();
+        $vendor = request()->user();
+
+        // Load relations that onboarding needs
+        $vendor->loadMissing(['addresses', 'bankAccounts']);
 
         $sr = new \App\Core\ServiceResponse();
         $sr->setSuccess(true)
            ->setStatusCode(200)
            ->setMessage('OK')
            ->setData([
-               'user' => [
-                   'id' => $user->id,
-                   'name' => $user->name,
-                   'email' => $user->email,
-                   'roles' => $user->roles->pluck('name'),
-                   'created_at' => $user->created_at?->toIso8601String(),
+               'vendor' => [
+                   'id' => $vendor->id,
+                   'name' => $vendor->name,
+                   'email' => $vendor->email,
+                   'company_name' => $vendor->company_name,
+                   'tax_id' => $vendor->tax_id,
+                   'phone' => $vendor->phone,
+                   'logo_path' => $vendor->logo_path,
+                   'cover_path' => $vendor->cover_path,
+                   'status' => $vendor->status ?? null,
+                   'roles' => $vendor->roles->pluck('name'),
+                   'addresses' => $vendor->addresses->map(function($a){
+                       return [
+                           'id' => $a->id,
+                           'label' => $a->label,
+                           'country' => $a->country,
+                           'city' => $a->city,
+                           'address_line' => $a->address_line,
+                           'postal_code' => $a->postal_code,
+                           'is_primary' => (bool) $a->is_primary,
+                       ];
+                   })->toArray(),
+                   'bank_accounts' => $vendor->bankAccounts->map(function($b){
+                       return [
+                           'id' => $b->id,
+                           'bank_name' => $b->bank_name,
+                           'account_holder' => $b->account_holder,
+                           'iban' => $b->iban,
+                           'currency' => $b->currency,
+                           'is_primary' => (bool) $b->is_primary,
+                       ];
+                   })->toArray(),
+                   'created_at' => $vendor->created_at?->toIso8601String(),
                ],
            ]);
 

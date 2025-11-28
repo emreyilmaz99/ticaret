@@ -1,5 +1,5 @@
 import React from 'react';
-import VendorList from '../../features/vendors/components/VendorList';
+import VendorList from '../../features/vendor/components/VendorList';
 import { FaPlus } from 'react-icons/fa';
 
 const VendorsPage = () => {

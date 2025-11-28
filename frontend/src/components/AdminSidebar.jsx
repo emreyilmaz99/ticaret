@@ -70,6 +70,10 @@ const AdminSidebar = () => {
           <FaStore size={18} /> Satıcılar
         </Link>
 
+        <Link to="/admin/pre-applications" style={getLinkStyle('/admin/pre-applications')}>
+          <FaUsers size={18} /> Ön Başvurular
+        </Link>
+
         <Link to="/admin/products" style={getLinkStyle('/admin/products')}>
           <FaBox size={18} /> Ürünler
         </Link>

@@ -24,9 +24,23 @@ class ProfileController extends BaseVendorController
             return $this->error('Yetkisiz', 401);
         }
 
+
+        // Get validated fields
         $data = $request->validated();
-        if (isset($data['password'])) {
-            $data['password'] = bcrypt($data['password']);
+
+        // Password hashing is handled by the Vendor model mutator (`setPasswordAttribute`).
+        // If a password is provided it will be hashed by the model when saved.
+
+        // Handle file uploads (logo, cover) if present
+        // Store on the 'public' disk under vendors/{id}/
+        if ($request->hasFile('logo')) {
+            $logoPath = $request->file('logo')->store("vendors/{$vendor->getKey()}", 'public');
+            $data['logo_path'] = $logoPath;
+        }
+
+        if ($request->hasFile('cover')) {
+            $coverPath = $request->file('cover')->store("vendors/{$vendor->getKey()}", 'public');
+            $data['cover_path'] = $coverPath;
         }
 
         $updated = $this->service->update($vendor->getKey(), $data);

@@ -82,9 +82,17 @@ class Vendor extends Authenticatable
     public const STATUS_INACTIVE = 'inactive';
     public const STATUS_BANNED = 'banned';
 
+    // Pre-application (ön başvuru) statuses
+    public const STATUS_PRE_PENDING = 'pre_pending'; // ön başvuru beklemede
+    public const STATUS_PRE_APPROVED = 'pre_approved'; // ön başvuru onaylandı
+    public const STATUS_PRE_REJECTED = 'pre_rejected'; // ön başvuru reddedildi
+
     public static function statuses(): array
     {
         return [
+            self::STATUS_PRE_PENDING,
+            self::STATUS_PRE_APPROVED,
+            self::STATUS_PRE_REJECTED,
             self::STATUS_PENDING,
             self::STATUS_ACTIVE,
             self::STATUS_INACTIVE,

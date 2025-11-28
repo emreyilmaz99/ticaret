@@ -53,8 +53,9 @@ class AuthService
                 ->setData(null);
         }
 
-        // Reject vendors that are not active
-        if (property_exists($vendor, 'status') && $vendor->status !== Vendor::STATUS_ACTIVE) {
+        // Allow vendors that are active or have a pre-approved application to login.
+        // Other statuses should be rejected.
+        if (property_exists($vendor, 'status') && ! in_array($vendor->status, [Vendor::STATUS_ACTIVE, Vendor::STATUS_PRE_APPROVED])) {
             return (new ServiceResponse())
                 ->setSuccess(false)
                 ->setStatusCode(403)

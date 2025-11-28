@@ -12,13 +12,11 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         // Repository bindings (bind interfaces to implementations)
-        $this->app->bind(\App\Repositories\Interfaces\UserRepositoryInterface::class, function ($app) {
-            return new \App\Repositories\UserRepository(new \App\Models\User());
-        });
+        // Bind interfaces to concrete repository classes so the container
+        // can resolve constructor dependencies automatically.
+        $this->app->bind(\App\Repositories\Interfaces\UserRepositoryInterface::class, \App\Repositories\UserRepository::class);
 
-        $this->app->bind(\App\Repositories\Interfaces\VendorRepositoryInterface::class, function ($app) {
-            return new \App\Repositories\VendorRepository(new \App\Models\Vendor());
-        });
+        $this->app->bind(\App\Repositories\Interfaces\VendorRepositoryInterface::class, \App\Repositories\VendorRepository::class);
 
         // Service bindings
         $this->app->bind(\App\Interfaces\Services\AuthServiceInterface::class, \App\Services\AuthService::class);

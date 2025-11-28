@@ -39,9 +39,8 @@ class VendorController extends BaseAdminController
     public function store(\App\Http\Requests\Api\V1\Admin\StoreVendorRequest $request)
     {
         $data = $request->validated();
-        if (isset($data['password'])) {
-            $data['password'] = bcrypt($data['password']);
-        }
+        // Password hashing is handled by the Vendor model mutator (`setPasswordAttribute`).
+        // Do not pre-hash here to avoid double hashing.
 
         $vendor = $this->service->create($data);
 
@@ -56,9 +55,8 @@ class VendorController extends BaseAdminController
             return $this->error('Satıcı bulunamadı', 404);
         }
 
-        if (isset($data['password'])) {
-            $data['password'] = bcrypt($data['password']);
-        }
+        // Password hashing is handled by the Vendor model mutator (`setPasswordAttribute`).
+        // Do not pre-hash here to avoid double hashing.
 
         $updated = $this->service->update($id, $data);
 

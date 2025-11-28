@@ -18,10 +18,13 @@ import Dashboard from './pages/admin/Dashboard';   // Admin Paneli
 import VendorsPage from './pages/admin/VendorsPage'; // Satıcı Yönetimi
 import AdminsPage from './pages/admin/AdminsPage'; // Yönetici Yönetimi
 import UsersPage from './pages/admin/UsersPage'; // Kullanıcı Yönetimi
+import PreApplications from './pages/admin/PreApplications'; // Ön Başvurular
 
 // 3. Satıcı Sayfaları
 import VendorLogin from './pages/vendor/VendorLogin';
+import VendorRegister from './pages/vendor/VendorRegister';
 import VendorDashboard from './pages/vendor/VendorDashboard';
+import VendorOnboarding from './pages/vendor/VendorOnboarding';
 import VendorProducts from './pages/vendor/VendorProducts';
 import VendorOrders from './pages/vendor/VendorOrders';
 import VendorFinance from './pages/vendor/VendorFinance';
@@ -73,6 +76,7 @@ function App() {
               {/* İçerik: Dashboard */}
               <Route path="/admin/dashboard" element={<Dashboard />} />
               <Route path="/admin/vendors" element={<VendorsPage />} />
+              <Route path="/admin/pre-applications" element={<PreApplications />} />
               <Route path="/admin/admins" element={<AdminsPage />} />
               <Route path="/admin/users" element={<UsersPage />} />
               
@@ -87,6 +91,8 @@ function App() {
           {/* 4. SATICI (VENDOR) BÖLÜMÜ               */}
           {/* ======================================= */}
           <Route path="/vendor/login" element={<VendorLogin />} />
+          <Route path="/vendor/register" element={<VendorRegister />} />
+          <Route path="/vendor/onboarding" element={<VendorOnboarding />} />
 
           <Route path="/vendor" element={<VendorLayout />}>
              <Route path="dashboard" element={<VendorDashboard />} />

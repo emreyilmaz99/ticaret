@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
-import { vendorLogin } from '../../features/vendor/api/vendorAuthApi';
+import { vendorLogin, getVendorProfile } from '../../features/vendor/api/vendorAuthApi';
 import { FaStore, FaEnvelope, FaLock, FaArrowRight } from 'react-icons/fa';
 
 const VendorLogin = () => {
@@ -13,7 +13,22 @@ const VendorLogin = () => {
     mutationFn: vendorLogin,
     onSuccess: (data) => {
       localStorage.setItem('vendor_token', data.data.token);
-      navigate('/vendor/dashboard');
+      // Hemen profil bilgisini alıp onboarding gerekip gerekmediğine bak
+      getVendorProfile().then(res => {
+        const v = res.data.vendor;
+        const hasCompany = !!v.company_name;
+        const hasAddress = (v.addresses && v.addresses.length > 0);
+        const hasBank = (v.bank_accounts && v.bank_accounts.length > 0);
+
+        if (!hasCompany || !hasAddress || !hasBank || v.status !== 'active') {
+          navigate('/vendor/onboarding');
+        } else {
+          navigate('/vendor/dashboard');
+        }
+      }).catch(err => {
+        // Profil alınamazsa yine dashboard'a gönder (veya onboarding)
+        navigate('/vendor/dashboard');
+      });
     },
     onError: (error) => {
       alert('Giriş başarısız: ' + (error.response?.data?.message || error.message));
@@ -173,7 +188,7 @@ const VendorLogin = () => {
 
         <div style={{ marginTop: '32px', textAlign: 'center', fontSize: '14px', color: '#64748b' }}>
           Henüz satıcı hesabınız yok mu? <br />
-          <a href="#" style={{ color: '#16a34a', fontWeight: '700', textDecoration: 'none', marginTop: '4px', display: 'inline-block' }}>
+          <a href="/vendor/register" style={{ color: '#16a34a', fontWeight: '700', textDecoration: 'none', marginTop: '4px', display: 'inline-block' }}>
             Hemen Başvurun
           </a>
         </div>
