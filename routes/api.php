@@ -99,6 +99,8 @@ Route::prefix('v1/vendor')->group(function () {
         // vendor payouts
         Route::get('payouts', [SelfVendorPayoutController::class, 'index']);
         Route::post('payouts', [SelfVendorPayoutController::class, 'store']);
+        // onboarding completion (vendor marks their onboarding as finished)
+        Route::post('onboarding/complete', [VendorProfileController::class, 'completeOnboarding']);
     });
 });
 

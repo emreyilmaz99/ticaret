@@ -30,7 +30,7 @@ const VendorList = () => {
   const meta = responseData?.meta || {};
 
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeTab, setActiveTab] = useState('all'); // all, pre_pending, active, pending, banned
+  const [activeTab, setActiveTab] = useState('all'); // all, pre_pending, pre_approved, pending, active, banned
 
   const updateStatusMutation = useMutation({
     mutationFn: ({ id, status }) => updateVendorStatus(id, status),
@@ -109,8 +109,20 @@ const VendorList = () => {
       {/* omitted for brevity: same markup as before */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'var(--bg-card)', padding: '16px 24px', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow-sm)', border: '1px solid #e2e8f0' }}>
         <div style={{ display: 'flex', gap: '8px' }}>
-          {['all','pre_pending', 'active', 'pending', 'banned'].map((tab) => (
-            <button key={tab} onClick={() => { setActiveTab(tab); setCurrentPage(1); }} style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', backgroundColor: activeTab === tab ? 'var(--primary)' : 'transparent', color: activeTab === tab ? 'white' : 'var(--text-muted)', fontWeight: '500', cursor: 'pointer', textTransform: 'capitalize' }}>{tab === 'all' ? 'Tümü' : tab === 'pre_pending' ? 'Ön Başvuru' : tab === 'active' ? 'Aktif' : tab === 'pending' ? 'Bekleyen' : 'Yasaklı'}</button>
+          {['all','pre_pending','pre_approved','pending','active','banned'].map((tab) => (
+            <button
+              key={tab}
+              onClick={() => { setActiveTab(tab); setCurrentPage(1); }}
+              style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', backgroundColor: activeTab === tab ? 'var(--primary)' : 'transparent', color: activeTab === tab ? 'white' : 'var(--text-muted)', fontWeight: '500', cursor: 'pointer', textTransform: 'capitalize' }}
+            >
+              {tab === 'all' ? 'Tümü'
+                : tab === 'pre_pending' ? 'Ön Başvuru - Beklemede'
+                : tab === 'pre_approved' ? 'Ön Başvuru - Onaylandı'
+                : tab === 'pending' ? 'Bekleyen'
+                : tab === 'active' ? 'Aktif'
+                : 'Yasaklı'
+              }
+            </button>
           ))}
         </div>
         <div style={{ display: 'flex', gap: '12px' }}>
@@ -177,7 +189,7 @@ const VendorList = () => {
         </div>
       </div>
 
-      <VendorEditModal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} vendor={selectedVendor} onSave={handleSaveVendor} />
+      <VendorEditModal isOpen={isEditModalOpen} onClose={() => { setIsEditModalOpen(false); setSelectedVendor(null); }} vendor={selectedVendor} onSave={handleSaveVendor} />
     </div>
   );
 };

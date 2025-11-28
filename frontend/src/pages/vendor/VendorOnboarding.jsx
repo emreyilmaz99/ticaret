@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getVendorProfile, updateVendorProfile, createVendorAddress, createVendorBankAccount } from '../../features/vendor/api/vendorAuthApi';
+import { getVendorProfile, updateVendorProfile, createVendorAddress, createVendorBankAccount, completeOnboarding } from '../../features/vendor/api/vendorAuthApi';
 
 const VendorOnboarding = () => {
   const navigate = useNavigate();
@@ -86,6 +86,8 @@ const VendorOnboarding = () => {
       await createBankMutation.mutateAsync(bank);
       qc.invalidateQueries(['vendor','me']);
       // tamamlandı
+      // mark onboarding complete so admin sees this vendor in 'pending'
+      await completeOnboarding();
       alert('Onboarding tamamlandı. Bilgiler kaydedildi. Admin onayı bekleniyor.');
       navigate('/vendor/dashboard');
     } catch (e) {

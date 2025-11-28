@@ -55,3 +55,8 @@ export const createVendorBankAccount = async (payload) => {
   const response = await axios.post('/v1/vendor/bank-accounts', payload);
   return response.data;
 };
+
+export const completeOnboarding = async () => {
+  const response = await axios.post('/v1/vendor/onboarding/complete');
+  return response.data;
+};

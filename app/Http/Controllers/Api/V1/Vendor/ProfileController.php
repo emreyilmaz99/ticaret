@@ -59,4 +59,35 @@ class ProfileController extends BaseVendorController
 
         return $this->success(null, 'Hesabınız başarıyla silindi (soft delete)', 200);
     }
+
+    /**
+     * Mark onboarding complete — vendor indicates they've finished step 2.
+     * Only allowed when vendor currently has status `pre_approved`.
+     */
+    public function completeOnboarding(Request $request)
+    {
+        $vendor = $request->user();
+        if (! $vendor) {
+            return $this->error('Yetkisiz', 401);
+        }
+
+        // Basic guards: only transition pre_approved -> pending
+        if ($vendor->status !== 'pre_approved') {
+            return $this->error('Onboarding tamamlanamaz: mevcut statü uygun değil', 422);
+        }
+
+        // Optionally verify required fields exist (company_name, at least one address and bank account)
+        $hasCompany = !empty($vendor->company_name);
+        $hasAddress = $vendor->addresses()->exists();
+        $hasBank = $vendor->bankAccounts()->exists();
+
+        if (!($hasCompany && $hasAddress && $hasBank)) {
+            return $this->error('Onboarding tamamlanmadan önce tüm zorunlu bilgiler doldurulmalıdır', 422);
+        }
+
+        // Update status to pending so admin can review full application
+        $updated = $this->service->update($vendor->getKey(), ['status' => 'pending']);
+
+        return $this->success(new VendorResource($updated), 'Onboarding tamamlandı; admin onayı bekleniyor', 200);
+    }
 }
