@@ -68,28 +68,32 @@ class ProductController extends Controller
     public function update(UpdateProductRequest $request, Product $product)
     {
         $vendor = $request->user();
-        if ($product->vendor_id !== $vendor->id) {
+        
+        try {
+            $updated = $this->service->updateForVendor($vendor, $product, $request->validated());
             $sr = new \App\Core\ServiceResponse();
-            $sr->setSuccess(false)->setStatusCode(403)->setMessage('Forbidden');
+            $sr->setSuccess(true)->setStatusCode(200)->setMessage('Updated')->setData(new ProductResource($updated));
+            return $this->fromServiceResponse($sr);
+        } catch (\Exception $e) {
+            $sr = new \App\Core\ServiceResponse();
+            $sr->setSuccess(false)->setStatusCode(403)->setMessage($e->getMessage());
             return $this->fromServiceResponse($sr);
         }
-        $updated = $this->service->updateForVendor($vendor, $product, $request->validated());
-        $sr = new \App\Core\ServiceResponse();
-        $sr->setSuccess(true)->setStatusCode(200)->setMessage('Updated')->setData(new ProductResource($updated));
-        return $this->fromServiceResponse($sr);
     }
 
     public function destroy(Request $request, Product $product)
     {
         $vendor = $request->user();
-        if ($product->vendor_id !== $vendor->id) {
+        
+        try {
+            $this->service->deleteForVendor($vendor, $product);
             $sr = new \App\Core\ServiceResponse();
-            $sr->setSuccess(false)->setStatusCode(403)->setMessage('Forbidden');
+            $sr->setSuccess(true)->setStatusCode(204)->setMessage('Deleted')->setData(null);
+            return $this->fromServiceResponse($sr);
+        } catch (\Exception $e) {
+            $sr = new \App\Core\ServiceResponse();
+            $sr->setSuccess(false)->setStatusCode(403)->setMessage($e->getMessage());
             return $this->fromServiceResponse($sr);
         }
-        $this->service->deleteForVendor($vendor, $product);
-        $sr = new \App\Core\ServiceResponse();
-        $sr->setSuccess(true)->setStatusCode(204)->setMessage('Deleted')->setData(null);
-        return $this->fromServiceResponse($sr);
     }
 }

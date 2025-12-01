@@ -4,20 +4,30 @@ namespace App\Services;
 
 use App\Models\Product;
 use App\Models\Vendor;
-use App\Models\Tag;
-use App\Models\ProductVariant;
-use App\Models\Media;
-use App\Repositories\ProductRepository;
+use App\Repositories\Interfaces\ProductRepositoryInterface;
+use App\Repositories\Interfaces\TagRepositoryInterface;
+use App\Repositories\Interfaces\ProductVariantRepositoryInterface;
+use App\Repositories\Interfaces\ProductPhotoRepositoryInterface;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
 
 class ProductService
 {
-    protected ProductRepository $repo;
+    protected ProductRepositoryInterface $repo;
+    protected TagRepositoryInterface $tagRepo;
+    protected ProductVariantRepositoryInterface $variantRepo;
+    protected ProductPhotoRepositoryInterface $photoRepo;
 
-    public function __construct(ProductRepository $repo)
-    {
+    public function __construct(
+        ProductRepositoryInterface $repo,
+        TagRepositoryInterface $tagRepo,
+        ProductVariantRepositoryInterface $variantRepo,
+        ProductPhotoRepositoryInterface $photoRepo
+    ) {
         $this->repo = $repo;
+        $this->tagRepo = $tagRepo;
+        $this->variantRepo = $variantRepo;
+        $this->photoRepo = $photoRepo;
     }
 
     public function createForVendor(Vendor $vendor, array $data): Product
@@ -54,7 +64,7 @@ class ProductService
         $baseSlug = isset($data['slug']) && $data['slug'] ? Str::slug($data['slug']) : Str::slug($data['name'] ?? 'product');
         $slug = $baseSlug;
         $suf = 1;
-        while (Product::where('slug', $slug)->exists()) {
+        while ($this->repo->existsBySlug($slug)) {
             $slug = $baseSlug . '-' . $suf;
             $suf++;
         }
@@ -67,13 +77,13 @@ class ProductService
             $tagIds = [];
             foreach ($tags as $t) {
                 if (is_numeric($t)) {
-                    $tag = Tag::find($t);
+                    $tag = $this->tagRepo->findById($t);
                     if ($tag) $tagIds[] = $tag->id;
                     continue;
                 }
                 $name = (string) $t;
                 $slug = Str::slug($name);
-                $tag = Tag::firstOrCreate(['slug' => $slug], ['name' => $name]);
+                $tag = $this->tagRepo->firstOrCreateBySlug($slug, ['name' => $name]);
                 $tagIds[] = $tag->id;
             }
             if (! empty($tagIds)) {
@@ -97,7 +107,7 @@ class ProductService
                     'metadata' => $v['metadata'] ?? null,
                 ], function ($val) { return $val !== null; });
                 $vData['product_id'] = $product->id;
-                ProductVariant::create($vData);
+                $this->variantRepo->create($vData);
             }
         }
 
@@ -112,7 +122,7 @@ class ProductService
             ];
             // remove null values to let DB defaults apply
             $vData = array_filter($vData, function ($val) { return $val !== null; });
-            ProductVariant::create($vData);
+            $this->variantRepo->create($vData);
         }
 
         // store images and create media records
@@ -122,7 +132,7 @@ class ProductService
                 $path = $file->store('products', 'public');
                 $url = Storage::url($path);
                 // persist into product_photos table
-                \App\Models\ProductPhoto::create([
+                $this->photoRepo->create([
                     'product_id' => $product->id,
                     'path' => $path,
                     'url' => $url,
@@ -136,6 +146,11 @@ class ProductService
 
     public function updateForVendor(Vendor $vendor, Product $product, array $data): Product
     {
+        // Verify ownership
+        if ($product->vendor_id !== $vendor->id) {
+            throw new \Exception('Unauthorized: Product does not belong to this vendor');
+        }
+        
         // prevent changing vendor_id
         unset($data['vendor_id']);
         // update via repository (id-based repository interface)
@@ -150,6 +165,11 @@ class ProductService
 
     public function deleteForVendor(Vendor $vendor, Product $product): void
     {
+        // Verify ownership
+        if ($product->vendor_id !== $vendor->id) {
+            throw new \Exception('Unauthorized: Product does not belong to this vendor');
+        }
+        
         // repository uses id-based delete signature
         $this->repo->delete($product->id);
     }

@@ -3,21 +3,30 @@
 namespace App\Services;
 
 use App\Repositories\VendorRepository;
+use App\Repositories\Interfaces\VendorAddressRepositoryInterface;
+use App\Repositories\Interfaces\VendorBankAccountRepositoryInterface;
+use App\Repositories\Interfaces\VendorPayoutRepositoryInterface;
 use App\Models\Vendor;
-use App\Models\VendorAddress;
-use App\Models\VendorBankAccount;
-use App\Models\VendorPayout;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Storage;
 
 class VendorService extends BaseService
 {
     protected VendorRepository $repo;
+    protected VendorAddressRepositoryInterface $addressRepo;
+    protected VendorBankAccountRepositoryInterface $bankRepo;
+    protected VendorPayoutRepositoryInterface $payoutRepo;
 
-    public function __construct(VendorRepository $repo)
-    {
+    public function __construct(
+        VendorRepository $repo,
+        VendorAddressRepositoryInterface $addressRepo,
+        VendorBankAccountRepositoryInterface $bankRepo,
+        VendorPayoutRepositoryInterface $payoutRepo
+    ) {
         $this->repo = $repo;
+        $this->addressRepo = $addressRepo;
+        $this->bankRepo = $bankRepo;
+        $this->payoutRepo = $payoutRepo;
     }
 
     public function list(int $perPage = 15)
@@ -113,14 +122,14 @@ class VendorService extends BaseService
                 $keepIds = collect($data['addresses'])->pluck('id')->filter()->toArray();
                 
                 // Delete removed addresses
-                VendorAddress::where('vendor_id', $id)->whereNotIn('id', $keepIds)->delete();
+                $this->addressRepo->deleteByVendor($id, $keepIds);
 
                 foreach ($data['addresses'] as $addrData) {
                     if (isset($addrData['id'])) {
-                        VendorAddress::where('id', $addrData['id'])->where('vendor_id', $id)->update($addrData);
+                        $this->addressRepo->update($addrData['id'], $addrData);
                     } else {
                         $addrData['vendor_id'] = $id;
-                        VendorAddress::create($addrData);
+                        $this->addressRepo->create($addrData);
                     }
                 }
             }
@@ -128,14 +137,14 @@ class VendorService extends BaseService
             // 3. Sync Bank Accounts if provided
             if (isset($data['bank_accounts']) && is_array($data['bank_accounts'])) {
                 $keepIds = collect($data['bank_accounts'])->pluck('id')->filter()->toArray();
-                VendorBankAccount::where('vendor_id', $id)->whereNotIn('id', $keepIds)->delete();
+                $this->bankRepo->deleteByVendor($id, $keepIds);
 
                 foreach ($data['bank_accounts'] as $bankData) {
                     if (isset($bankData['id'])) {
-                        VendorBankAccount::where('id', $bankData['id'])->where('vendor_id', $id)->update($bankData);
+                        $this->bankRepo->update($bankData['id'], $bankData);
                     } else {
                         $bankData['vendor_id'] = $id;
-                        VendorBankAccount::create($bankData);
+                        $this->bankRepo->create($bankData);
                     }
                 }
             }
@@ -155,16 +164,16 @@ class VendorService extends BaseService
     public function addAddress(int $vendorId, array $data)
     {
         if (!empty($data['is_primary'])) {
-            VendorAddress::where('vendor_id', $vendorId)->update(['is_primary' => false]);
+            $this->addressRepo->clearPrimaryForVendor($vendorId);
         }
 
         $data['vendor_id'] = $vendorId;
-        return VendorAddress::create($data);
+        return $this->addressRepo->create($data);
     }
 
     public function listAddresses(int $vendorId)
     {
-        return VendorAddress::where('vendor_id', $vendorId)->get();
+        return $this->addressRepo->listByVendor($vendorId);
     }
 
     /**
@@ -173,56 +182,68 @@ class VendorService extends BaseService
     public function addBankAccount(int $vendorId, array $data)
     {
         if (!empty($data['is_primary'])) {
-            VendorBankAccount::where('vendor_id', $vendorId)->update(['is_primary' => false]);
+            $this->bankRepo->clearPrimaryForVendor($vendorId);
         }
 
         $data['vendor_id'] = $vendorId;
-        return VendorBankAccount::create($data);
+        return $this->bankRepo->create($data);
     }
 
     public function listBankAccounts(int $vendorId)
     {
-        return VendorBankAccount::where('vendor_id', $vendorId)->get();
+        return $this->bankRepo->listByVendor($vendorId);
     }
 
     public function updateAddress(int $vendorId, int $addressId, array $data)
     {
-        $address = VendorAddress::where('vendor_id', $vendorId)->where('id', $addressId)->firstOrFail();
-
-        if (!empty($data['is_primary'])) {
-            VendorAddress::where('vendor_id', $vendorId)->update(['is_primary' => false]);
+        $address = $this->addressRepo->findByVendorAndId($vendorId, $addressId);
+        
+        if (!$address) {
+            throw new \Exception('Address not found');
         }
 
-        $address->fill($data);
-        $address->save();
+        if (!empty($data['is_primary'])) {
+            $this->addressRepo->clearPrimaryForVendor($vendorId);
+        }
 
-        return $address;
+        return $this->addressRepo->update($addressId, $data);
     }
 
     public function deleteAddress(int $vendorId, int $addressId)
     {
-        $address = VendorAddress::where('vendor_id', $vendorId)->where('id', $addressId)->firstOrFail();
-        return $address->delete();
+        $address = $this->addressRepo->findByVendorAndId($vendorId, $addressId);
+        
+        if (!$address) {
+            throw new \Exception('Address not found');
+        }
+        
+        return $this->addressRepo->delete($addressId);
     }
 
     public function updateBankAccount(int $vendorId, int $accountId, array $data)
     {
-        $account = VendorBankAccount::where('vendor_id', $vendorId)->where('id', $accountId)->firstOrFail();
-
-        if (!empty($data['is_primary'])) {
-            VendorBankAccount::where('vendor_id', $vendorId)->update(['is_primary' => false]);
+        $account = $this->bankRepo->findByVendorAndId($vendorId, $accountId);
+        
+        if (!$account) {
+            throw new \Exception('Bank account not found');
         }
 
-        $account->fill($data);
-        $account->save();
+        if (!empty($data['is_primary'])) {
+            $this->bankRepo->clearPrimaryForVendor($vendorId);
+        }
 
-        return $account;
+        return $this->bankRepo->update($accountId, $data);
     }
 
     public function deleteBankAccount(int $vendorId, int $accountId)
     {
-        $account = VendorBankAccount::where('vendor_id', $vendorId)->where('id', $accountId)->firstOrFail();
-        return $account->delete();
+        $account = $this->bankRepo->findByVendorAndId($vendorId, $accountId);
+        
+        if (!$account) {
+            throw new \Exception('Bank account not found');
+        }
+        
+        return $this->bankRepo->delete($accountId);
     }
 
     /**
@@ -243,7 +264,7 @@ class VendorService extends BaseService
             $vendor->balance = $vendor->balance - $total;
             $vendor->save();
 
-            $payout = VendorPayout::create([
+            $payout = $this->payoutRepo->create([
                 'vendor_id' => $vendorId,
                 'amount' => $amount,
                 'fee' => $fee,
@@ -258,7 +279,7 @@ class VendorService extends BaseService
 
     public function listPayouts(int $vendorId)
     {
-        return VendorPayout::where('vendor_id', $vendorId)->orderByDesc('created_at')->get();
+        return $this->payoutRepo->listByVendor($vendorId);
     }
 
     public function getBalance(int $vendorId)
