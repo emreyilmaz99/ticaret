@@ -136,6 +136,7 @@ Route::get('v1/vendors/{slug}', [PublicVendorController::class, 'show']);
 
 // Public vendor application submission
 Route::post('v1/vendor-applications', [PublicVendorApplicationController::class, 'store']);
+Route::post('v1/vendor-applications/{preApplicationId}/submit-full', [PublicVendorApplicationController::class, 'submitFull']);
 
 // units (public)
 Route::get('v1/units', [\App\Http\Controllers\Api\V1\Public\UnitsController::class, 'index']);
