@@ -1,45 +1,88 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { submitFullApplication } from '../../features/vendor/api/vendorAuthApi';
-import { FaStore, FaLock, FaPhone, FaCheckCircle } from 'react-icons/fa';
+import axios from '../../lib/axios';
+import { FaStore, FaPhone, FaIdCard, FaCheckCircle, FaUser, FaLink, FaMapMarkerAlt, FaCity, FaGlobe, FaMailBulk } from 'react-icons/fa';
 
 const VendorFullApplication = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({
+    full_name: '',
     company_name: '',
-    tax_id: '',
+    slug: '',
     phone: '',
-    password: '',
-    password_confirmation: ''
+    tax_id: '',
+    address_line: '',
+    city: '',
+    country: 'Türkiye',
+    postal_code: ''
   });
   const [acceptTerms, setAcceptTerms] = useState(false);
+
+  // Fetch pre-application data
+  useEffect(() => {
+    const fetchPreApplication = async () => {
+      try {
+        const response = await axios.get(`/v1/vendor-applications/${id}`);
+        const app = response.data.data;
+        
+        // Pre-fill form with existing data
+        setForm({
+          full_name: app.full_name || '',
+          company_name: app.company_name || '',
+          slug: app.company_name ? app.company_name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') : '',
+          phone: app.phone || '',
+          tax_id: app.tax_id || '',
+          address_line: '',
+          city: '',
+          country: 'Türkiye',
+          postal_code: ''
+        });
+        setLoading(false);
+      } catch (error) {
+        console.error('Failed to fetch pre-application:', error);
+        const response = error.response?.data;
+        
+        // Check if vendor is already active
+        if (response?.data?.redirect_to_dashboard) {
+          alert('✅ Hesabınız Zaten Aktif\n\nDashboard sayfasına yönlendiriliyorsunuz.');
+          navigate('/vendor/dashboard');
+        } else {
+          alert('Ön başvuru bilgileri yüklenemedi. Lütfen tekrar deneyin.');
+          navigate('/vendor/login');
+        }
+      }
+    };
+
+    fetchPreApplication();
+  }, [id, navigate]);
 
   const submitMutation = useMutation({
     mutationFn: (data) => submitFullApplication(id, data),
     onSuccess: (data) => {
-      alert('Tam başvurunuz alındı! Admin onayı sonrası hesabınız aktif edilecektir.');
+      alert('✅ Tam Başvurunuz Tamamlandı!\n\nVendor hesabınız oluşturuldu.\nAdmin onayından sonra aktifleştirilecektir.\n\nE-posta adresinize bilgilendirme gönderilecektir.');
       navigate('/vendor/login');
     },
     onError: (err) => {
-      alert('Başvuru başarısız: ' + (err.response?.data?.message || err.message));
+      const response = err.response?.data;
+      
+      // Check if vendor is already active
+      if (response?.data?.redirect_to_dashboard) {
+        alert('✅ Hesabınız Zaten Aktif\n\nDashboard sayfasına yönlendiriliyorsunuz.');
+        navigate('/vendor/dashboard');
+      } else {
+        const errorMsg = response?.message || err.message || 'Bir hata oluştu';
+        alert('❌ Tam Başvuru Başarısız:\n' + errorMsg);
+      }
     }
   });
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (form.password !== form.password_confirmation) {
-      alert('Şifreler eşleşmiyor');
-      return;
-    }
-
-    submitMutation.mutate({
-      company_name: form.company_name,
-      tax_id: form.tax_id,
-      phone: form.phone,
-      password: form.password
-    });
+    submitMutation.mutate(form);
   };
 
   // Styles (Reused from VendorRegister for consistency)
@@ -153,6 +196,22 @@ const VendorFullApplication = () => {
     e.target.style.backgroundColor = '#f8fafc';
   };
 
+  if (loading) {
+    return (
+      <div style={styles.container}>
+        <div style={styles.card}>
+          <div style={styles.header}>
+            <div style={styles.iconWrapper}>
+              <FaStore />
+            </div>
+            <h1 style={styles.title}>Yükleniyor...</h1>
+            <p style={styles.subtitle}>Ön başvuru bilgileriniz getiriliyor.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div style={styles.container}>
       <div style={styles.card}>
@@ -168,7 +227,23 @@ const VendorFullApplication = () => {
 
         <form onSubmit={handleSubmit}>
           <div style={styles.formGroup}>
-            <label style={styles.label}>Şirket / Mağaza Adı</label>
+            <label style={styles.label}>Ad Soyad *</label>
+            <div style={styles.inputWrapper}>
+              <FaUser style={styles.inputIcon} />
+              <input 
+                style={styles.input} 
+                onFocus={handleFocus} 
+                onBlur={handleBlur}
+                value={form.full_name} 
+                onChange={(e) => setForm({...form, full_name: e.target.value})} 
+                required 
+                placeholder="Ad ve soyadınız" 
+              />
+            </div>
+          </div>
+
+          <div style={styles.formGroup}>
+            <label style={styles.label}>Şirket / Mağaza Adı *</label>
             <div style={styles.inputWrapper}>
               <FaStore style={styles.inputIcon} />
               <input 
@@ -176,7 +251,14 @@ const VendorFullApplication = () => {
                 onFocus={handleFocus} 
                 onBlur={handleBlur}
                 value={form.company_name} 
-                onChange={(e) => setForm({...form, company_name: e.target.value})} 
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setForm({
+                    ...form, 
+                    company_name: value,
+                    slug: value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+                  });
+                }} 
                 required 
                 placeholder="Resmi şirket adı" 
               />
@@ -184,22 +266,26 @@ const VendorFullApplication = () => {
           </div>
 
           <div style={styles.formGroup}>
-            <label style={styles.label}>Vergi Numarası</label>
+            <label style={styles.label}>Mağaza URL (Slug) *</label>
             <div style={styles.inputWrapper}>
-              <span style={{...styles.inputIcon, fontSize: '14px', fontWeight: 'bold'}}>#</span>
+              <FaLink style={styles.inputIcon} />
               <input 
                 style={styles.input} 
                 onFocus={handleFocus} 
                 onBlur={handleBlur}
-                value={form.tax_id} 
-                onChange={(e) => setForm({...form, tax_id: e.target.value})} 
-                placeholder="Vergi numaranız" 
+                value={form.slug} 
+                onChange={(e) => setForm({...form, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '')})} 
+                required 
+                placeholder="magaza-adi" 
               />
             </div>
+            <small style={{color: '#64748b', fontSize: '12px', marginTop: '4px', display: 'block'}}>
+              Site adresiniz: yoursite.com/vendor/{form.slug || 'magaza-adi'}
+            </small>
           </div>
 
           <div style={styles.formGroup}>
-            <label style={styles.label}>Telefon</label>
+            <label style={styles.label}>Telefon *</label>
             <div style={styles.inputWrapper}>
               <FaPhone style={styles.inputIcon} />
               <input 
@@ -215,35 +301,85 @@ const VendorFullApplication = () => {
           </div>
 
           <div style={styles.formGroup}>
-            <label style={styles.label}>Şifre Belirleyin</label>
+            <label style={styles.label}>Vergi Numarası <span style={{fontWeight: 400, color: '#94a3b8'}}>(Opsiyonel)</span></label>
             <div style={styles.inputWrapper}>
-              <FaLock style={styles.inputIcon} />
+              <FaIdCard style={styles.inputIcon} />
               <input 
-                type="password"
                 style={styles.input} 
                 onFocus={handleFocus} 
                 onBlur={handleBlur}
-                value={form.password} 
-                onChange={(e) => setForm({...form, password: e.target.value})} 
-                required 
-                placeholder="Güçlü bir şifre" 
+                value={form.tax_id} 
+                onChange={(e) => setForm({...form, tax_id: e.target.value})} 
+                placeholder="Vergi numaranız" 
               />
             </div>
           </div>
 
+          <div style={{...styles.subtitle, textAlign: 'left', marginTop: '32px', marginBottom: '16px', fontWeight: '600', color: '#047857'}}>
+            📍 Adres Bilgileri
+          </div>
+
           <div style={styles.formGroup}>
-            <label style={styles.label}>Şifre Tekrar</label>
+            <label style={styles.label}>Adres *</label>
             <div style={styles.inputWrapper}>
-              <FaLock style={styles.inputIcon} />
+              <FaMapMarkerAlt style={styles.inputIcon} />
               <input 
-                type="password"
                 style={styles.input} 
                 onFocus={handleFocus} 
                 onBlur={handleBlur}
-                value={form.password_confirmation} 
-                onChange={(e) => setForm({...form, password_confirmation: e.target.value})} 
+                value={form.address_line} 
+                onChange={(e) => setForm({...form, address_line: e.target.value})} 
                 required 
-                placeholder="Şifreyi doğrulayın" 
+                placeholder="Cadde, sokak, bina no" 
+              />
+            </div>
+          </div>
+
+          <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px'}}>
+            <div style={styles.formGroup}>
+              <label style={styles.label}>Şehir *</label>
+              <div style={styles.inputWrapper}>
+                <FaCity style={styles.inputIcon} />
+                <input 
+                  style={styles.input} 
+                  onFocus={handleFocus} 
+                  onBlur={handleBlur}
+                  value={form.city} 
+                  onChange={(e) => setForm({...form, city: e.target.value})} 
+                  required 
+                  placeholder="İstanbul" 
+                />
+              </div>
+            </div>
+
+            <div style={styles.formGroup}>
+              <label style={styles.label}>Posta Kodu <span style={{fontWeight: 400, color: '#94a3b8'}}>(Opsiyonel)</span></label>
+              <div style={styles.inputWrapper}>
+                <FaMailBulk style={styles.inputIcon} />
+                <input 
+                  style={styles.input} 
+                  onFocus={handleFocus} 
+                  onBlur={handleBlur}
+                  value={form.postal_code} 
+                  onChange={(e) => setForm({...form, postal_code: e.target.value})} 
+                  placeholder="34000" 
+                />
+              </div>
+            </div>
+          </div>
+
+          <div style={styles.formGroup}>
+            <label style={styles.label}>Ülke *</label>
+            <div style={styles.inputWrapper}>
+              <FaGlobe style={styles.inputIcon} />
+              <input 
+                style={styles.input} 
+                onFocus={handleFocus} 
+                onBlur={handleBlur}
+                value={form.country} 
+                onChange={(e) => setForm({...form, country: e.target.value})} 
+                required 
+                placeholder="Türkiye" 
               />
             </div>
           </div>
@@ -257,7 +393,7 @@ const VendorFullApplication = () => {
               style={{ marginTop: '4px', width: '18px', height: '18px', accentColor: '#047857', cursor: 'pointer' }} 
             />
             <label htmlFor="acceptTerms" style={{ fontSize: '14px', color: '#334155', lineHeight: '1.5', cursor: 'pointer' }}>
-              Tüm bilgilerin doğruluğunu kabul ediyorum.
+              Tüm bilgilerin doğruluğunu kabul ediyorum ve <span style={{fontWeight: '600', color: '#047857'}}>Satıcı Sözleşmesi</span>'ni okudum.
             </label>
           </div>
 

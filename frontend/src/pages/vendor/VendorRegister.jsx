@@ -8,12 +8,11 @@ const VendorRegister = () => {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [form, setForm] = useState({
-    first_name: '',
-    last_name: '',
-    store_name: '',
-    tax_id: '',
+    full_name: '',
+    company_name: '',
     email: '',
     phone: '',
+    tax_id: '',
     password: '',
     password_confirmation: ''
   });
@@ -22,19 +21,12 @@ const VendorRegister = () => {
   const registerMutation = useMutation({
     mutationFn: (data) => vendorRegister(data),
     onSuccess: (response) => {
-      const applicationId = response?.data?.id;
-      if (applicationId) {
-        // Backend ön başvuruyu kaydetti, şimdi kullanıcıya ID'yi göster
-        alert(`Ön başvurunuz alındı! Başvuru ID: ${applicationId}\n\nAdmin onayı sonrasında bu ID ile tam başvuru yapabilirsiniz: /vendor/full-application/${applicationId}`);
-        // Kullanıcıyı bilgilendirme sayfasına yönlendir
-        navigate('/', { state: { applicationId, message: 'Ön başvurunuz alındı. Admin onayı bekleniyor.' } });
-      } else {
-        alert('Ön başvurunuz alındı! E-posta adresinize bilgilendirme gönderilecektir.');
-        navigate('/');
-      }
+      alert('✅ Ön başvurunuz alındı!\n\nAdmin onayından sonra e-posta adresinize bilgilendirme gönderilecektir.');
+      navigate('/', { state: { message: 'Ön başvurunuz başarıyla alındı. Lütfen e-postanızı kontrol edin.' } });
     },
     onError: (err) => {
-      alert('Başvuru başarısız: ' + (err.response?.data?.message || err.message));
+      const errorMsg = err.response?.data?.message || err.message || 'Bir hata oluştu';
+      alert('❌ Başvuru başarısız:\n' + errorMsg);
     }
   });
 
@@ -55,10 +47,11 @@ const VendorRegister = () => {
     }
 
     const payload = {
-      full_name: `${form.first_name} ${form.last_name}`.trim(),
+      full_name: form.full_name,
       email: form.email,
-      company_name: form.store_name || null,
+      company_name: form.company_name || null,
       phone: form.phone || null,
+      tax_id: form.tax_id || null,
       password: form.password,
       password_confirmation: form.password_confirmation,
     };
@@ -234,36 +227,19 @@ const VendorRegister = () => {
         <form onSubmit={handleSubmit}>
           {step === 1 && (
             <div style={{ animation: 'fadeIn 0.5s ease' }}>
-              <div style={styles.row}>
-                <div style={styles.formGroup}>
-                  <label style={styles.label}>Ad</label>
-                  <div style={styles.inputWrapper}>
-                    <FaUser style={styles.inputIcon} />
-                    <input 
-                      style={styles.input} 
-                      onFocus={handleFocus} 
-                      onBlur={handleBlur}
-                      value={form.first_name} 
-                      onChange={(e) => setForm({...form, first_name: e.target.value})} 
-                      required 
-                      placeholder="Adınız" 
-                    />
-                  </div>
-                </div>
-                <div style={styles.formGroup}>
-                  <label style={styles.label}>Soyad</label>
-                  <div style={styles.inputWrapper}>
-                    <FaUser style={styles.inputIcon} />
-                    <input 
-                      style={styles.input} 
-                      onFocus={handleFocus} 
-                      onBlur={handleBlur}
-                      value={form.last_name} 
-                      onChange={(e) => setForm({...form, last_name: e.target.value})} 
-                      required 
-                      placeholder="Soyadınız" 
-                    />
-                  </div>
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Ad Soyad</label>
+                <div style={styles.inputWrapper}>
+                  <FaUser style={styles.inputIcon} />
+                  <input 
+                    style={styles.input} 
+                    onFocus={handleFocus} 
+                    onBlur={handleBlur}
+                    value={form.full_name} 
+                    onChange={(e) => setForm({...form, full_name: e.target.value})} 
+                    required 
+                    placeholder="Ad ve soyadınız" 
+                  />
                 </div>
               </div>
 
@@ -287,8 +263,8 @@ const VendorRegister = () => {
               <button 
                 type="button" 
                 onClick={next} 
-                disabled={!form.first_name || !form.last_name || !form.email}
-                style={{ ...styles.buttonPrimary, opacity: (!form.first_name || !form.last_name || !form.email) ? 0.7 : 1 }}
+                disabled={!form.full_name || !form.email}
+                style={{ ...styles.buttonPrimary, opacity: (!form.full_name || !form.email) ? 0.7 : 1 }}
               >
                 Devam Et <FaArrowRight />
               </button>
@@ -298,17 +274,31 @@ const VendorRegister = () => {
           {step === 2 && (
             <div style={{ animation: 'fadeIn 0.5s ease' }}>
               <div style={styles.formGroup}>
-                <label style={styles.label}>Mağaza / Şirket Adı</label>
+                <label style={styles.label}>Mağaza / Şirket Adı <span style={{fontWeight: 400, color: '#94a3b8'}}>(Opsiyonel)</span></label>
                 <div style={styles.inputWrapper}>
                   <FaStore style={styles.inputIcon} />
                   <input 
                     style={styles.input} 
                     onFocus={handleFocus} 
                     onBlur={handleBlur}
-                    value={form.store_name} 
-                    onChange={(e) => setForm({...form, store_name: e.target.value})} 
-                    required 
+                    value={form.company_name} 
+                    onChange={(e) => setForm({...form, company_name: e.target.value})} 
                     placeholder="Mağaza adınız" 
+                  />
+                </div>
+              </div>
+
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Telefon Numarası <span style={{fontWeight: 400, color: '#94a3b8'}}>(Opsiyonel)</span></label>
+                <div style={styles.inputWrapper}>
+                  <FaPhone style={styles.inputIcon} />
+                  <input 
+                    style={styles.input} 
+                    onFocus={handleFocus} 
+                    onBlur={handleBlur}
+                    value={form.phone} 
+                    onChange={(e) => setForm({...form, phone: e.target.value})} 
+                    placeholder="05xx xxx xx xx" 
                   />
                 </div>
               </div>
@@ -324,21 +314,6 @@ const VendorRegister = () => {
                     value={form.tax_id} 
                     onChange={(e) => setForm({...form, tax_id: e.target.value})} 
                     placeholder="Vergi numaranız" 
-                  />
-                </div>
-              </div>
-
-              <div style={styles.formGroup}>
-                <label style={styles.label}>Telefon Numarası</label>
-                <div style={styles.inputWrapper}>
-                  <FaPhone style={styles.inputIcon} />
-                  <input 
-                    style={styles.input} 
-                    onFocus={handleFocus} 
-                    onBlur={handleBlur}
-                    value={form.phone} 
-                    onChange={(e) => setForm({...form, phone: e.target.value})} 
-                    placeholder="05xx xxx xx xx" 
                   />
                 </div>
               </div>
@@ -401,8 +376,8 @@ const VendorRegister = () => {
                 </button>
                 <button 
                   type="submit" 
-                  disabled={registerMutation.isPending || !acceptTerms || !form.store_name} 
-                  style={{ ...styles.buttonPrimary, opacity: (registerMutation.isPending || !acceptTerms || !form.store_name) ? 0.7 : 1 }}
+                  disabled={registerMutation.isPending || !acceptTerms} 
+                  style={{ ...styles.buttonPrimary, flex: 1, opacity: (registerMutation.isPending || !acceptTerms) ? 0.7 : 1 }}
                 >
                   {registerMutation.isPending ? 'İşleniyor...' : 'Başvuruyu Tamamla'} <FaCheckCircle />
                 </button>

@@ -15,6 +15,7 @@ class VendorApplication extends Model
         'full_name',
         'company_name',
         'phone',
+        'tax_id',
         'password',
         'reviewed_by',
         'reviewed_at',

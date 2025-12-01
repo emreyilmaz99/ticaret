@@ -41,6 +41,7 @@ class VendorApplicationService extends BaseService
                 'full_name' => $data['full_name'],
                 'company_name' => $data['company_name'] ?? null,
                 'phone' => $data['phone'] ?? null,
+                'tax_id' => $data['tax_id'] ?? null,
                 'password' => bcrypt($data['password']),
             ]);
 
@@ -155,6 +156,18 @@ class VendorApplicationService extends BaseService
                 return $this->errorResponse('Invalid or unapproved pre-application', 400);
             }
 
+            // Check if vendor already exists with this email
+            $existingVendor = \App\Models\Vendor::where('email', $preApp->email)->first();
+            if ($existingVendor) {
+                // If vendor is active, redirect to dashboard
+                if ($existingVendor->status === 'active') {
+                    return $this->errorResponse('Vendor account already exists and is active', 403, [
+                        'redirect_to_dashboard' => true
+                    ]);
+                }
+                return $this->errorResponse('A vendor account already exists with this email address', 400);
+            }
+
             DB::beginTransaction();
 
             // Create full application record
@@ -165,6 +178,7 @@ class VendorApplicationService extends BaseService
                 'full_name' => $preApp->full_name,
                 'company_name' => $data['company_name'],
                 'phone' => $data['phone'],
+                'tax_id' => $data['tax_id'] ?? $preApp->tax_id,
                 'password' => $preApp->password, // Use password from pre-application
             ]);
 
@@ -175,11 +189,21 @@ class VendorApplicationService extends BaseService
                 'email' => $preApp->email,
                 'password' => $preApp->password, // Already hashed in pre-application
                 'company_name' => $data['company_name'],
-                'slug' => Str::slug($data['company_name']),
-                'tax_id' => $data['tax_id'] ?? null,
+                'slug' => $data['slug'],
+                'tax_id' => $data['tax_id'] ?? $preApp->tax_id,
                 'phone' => $data['phone'],
                 'status' => 'inactive',
                 'onboarding_completed' => false,
+            ]);
+
+            // Create vendor address
+            \App\Models\VendorAddress::create([
+                'vendor_id' => $vendor->id,
+                'address_line' => $data['address_line'],
+                'city' => $data['city'],
+                'country' => $data['country'],
+                'postal_code' => $data['postal_code'] ?? null,
+                'is_primary' => true,
             ]);
 
             // Link vendor to application
@@ -230,7 +254,7 @@ class VendorApplicationService extends BaseService
             ]);
 
             // Activate vendor
-            $this->vendorRepository->update($application->vendor, [
+            $this->vendorRepository->update($application->vendor->id, [
                 'status' => 'active',
                 'activated_at' => now(),
             ]);
@@ -254,6 +278,14 @@ class VendorApplicationService extends BaseService
 
             if (!$application) {
                 return $this->errorResponse('Application not found', 404);
+            }
+
+            // Check if vendor account already exists and is active
+            $vendor = \App\Models\Vendor::where('email', $application->email)->first();
+            if ($vendor && $vendor->status === 'active') {
+                return $this->errorResponse('Vendor account is already active', 403, [
+                    'redirect_to_dashboard' => true
+                ]);
             }
 
             $application->load(['reviewer', 'vendor']);

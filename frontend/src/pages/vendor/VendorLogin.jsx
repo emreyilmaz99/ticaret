@@ -12,26 +12,36 @@ const VendorLogin = () => {
   const loginMutation = useMutation({
     mutationFn: vendorLogin,
     onSuccess: (data) => {
+      // Vendor login successful - has token and vendor account
       localStorage.setItem('vendor_token', data.data.token);
-      // Hemen profil bilgisini alıp onboarding gerekip gerekmediğine bak
-      getVendorProfile().then(res => {
-        const v = res.data.vendor;
-        const hasCompany = !!v.company_name;
-        const hasAddress = (v.addresses && v.addresses.length > 0);
-        const hasBank = (v.bank_accounts && v.bank_accounts.length > 0);
-
-        if (!hasCompany || !hasAddress || !hasBank || v.status !== 'active') {
-          navigate('/vendor/onboarding');
-        } else {
-          navigate('/vendor/dashboard');
-        }
-      }).catch(err => {
-        // Profil alınamazsa yine dashboard'a gönder (veya onboarding)
-        navigate('/vendor/dashboard');
-      });
+      
+      // Vendor account exists, go to dashboard
+      // (Status and onboarding checks can be done in dashboard)
+      navigate('/vendor/dashboard');
     },
     onError: (error) => {
-      alert('Giriş başarısız: ' + (error.response?.data?.message || error.message));
+      const response = error.response?.data;
+      
+      // Check if this is an application (not a vendor yet)
+      if (response?.data?.is_application) {
+        const status = response.data.application_status;
+        const applicationId = response.data.application_id;
+        
+        if (status === 'pending') {
+          alert('⏳ Başvurunuz İnceleniyor\n\nÖn başvurunuz admin onayı bekliyor. E-posta adresinize bilgilendirme gönderilecektir.');
+          navigate('/');
+        } else if (status === 'approved') {
+          alert('✅ Başvurunuz Onaylandı!\n\nTam başvurunuzu tamamlamak için yönlendiriliyorsunuz.');
+          navigate(`/vendor/full-application/${applicationId}`);
+        } else if (status === 'rejected') {
+          const reason = response.data.rejection_reason || 'Belirtilmedi';
+          alert(`❌ Başvurunuz Reddedildi\n\nRed Nedeni: ${reason}\n\nYeni bir başvuru yapmak için kayıt sayfasına gidin.`);
+          navigate('/vendor/register');
+        }
+      } else {
+        // Normal login error
+        alert('❌ Giriş Başarısız\n\n' + (response?.message || error.message || 'E-posta veya şifre hatalı'));
+      }
     }
   });
 

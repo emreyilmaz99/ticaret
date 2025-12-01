@@ -35,31 +35,58 @@ class AuthService extends BaseService
 
     public function vendorLogin(array $data): ServiceResponse
     {
+        // First, try to find in vendors table
         $vendor = Vendor::where('email', $data['email'])->first();
 
-        if (!$vendor || !Hash::check($data['password'], $vendor->password)) {
-            return $this->errorResponse('Invalid credentials', 401);
+        if ($vendor && Hash::check($data['password'], $vendor->password)) {
+            // Vendor account exists - allow login regardless of status
+            // Frontend will handle onboarding/activation checks
+            $token = $vendor->createToken('vendor-token', ['vendor:*'])->plainTextToken;
+
+            $payload = [
+                'token' => $token,
+                'vendor' => [
+                    'id' => $vendor->id,
+                    'name' => $vendor->name,
+                    'email' => $vendor->email,
+                    'status' => $vendor->status,
+                    'onboarding_completed' => $vendor->onboarding_completed,
+                    'roles' => $vendor->roles->pluck('name'),
+                    'created_at' => $vendor->created_at?->toIso8601String(),
+                ],
+            ];
+
+            return $this->successResponse($payload, 'Logged in');
         }
 
-        // Only active vendors can login
-        if (!$vendor->canOperate()) {
-            return $this->errorResponse('Vendor account not active', 403, ['status' => $vendor->status]);
+        // If not found in vendors, check vendor_applications
+        $application = \App\Models\VendorApplication::where('email', $data['email'])
+            ->where('type', 'pre_application')
+            ->latest()
+            ->first();
+
+        if ($application && Hash::check($data['password'], $application->password)) {
+            // Application exists - return status info
+            $statusMessages = [
+                'pending' => 'Your application is pending admin review',
+                'approved' => 'Your application has been approved. Please complete the full application.',
+                'rejected' => 'Your application was rejected. Reason: ' . $application->rejection_reason,
+            ];
+
+            return $this->errorResponse(
+                $statusMessages[$application->status] ?? 'Application found but vendor account not created yet',
+                403,
+                [
+                    'is_application' => true,
+                    'application_status' => $application->status,
+                    'application_id' => $application->id,
+                    'rejection_reason' => $application->rejection_reason,
+                ]
+            );
         }
 
-        $token = $vendor->createToken('vendor-token', ['vendor:*'])->plainTextToken;
-
-        $payload = [
-            'token' => $token,
-            'vendor' => [
-                'id' => $vendor->id,
-                'name' => $vendor->name,
-                'email' => $vendor->email,
-                'roles' => $vendor->roles->pluck('name'),
-                'created_at' => $vendor->created_at?->toIso8601String(),
-            ],
-        ];
-
-        return $this->successResponse($payload, 'Logged in');
+        // Invalid credentials
+        return $this->errorResponse('Invalid credentials', 401);
     }
 
     public function logout($user): ServiceResponse

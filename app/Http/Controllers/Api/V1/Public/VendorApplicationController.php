@@ -29,6 +29,15 @@ class VendorApplicationController extends Controller
     }
 
     /**
+     * Get vendor application details (public endpoint)
+     */
+    public function show(int $id)
+    {
+        $result = $this->applicationService->show($id);
+        return $this->fromServiceResponse($result);
+    }
+
+    /**
      * Submit full application and create vendor account (public endpoint)
      */
     public function submitFull(SubmitFullApplicationRequest $request, int $preApplicationId)

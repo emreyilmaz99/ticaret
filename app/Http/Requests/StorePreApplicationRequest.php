@@ -26,6 +26,7 @@ class StorePreApplicationRequest extends FormRequest
             'full_name' => 'required|string|max:255',
             'company_name' => 'nullable|string|max:255',
             'phone' => 'nullable|string|max:20',
+            'tax_id' => 'nullable|string|max:50',
             'password' => 'required|string|min:8|confirmed',
         ];
     }
