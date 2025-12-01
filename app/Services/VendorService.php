@@ -6,8 +6,13 @@ use App\Repositories\VendorRepository;
 use App\Repositories\Interfaces\VendorAddressRepositoryInterface;
 use App\Repositories\Interfaces\VendorBankAccountRepositoryInterface;
 use App\Repositories\Interfaces\VendorPayoutRepositoryInterface;
+use App\Repositories\Interfaces\VendorMediaRepositoryInterface;
+use App\Repositories\Interfaces\VendorSettingRepositoryInterface;
+use App\Repositories\Interfaces\VendorMetadataRepositoryInterface;
+use App\Repositories\Interfaces\VendorRatingRepositoryInterface;
 use App\Models\Vendor;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\UploadedFile;
 
 class VendorService extends BaseService
@@ -16,17 +21,29 @@ class VendorService extends BaseService
     protected VendorAddressRepositoryInterface $addressRepo;
     protected VendorBankAccountRepositoryInterface $bankRepo;
     protected VendorPayoutRepositoryInterface $payoutRepo;
+    protected VendorMediaRepositoryInterface $mediaRepo;
+    protected VendorSettingRepositoryInterface $settingRepo;
+    protected VendorMetadataRepositoryInterface $metadataRepo;
+    protected VendorRatingRepositoryInterface $ratingRepo;
 
     public function __construct(
         VendorRepository $repo,
         VendorAddressRepositoryInterface $addressRepo,
         VendorBankAccountRepositoryInterface $bankRepo,
-        VendorPayoutRepositoryInterface $payoutRepo
+        VendorPayoutRepositoryInterface $payoutRepo,
+        VendorMediaRepositoryInterface $mediaRepo,
+        VendorSettingRepositoryInterface $settingRepo,
+        VendorMetadataRepositoryInterface $metadataRepo,
+        VendorRatingRepositoryInterface $ratingRepo
     ) {
         $this->repo = $repo;
         $this->addressRepo = $addressRepo;
         $this->bankRepo = $bankRepo;
         $this->payoutRepo = $payoutRepo;
+        $this->mediaRepo = $mediaRepo;
+        $this->settingRepo = $settingRepo;
+        $this->metadataRepo = $metadataRepo;
+        $this->ratingRepo = $ratingRepo;
     }
 
     public function list(int $perPage = 15)
@@ -286,5 +303,276 @@ class VendorService extends BaseService
     {
         $vendor = Vendor::findOrFail($vendorId);
         return $vendor->balance;
+    }
+
+    // ==================== Media Management ====================
+
+    /**
+     * Upload and store vendor media (logo, cover, banner, document)
+     */
+    public function uploadMedia(int $vendorId, UploadedFile $file, string $type = 'logo'): \App\Core\ServiceResponse
+    {
+        try {
+            // Deactivate old media of the same type
+            $this->mediaRepo->deactivateAllByType($vendorId, $type);
+
+            // Store file
+            $path = $file->store("vendors/{$vendorId}/{$type}", 'public');
+            
+            // Create media record
+            $media = $this->mediaRepo->create([
+                'vendor_id' => $vendorId,
+                'type' => $type,
+                'file_path' => $path,
+                'file_name' => $file->getClientOriginalName(),
+                'mime_type' => $file->getMimeType(),
+                'file_size' => $file->getSize(),
+                'is_active' => true,
+            ]);
+
+            return $this->successResponse($media, 'Media uploaded successfully');
+        } catch (\Exception $e) {
+            return $this->handleException($e, 'Failed to upload media');
+        }
+    }
+
+    /**
+     * Get active media by type
+     */
+    public function getActiveMedia(int $vendorId, string $type): ?\App\Models\VendorMedia
+    {
+        return $this->mediaRepo->findActiveByVendorAndType($vendorId, $type);
+    }
+
+    /**
+     * List all media for vendor
+     */
+    public function listMedia(int $vendorId)
+    {
+        return $this->mediaRepo->listByVendor($vendorId);
+    }
+
+    /**
+     * Delete media
+     */
+    public function deleteMedia(int $vendorId, int $mediaId): \App\Core\ServiceResponse
+    {
+        try {
+            $media = $this->mediaRepo->findByVendorAndId($vendorId, $mediaId);
+            
+            if (!$media) {
+                return $this->errorResponse('Media not found', 404);
+            }
+
+            // Delete file from storage
+            Storage::disk('public')->delete($media->file_path);
+            
+            // Delete record
+            $this->mediaRepo->delete($mediaId);
+
+            return $this->successResponse(null, 'Media deleted successfully');
+        } catch (\Exception $e) {
+            return $this->handleException($e, 'Failed to delete media');
+        }
+    }
+
+    // ==================== Settings Management ====================
+
+    /**
+     * Set vendor setting (with auto type detection)
+     */
+    public function setSetting(int $vendorId, string $key, $value): \App\Core\ServiceResponse
+    {
+        try {
+            $setting = $this->settingRepo->upsert($vendorId, $key, $value);
+            return $this->successResponse($setting, 'Setting saved successfully');
+        } catch (\Exception $e) {
+            return $this->handleException($e, 'Failed to save setting');
+        }
+    }
+
+    /**
+     * Get vendor setting with typed value
+     */
+    public function getSetting(int $vendorId, string $key, $default = null)
+    {
+        $setting = $this->settingRepo->findByVendorAndKey($vendorId, $key);
+        return $setting ? $setting->getTypedValueAttribute() : $default;
+    }
+
+    /**
+     * Get all settings for vendor as key-value array
+     */
+    public function getAllSettings(int $vendorId): array
+    {
+        $settings = $this->settingRepo->listByVendor($vendorId);
+        $result = [];
+        
+        foreach ($settings as $setting) {
+            $result[$setting->setting_key] = $setting->getTypedValueAttribute();
+        }
+        
+        return $result;
+    }
+
+    /**
+     * Delete vendor setting
+     */
+    public function deleteSetting(int $vendorId, string $key): \App\Core\ServiceResponse
+    {
+        try {
+            $deleted = $this->settingRepo->deleteByVendorAndKey($vendorId, $key);
+            
+            if (!$deleted) {
+                return $this->errorResponse('Setting not found', 404);
+            }
+
+            return $this->successResponse(null, 'Setting deleted successfully');
+        } catch (\Exception $e) {
+            return $this->handleException($e, 'Failed to delete setting');
+        }
+    }
+
+    // ==================== Metadata Management ====================
+
+    /**
+     * Set vendor metadata
+     */
+    public function setMetadata(int $vendorId, string $key, string $value): \App\Core\ServiceResponse
+    {
+        try {
+            $metadata = $this->metadataRepo->upsert($vendorId, $key, $value);
+            return $this->successResponse($metadata, 'Metadata saved successfully');
+        } catch (\Exception $e) {
+            return $this->handleException($e, 'Failed to save metadata');
+        }
+    }
+
+    /**
+     * Get vendor metadata
+     */
+    public function getMetadata(int $vendorId, string $key, $default = null)
+    {
+        $metadata = $this->metadataRepo->findByVendorAndKey($vendorId, $key);
+        return $metadata ? $metadata->meta_value : $default;
+    }
+
+    /**
+     * Get all metadata for vendor as key-value array
+     */
+    public function getAllMetadata(int $vendorId): array
+    {
+        $metadata = $this->metadataRepo->listByVendor($vendorId);
+        $result = [];
+        
+        foreach ($metadata as $meta) {
+            $result[$meta->meta_key] = $meta->meta_value;
+        }
+        
+        return $result;
+    }
+
+    /**
+     * Delete vendor metadata
+     */
+    public function deleteMetadata(int $vendorId, string $key): \App\Core\ServiceResponse
+    {
+        try {
+            $deleted = $this->metadataRepo->deleteByVendorAndKey($vendorId, $key);
+            
+            if (!$deleted) {
+                return $this->errorResponse('Metadata not found', 404);
+            }
+
+            return $this->successResponse(null, 'Metadata deleted successfully');
+        } catch (\Exception $e) {
+            return $this->handleException($e, 'Failed to delete metadata');
+        }
+    }
+
+    // ==================== Rating Management ====================
+
+    /**
+     * Create vendor rating
+     */
+    public function createRating(int $vendorId, int $userId, array $data): \App\Core\ServiceResponse
+    {
+        try {
+            // Check if user already rated this vendor for this order
+            $existing = $this->ratingRepo->findByVendorUserOrder(
+                $vendorId, 
+                $userId, 
+                $data['order_id'] ?? null
+            );
+
+            if ($existing) {
+                return $this->errorResponse('You have already rated this vendor', 422);
+            }
+
+            $rating = $this->ratingRepo->create([
+                'vendor_id' => $vendorId,
+                'user_id' => $userId,
+                'order_id' => $data['order_id'] ?? null,
+                'rating' => $data['rating'],
+                'review' => $data['review'] ?? null,
+                'is_approved' => false,
+            ]);
+
+            return $this->successResponse($rating, 'Rating submitted successfully');
+        } catch (\Exception $e) {
+            return $this->handleException($e, 'Failed to create rating');
+        }
+    }
+
+    /**
+     * Approve vendor rating (admin only)
+     */
+    public function approveRating(int $ratingId): \App\Core\ServiceResponse
+    {
+        try {
+            $approved = $this->ratingRepo->approve($ratingId);
+            
+            if (!$approved) {
+                return $this->errorResponse('Failed to approve rating', 500);
+            }
+
+            // Update vendor's average rating
+            $rating = $this->ratingRepo->findById($ratingId);
+            $this->updateVendorRatingStats($rating->vendor_id);
+
+            return $this->successResponse(null, 'Rating approved successfully');
+        } catch (\Exception $e) {
+            return $this->handleException($e, 'Failed to approve rating');
+        }
+    }
+
+    /**
+     * List vendor ratings (approved only)
+     */
+    public function listRatings(int $vendorId, int $perPage = 15)
+    {
+        return $this->ratingRepo->listApprovedByVendor($vendorId, $perPage);
+    }
+
+    /**
+     * List all vendor ratings (including unapproved - admin only)
+     */
+    public function listAllRatings(int $vendorId, int $perPage = 15)
+    {
+        return $this->ratingRepo->listByVendor($vendorId, $perPage);
+    }
+
+    /**
+     * Update vendor rating statistics
+     */
+    protected function updateVendorRatingStats(int $vendorId): void
+    {
+        $avgRating = $this->ratingRepo->getAverageRating($vendorId);
+        $ratingCount = $this->ratingRepo->getRatingCount($vendorId);
+
+        $vendor = Vendor::findOrFail($vendorId);
+        $vendor->rating_avg = $avgRating;
+        $vendor->rating_count = $ratingCount;
+        $vendor->save();
     }
 }

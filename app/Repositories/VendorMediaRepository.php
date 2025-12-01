@@ -1,0 +1,78 @@
+<?php
+
+namespace App\Repositories;
+
+use App\Models\VendorMedia;
+use App\Repositories\Interfaces\VendorMediaRepositoryInterface;
+use Illuminate\Database\Eloquent\Collection;
+
+class VendorMediaRepository implements VendorMediaRepositoryInterface
+{
+    protected VendorMedia $model;
+
+    public function __construct(VendorMedia $model)
+    {
+        $this->model = $model;
+    }
+
+    public function create(array $data): VendorMedia
+    {
+        return $this->model->create($data);
+    }
+
+    public function update(int $id, array $data): VendorMedia
+    {
+        $media = $this->model->findOrFail($id);
+        $media->update($data);
+        return $media->fresh();
+    }
+
+    public function findById(int $id): ?VendorMedia
+    {
+        return $this->model->find($id);
+    }
+
+    public function delete(int $id): bool
+    {
+        $media = $this->model->findOrFail($id);
+        return (bool) $media->delete();
+    }
+
+    public function findByVendorAndId(int $vendorId, int $mediaId): ?VendorMedia
+    {
+        return $this->model->where('vendor_id', $vendorId)
+            ->where('id', $mediaId)
+            ->first();
+    }
+
+    public function listByVendor(int $vendorId): Collection
+    {
+        return $this->model->where('vendor_id', $vendorId)
+            ->orderBy('created_at', 'desc')
+            ->get();
+    }
+
+    public function listByVendorAndType(int $vendorId, string $type): Collection
+    {
+        return $this->model->where('vendor_id', $vendorId)
+            ->where('type', $type)
+            ->orderBy('created_at', 'desc')
+            ->get();
+    }
+
+    public function findActiveByVendorAndType(int $vendorId, string $type): ?VendorMedia
+    {
+        return $this->model->where('vendor_id', $vendorId)
+            ->where('type', $type)
+            ->where('is_active', true)
+            ->latest()
+            ->first();
+    }
+
+    public function deactivateAllByType(int $vendorId, string $type): int
+    {
+        return $this->model->where('vendor_id', $vendorId)
+            ->where('type', $type)
+            ->update(['is_active' => false]);
+    }
+}

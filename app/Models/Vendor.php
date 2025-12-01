@@ -26,14 +26,12 @@ class Vendor extends Authenticatable
         'slug',
         'tax_id',
         'phone',
-        'logo_path',
-        'cover_path',
-        'rating_avg',
-        'rating_count',
+        // Removed: 'logo_path', 'cover_path' - now in vendor_media table
+        'rating_avg',     // Computed field for performance
+        'rating_count',   // Computed field for performance
         'balance',
         'commission_rate',
-        'settings',
-        'metadata',
+        // Removed: 'settings', 'metadata' - now in separate tables
         'status',
     ];
 
@@ -48,8 +46,7 @@ class Vendor extends Authenticatable
         'rating_count' => 'integer',
         'balance' => 'decimal:2',
         'commission_rate' => 'decimal:2',
-        'settings' => 'array',
-        'metadata' => 'array',
+        // Removed: 'settings' => 'array', 'metadata' => 'array' - now in separate tables
         'status' => 'string',
     ];
     
@@ -74,6 +71,31 @@ class Vendor extends Authenticatable
     public function payouts()
     {
         return $this->hasMany(\App\Models\VendorPayout::class);
+    }
+
+    public function media()
+    {
+        return $this->hasMany(VendorMedia::class);
+    }
+
+    public function settings()
+    {
+        return $this->hasMany(VendorSetting::class);
+    }
+
+    public function metadata()
+    {
+        return $this->hasMany(VendorMetadata::class);
+    }
+
+    public function ratings()
+    {
+        return $this->hasMany(VendorRating::class);
+    }
+
+    public function approvedRatings()
+    {
+        return $this->hasMany(VendorRating::class)->approved();
     }
 
     // Vendor status constants
