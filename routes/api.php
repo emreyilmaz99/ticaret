@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\V1\Admin\VendorController as AdminVendorController;
 use App\Http\Controllers\Api\V1\Admin\AdminController;
 use App\Http\Controllers\Api\V1\Admin\AdminPermissionsController;
 use App\Http\Controllers\Api\V1\Admin\VendorPayoutController as AdminVendorPayoutController;
+use App\Http\Controllers\Admin\CommissionPlanController;
 
 // Vendor controllers
 use App\Http\Controllers\Api\V1\Vendor\VendorAuthController;
@@ -61,6 +62,18 @@ Route::prefix('v1/admin')->group(function () {
         Route::get('vendors/payouts', [AdminVendorPayoutController::class, 'index']);
         Route::get('vendors/payouts/{payout}', [AdminVendorPayoutController::class, 'show']);
         Route::put('vendors/payouts/{payout}', [AdminVendorPayoutController::class, 'update']);
+
+        // commission plans management
+        Route::get('commission-plans', [CommissionPlanController::class, 'index']);
+        Route::post('commission-plans', [CommissionPlanController::class, 'store']);
+        Route::get('commission-plans/active', [CommissionPlanController::class, 'active']);
+        Route::get('commission-plans/default', [CommissionPlanController::class, 'default']);
+        Route::get('commission-plans/{id}', [CommissionPlanController::class, 'show']);
+        Route::put('commission-plans/{id}', [CommissionPlanController::class, 'update']);
+        Route::delete('commission-plans/{id}', [CommissionPlanController::class, 'destroy']);
+        Route::post('commission-plans/{id}/set-default', [CommissionPlanController::class, 'setDefault']);
+        Route::post('commission-plans/{id}/toggle-active', [CommissionPlanController::class, 'toggleActive']);
+        Route::post('vendors/{vendorId}/assign-commission-plan', [CommissionPlanController::class, 'assignToVendor']);
     });
 });
 

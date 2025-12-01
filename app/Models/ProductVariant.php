@@ -11,11 +11,12 @@ class ProductVariant extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'product_id','sku','title','price','stock','unit_id','weight','length','width','height','metadata'
+        'product_id','sku','title','price','stock','unit_id','weight','length','width','height'
+        // Removed: 'metadata' - now in product_variant_metadata table
     ];
 
     protected $casts = [
-        'metadata' => 'array',
+        // Removed: 'metadata' => 'array'
     ];
 
     public function product()
@@ -26,5 +27,10 @@ class ProductVariant extends Model
     public function media()
     {
         return $this->morphMany(Media::class, 'model');
+    }
+
+    public function variantMetadata()
+    {
+        return $this->hasMany(ProductVariantMetadata::class, 'variant_id');
     }
 }

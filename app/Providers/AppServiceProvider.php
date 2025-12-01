@@ -28,6 +28,10 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(\App\Repositories\Interfaces\VendorSettingRepositoryInterface::class, \App\Repositories\VendorSettingRepository::class);
         $this->app->bind(\App\Repositories\Interfaces\VendorMetadataRepositoryInterface::class, \App\Repositories\VendorMetadataRepository::class);
         $this->app->bind(\App\Repositories\Interfaces\VendorRatingRepositoryInterface::class, \App\Repositories\VendorRatingRepository::class);
+        $this->app->bind(\App\Repositories\Interfaces\ProductSettingRepositoryInterface::class, \App\Repositories\ProductSettingRepository::class);
+        $this->app->bind(\App\Repositories\Interfaces\ProductMetadataRepositoryInterface::class, \App\Repositories\ProductMetadataRepository::class);
+        $this->app->bind(\App\Repositories\Interfaces\ProductVariantMetadataRepositoryInterface::class, \App\Repositories\ProductVariantMetadataRepository::class);
+        $this->app->bind(\App\Repositories\Interfaces\CommissionPlanRepositoryInterface::class, \App\Repositories\CommissionPlanRepository::class);
 
         // Service bindings
         $this->app->bind(\App\Interfaces\Services\AuthServiceInterface::class, \App\Services\AuthService::class);

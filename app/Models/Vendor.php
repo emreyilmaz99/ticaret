@@ -19,6 +19,7 @@ class Vendor extends Authenticatable
     protected $guard_name = 'vendor';
 
     protected $fillable = [
+        'commission_plan_id',
         'name',
         'email',
         'password',
@@ -58,6 +59,11 @@ class Vendor extends Authenticatable
     }
 
     // Relationships
+    public function commissionPlan()
+    {
+        return $this->belongsTo(CommissionPlan::class);
+    }
+
     public function addresses()
     {
         return $this->hasMany(\App\Models\VendorAddress::class);

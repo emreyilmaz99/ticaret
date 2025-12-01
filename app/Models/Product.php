@@ -15,14 +15,15 @@ class Product extends Model
     public $incrementing = false;
 
     protected $fillable = [
-        'id','vendor_id','category_id','sku','slug','name','short_description','description','type','status','is_featured',
-        'price','compare_at_price','weight','length','width','height','tax_class','commission_rate','settings','metadata'
+        'id','vendor_id','category_id','sku','slug','name','short_description','description','type','status','is_featured','tax_class','commission_rate'
+        // Removed variant-specific fields: 'price','compare_at_price','weight','length','width','height'
+        // These now live in product_variants table only
+        // Removed: 'settings', 'metadata' - now in separate tables
     ];
 
     protected $casts = [
         'is_featured' => 'boolean',
-        'settings' => 'array',
-        'metadata' => 'array',
+        // Removed: 'settings' => 'array', 'metadata' => 'array'
     ];
 
     public function vendor()
@@ -53,6 +54,16 @@ class Product extends Model
     public function photos()
     {
         return $this->hasMany(ProductPhoto::class)->orderBy('sort_order')->orderBy('id');
+    }
+
+    public function settings()
+    {
+        return $this->hasMany(ProductSetting::class);
+    }
+
+    public function productMetadata()
+    {
+        return $this->hasMany(ProductMetadata::class);
     }
 
     protected static function booted()
