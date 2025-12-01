@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { getVendors, updateVendorStatus } from '../../features/vendor/api/vendorApi';
+import { useToast } from '../../components/Toast';
 import { 
   FaCheck, FaTimes, FaEye, FaSearch, FaFilePdf, 
   FaExternalLinkAlt, FaUser, FaMapMarkerAlt, FaUniversity,
@@ -9,6 +10,7 @@ import {
 
 const PreApplications = () => {
   const queryClient = useQueryClient();
+  const toast = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedVendor, setSelectedVendor] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -336,10 +338,10 @@ const PreApplications = () => {
       setActionModal({ type: null, vendorId: null });
       setRejectionReason('');
       setCommissionRate(10);
-      alert('İşlem başarıyla tamamlandı.');
+      toast.success('İşlem Başarılı', 'İşlem başarıyla tamamlandı.', 3000);
     },
     onError: (err) => {
-      alert('Hata: ' + (err.response?.data?.message || err.message));
+      toast.error('Hata', err.response?.data?.message || err.message, 4000);
     }
   });
 
@@ -357,7 +359,7 @@ const PreApplications = () => {
 
   const submitReject = () => {
     if (!rejectionReason.trim()) {
-      alert('Lütfen bir reddetme nedeni giriniz.');
+      toast.warning('Uyarı', 'Lütfen bir reddetme nedeni giriniz.', 3000);
       return;
     }
     mutation.mutate({ id: actionModal.vendorId, status: 'rejected', reason: rejectionReason });

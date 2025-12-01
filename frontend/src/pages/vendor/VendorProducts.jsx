@@ -4,10 +4,12 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getVendorProducts, createVendorProduct, deleteVendorProduct, updateVendorProduct } from '../../features/vendor/api/productApi';
 import { getVendorCategories } from '../../features/vendor/api/categoryApi';
 import { getUnits } from '../../features/public/api/unitsApi';
+import { useToast } from '../../components/Toast';
 import axios from '../../lib/axios';
 
 const VendorProducts = () => {
   const qc = useQueryClient();
+  const toast = useToast();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [form, setForm] = useState({ name: '', category_id: '', price: '', stock: 0, description: '', type: 'simple' });
   const [imageFile, setImageFile] = useState(null);
@@ -75,11 +77,10 @@ const VendorProducts = () => {
       const message = err?.response?.data?.message;
       const errors = err?.response?.data?.errors;
       if (errors) {
-        // concat validation messages
-        const msgs = Object.values(errors).flat().join('\n');
-        alert(msgs);
+        const msgs = Object.values(errors).flat().join(', ');
+        toast.error('Ürün Oluşturulamadı', msgs, 5000);
       } else {
-        alert(message || 'Ürün oluşturulurken hata oluştu');
+        toast.error('Ürün Oluşturulamadı', message || 'Ürün oluşturulurken hata oluştu', 4000);
       }
     }
   });
@@ -102,10 +103,10 @@ const VendorProducts = () => {
       const message = err?.response?.data?.message;
       const errors = err?.response?.data?.errors;
       if (errors) {
-        const msgs = Object.values(errors).flat().join('\n');
-        alert(msgs);
+        const msgs = Object.values(errors).flat().join(', ');
+        toast.error('Ürün Güncellenemedi', msgs, 5000);
       } else {
-        alert(message || 'Ürün güncellenirken hata oluştu');
+        toast.error('Ürün Güncellenemedi', message || 'Ürün güncellenirken hata oluştu', 4000);
       }
     }
   });

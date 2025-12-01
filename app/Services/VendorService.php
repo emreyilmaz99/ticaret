@@ -72,12 +72,14 @@ class VendorService extends BaseService
     {
         // Use Eloquent to load relations and aggregates
         // Only show vendors with completed applications (application_id is not null)
+        // Only show active vendors (status = 'active')
         $paginator = Vendor::with(['addresses' => function($q) {
                 $q->where('is_primary', true);
             }, 'bankAccounts' => function($q) {
                 $q->where('is_primary', true);
             }])
             ->whereNotNull('application_id') // Only vendors who completed full application
+            ->where('status', 'active') // Only active vendors
             ->withSum('payouts', 'amount') // Calculate total revenue
             ->latest()
             ->paginate($perPage);

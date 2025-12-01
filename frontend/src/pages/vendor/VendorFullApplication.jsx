@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { submitFullApplication } from '../../features/vendor/api/vendorAuthApi';
+import { useToast } from '../../components/Toast';
 import axios from '../../lib/axios';
 import { FaStore, FaPhone, FaIdCard, FaCheckCircle, FaUser, FaLink, FaMapMarkerAlt, FaCity, FaGlobe, FaMailBulk } from 'react-icons/fa';
 
 const VendorFullApplication = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const toast = useToast();
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({
     full_name: '',
@@ -48,34 +50,34 @@ const VendorFullApplication = () => {
         
         // Check if vendor is already active
         if (response?.data?.redirect_to_dashboard) {
-          alert('✅ Hesabınız Zaten Aktif\n\nDashboard sayfasına yönlendiriliyorsunuz.');
-          navigate('/vendor/dashboard');
+          toast.success('Hesabınız Zaten Aktif', 'Dashboard sayfasına yönlendiriliyorsunuz.', 4000);
+          setTimeout(() => navigate('/vendor/dashboard'), 600);
         } else {
-          alert('Ön başvuru bilgileri yüklenemedi. Lütfen tekrar deneyin.');
-          navigate('/vendor/login');
+          toast.error('Hata', 'Ön başvuru bilgileri yüklenemedi. Lütfen tekrar deneyin.', 4000);
+          setTimeout(() => navigate('/vendor/login'), 600);
         }
       }
     };
 
     fetchPreApplication();
-  }, [id, navigate]);
+  }, [id, navigate, toast]);
 
   const submitMutation = useMutation({
     mutationFn: (data) => submitFullApplication(id, data),
     onSuccess: (data) => {
-      alert('✅ Tam Başvurunuz Tamamlandı!\n\nVendor hesabınız oluşturuldu.\nAdmin onayından sonra aktifleştirilecektir.\n\nE-posta adresinize bilgilendirme gönderilecektir.');
-      navigate('/vendor/login');
+      toast.success('Tam Başvurunuz Tamamlandı!', 'Vendor hesabınız oluşturuldu. Admin onayından sonra aktifleştirilecektir.', 5000);
+      setTimeout(() => navigate('/vendor/login'), 600);
     },
     onError: (err) => {
       const response = err.response?.data;
       
       // Check if vendor is already active
       if (response?.data?.redirect_to_dashboard) {
-        alert('✅ Hesabınız Zaten Aktif\n\nDashboard sayfasına yönlendiriliyorsunuz.');
-        navigate('/vendor/dashboard');
+        toast.success('Hesabınız Zaten Aktif', 'Dashboard sayfasına yönlendiriliyorsunuz.', 4000);
+        setTimeout(() => navigate('/vendor/dashboard'), 600);
       } else {
         const errorMsg = response?.message || err.message || 'Bir hata oluştu';
-        alert('❌ Tam Başvuru Başarısız:\n' + errorMsg);
+        toast.error('Tam Başvuru Başarısız', errorMsg, 5000);
       }
     }
   });

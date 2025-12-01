@@ -2,10 +2,12 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { vendorRegister } from '../../features/vendor/api/vendorAuthApi';
+import { useToast } from '../../components/Toast';
 import { FaStore, FaUser, FaEnvelope, FaLock, FaPhone, FaArrowRight, FaArrowLeft, FaCheckCircle } from 'react-icons/fa';
 
 const VendorRegister = () => {
   const navigate = useNavigate();
+  const toast = useToast();
   const [step, setStep] = useState(1);
   const [form, setForm] = useState({
     full_name: '',
@@ -21,12 +23,14 @@ const VendorRegister = () => {
   const registerMutation = useMutation({
     mutationFn: (data) => vendorRegister(data),
     onSuccess: (response) => {
-      alert('✅ Ön başvurunuz alındı!\n\nAdmin onayından sonra e-posta adresinize bilgilendirme gönderilecektir.');
-      navigate('/', { state: { message: 'Ön başvurunuz başarıyla alındı. Lütfen e-postanızı kontrol edin.' } });
+      toast.success('Ön Başvurunuz Alındı!', 'Admin onayından sonra e-posta adresinize bilgilendirme gönderilecektir.', 5000);
+      setTimeout(() => {
+        navigate('/', { state: { message: 'Ön başvurunuz başarıyla alındı. Lütfen e-postanızı kontrol edin.' } });
+      }, 600);
     },
     onError: (err) => {
       const errorMsg = err.response?.data?.message || err.message || 'Bir hata oluştu';
-      alert('❌ Başvuru başarısız:\n' + errorMsg);
+      toast.error('Başvuru Başarısız', errorMsg, 5000);
     }
   });
 
@@ -37,12 +41,12 @@ const VendorRegister = () => {
     e.preventDefault();
 
     if (form.password !== form.password_confirmation) {
-      alert('Şifreler eşleşmiyor!');
+      toast.warning('Uyarı', 'Şifreler eşleşmiyor!', 4000);
       return;
     }
 
     if (form.password.length < 8) {
-      alert('Şifre en az 8 karakter olmalıdır!');
+      toast.warning('Uyarı', 'Şifre en az 8 karakter olmalıdır!', 4000);
       return;
     }
 
@@ -297,8 +301,13 @@ const VendorRegister = () => {
                     onFocus={handleFocus} 
                     onBlur={handleBlur}
                     value={form.phone} 
-                    onChange={(e) => setForm({...form, phone: e.target.value})} 
-                    placeholder="05xx xxx xx xx" 
+                    onChange={(e) => {
+                      // Sadece rakam kabul et ve 11 haneden fazla yazdırma
+                      const value = e.target.value.replace(/\D/g, '').slice(0, 11);
+                      setForm({...form, phone: value});
+                    }} 
+                    placeholder="05xxxxxxxxx"
+                    maxLength={11}
                   />
                 </div>
               </div>
@@ -312,8 +321,13 @@ const VendorRegister = () => {
                     onFocus={handleFocus} 
                     onBlur={handleBlur}
                     value={form.tax_id} 
-                    onChange={(e) => setForm({...form, tax_id: e.target.value})} 
-                    placeholder="Vergi numaranız" 
+                    onChange={(e) => {
+                      // Sadece rakam kabul et ve 10 haneden fazla yazdırma (Türk vergi numarası 10 hane)
+                      const value = e.target.value.replace(/\D/g, '').slice(0, 10);
+                      setForm({...form, tax_id: value});
+                    }} 
+                    placeholder="Vergi numaranız"
+                    maxLength={10}
                   />
                 </div>
               </div>

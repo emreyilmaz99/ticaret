@@ -3,9 +3,11 @@ import { FaSearch, FaFilter, FaStore, FaStar, FaEdit, FaBan, FaEye } from 'react
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import VendorEditModal from './VendorEditModal';
 import { getVendors, updateVendorStatus } from '../api/vendorApi';
+import { useToast } from '../../../components/Toast';
 
 const ActiveVendorList = () => {
   const queryClient = useQueryClient();
+  const toast = useToast();
   
   // Modal State
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -41,10 +43,10 @@ const ActiveVendorList = () => {
     mutationFn: ({ id, status }) => updateVendorStatus(id, status),
     onSuccess: () => {
       queryClient.invalidateQueries(['active-vendors']);
-      alert('Satıcı durumu güncellendi');
+      toast.success('Durum Güncellendi', 'Satıcı durumu başarıyla güncellendi.', 3000);
     },
     onError: (err) => {
-      alert('Durum güncellenemedi: ' + (err.response?.data?.message || err.message));
+      toast.error('Hata', 'Durum güncellenemedi: ' + (err.response?.data?.message || err.message), 4000);
     }
   });
 

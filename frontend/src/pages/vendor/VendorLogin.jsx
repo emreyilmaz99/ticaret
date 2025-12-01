@@ -2,12 +2,14 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { vendorLogin, getVendorProfile } from '../../features/vendor/api/vendorAuthApi';
+import { useToast } from '../../components/Toast';
 import { FaStore, FaEnvelope, FaLock, FaArrowRight } from 'react-icons/fa';
 
 const VendorLogin = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
+  const toast = useToast();
 
   const loginMutation = useMutation({
     mutationFn: vendorLogin,
@@ -17,7 +19,10 @@ const VendorLogin = () => {
       
       // Vendor account exists, go to dashboard
       // (Status and onboarding checks can be done in dashboard)
-      navigate('/vendor/dashboard');
+      toast.success('Giriş Başarılı', 'Mağaza panelinize yönlendiriliyorsunuz...', 3000);
+      setTimeout(() => {
+        navigate('/vendor/dashboard');
+      }, 600);
     },
     onError: (error) => {
       const response = error.response?.data;
@@ -28,19 +33,19 @@ const VendorLogin = () => {
         const applicationId = response.data.application_id;
         
         if (status === 'pending') {
-          alert('⏳ Başvurunuz İnceleniyor\n\nÖn başvurunuz admin onayı bekliyor. E-posta adresinize bilgilendirme gönderilecektir.');
-          navigate('/');
+          toast.info('Başvurunuz İnceleniyor', 'Ön başvurunuz admin onayı bekliyor. E-posta adresinize bilgilendirme gönderilecektir.', 5000);
+          setTimeout(() => navigate('/'), 600);
         } else if (status === 'approved') {
-          alert('✅ Başvurunuz Onaylandı!\n\nTam başvurunuzu tamamlamak için yönlendiriliyorsunuz.');
-          navigate(`/vendor/full-application/${applicationId}`);
+          toast.success('Başvurunuz Onaylandı!', 'Tam başvurunuzu tamamlamak için yönlendiriliyorsunuz.', 4000);
+          setTimeout(() => navigate(`/vendor/full-application/${applicationId}`), 600);
         } else if (status === 'rejected') {
           const reason = response.data.rejection_reason || 'Belirtilmedi';
-          alert(`❌ Başvurunuz Reddedildi\n\nRed Nedeni: ${reason}\n\nYeni bir başvuru yapmak için kayıt sayfasına gidin.`);
-          navigate('/vendor/register');
+          toast.error('Başvurunuz Reddedildi', `Red Nedeni: ${reason}. Yeni bir başvuru yapmak için kayıt sayfasına gidin.`, 6000);
+          setTimeout(() => navigate('/vendor/register'), 600);
         }
       } else {
         // Normal login error
-        alert('❌ Giriş Başarısız\n\n' + (response?.message || error.message || 'E-posta veya şifre hatalı'));
+        toast.error('Giriş Başarısız', response?.message || error.message || 'E-posta veya şifre hatalı', 4000);
       }
     }
   });

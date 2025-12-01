@@ -2,9 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import { FaTimes } from 'react-icons/fa';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { updateVendor } from '../api/vendorApi';
+import { useToast } from '../../../components/Toast';
 
 const VendorEditModal = ({ vendor, isOpen = true, onClose }) => {
   const queryClient = useQueryClient();
+  const toast = useToast();
   const overlayRef = useRef(null);
   const [formData, setFormData] = useState({ name: '', email: '', phone: '', commission_rate: 0, status: 'active', password: '', password_confirmation: '', addresses: [], bank_accounts: [] });
 
@@ -34,8 +36,12 @@ const VendorEditModal = ({ vendor, isOpen = true, onClose }) => {
 
   const updateMutation = useMutation({
     mutationFn: (data) => updateVendor(vendor?.id, data),
-    onSuccess: () => { queryClient.invalidateQueries(['vendors']); onClose && onClose(); },
-    onError: (err) => { alert('Güncelleme hatası: ' + (err.response?.data?.message || err.message)); }
+    onSuccess: () => { 
+      queryClient.invalidateQueries(['vendors']); 
+      toast.success('Satıcı Güncellendi', 'Satıcı bilgileri başarıyla güncellendi.', 3000);
+      onClose && onClose(); 
+    },
+    onError: (err) => { toast.error('Güncelleme Hatası', err.response?.data?.message || err.message, 4000); }
   });
 
   const handleSubmit = (e) => {

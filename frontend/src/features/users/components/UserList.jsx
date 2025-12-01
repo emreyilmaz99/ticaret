@@ -2,12 +2,14 @@ import React, { useState } from 'react';
 import { FaSearch, FaUser, FaTrash, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getUsers, deleteUser } from '../api/userApi';
+import { useToast } from '../../../components/Toast';
 
 const UserList = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
   const queryClient = useQueryClient();
+  const toast = useToast();
 
   // React Query ile Veri Çekme
   const { data: users = [], isLoading: loading } = useQuery({
@@ -26,10 +28,11 @@ const UserList = () => {
     mutationFn: deleteUser,
     onSuccess: () => {
       queryClient.invalidateQueries(['users']);
+      toast.success('Kullanıcı Silindi', 'Kullanıcı başarıyla silindi.', 3000);
     },
     onError: (error) => {
       console.error('Error deleting user:', error);
-      alert('Kullanıcı silinemedi.');
+      toast.error('Hata', 'Kullanıcı silinemedi.', 4000);
     }
   });
 

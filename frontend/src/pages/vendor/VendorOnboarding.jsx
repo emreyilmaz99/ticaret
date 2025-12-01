@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getVendorProfile, updateVendorProfile, createVendorAddress, createVendorBankAccount, completeOnboarding } from '../../features/vendor/api/vendorAuthApi';
+import { useToast } from '../../components/Toast';
 
 const VendorOnboarding = () => {
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const toast = useToast();
   const [step, setStep] = useState(1);
   const [loadingSave, setLoadingSave] = useState(false);
 
@@ -59,9 +61,10 @@ const VendorOnboarding = () => {
 
       await updateProfileMutation.mutateAsync(fd);
       qc.invalidateQueries(['vendor','me']);
+      toast.success('Profil Kaydedildi', 'Mağaza bilgileriniz başarıyla güncellendi.', 3000);
       setStep(2);
     } catch (e) {
-      alert('Kaydetme hatası: ' + (e.response?.data?.message || e.message));
+      toast.error('Kaydetme Hatası', e.response?.data?.message || e.message, 4000);
     } finally {
       setLoadingSave(false);
     }
@@ -72,9 +75,10 @@ const VendorOnboarding = () => {
     try {
       await createAddressMutation.mutateAsync(address);
       qc.invalidateQueries(['vendor','me']);
+      toast.success('Adres Kaydedildi', 'İş yeri adresiniz başarıyla eklendi.', 3000);
       setStep(3);
     } catch (e) {
-      alert('Adres kaydı başarısız: ' + (e.response?.data?.message || e.message));
+      toast.error('Adres Kaydı Başarısız', e.response?.data?.message || e.message, 4000);
     } finally {
       setLoadingSave(false);
     }
@@ -88,10 +92,10 @@ const VendorOnboarding = () => {
       // tamamlandı
       // mark onboarding complete so admin sees this vendor in 'pending'
       await completeOnboarding();
-      alert('Onboarding tamamlandı. Bilgiler kaydedildi. Admin onayı bekleniyor.');
-      navigate('/vendor/dashboard');
+      toast.success('Onboarding Tamamlandı!', 'Bilgileriniz kaydedildi. Admin onayı bekleniyor.', 4000);
+      setTimeout(() => navigate('/vendor/dashboard'), 600);
     } catch (e) {
-      alert('Banka hesabı kaydı başarısız: ' + (e.response?.data?.message || e.message));
+      toast.error('Banka Hesabı Kaydı Başarısız', e.response?.data?.message || e.message, 4000);
     } finally {
       setLoadingSave(false);
     }

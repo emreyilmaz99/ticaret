@@ -227,7 +227,7 @@ class VendorApplicationService extends BaseService
     /**
      * Approve full application and activate vendor (admin)
      */
-    public function approveFullApplication(int $id, int $adminId)
+    public function approveFullApplication(int $id, int $adminId, ?int $commissionPlanId = null)
     {
         try {
             $application = $this->applicationRepository->find($id);
@@ -253,11 +253,24 @@ class VendorApplicationService extends BaseService
                 'reviewed_at' => now(),
             ]);
 
-            // Activate vendor
-            $this->vendorRepository->update($application->vendor->id, [
+            // Determine commission plan - use provided or default
+            $finalCommissionPlanId = $commissionPlanId;
+            if (!$finalCommissionPlanId) {
+                $defaultPlan = \App\Models\CommissionPlan::where('is_default', true)->first();
+                $finalCommissionPlanId = $defaultPlan?->id;
+            }
+
+            // Activate vendor with commission plan
+            $vendorUpdateData = [
                 'status' => 'active',
                 'activated_at' => now(),
-            ]);
+            ];
+            
+            if ($finalCommissionPlanId) {
+                $vendorUpdateData['commission_plan_id'] = $finalCommissionPlanId;
+            }
+
+            $this->vendorRepository->update($application->vendor->id, $vendorUpdateData);
 
             DB::commit();
 

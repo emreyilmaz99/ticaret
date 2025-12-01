@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import { FaPlus, FaTrash } from 'react-icons/fa';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getVendorCategories, createVendorCategory, deleteVendorCategory } from '../../features/vendor/api/categoryApi';
+import { useToast } from '../../components/Toast';
 
 export default function VendorCategories() {
   const qc = useQueryClient();
+  const toast = useToast();
   const { data, isLoading, isError } = useQuery({ queryKey: ['vendorCategories'], queryFn: getVendorCategories });
   const [modalOpen, setModalOpen] = useState(false);
   const [name, setName] = useState('');
@@ -26,11 +28,11 @@ export default function VendorCategories() {
       onSuccess: () => {
         setName('');
         setModalOpen(false);
+        toast.success('Kategori Oluşturuldu', 'Yeni kategori başarıyla eklendi.', 3000);
       },
       onError: (err) => {
         console.error('Create category failed', err);
-        // keep modal open so user can retry; show a browser alert for now
-        alert(err?.response?.data?.message || err.message || 'Kategori oluşturulurken hata oluştu');
+        toast.error('Kategori Oluşturulamadı', err?.response?.data?.message || err.message || 'Kategori oluşturulurken hata oluştu', 4000);
       }
     });
   };

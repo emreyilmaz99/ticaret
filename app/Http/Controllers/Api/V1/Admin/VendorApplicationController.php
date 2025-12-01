@@ -67,7 +67,8 @@ class VendorApplicationController extends Controller
     public function approveFullApplication(int $id, Request $request)
     {
         $adminId = $request->user()->id;
-        $result = $this->applicationService->approveFullApplication($id, $adminId);
+        $commissionPlanId = $request->input('commission_plan_id');
+        $result = $this->applicationService->approveFullApplication($id, $adminId, $commissionPlanId);
         return $this->fromServiceResponse($result);
     }
 

@@ -1,22 +1,40 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
 :root {
-  /* --- RENK PALETİ --- */
-  --bg-body: #f1f5f9;       /* Sayfa Arka Planı */
-  --bg-sidebar: #0f172a;    /* Sidebar Rengi */
+  /* --- YEŞİL TEMA RENK PALETİ --- */
+  --bg-body: #f0fdf4;       /* Sayfa Arka Planı - Açık yeşil */
+  --bg-sidebar: #052e16;    /* Sidebar Rengi - Koyu yeşil */
   --bg-card: #ffffff;       /* Kart Rengi */
   
-  --primary: #4f46e5;       /* Ana Vurgu (Indigo) */
-  --primary-hover: #4338ca; /* Hover Rengi */
+  --primary: #059669;       /* Ana Vurgu (Emerald) */
+  --primary-dark: #047857;  /* Koyu Emerald */
+  --primary-darker: #065f46; /* Daha koyu Emerald */
+  --primary-hover: #10b981; /* Hover Rengi */
+  --primary-light: #d1fae5; /* Açık Emerald */
+  --primary-lighter: #ecfdf5; /* Çok açık Emerald */
   
-  --text-main: #1e293b;     /* Ana Metin */
-  --text-muted: #64748b;    /* Silik Metin */
-  --text-light: #f8fafc;    /* Açık Renk Metin (Sidebar için) */
+  --text-main: #064e3b;     /* Ana Metin - Koyu yeşil ton */
+  --text-muted: #6b7280;    /* Silik Metin */
+  --text-light: #f0fdf4;    /* Açık Renk Metin (Sidebar için) */
+
+  /* --- DURUM RENKLERİ --- */
+  --success: #10b981;
+  --success-light: #d1fae5;
+  --warning: #f59e0b;
+  --warning-light: #fef3c7;
+  --danger: #ef4444;
+  --danger-light: #fee2e2;
+  --info: #3b82f6;
+  --info-light: #dbeafe;
 
   /* --- DİĞER --- */
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-green: 0 4px 14px -3px rgba(5, 150, 105, 0.25);
   --radius: 12px;           /* Köşe Yuvarlaklığı */
+  --radius-sm: 8px;
+  --radius-lg: 16px;
 }
 
 * {
@@ -26,7 +44,7 @@
 }
 
 body {
-  font-family: 'Inter', sans-serif;
+  font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
   background-color: var(--bg-body);
   color: var(--text-main);
   -webkit-font-smoothing: antialiased;
@@ -35,23 +53,23 @@ body {
 
 /* Genel Buton Stili */
 button {
-  font-family: 'Inter', sans-serif;
+  font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
   transition: all 0.2s ease;
 }
 
-/* Scrollbar Güzelleştirme */
+/* Scrollbar Güzelleştirme - Yeşil Tema */
 ::-webkit-scrollbar {
   width: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: #f1f1f1; 
+  background: #ecfdf5; 
 }
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1; 
+  background: #86efac; 
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8; 
+  background: #4ade80; 
 }
 
 a {
@@ -61,4 +79,26 @@ a {
 
 ul {
   list-style: none;
+}
+
+/* Smooth transitions for interactive elements */
+input, select, textarea, button {
+  transition: all 0.2s ease;
+}
+
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.1);
+}
+
+/* Table hover effects */
+tr {
+  transition: background-color 0.15s ease;
+}
+
+/* Selection color */
+::selection {
+  background-color: var(--primary-light);
+  color: var(--primary-darker);
 }

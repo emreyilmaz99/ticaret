@@ -27,27 +27,31 @@ export const DashboardChart = () => {
         borderRadius: 'var(--radius)', 
         boxShadow: 'var(--shadow-sm)',
         border: '1px solid #e2e8f0',
-        height: '400px'
+        height: '400px',
+        display: 'flex',
+        flexDirection: 'column'
       }}>
         <h3 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--text-main)', marginBottom: '24px' }}>Yıllık Satış Analizi</h3>
-        <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-            <defs>
-              <linearGradient id="colorSatis" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="var(--primary)" stopOpacity={0.8}/>
-                <stop offset="95%" stopColor="var(--primary)" stopOpacity={0}/>
-              </linearGradient>
-            </defs>
-            <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 12 }} />
-            <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 12 }} tickFormatter={(value) => `₺${value}`} />
-            <CartesianGrid vertical={false} stroke="#e2e8f0" strokeDasharray="3 3" />
-            <Tooltip 
-              contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px', color: 'white' }}
-              itemStyle={{ color: '#cbd5e1' }}
-            />
-            <Area type="monotone" dataKey="satis" stroke="var(--primary)" strokeWidth={3} fillOpacity={1} fill="url(#colorSatis)" />
-          </AreaChart>
-        </ResponsiveContainer>
+        <div style={{ flex: 1, minHeight: 0 }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+              <defs>
+                <linearGradient id="colorSatis" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="var(--primary)" stopOpacity={0.8}/>
+                  <stop offset="95%" stopColor="var(--primary)" stopOpacity={0}/>
+                </linearGradient>
+              </defs>
+              <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 12 }} />
+              <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 12 }} tickFormatter={(value) => `₺${value}`} />
+              <CartesianGrid vertical={false} stroke="#e2e8f0" strokeDasharray="3 3" />
+              <Tooltip 
+                contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px', color: 'white' }}
+                itemStyle={{ color: '#cbd5e1' }}
+              />
+              <Area type="monotone" dataKey="satis" stroke="var(--primary)" strokeWidth={3} fillOpacity={1} fill="url(#colorSatis)" />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
       </div>
 
       {/* Sağ: Ziyaretçi Grafiği */}
@@ -57,20 +61,24 @@ export const DashboardChart = () => {
         borderRadius: 'var(--radius)', 
         boxShadow: 'var(--shadow-sm)',
         border: '1px solid #e2e8f0',
-        height: '400px'
+        height: '400px',
+        display: 'flex',
+        flexDirection: 'column'
       }}>
         <h3 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--text-main)', marginBottom: '24px' }}>Ziyaretçi İstatistiği</h3>
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data}>
-            <CartesianGrid vertical={false} stroke="#e2e8f0" strokeDasharray="3 3" />
-            <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 12 }} />
-            <Tooltip 
-              cursor={{ fill: '#f1f5f9' }}
-              contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px', color: 'white' }}
-            />
-            <Bar dataKey="ziyaret" fill="#f59e0b" radius={[4, 4, 0, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
+        <div style={{ flex: 1, minHeight: 0 }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={data}>
+              <CartesianGrid vertical={false} stroke="#e2e8f0" strokeDasharray="3 3" />
+              <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 12 }} />
+              <Tooltip 
+                cursor={{ fill: '#f1f5f9' }}
+                contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px', color: 'white' }}
+              />
+              <Bar dataKey="ziyaret" fill="#f59e0b" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
       </div>
 
     </div>

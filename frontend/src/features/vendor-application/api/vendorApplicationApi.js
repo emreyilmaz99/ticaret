@@ -22,9 +22,11 @@ export const approvePreApplication = (id) => {
   return axios.post(`/v1/admin/vendor-applications/${id}/approve-pre`);
 };
 
-// Tam başvuru onayla (Vendor aktifleştir)
-export const approveFullApplication = (id) => {
-  return axios.post(`/v1/admin/vendor-applications/${id}/approve-full`);
+// Tam başvuru onayla (Vendor aktifleştir) - komisyon planı ile
+export const approveFullApplication = (id, commissionPlanId = null) => {
+  return axios.post(`/v1/admin/vendor-applications/${id}/approve-full`, {
+    commission_plan_id: commissionPlanId
+  });
 };
 
 // Başvuruyu reddet

@@ -2,12 +2,14 @@ import React, { useState } from 'react';
 import { FaSearch, FaUserShield, FaEdit, FaTrash, FaPlus, FaCheckCircle, FaTimesCircle } from 'react-icons/fa';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getAdmins, deleteAdmin } from '../api/adminApi';
+import { useToast } from '../../../components/Toast';
 
 const AdminList = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
   const queryClient = useQueryClient();
+  const toast = useToast();
 
   const { data: admins = [], isLoading: loading } = useQuery({
     queryKey: ['admins'],
@@ -20,8 +22,14 @@ const AdminList = () => {
 
   const deleteMutation = useMutation({
     mutationFn: deleteAdmin,
-    onSuccess: () => queryClient.invalidateQueries(['admins']),
-    onError: (error) => { console.error('Error deleting admin:', error); alert('Silme işlemi başarısız oldu.'); }
+    onSuccess: () => {
+      queryClient.invalidateQueries(['admins']);
+      toast.success('Yönetici Silindi', 'Yönetici başarıyla silindi.', 3000);
+    },
+    onError: (error) => { 
+      console.error('Error deleting admin:', error); 
+      toast.error('Hata', 'Silme işlemi başarısız oldu.', 4000); 
+    }
   });
 
   const handleDelete = async (id) => {
