@@ -41,10 +41,9 @@ class AuthService extends BaseService
             return $this->errorResponse('Invalid credentials', 401);
         }
 
-        // Allow vendors that are active or have a pre-approved application to login.
-        // Other statuses should be rejected.
-        if (property_exists($vendor, 'status') && !in_array($vendor->status, [Vendor::STATUS_ACTIVE, Vendor::STATUS_PRE_APPROVED])) {
-            return $this->errorResponse('Vendor not active', 403, ['status' => $vendor->status]);
+        // Only active vendors can login
+        if (!$vendor->canOperate()) {
+            return $this->errorResponse('Vendor account not active', 403, ['status' => $vendor->status]);
         }
 
         $token = $vendor->createToken('vendor-token', ['vendor:*'])->plainTextToken;

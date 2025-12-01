@@ -23,6 +23,8 @@ use App\Http\Controllers\Api\V1\Vendor\PayoutController as SelfVendorPayoutContr
 
 // Public controllers
 use App\Http\Controllers\Api\V1\Public\VendorController as PublicVendorController;
+use App\Http\Controllers\Api\V1\Public\VendorApplicationController as PublicVendorApplicationController;
+use App\Http\Controllers\Api\V1\Admin\VendorApplicationController as AdminVendorApplicationController;
 
 // Admin API
 // Note: the application's routing already prefixes API routes with '/api',
@@ -74,6 +76,14 @@ Route::prefix('v1/admin')->group(function () {
         Route::post('commission-plans/{id}/set-default', [CommissionPlanController::class, 'setDefault']);
         Route::post('commission-plans/{id}/toggle-active', [CommissionPlanController::class, 'toggleActive']);
         Route::post('vendors/{vendorId}/assign-commission-plan', [CommissionPlanController::class, 'assignToVendor']);
+
+        // vendor applications management
+        Route::get('vendor-applications', [AdminVendorApplicationController::class, 'index']);
+        Route::get('vendor-applications/pending-pre', [AdminVendorApplicationController::class, 'pendingPreApplications']);
+        Route::get('vendor-applications/{id}', [AdminVendorApplicationController::class, 'show']);
+        Route::post('vendor-applications/{id}/approve-pre', [AdminVendorApplicationController::class, 'approvePreApplication']);
+        Route::post('vendor-applications/{id}/approve-full', [AdminVendorApplicationController::class, 'approveFullApplication']);
+        Route::post('vendor-applications/{id}/reject', [AdminVendorApplicationController::class, 'reject']);
     });
 });
 
@@ -123,6 +133,9 @@ Route::prefix('v1/vendor')->group(function () {
 
 // Public vendor profile by slug (public)
 Route::get('v1/vendors/{slug}', [PublicVendorController::class, 'show']);
+
+// Public vendor application submission
+Route::post('v1/vendor-applications', [PublicVendorApplicationController::class, 'store']);
 
 // units (public)
 Route::get('v1/units', [\App\Http\Controllers\Api\V1\Public\UnitsController::class, 'index']);

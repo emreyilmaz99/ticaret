@@ -19,6 +19,7 @@ class Vendor extends Authenticatable
     protected $guard_name = 'vendor';
 
     protected $fillable = [
+        'application_id',
         'commission_plan_id',
         'name',
         'email',
@@ -34,6 +35,8 @@ class Vendor extends Authenticatable
         'commission_rate',
         // Removed: 'settings', 'metadata' - now in separate tables
         'status',
+        'onboarding_completed',
+        'activated_at',
     ];
 
     protected $hidden = [
@@ -47,8 +50,9 @@ class Vendor extends Authenticatable
         'rating_count' => 'integer',
         'balance' => 'decimal:2',
         'commission_rate' => 'decimal:2',
-        // Removed: 'settings' => 'array', 'metadata' => 'array' - now in separate tables
         'status' => 'string',
+        'onboarding_completed' => 'boolean',
+        'activated_at' => 'datetime',
     ];
     
     public function setPasswordAttribute($value)
@@ -59,6 +63,16 @@ class Vendor extends Authenticatable
     }
 
     // Relationships
+    public function application()
+    {
+        return $this->belongsTo(VendorApplication::class);
+    }
+
+    public function applications()
+    {
+        return $this->hasMany(VendorApplication::class);
+    }
+
     public function commissionPlan()
     {
         return $this->belongsTo(CommissionPlan::class);
@@ -104,37 +118,45 @@ class Vendor extends Authenticatable
         return $this->hasMany(VendorRating::class)->approved();
     }
 
-    // Vendor status constants
-    public const STATUS_PENDING = 'pending';
-    public const STATUS_ACTIVE = 'active';
-    public const STATUS_INACTIVE = 'inactive';
-    public const STATUS_BANNED = 'banned';
-
-    // Pre-application (ön başvuru) statuses
-    public const STATUS_PRE_PENDING = 'pre_pending'; // ön başvuru beklemede
-    public const STATUS_PRE_APPROVED = 'pre_approved'; // ön başvuru onaylandı
-    public const STATUS_PRE_REJECTED = 'pre_rejected'; // ön başvuru reddedildi
+    // Vendor status constants (simplified - application status moved to vendor_applications)
+    public const STATUS_ACTIVE = 'active';       // Aktif - işlem yapabilir
+    public const STATUS_INACTIVE = 'inactive';   // Pasif - geçici durduruldu
+    public const STATUS_SUSPENDED = 'suspended'; // Askıya alındı
+    public const STATUS_BANNED = 'banned';       // Yasaklandı
 
     public static function statuses(): array
     {
         return [
-            self::STATUS_PRE_PENDING,
-            self::STATUS_PRE_APPROVED,
-            self::STATUS_PRE_REJECTED,
-            self::STATUS_PENDING,
             self::STATUS_ACTIVE,
             self::STATUS_INACTIVE,
+            self::STATUS_SUSPENDED,
             self::STATUS_BANNED,
         ];
-    }
-
-    public function scopePending($query)
-    {
-        return $query->where('status', self::STATUS_PENDING);
     }
 
     public function scopeActive($query)
     {
         return $query->where('status', self::STATUS_ACTIVE);
+    }
+
+    public function scopeInactive($query)
+    {
+        return $query->where('status', self::STATUS_INACTIVE);
+    }
+
+    /**
+     * Check if vendor has completed onboarding
+     */
+    public function hasCompletedOnboarding(): bool
+    {
+        return $this->onboarding_completed === true;
+    }
+
+    /**
+     * Check if vendor is active and can operate
+     */
+    public function canOperate(): bool
+    {
+        return $this->status === self::STATUS_ACTIVE && $this->hasCompletedOnboarding();
     }
 }

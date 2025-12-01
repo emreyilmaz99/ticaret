@@ -22,8 +22,8 @@ class RegistrationController extends Controller
     public function store(RegisterVendorRequest $request)
     {
         $data = $request->validated();
-        // ensure initial status is pending
-        $data['status'] = \App\Models\Vendor::STATUS_PENDING;
+        // New vendors start as inactive until admin approval
+        $data['status'] = \App\Models\Vendor::STATUS_INACTIVE;
 
         // password mutator will hash
         $vendor = $this->service->create($data);
