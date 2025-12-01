@@ -16,7 +16,9 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('vendors', function (Blueprint $table) {
-            $table->dropSoftDeletes();
+            if (Schema::hasColumn('vendors', 'deleted_at')) {
+                $table->dropSoftDeletes();
+            }
         });
     }
 };
