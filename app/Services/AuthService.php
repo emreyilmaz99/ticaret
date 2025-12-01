@@ -7,18 +7,14 @@ use App\Models\Admin;
 use App\Models\Vendor;
 use Illuminate\Support\Facades\Hash;
 
-class AuthService
+class AuthService extends BaseService
 {
     public function adminLogin(array $data): ServiceResponse
     {
         $admin = Admin::where('email', $data['email'])->first();
 
-        if (! $admin || ! Hash::check($data['password'], $admin->password)) {
-            return (new ServiceResponse())
-                ->setSuccess(false)
-                ->setStatusCode(401)
-                ->setMessage('Invalid credentials')
-                ->setData(null);
+        if (!$admin || !Hash::check($data['password'], $admin->password)) {
+            return $this->errorResponse('Invalid credentials', 401);
         }
 
         $token = $admin->createToken('admin-token', ['admin:*'])->plainTextToken;
@@ -34,33 +30,21 @@ class AuthService
             ],
         ];
 
-        return (new ServiceResponse())
-            ->setSuccess(true)
-            ->setStatusCode(200)
-            ->setMessage('Logged in')
-            ->setData($payload);
+        return $this->successResponse($payload, 'Logged in');
     }
 
     public function vendorLogin(array $data): ServiceResponse
     {
         $vendor = Vendor::where('email', $data['email'])->first();
 
-        if (! $vendor || ! Hash::check($data['password'], $vendor->password)) {
-            return (new ServiceResponse())
-                ->setSuccess(false)
-                ->setStatusCode(401)
-                ->setMessage('Invalid credentials')
-                ->setData(null);
+        if (!$vendor || !Hash::check($data['password'], $vendor->password)) {
+            return $this->errorResponse('Invalid credentials', 401);
         }
 
         // Allow vendors that are active or have a pre-approved application to login.
         // Other statuses should be rejected.
-        if (property_exists($vendor, 'status') && ! in_array($vendor->status, [Vendor::STATUS_ACTIVE, Vendor::STATUS_PRE_APPROVED])) {
-            return (new ServiceResponse())
-                ->setSuccess(false)
-                ->setStatusCode(403)
-                ->setMessage('Vendor not active')
-                ->setData(['status' => $vendor->status]);
+        if (property_exists($vendor, 'status') && !in_array($vendor->status, [Vendor::STATUS_ACTIVE, Vendor::STATUS_PRE_APPROVED])) {
+            return $this->errorResponse('Vendor not active', 403, ['status' => $vendor->status]);
         }
 
         $token = $vendor->createToken('vendor-token', ['vendor:*'])->plainTextToken;
@@ -76,11 +60,7 @@ class AuthService
             ],
         ];
 
-        return (new ServiceResponse())
-            ->setSuccess(true)
-            ->setStatusCode(200)
-            ->setMessage('Logged in')
-            ->setData($payload);
+        return $this->successResponse($payload, 'Logged in');
     }
 
     public function logout($user): ServiceResponse
@@ -96,10 +76,6 @@ class AuthService
             }
         }
 
-        return (new ServiceResponse())
-            ->setSuccess(true)
-            ->setStatusCode(200)
-            ->setMessage('Logged out')
-            ->setData(null);
+        return $this->successResponse(null, 'Logged out');
     }
 }

@@ -3,14 +3,21 @@
 namespace App\Services;
 
 use App\Core\ServiceResponse;
-use App\Models\Category;
+use App\Repositories\Interfaces\CategoryRepositoryInterface;
 use Illuminate\Support\Str;
 
-class CategoryService
+class CategoryService extends BaseService
 {
+    protected CategoryRepositoryInterface $repo;
+
+    public function __construct(CategoryRepositoryInterface $repo)
+    {
+        $this->repo = $repo;
+    }
+
     public function listForVendor($vendor, int $perPage = 15): ServiceResponse
     {
-        $paginator = Category::where('vendor_id', $vendor->id)->orderBy('sort_order', 'asc')->paginate($perPage);
+        $paginator = $this->repo->listByVendor($vendor->id, $perPage);
 
         $data = [
             'data' => $paginator->items(),
@@ -22,9 +29,7 @@ class CategoryService
             ],
         ];
 
-        $sr = new ServiceResponse();
-        $sr->setSuccess(true)->setStatusCode(200)->setMessage('Categories listed')->setData($data);
-        return $sr;
+        return $this->successResponse($data, 'Categories listed');
     }
 
     public function createCategory($vendor, array $data): ServiceResponse
@@ -32,12 +37,12 @@ class CategoryService
         $baseSlug = Str::slug($data['name'] ?? 'category');
         $slug = $baseSlug;
         $i = 1;
-        while (Category::where('slug', $slug)->exists()) {
+        while ($this->repo->existsBySlug($slug)) {
             $slug = $baseSlug . '-' . $i;
             $i++;
         }
 
-        $category = Category::create([
+        $category = $this->repo->create([
             'vendor_id' => $vendor->id,
             'parent_id' => $data['parent_id'] ?? null,
             'name' => $data['name'] ?? null,
@@ -45,25 +50,23 @@ class CategoryService
             'description' => $data['description'] ?? null,
         ]);
 
-        $sr = new ServiceResponse();
-        $sr->setSuccess(true)->setStatusCode(201)->setMessage('Category created')->setData($category);
-        return $sr;
+        return $this->successResponse($category, 'Category created', 201);
     }
 
     public function deleteCategory($vendor, $id): ServiceResponse
     {
-        $category = Category::find($id);
-        $sr = new ServiceResponse();
-        if (! $category) {
-            $sr->setSuccess(false)->setStatusCode(404)->setMessage('Not found');
-            return $sr;
+        $category = $this->repo->findById($id);
+        
+        if (!$category) {
+            return $this->errorResponse('Not found', 404);
         }
+        
         if ($category->vendor_id !== $vendor->id) {
-            $sr->setSuccess(false)->setStatusCode(403)->setMessage('Forbidden');
-            return $sr;
+            return $this->errorResponse('Forbidden', 403);
         }
-        $category->delete();
-        $sr->setSuccess(true)->setStatusCode(204)->setMessage('Deleted')->setData(null);
-        return $sr;
+        
+        $this->repo->delete($id);
+        
+        return $this->successResponse(null, 'Deleted', 204);
     }
 }

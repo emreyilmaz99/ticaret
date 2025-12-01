@@ -51,17 +51,17 @@ class AdminService extends BaseService
     {
         $admin = $this->create($data);
 
-        if (! $admin) {
-            return (new ServiceResponse())->setSuccess(false)->setStatusCode(500)->setMessage('Could not create admin');
+        if (!$admin) {
+            return $this->errorResponse('Could not create admin', 500);
         }
 
-        if (! empty($roles)) {
+        if (!empty($roles)) {
             $admin->syncRoles($roles);
             $admin->primary_role = $roles[0] ?? null;
             $admin->save();
         }
 
-        return (new ServiceResponse())->setSuccess(true)->setStatusCode(201)->setMessage('Admin created')->setData($admin);
+        return $this->successResponse($admin, 'Admin created', 201);
     }
 
     /**
@@ -81,11 +81,7 @@ class AdminService extends BaseService
             ],
         ];
 
-        return (new ServiceResponse())
-            ->setSuccess(true)
-            ->setStatusCode(200)
-            ->setMessage('Admins listed')
-            ->setData($data);
+        return $this->successResponse($data, 'Admins listed');
     }
 
     /**
@@ -94,22 +90,22 @@ class AdminService extends BaseService
     public function updateRolesAndStatus(int $id, array $roles = [], ?bool $isActive = null): ServiceResponse
     {
         $admin = $this->find($id);
-        if (! $admin) {
-            return (new ServiceResponse())->setSuccess(false)->setStatusCode(404)->setMessage('Admin not found');
+        if (!$admin) {
+            return $this->errorResponse('Admin not found', 404);
         }
 
         if ($isActive !== null) {
             $admin->is_active = (bool) $isActive;
         }
 
-        if (! empty($roles)) {
+        if (!empty($roles)) {
             $admin->syncRoles($roles);
             $admin->primary_role = $roles[0] ?? null;
         }
 
         $admin->save();
 
-        return (new ServiceResponse())->setSuccess(true)->setStatusCode(200)->setMessage('Admin updated')->setData($admin);
+        return $this->successResponse($admin, 'Admin updated');
     }
 
     /**
@@ -118,8 +114,8 @@ class AdminService extends BaseService
     public function listPermissionsForAdmin(int $adminId): ServiceResponse
     {
         $admin = $this->find($adminId);
-        if (! $admin) {
-            return (new ServiceResponse())->setSuccess(false)->setStatusCode(404)->setMessage('Admin not found');
+        if (!$admin) {
+            return $this->errorResponse('Admin not found', 404);
         }
 
         $all = \Spatie\Permission\Models\Permission::all()->map(fn($p) => $p->name)->toArray();
@@ -129,7 +125,7 @@ class AdminService extends BaseService
             return ['name' => $name, 'assigned' => in_array($name, $assigned)];
         }, $all);
 
-        return (new ServiceResponse())->setSuccess(true)->setStatusCode(200)->setMessage('Permissions fetched')->setData(['permissions' => $list]);
+        return $this->successResponse(['permissions' => $list], 'Permissions fetched');
     }
 
     /**
@@ -139,8 +135,8 @@ class AdminService extends BaseService
     public function updateAdminPermissions(int $adminId, array $permissions): ServiceResponse
     {
         $admin = $this->find($adminId);
-        if (! $admin) {
-            return (new ServiceResponse())->setSuccess(false)->setStatusCode(404)->setMessage('Admin not found');
+        if (!$admin) {
+            return $this->errorResponse('Admin not found', 404);
         }
 
         // Validate provided permission names exist; ignore unknown names
@@ -149,7 +145,7 @@ class AdminService extends BaseService
         // syncDirectPermissions ensures explicit permissions are set on model
         $admin->syncPermissions($valid);
 
-        return (new ServiceResponse())->setSuccess(true)->setStatusCode(200)->setMessage('Permissions updated')->setData(['permissions' => $admin->getAllPermissions()->pluck('name')]);
+        return $this->successResponse(['permissions' => $admin->getAllPermissions()->pluck('name')], 'Permissions updated');
     }
 
     /**
@@ -169,17 +165,17 @@ class AdminService extends BaseService
             ],
         ];
 
-        return (new ServiceResponse())->setSuccess(true)->setStatusCode(200)->setMessage('Payouts listed')->setData($data);
+        return $this->successResponse($data, 'Payouts listed');
     }
 
     public function findPayout(int $id): ServiceResponse
     {
         $payout = VendorPayout::with('vendor')->find($id);
-        if (! $payout) {
-            return (new ServiceResponse())->setSuccess(false)->setStatusCode(404)->setMessage('Payout not found');
+        if (!$payout) {
+            return $this->errorResponse('Payout not found', 404);
         }
 
-        return (new ServiceResponse())->setSuccess(true)->setStatusCode(200)->setMessage('Payout fetched')->setData($payout);
+        return $this->successResponse($payout, 'Payout fetched');
     }
 
     /**
@@ -188,14 +184,14 @@ class AdminService extends BaseService
     public function updatePayoutStatus(int $payoutId, string $status, int $adminId): ServiceResponse
     {
         $allowed = ['pending', 'approved', 'rejected', 'processed'];
-        if (! in_array($status, $allowed)) {
-            return (new ServiceResponse())->setSuccess(false)->setStatusCode(422)->setMessage('Invalid status');
+        if (!in_array($status, $allowed)) {
+            return $this->errorResponse('Invalid status', 422);
         }
 
         return DB::transaction(function () use ($payoutId, $status, $adminId) {
             $payout = VendorPayout::with('vendor')->lockForUpdate()->find($payoutId);
-            if (! $payout) {
-                return (new ServiceResponse())->setSuccess(false)->setStatusCode(404)->setMessage('Payout not found');
+            if (!$payout) {
+                return $this->errorResponse('Payout not found', 404);
             }
 
             // simple state change; admins may want to record reviewer/admin in audit later
@@ -214,7 +210,7 @@ class AdminService extends BaseService
                 'new_status' => $payout->status,
             ]);
 
-            return (new ServiceResponse())->setSuccess(true)->setStatusCode(200)->setMessage('Payout updated')->setData($payout);
+            return $this->successResponse($payout, 'Payout updated');
         });
     }
 }

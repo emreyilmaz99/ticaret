@@ -13,27 +13,25 @@ use Illuminate\Http\Request;
 
 class ProductController extends Controller
 {
+    use ResponseHttp;
+    
     protected ProductService $service;
 
     public function __construct(ProductService $service)
     {
         $this->service = $service;
     }
-    
-    use ResponseHttp;
 
     public function index(Request $request)
     {
         $vendor = $request->user();
         $perPage = (int) $request->query('per_page', 15);
         $list = $this->service->listForVendor($vendor, $perPage);
-        $data = [
-            'data' => ProductResource::collection($list),
-            'meta' => [ 'pagination' => [ 'total' => $list->total(), 'per_page' => $list->perPage() ] ],
-        ];
-        $sr = new \App\Core\ServiceResponse();
-        $sr->setSuccess(true)->setStatusCode(200)->setMessage('OK')->setData($data);
-        return $this->fromServiceResponse($sr);
+        
+        return $this->paginated(
+            ProductResource::collection($list),
+            'Products listed'
+        );
     }
 
     public function store(StoreProductRequest $request)
@@ -46,23 +44,24 @@ class ProductController extends Controller
         $data['variants'] = $request->input('variants');
 
         $product = $this->service->createForVendor($vendor, $data);
-        $sr = new \App\Core\ServiceResponse();
-        $sr->setSuccess(true)->setStatusCode(201)->setMessage('Created')->setData(new ProductResource($product));
-        return $this->fromServiceResponse($sr);
+        
+        return $this->success(
+            new ProductResource($product),
+            'Product created',
+            201
+        );
     }
 
     public function show(Request $request, $id)
     {
         $vendor = $request->user();
         $product = $this->service->findForVendor($vendor, $id);
-        if (! $product) {
-            $sr = new \App\Core\ServiceResponse();
-            $sr->setSuccess(false)->setStatusCode(404)->setMessage('Not found');
-            return $this->fromServiceResponse($sr);
+        
+        if (!$product) {
+            return $this->error('Product not found', 404);
         }
-        $sr = new \App\Core\ServiceResponse();
-        $sr->setSuccess(true)->setStatusCode(200)->setMessage('OK')->setData(new ProductResource($product));
-        return $this->fromServiceResponse($sr);
+        
+        return $this->success(new ProductResource($product));
     }
 
     public function update(UpdateProductRequest $request, Product $product)
@@ -71,13 +70,12 @@ class ProductController extends Controller
         
         try {
             $updated = $this->service->updateForVendor($vendor, $product, $request->validated());
-            $sr = new \App\Core\ServiceResponse();
-            $sr->setSuccess(true)->setStatusCode(200)->setMessage('Updated')->setData(new ProductResource($updated));
-            return $this->fromServiceResponse($sr);
+            return $this->success(
+                new ProductResource($updated),
+                'Product updated'
+            );
         } catch (\Exception $e) {
-            $sr = new \App\Core\ServiceResponse();
-            $sr->setSuccess(false)->setStatusCode(403)->setMessage($e->getMessage());
-            return $this->fromServiceResponse($sr);
+            return $this->error($e->getMessage(), 403);
         }
     }
 
@@ -87,13 +85,9 @@ class ProductController extends Controller
         
         try {
             $this->service->deleteForVendor($vendor, $product);
-            $sr = new \App\Core\ServiceResponse();
-            $sr->setSuccess(true)->setStatusCode(204)->setMessage('Deleted')->setData(null);
-            return $this->fromServiceResponse($sr);
+            return $this->success(null, 'Product deleted', 204);
         } catch (\Exception $e) {
-            $sr = new \App\Core\ServiceResponse();
-            $sr->setSuccess(false)->setStatusCode(403)->setMessage($e->getMessage());
-            return $this->fromServiceResponse($sr);
+            return $this->error($e->getMessage(), 403);
         }
     }
 }
