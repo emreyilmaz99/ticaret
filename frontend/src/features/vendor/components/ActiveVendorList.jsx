@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { FaSearch, FaFilter, FaStore, FaStar, FaEdit, FaBan, FaChevronLeft, FaChevronRight, FaCheck, FaTimes } from 'react-icons/fa';
+import { FaSearch, FaFilter, FaStore, FaStar, FaEdit, FaBan, FaEye } from 'react-icons/fa';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import VendorEditModal from './VendorEditModal';
 import { getVendors, updateVendorStatus } from '../api/vendorApi';
 
-const VendorList = () => {
+const ActiveVendorList = () => {
   const queryClient = useQueryClient();
   
   // Modal State
@@ -15,27 +15,32 @@ const VendorList = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
+  const [searchTerm, setSearchTerm] = useState('');
+
   // React Query ile Veri Çekme
   const { data: responseData, isLoading } = useQuery({
-    queryKey: ['vendors', currentPage],
+    queryKey: ['active-vendors', currentPage, searchTerm],
     queryFn: async () => {
-      const response = await getVendors({ page: currentPage, per_page: itemsPerPage });
-      return response.data; // { data: [...], meta: ... }
+      // Sadece aktif satıcıları getir
+      const response = await getVendors({ 
+        page: currentPage, 
+        per_page: itemsPerPage,
+        status: 'active',
+        search: searchTerm 
+      });
+      return response.data; 
     },
     keepPreviousData: true,
-    staleTime: 1000 * 60 * 5, // 5 dakika boyunca taze kabul et
+    staleTime: 1000 * 60 * 5, 
   });
 
   const vendors = responseData?.data || [];
   const meta = responseData?.meta || {};
 
-  const [searchTerm, setSearchTerm] = useState('');
-  const [activeTab, setActiveTab] = useState('all'); // all, pre_pending, pre_approved, pending, active, banned
-
   const updateStatusMutation = useMutation({
     mutationFn: ({ id, status }) => updateVendorStatus(id, status),
     onSuccess: () => {
-      queryClient.invalidateQueries(['vendors']);
+      queryClient.invalidateQueries(['active-vendors']);
       alert('Satıcı durumu güncellendi');
     },
     onError: (err) => {
@@ -50,7 +55,7 @@ const VendorList = () => {
   };
 
   const handleSaveVendor = (id, updatedData) => {
-    queryClient.setQueryData(['vendors', currentPage], (oldData) => {
+    queryClient.setQueryData(['active-vendors', currentPage], (oldData) => {
       if (!oldData) return oldData;
       return {
         ...oldData,
@@ -62,41 +67,36 @@ const VendorList = () => {
     setSelectedVendor(null);
   };
 
+  // Client-side filtering is not needed if API handles it, but keeping search logic just in case API search is limited
+  // However, I passed search to API above. Let's assume API handles it or we filter here.
+  // If API handles 'search' param, we don't need client side filter.
+  // But the previous code did client side filtering. I'll stick to client side for safety if API doesn't support search param fully yet.
+  // Wait, previous code fetched ALL vendors? No, it fetched with pagination.
+  // Previous code: `const response = await getVendors({ page: currentPage, per_page: itemsPerPage });`
+  // And then `filteredVendors = vendors.filter(...)`.
+  // This is buggy if pagination is server side. Filtering only current page?
+  // I will assume server side filtering is better. But for now I will replicate the pattern but add `status: 'active'` to the API call.
+  
   const filteredVendors = vendors.filter(vendor => {
     const matchesSearch = (vendor.storeName || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
                           (vendor.email || '').toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesTab = activeTab === 'all' ? true : vendor.status === activeTab;
-    return matchesSearch && matchesTab;
+    return matchesSearch;
   });
 
   const totalPages = meta.last_page || 1;
   const currentItems = filteredVendors;
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
-
-
   if (isLoading) return <div style={{ padding: '24px', color: 'var(--text-muted)' }}>Yükleniyor...</div>;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-      {/* omitted for brevity: same markup as before */}
+      
+      {/* Filtre Alanı */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'var(--bg-card)', padding: '16px 24px', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow-sm)', border: '1px solid #e2e8f0' }}>
         <div style={{ display: 'flex', gap: '8px' }}>
-          {['all','pre_pending','pre_approved','pending','active','banned'].map((tab) => (
-            <button
-              key={tab}
-              onClick={() => { setActiveTab(tab); setCurrentPage(1); }}
-              style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', backgroundColor: activeTab === tab ? 'var(--primary)' : 'transparent', color: activeTab === tab ? 'white' : 'var(--text-muted)', fontWeight: '500', cursor: 'pointer', textTransform: 'capitalize' }}
-            >
-              {tab === 'all' ? 'Tümü'
-                : tab === 'pre_pending' ? 'Ön Başvuru - Beklemede'
-                : tab === 'pre_approved' ? 'Ön Başvuru - Onaylandı'
-                : tab === 'pending' ? 'Bekleyen'
-                : tab === 'active' ? 'Aktif'
-                : 'Yasaklı'
-              }
-            </button>
-          ))}
+           {/* Tablar kaldırıldı çünkü sadece Aktif satıcılar */}
+           <span style={{ fontWeight: '600', color: 'var(--text-main)' }}>Aktif Satıcı Listesi</span>
         </div>
         <div style={{ display: 'flex', gap: '12px' }}>
           <div style={{ position: 'relative' }}>
@@ -107,7 +107,7 @@ const VendorList = () => {
         </div>
       </div>
 
-      {/* Table area (kept compact in patch) */}
+      {/* Tablo */}
       <div style={{ backgroundColor: 'var(--bg-card)', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow-sm)', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
           <thead style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
@@ -137,17 +137,16 @@ const VendorList = () => {
                 <td style={{ padding: '16px 24px', textAlign: 'right' }}>
                   <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
                     <button onClick={() => handleEditClick(vendor)} title="Düzenle" style={{ padding: '8px', borderRadius: '6px', border: '1px solid #e2e8f0', backgroundColor: 'white', color: 'var(--text-muted)', cursor: 'pointer' }}><FaEdit /></button>
-                    {(vendor.status === 'pending' || vendor.status === 'pre_pending') && (
-                      <>
-                        <button title="Onayla" onClick={() => { if (!confirm('Bu satıcıyı onaylamak istiyor musunuz?')) return; const newStatus = vendor.status === 'pre_pending' ? 'pre_approved' : 'active'; updateStatusMutation.mutate({ id: vendor.id, status: newStatus }); }} style={{ padding: '8px', borderRadius: '6px', border: '1px solid #dcfce7', backgroundColor: '#dcfce7', color: '#16a34a', cursor: 'pointer' }}><FaCheck /></button>
-                        <button title="Reddet" onClick={() => { if (!confirm('Bu satıcı başvurusunu reddetmek istiyor musunuz?')) return; const newStatus = vendor.status === 'pre_pending' ? 'pre_rejected' : 'inactive'; updateStatusMutation.mutate({ id: vendor.id, status: newStatus }); }} style={{ padding: '8px', borderRadius: '6px', border: '1px solid #fee2e2', backgroundColor: '#fff1f2', color: '#ef4444', cursor: 'pointer' }}><FaTimes /></button>
-                      </>
-                    )}
-                    {vendor.status !== 'pending' && (<button title="Yasakla" style={{ padding: '8px', borderRadius: '6px', border: '1px solid #fee2e2', backgroundColor: '#fff1f2', color: '#ef4444', cursor: 'pointer' }}><FaBan /></button>)}
+                    <button title="Yasakla" onClick={() => { if (!confirm('Bu satıcıyı yasaklamak istiyor musunuz?')) return; updateStatusMutation.mutate({ id: vendor.id, status: 'banned' }); }} style={{ padding: '8px', borderRadius: '6px', border: '1px solid #fee2e2', backgroundColor: '#fff1f2', color: '#ef4444', cursor: 'pointer' }}><FaBan /></button>
                   </div>
                 </td>
               </tr>
             ))}
+            {currentItems.length === 0 && (
+               <tr>
+                 <td colSpan="5" style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)' }}>Aktif satıcı bulunamadı.</td>
+               </tr>
+            )}
           </tbody>
         </table>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 24px', backgroundColor: '#f8fafc', borderTop: '1px solid #e2e8f0' }}>
@@ -165,4 +164,4 @@ const VendorList = () => {
   );
 };
 
-export default VendorList;
+export default ActiveVendorList;

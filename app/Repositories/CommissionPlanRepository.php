@@ -31,6 +31,7 @@ class CommissionPlanRepository extends EloquentBaseRepository implements Commiss
 
     /**
      * Set a commission plan as default (unsets others)
+     * If $id is 0, it only clears existing defaults.
      */
     public function setAsDefault(int $id): bool
     {
@@ -41,10 +42,14 @@ class CommissionPlanRepository extends EloquentBaseRepository implements Commiss
             // Unset all other defaults
             $this->model->where('is_default', true)->update(['is_default' => false]);
             
-            // Set this one as default
-            $plan = $this->model->find($id);
-            $plan->is_default = true;
-            $plan->save();
+            // Set this one as default if ID is valid
+            if ($id > 0) {
+                $plan = $this->model->find($id);
+                if ($plan) {
+                    $plan->is_default = true;
+                    $plan->save();
+                }
+            }
             
             DB::commit();
             return true;

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { FaHome, FaBox, FaUsers, FaSignOutAlt, FaChartLine, FaStore, FaUserShield } from 'react-icons/fa';
+import { FaHome, FaBox, FaUsers, FaSignOutAlt, FaChartLine, FaStore, FaUserShield, FaPercentage } from 'react-icons/fa';
 
 const AdminSidebar = () => {
   const navigate = useNavigate();
@@ -66,12 +66,20 @@ const AdminSidebar = () => {
           Yönetim
         </p>
 
-        <Link to="/admin/vendors" style={getLinkStyle('/admin/vendors')}>
+        <Link to="/admin/active-vendors" style={getLinkStyle('/admin/active-vendors')}>
           <FaStore size={18} /> Satıcılar
         </Link>
 
-        <Link to="/admin/pre-applications" style={getLinkStyle('/admin/pre-applications')}>
+        <Link to="/admin/vendors" style={getLinkStyle('/admin/vendors')}>
+          <FaStore size={18} /> Satıcı Başvuruları
+        </Link>
+
+        <Link to="/admin/vendor-applications" style={getLinkStyle('/admin/vendor-applications')}>
           <FaUsers size={18} /> Ön Başvurular
+        </Link>
+
+        <Link to="/admin/commission-plans" style={getLinkStyle('/admin/commission-plans')}>
+          <FaPercentage size={18} /> Komisyon Planları
         </Link>
 
         <Link to="/admin/products" style={getLinkStyle('/admin/products')}>

@@ -11,8 +11,8 @@ export const getVendorDetail = (id) => {
 };
 
 // Satıcıyı onayla veya reddet (Status update)
-export const updateVendorStatus = (id, status) => {
-  return axios.put(`/v1/admin/vendors/${id}/status`, { status });
+export const updateVendorStatus = (id, status, extraData = {}) => {
+  return axios.put(`/v1/admin/vendors/${id}/status`, { status, ...extraData });
 };
 
 // Satıcı bilgilerini güncelle

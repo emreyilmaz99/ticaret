@@ -15,14 +15,18 @@ import Login from './pages/Login'; // Müşteri Girişi (Dosya: src/pages/Login.
 // 2. Admin Sayfaları (Senin klasör yapına göre: src/pages/admin/...)
 import AdminLogin from './pages/admin/AdminLogin'; // Admin Girişi
 import Dashboard from './pages/admin/Dashboard';   // Admin Paneli
-import VendorsPage from './pages/admin/VendorsPage'; // Satıcı Yönetimi
+import VendorsPage from './pages/admin/VendorsPage'; // Satıcı Yönetimi (UNUSED NOW, replaced by FullApplicationsPage)
+import FullApplicationsPage from './pages/admin/FullApplicationsPage'; // Tam Başvurular
+import ActiveVendorsPage from './pages/admin/ActiveVendorsPage'; // Aktif Satıcılar
 import AdminsPage from './pages/admin/AdminsPage'; // Yönetici Yönetimi
 import UsersPage from './pages/admin/UsersPage'; // Kullanıcı Yönetimi
-import PreApplications from './pages/admin/PreApplications'; // Ön Başvurular
+import VendorApplications from './pages/admin/VendorApplications'; // Satıcı Başvuruları
+import CommissionPlans from './pages/admin/CommissionPlans'; // Komisyon Planları
 
 // 3. Satıcı Sayfaları
 import VendorLogin from './pages/vendor/VendorLogin';
 import VendorRegister from './pages/vendor/VendorRegister';
+import VendorFullApplication from './pages/vendor/VendorFullApplication';
 import VendorDashboard from './pages/vendor/VendorDashboard';
 import VendorOnboarding from './pages/vendor/VendorOnboarding';
 import VendorProducts from './pages/vendor/VendorProducts';
@@ -76,8 +80,10 @@ function App() {
               
               {/* İçerik: Dashboard */}
               <Route path="/admin/dashboard" element={<Dashboard />} />
-              <Route path="/admin/vendors" element={<VendorsPage />} />
-              <Route path="/admin/pre-applications" element={<PreApplications />} />
+              <Route path="/admin/active-vendors" element={<ActiveVendorsPage />} />
+              <Route path="/admin/vendors" element={<FullApplicationsPage />} />
+              <Route path="/admin/vendor-applications" element={<VendorApplications />} />
+              <Route path="/admin/commission-plans" element={<CommissionPlans />} />
               <Route path="/admin/admins" element={<AdminsPage />} />
               <Route path="/admin/users" element={<UsersPage />} />
               
@@ -93,6 +99,7 @@ function App() {
           {/* ======================================= */}
           <Route path="/vendor/login" element={<VendorLogin />} />
           <Route path="/vendor/register" element={<VendorRegister />} />
+          <Route path="/vendor/full-application/:id" element={<VendorFullApplication />} />
           <Route path="/vendor/onboarding" element={<VendorOnboarding />} />
 
           <Route path="/vendor" element={<VendorLayout />}>

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { vendorRegister } from '../../features/vendor/api/vendorAuthApi';
-import { FaStore, FaUser, FaEnvelope, FaLock, FaPhone } from 'react-icons/fa';
+import { FaStore, FaUser, FaEnvelope, FaLock, FaPhone, FaArrowRight, FaArrowLeft, FaCheckCircle } from 'react-icons/fa';
 
 const VendorRegister = () => {
   const navigate = useNavigate();
@@ -13,20 +13,28 @@ const VendorRegister = () => {
     store_name: '',
     tax_id: '',
     email: '',
+    phone: '',
     password: '',
-    password_confirmation: '',
-    phone: ''
+    password_confirmation: ''
   });
   const [acceptTerms, setAcceptTerms] = useState(false);
 
   const registerMutation = useMutation({
     mutationFn: (data) => vendorRegister(data),
-    onSuccess: (data) => {
-      alert(data.message || 'Kayıt başarılı. Admin onayı bekleniyor.');
-      navigate('/vendor/login');
+    onSuccess: (response) => {
+      const applicationId = response?.data?.id;
+      if (applicationId) {
+        // Backend ön başvuruyu kaydetti, şimdi kullanıcıya ID'yi göster
+        alert(`Ön başvurunuz alındı! Başvuru ID: ${applicationId}\n\nAdmin onayı sonrasında bu ID ile tam başvuru yapabilirsiniz: /vendor/full-application/${applicationId}`);
+        // Kullanıcıyı bilgilendirme sayfasına yönlendir
+        navigate('/', { state: { applicationId, message: 'Ön başvurunuz alındı. Admin onayı bekleniyor.' } });
+      } else {
+        alert('Ön başvurunuz alındı! E-posta adresinize bilgilendirme gönderilecektir.');
+        navigate('/');
+      }
     },
     onError: (err) => {
-      alert('Kayıt başarısız: ' + (err.response?.data?.message || err.message));
+      alert('Başvuru başarısız: ' + (err.response?.data?.message || err.message));
     }
   });
 
@@ -35,104 +43,380 @@ const VendorRegister = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Basic client-side checks
+
     if (form.password !== form.password_confirmation) {
-      alert('Şifreler eşleşmiyor');
+      alert('Şifreler eşleşmiyor!');
       return;
     }
 
-    // Build payload: backend expects `name` and `company_name`
+    if (form.password.length < 8) {
+      alert('Şifre en az 8 karakter olmalıdır!');
+      return;
+    }
+
     const payload = {
-      name: `${form.first_name} ${form.last_name}`.trim(),
+      full_name: `${form.first_name} ${form.last_name}`.trim(),
       email: form.email,
-      password: form.password,
       company_name: form.store_name || null,
       phone: form.phone || null,
-      tax_id: form.tax_id || null
+      password: form.password,
+      password_confirmation: form.password_confirmation,
     };
 
     registerMutation.mutate(payload);
   };
 
+  // Styles
+  const styles = {
+    container: {
+      minHeight: '100vh',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: '#f0fdf4', // Emerald 50
+      fontFamily: '"Plus Jakarta Sans", sans-serif',
+      padding: '20px'
+    },
+    card: {
+      width: '100%',
+      maxWidth: '600px',
+      backgroundColor: 'white',
+      borderRadius: '24px',
+      boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+      padding: '48px',
+      position: 'relative',
+      overflow: 'hidden'
+    },
+    header: {
+      textAlign: 'center',
+      marginBottom: '40px'
+    },
+    iconWrapper: {
+      width: '64px',
+      height: '64px',
+      backgroundColor: '#d1fae5', // Emerald 100
+      color: '#047857', // Emerald 700
+      borderRadius: '50%',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontSize: '24px',
+      margin: '0 auto 24px auto'
+    },
+    title: {
+      fontFamily: '"Playfair Display", serif',
+      fontSize: '32px',
+      fontWeight: '700',
+      color: '#064e3b', // Emerald 900
+      marginBottom: '8px'
+    },
+    subtitle: {
+      color: '#64748b',
+      fontSize: '16px',
+      lineHeight: '1.5'
+    },
+    formGroup: {
+      marginBottom: '20px'
+    },
+    label: {
+      display: 'block',
+      fontSize: '14px',
+      fontWeight: '600',
+      color: '#334155',
+      marginBottom: '8px'
+    },
+    inputWrapper: {
+      position: 'relative'
+    },
+    inputIcon: {
+      position: 'absolute',
+      left: '16px',
+      top: '50%',
+      transform: 'translateY(-50%)',
+      color: '#94a3b8',
+      fontSize: '16px'
+    },
+    input: {
+      width: '100%',
+      padding: '14px 16px 14px 48px',
+      borderRadius: '12px',
+      border: '1px solid #e2e8f0',
+      fontSize: '15px',
+      color: '#1e293b',
+      transition: 'all 0.2s',
+      outline: 'none',
+      backgroundColor: '#f8fafc'
+    },
+    inputFocus: {
+      borderColor: '#059669', // Emerald 600
+      boxShadow: '0 0 0 4px rgba(5, 150, 105, 0.1)',
+      backgroundColor: 'white'
+    },
+    row: {
+      display: 'grid',
+      gridTemplateColumns: '1fr 1fr',
+      gap: '20px'
+    },
+    buttonPrimary: {
+      width: '100%',
+      padding: '16px',
+      backgroundColor: '#047857', // Emerald 700
+      color: 'white',
+      border: 'none',
+      borderRadius: '12px',
+      fontSize: '16px',
+      fontWeight: '600',
+      cursor: 'pointer',
+      transition: 'background-color 0.2s',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: '8px'
+    },
+    buttonSecondary: {
+      padding: '16px 24px',
+      backgroundColor: 'white',
+      color: '#475569',
+      border: '1px solid #e2e8f0',
+      borderRadius: '12px',
+      fontSize: '16px',
+      fontWeight: '600',
+      cursor: 'pointer',
+      transition: 'all 0.2s'
+    },
+    stepIndicator: {
+      display: 'flex',
+      justifyContent: 'center',
+      gap: '8px',
+      marginBottom: '32px'
+    },
+    stepDot: (isActive) => ({
+      width: isActive ? '32px' : '10px',
+      height: '10px',
+      borderRadius: '5px',
+      backgroundColor: isActive ? '#047857' : '#e2e8f0',
+      transition: 'all 0.3s ease'
+    })
+  };
+
+  // Helper for input focus state
+  const handleFocus = (e) => {
+    Object.assign(e.target.style, styles.inputFocus);
+  };
+  const handleBlur = (e) => {
+    e.target.style.borderColor = '#e2e8f0';
+    e.target.style.boxShadow = 'none';
+    e.target.style.backgroundColor = '#f8fafc';
+  };
+
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f7fdf6' }}>
-      <div style={{ width: '760px', maxWidth: '95%', background: 'white', padding: '36px', borderRadius: '16px', boxShadow: '0 30px 60px rgba(0,0,0,0.06)' }}>
-        <div style={{ textAlign: 'center', marginBottom: 20 }}>
-          <div style={{ width: 68, height: 68, margin: '0 auto 8px', borderRadius: 12, background: '#16a34a', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32 }}>
+    <div style={styles.container}>
+      <div style={styles.card}>
+        
+        <div style={styles.header}>
+          <div style={styles.iconWrapper}>
             <FaStore />
           </div>
-          <h2 style={{ margin: 0, color: '#14532d' }}>Satıcı Başvurusu</h2>
-          <p style={{ color: '#6b7280' }}>Adım {step} / 2 — Lütfen bilgilerinizi doldurun</p>
+          <h1 style={styles.title}>Satıcı Başvurusu</h1>
+          <p style={styles.subtitle}>
+            Platformumuzda mağazanızı açın ve satışa başlayın.<br/>
+            <span style={{ fontSize: '14px', color: '#059669', fontWeight: '600' }}>
+              {step === 1 ? 'Hesap Bilgileri' : 'Mağaza Detayları'}
+            </span>
+          </p>
         </div>
 
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <div style={styles.stepIndicator}>
+          <div style={styles.stepDot(step === 1)}></div>
+          <div style={styles.stepDot(step === 2)}></div>
+        </div>
+
+        <form onSubmit={handleSubmit}>
           {step === 1 && (
-            <>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                <div>
-                  <label style={{ fontSize: 13, color: '#334155' }}>İsim</label>
-                  <div style={{ position: 'relative' }}>
-                    <FaUser style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
-                    <input value={form.first_name} onChange={(e) => setForm({...form, first_name: e.target.value})} required placeholder="Ad" style={{ padding: '14px 12px 14px 44px', borderRadius: 10, border: '1px solid #e5e7eb', width: '100%' }} />
+            <div style={{ animation: 'fadeIn 0.5s ease' }}>
+              <div style={styles.row}>
+                <div style={styles.formGroup}>
+                  <label style={styles.label}>Ad</label>
+                  <div style={styles.inputWrapper}>
+                    <FaUser style={styles.inputIcon} />
+                    <input 
+                      style={styles.input} 
+                      onFocus={handleFocus} 
+                      onBlur={handleBlur}
+                      value={form.first_name} 
+                      onChange={(e) => setForm({...form, first_name: e.target.value})} 
+                      required 
+                      placeholder="Adınız" 
+                    />
                   </div>
                 </div>
-
-                <div>
-                  <label style={{ fontSize: 13, color: '#334155' }}>Soyisim</label>
-                  <input value={form.last_name} onChange={(e) => setForm({...form, last_name: e.target.value})} required placeholder="Soyad" style={{ padding: '14px', borderRadius: 10, border: '1px solid #e5e7eb', width: '100%' }} />
+                <div style={styles.formGroup}>
+                  <label style={styles.label}>Soyad</label>
+                  <div style={styles.inputWrapper}>
+                    <FaUser style={styles.inputIcon} />
+                    <input 
+                      style={styles.input} 
+                      onFocus={handleFocus} 
+                      onBlur={handleBlur}
+                      value={form.last_name} 
+                      onChange={(e) => setForm({...form, last_name: e.target.value})} 
+                      required 
+                      placeholder="Soyadınız" 
+                    />
+                  </div>
                 </div>
               </div>
 
-              <label style={{ fontSize: 13, color: '#334155' }}>E-posta</label>
-              <div style={{ position: 'relative' }}>
-                <FaEnvelope style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
-                <input type="email" value={form.email} onChange={(e) => setForm({...form, email: e.target.value})} required placeholder="email@ornek.com" style={{ padding: '12px 12px 12px 44px', borderRadius: 10, border: '1px solid #e5e7eb' }} />
+              <div style={styles.formGroup}>
+                <label style={styles.label}>E-posta Adresi</label>
+                <div style={styles.inputWrapper}>
+                  <FaEnvelope style={styles.inputIcon} />
+                  <input 
+                    type="email"
+                    style={styles.input} 
+                    onFocus={handleFocus} 
+                    onBlur={handleBlur}
+                    value={form.email} 
+                    onChange={(e) => setForm({...form, email: e.target.value})} 
+                    required 
+                    placeholder="ornek@sirket.com" 
+                  />
+                </div>
               </div>
 
-              <label style={{ fontSize: 13, color: '#334155' }}>Şifre</label>
-              <div style={{ position: 'relative' }}>
-                <FaLock style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
-                <input type="password" value={form.password} onChange={(e) => setForm({...form, password: e.target.value})} required placeholder="Parola" style={{ padding: '12px 12px 12px 44px', borderRadius: 10, border: '1px solid #e5e7eb' }} />
-              </div>
-
-              <label style={{ fontSize: 13, color: '#334155' }}>Şifre (Tekrar)</label>
-              <input type="password" value={form.password_confirmation} onChange={(e) => setForm({...form, password_confirmation: e.target.value})} required placeholder="Parolayı tekrar girin" style={{ padding: '12px', borderRadius: 10, border: '1px solid #e5e7eb' }} />
-
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-                <button type="button" onClick={next} disabled={!form.first_name || !form.last_name || !form.email || !form.password} style={{ background: '#16a34a', color: 'white', padding: '10px 14px', borderRadius: 10, border: 'none' }}>İleri</button>
-              </div>
-            </>
+              <button 
+                type="button" 
+                onClick={next} 
+                disabled={!form.first_name || !form.last_name || !form.email}
+                style={{ ...styles.buttonPrimary, opacity: (!form.first_name || !form.last_name || !form.email) ? 0.7 : 1 }}
+              >
+                Devam Et <FaArrowRight />
+              </button>
+            </div>
           )}
 
           {step === 2 && (
-            <>
-              <label style={{ fontSize: 13, color: '#334155' }}>Mağaza Adı (zorunlu)</label>
-              <input value={form.store_name} onChange={(e) => setForm({...form, store_name: e.target.value})} required placeholder="Mağaza / Şirket adı" style={{ padding: '14px', borderRadius: 10, border: '1px solid #e5e7eb', width: '100%' }} />
-
-              <label style={{ fontSize: 13, color: '#334155', marginTop: 8 }}>Vergi Numarası (opsiyonel)</label>
-              <input value={form.tax_id} onChange={(e) => setForm({...form, tax_id: e.target.value})} placeholder="Vergi Numarası" style={{ padding: '12px', borderRadius: 10, border: '1px solid #e5e7eb', width: '100%' }} />
-
-              <label style={{ fontSize: 13, color: '#334155' }}>Telefon (opsiyonel)</label>
-              <div style={{ position: 'relative' }}>
-                <FaPhone style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
-                <input value={form.phone} onChange={(e) => setForm({...form, phone: e.target.value})} placeholder="05xx xxx xx xx" style={{ padding: '12px 12px 12px 44px', borderRadius: 10, border: '1px solid #e5e7eb', width: '100%' }} />
+            <div style={{ animation: 'fadeIn 0.5s ease' }}>
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Mağaza / Şirket Adı</label>
+                <div style={styles.inputWrapper}>
+                  <FaStore style={styles.inputIcon} />
+                  <input 
+                    style={styles.input} 
+                    onFocus={handleFocus} 
+                    onBlur={handleBlur}
+                    value={form.store_name} 
+                    onChange={(e) => setForm({...form, store_name: e.target.value})} 
+                    required 
+                    placeholder="Mağaza adınız" 
+                  />
+                </div>
               </div>
 
-              <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
-                <input id="acceptTerms" type="checkbox" checked={acceptTerms} onChange={(e) => setAcceptTerms(e.target.checked)} style={{ width: 18, height: 18 }} />
-                <label htmlFor="acceptTerms" style={{ fontSize: 13, color: '#334155' }}>
-                  Kullanım şartlarını ve <a href="/terms" target="_blank" rel="noreferrer" style={{ color: '#16a34a', fontWeight: 700 }}>gizlilik politikasını</a> kabul ediyorum
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Vergi Numarası <span style={{fontWeight: 400, color: '#94a3b8'}}>(Opsiyonel)</span></label>
+                <div style={styles.inputWrapper}>
+                  <span style={{...styles.inputIcon, fontSize: '14px', fontWeight: 'bold'}}>#</span>
+                  <input 
+                    style={styles.input} 
+                    onFocus={handleFocus} 
+                    onBlur={handleBlur}
+                    value={form.tax_id} 
+                    onChange={(e) => setForm({...form, tax_id: e.target.value})} 
+                    placeholder="Vergi numaranız" 
+                  />
+                </div>
+              </div>
+
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Telefon Numarası</label>
+                <div style={styles.inputWrapper}>
+                  <FaPhone style={styles.inputIcon} />
+                  <input 
+                    style={styles.input} 
+                    onFocus={handleFocus} 
+                    onBlur={handleBlur}
+                    value={form.phone} 
+                    onChange={(e) => setForm({...form, phone: e.target.value})} 
+                    placeholder="05xx xxx xx xx" 
+                  />
+                </div>
+              </div>
+
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Şifre</label>
+                <div style={styles.inputWrapper}>
+                  <FaLock style={styles.inputIcon} />
+                  <input 
+                    type="password"
+                    style={styles.input} 
+                    onFocus={handleFocus} 
+                    onBlur={handleBlur}
+                    value={form.password} 
+                    onChange={(e) => setForm({...form, password: e.target.value})} 
+                    required
+                    placeholder="En az 8 karakter" 
+                    minLength={8}
+                  />
+                </div>
+              </div>
+
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Şifre Tekrar</label>
+                <div style={styles.inputWrapper}>
+                  <FaLock style={styles.inputIcon} />
+                  <input 
+                    type="password"
+                    style={styles.input} 
+                    onFocus={handleFocus} 
+                    onBlur={handleBlur}
+                    value={form.password_confirmation} 
+                    onChange={(e) => setForm({...form, password_confirmation: e.target.value})} 
+                    required
+                    placeholder="Şifrenizi tekrar girin" 
+                  />
+                </div>
+              </div>
+
+              <div style={{ marginBottom: '24px', display: 'flex', alignItems: 'flex-start', gap: '12px', padding: '16px', backgroundColor: '#f0fdf4', borderRadius: '12px', border: '1px solid #dcfce7' }}>
+                <input 
+                  id="acceptTerms" 
+                  type="checkbox" 
+                  checked={acceptTerms} 
+                  onChange={(e) => setAcceptTerms(e.target.checked)} 
+                  style={{ marginTop: '4px', width: '18px', height: '18px', accentColor: '#047857', cursor: 'pointer' }} 
+                />
+                <label htmlFor="acceptTerms" style={{ fontSize: '14px', color: '#334155', lineHeight: '1.5', cursor: 'pointer' }}>
+                  <span style={{ fontWeight: '600', color: '#047857' }}>Kullanım Şartları</span> ve <span style={{ fontWeight: '600', color: '#047857' }}>Gizlilik Politikası</span>'nı okudum ve kabul ediyorum.
                 </label>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
-                <button type="button" onClick={back} style={{ background: '#f3f4f6', color: '#111827', padding: '10px 14px', borderRadius: 10, border: '1px solid #e5e7eb' }}>Geri</button>
-                <button type="submit" disabled={registerMutation.isPending || !acceptTerms || !form.store_name} style={{ background: '#16a34a', color: 'white', padding: '10px 14px', borderRadius: 10, border: 'none', opacity: (registerMutation.isPending || !acceptTerms || !form.store_name) ? 0.6 : 1 }}>{registerMutation.isPending ? 'Gönderiliyor...' : 'Başvuruyu Tamamla'}</button>
+              <div style={{ display: 'flex', gap: '16px' }}>
+                <button 
+                  type="button" 
+                  onClick={back} 
+                  style={styles.buttonSecondary}
+                >
+                  <FaArrowLeft />
+                </button>
+                <button 
+                  type="submit" 
+                  disabled={registerMutation.isPending || !acceptTerms || !form.store_name} 
+                  style={{ ...styles.buttonPrimary, opacity: (registerMutation.isPending || !acceptTerms || !form.store_name) ? 0.7 : 1 }}
+                >
+                  {registerMutation.isPending ? 'İşleniyor...' : 'Başvuruyu Tamamla'} <FaCheckCircle />
+                </button>
               </div>
-            </>
+            </div>
           )}
         </form>
       </div>
+      <style>{`
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
     </div>
   );
 };

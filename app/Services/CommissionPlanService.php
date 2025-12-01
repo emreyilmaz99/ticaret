@@ -3,16 +3,16 @@
 namespace App\Services;
 
 use App\Repositories\Interfaces\CommissionPlanRepositoryInterface;
-use App\Repositories\Interfaces\VendorRepositoryInterface;
+use App\Repositories\VendorRepository;
 
 class CommissionPlanService extends BaseService
 {
     protected CommissionPlanRepositoryInterface $commissionPlanRepository;
-    protected VendorRepositoryInterface $vendorRepository;
+    protected VendorRepository $vendorRepository;
 
     public function __construct(
         CommissionPlanRepositoryInterface $commissionPlanRepository,
-        VendorRepositoryInterface $vendorRepository
+        VendorRepository $vendorRepository
     ) {
         $this->commissionPlanRepository = $commissionPlanRepository;
         $this->vendorRepository = $vendorRepository;
@@ -215,13 +215,13 @@ class CommissionPlanService extends BaseService
                 return $this->errorResponse('Cannot assign inactive commission plan', 400);
             }
 
-            $vendor = $this->vendorRepository->findById($vendorId);
+            $vendor = $this->vendorRepository->find($vendorId);
             
             if (!$vendor) {
                 return $this->errorResponse('Vendor not found', 404);
             }
 
-            $vendor = $this->vendorRepository->update($vendor, [
+            $vendor = $this->vendorRepository->update($vendorId, [
                 'commission_plan_id' => $planId
             ]);
             

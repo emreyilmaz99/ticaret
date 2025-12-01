@@ -1,17 +1,18 @@
 import React from 'react';
-import VendorList from '../../features/vendor/components/VendorList';
+import ActiveVendorList from '../../features/vendor/components/ActiveVendorList';
 import { FaPlus } from 'react-icons/fa';
 
-const VendorsPage = () => {
+const ActiveVendorsPage = () => {
   return (
     <div>
       {/* SAYFA BAŞLIĞI VE AKSİYON BUTONU */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
         <div>
-          <h1 style={{ fontSize: '24px', fontWeight: '700', color: 'var(--text-main)' }}>Satıcı Başvuruları</h1>
-          <p style={{ color: 'var(--text-muted)', marginTop: '4px' }}>Platformdaki tüm mağazaları buradan yönetebilirsiniz.</p>
+          <h1 style={{ fontSize: '24px', fontWeight: '700', color: 'var(--text-main)' }}>Satıcılar</h1>
+          <p style={{ color: 'var(--text-muted)', marginTop: '4px' }}>Platformdaki aktif mağazaları buradan yönetebilirsiniz.</p>
         </div>
         
+        {/* Yeni satıcı ekleme butonu opsiyonel, belki admin direkt ekleyebilir */}
         <button style={{
           backgroundColor: 'var(--primary)',
           color: 'white',
@@ -30,9 +31,9 @@ const VendorsPage = () => {
       </div>
 
       {/* LİSTE BİLEŞENİ */}
-      <VendorList />
+      <ActiveVendorList />
     </div>
   );
 };
 
-export default VendorsPage;
+export default ActiveVendorsPage;

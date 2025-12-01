@@ -16,8 +16,14 @@ export const getVendorProfile = async () => {
 };
 
 export const vendorRegister = async (payload) => {
-  // payload should be form data or JSON depending on files; here it's JSON for basic fields
-  const response = await axios.post('/v1/vendor/register', payload);
+  // Pre-application submission
+  const response = await axios.post('/v1/vendor-applications', payload);
+  return response.data;
+};
+
+export const submitFullApplication = async (id, payload) => {
+  // Full application submission
+  const response = await axios.post(`/v1/vendor-applications/${id}/submit-full`, payload);
   return response.data;
 };
 

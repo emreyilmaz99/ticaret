@@ -3,6 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
@@ -11,6 +12,9 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // First, normalize existing status values to match new enum
+        DB::statement("UPDATE vendors SET status = 'inactive' WHERE status NOT IN ('active', 'inactive', 'suspended', 'banned')");
+        
         Schema::table('vendors', function (Blueprint $table) {
             // Simplified status
             $table->enum('status', ['active', 'inactive', 'suspended', 'banned'])

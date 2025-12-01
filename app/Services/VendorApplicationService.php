@@ -2,20 +2,20 @@
 
 namespace App\Services;
 
-use App\Repositories\Interfaces\VendorApplicationRepositoryInterface;
-use App\Repositories\Interfaces\VendorRepositoryInterface;
+use App\Repositories\VendorApplicationRepository;
+use App\Repositories\VendorRepository;
 use App\Models\VendorApplication;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class VendorApplicationService extends BaseService
 {
-    protected VendorApplicationRepositoryInterface $applicationRepository;
-    protected VendorRepositoryInterface $vendorRepository;
+    protected VendorApplicationRepository $applicationRepository;
+    protected VendorRepository $vendorRepository;
 
     public function __construct(
-        VendorApplicationRepositoryInterface $applicationRepository,
-        VendorRepositoryInterface $vendorRepository
+        VendorApplicationRepository $applicationRepository,
+        VendorRepository $vendorRepository
     ) {
         $this->applicationRepository = $applicationRepository;
         $this->vendorRepository = $vendorRepository;
@@ -56,13 +56,8 @@ class VendorApplicationService extends BaseService
     public function index(array $filters = [])
     {
         try {
-            $status = $filters['status'] ?? null;
-            
-            if ($status) {
-                $applications = $this->applicationRepository->getByStatus($status);
-            } else {
-                $applications = $this->applicationRepository->paginate(15, $filters);
-            }
+            // Always use paginate with filters to respect both status AND type
+            $applications = $this->applicationRepository->paginate(15, $filters);
 
             return $this->successResponse($applications, 'Applications retrieved successfully');
         } catch (\Exception $e) {

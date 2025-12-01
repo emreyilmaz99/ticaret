@@ -24,7 +24,11 @@ class VendorApplicationController extends Controller
      */
     public function index(Request $request)
     {
-        $filters = $request->only(['status', 'type']);
+        // Filter out empty values to avoid querying for empty strings
+        $filters = array_filter($request->only(['status', 'type']), function ($value) {
+            return !is_null($value) && $value !== '';
+        });
+        
         $result = $this->applicationService->index($filters);
         return $this->fromServiceResponse($result);
     }
