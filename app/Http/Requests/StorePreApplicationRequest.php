@@ -26,6 +26,7 @@ class StorePreApplicationRequest extends FormRequest
             'full_name' => 'required|string|max:255',
             'company_name' => 'nullable|string|max:255',
             'phone' => 'nullable|string|max:20',
+            'password' => 'required|string|min:8|confirmed',
         ];
     }
 
@@ -35,6 +36,9 @@ class StorePreApplicationRequest extends FormRequest
             'email.required' => 'Email address is required',
             'email.email' => 'Please provide a valid email address',
             'full_name.required' => 'Full name is required',
+            'password.required' => 'Password is required',
+            'password.min' => 'Password must be at least 8 characters',
+            'password.confirmed' => 'Password confirmation does not match',
         ];
     }
 }

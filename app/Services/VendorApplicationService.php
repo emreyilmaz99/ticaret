@@ -41,6 +41,7 @@ class VendorApplicationService extends BaseService
                 'full_name' => $data['full_name'],
                 'company_name' => $data['company_name'] ?? null,
                 'phone' => $data['phone'] ?? null,
+                'password' => bcrypt($data['password']),
             ]);
 
             return $this->successResponse($application, 'Pre-application submitted successfully', 201);
@@ -169,6 +170,7 @@ class VendorApplicationService extends BaseService
                 'full_name' => $preApp->full_name,
                 'company_name' => $data['company_name'],
                 'phone' => $data['phone'],
+                'password' => $preApp->password, // Use password from pre-application
             ]);
 
             // Create vendor account
@@ -176,7 +178,7 @@ class VendorApplicationService extends BaseService
                 'application_id' => $fullApplication->id,
                 'name' => $data['full_name'],
                 'email' => $preApp->email,
-                'password' => $data['password'],
+                'password' => $preApp->password, // Already hashed in pre-application
                 'company_name' => $data['company_name'],
                 'slug' => Str::slug($data['company_name']),
                 'tax_id' => $data['tax_id'] ?? null,

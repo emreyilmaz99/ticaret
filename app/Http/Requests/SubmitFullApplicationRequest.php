@@ -17,7 +17,6 @@ class SubmitFullApplicationRequest extends FormRequest
             'full_name' => 'required|string|max:255',
             'company_name' => 'required|string|max:255',
             'phone' => 'required|string|max:20',
-            'password' => 'required|string|min:8|confirmed',
             'tax_id' => 'nullable|string|max:50',
         ];
     }
@@ -28,9 +27,6 @@ class SubmitFullApplicationRequest extends FormRequest
             'full_name.required' => 'Full name is required',
             'company_name.required' => 'Company name is required',
             'phone.required' => 'Phone number is required',
-            'password.required' => 'Password is required',
-            'password.min' => 'Password must be at least 8 characters',
-            'password.confirmed' => 'Password confirmation does not match',
         ];
     }
 }

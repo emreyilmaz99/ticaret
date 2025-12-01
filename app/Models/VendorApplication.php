@@ -15,9 +15,14 @@ class VendorApplication extends Model
         'full_name',
         'company_name',
         'phone',
+        'password',
         'reviewed_by',
         'reviewed_at',
         'rejection_reason',
+    ];
+
+    protected $hidden = [
+        'password',
     ];
 
     protected $casts = [
