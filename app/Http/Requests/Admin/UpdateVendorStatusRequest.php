@@ -14,7 +14,7 @@ class UpdateVendorStatusRequest extends FormRequest
     public function rules()
     {
         return [
-            'status' => 'required|string|in:pre_pending,pre_approved,pre_rejected,pending,active,inactive,banned',
+            'status' => 'required|string|in:active,inactive,suspended,banned',
         ];
     }
 }
