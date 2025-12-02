@@ -10,6 +10,16 @@ export const createVendorCategory = async (payload) => {
   return res.data;
 };
 
+export const updateVendorCategory = async (id, payload) => {
+  const res = await axios.put(`/v1/vendor/categories/${id}`, payload);
+  return res.data;
+};
+
+export const toggleVendorCategoryActive = async (id) => {
+  const res = await axios.post(`/v1/vendor/categories/${id}/toggle-active`);
+  return res.data;
+};
+
 export const deleteVendorCategory = async (id) => {
   const res = await axios.delete(`/v1/vendor/categories/${id}`);
   return res.data;

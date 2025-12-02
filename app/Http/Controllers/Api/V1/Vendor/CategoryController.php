@@ -17,10 +17,11 @@ class CategoryController extends Controller
     {
         $this->service = $service;
     }
+
     public function index(Request $request)
     {
         $vendor = $request->user();
-        $perPage = (int) $request->query('per_page', 15);
+        $perPage = (int) $request->query('per_page', 100);
         $sr = $this->service->listForVendor($vendor, $perPage);
         return $this->fromServiceResponse($sr);
     }
@@ -32,9 +33,33 @@ class CategoryController extends Controller
             'name' => 'required|string|max:191',
             'parent_id' => 'nullable|exists:categories,id',
             'description' => 'nullable|string',
+            'is_active' => 'nullable|boolean',
+            'sort_order' => 'nullable|integer',
         ]);
 
         $sr = $this->service->createCategory($vendor, $data);
+        return $this->fromServiceResponse($sr);
+    }
+
+    public function update(Request $request, $id)
+    {
+        $vendor = $request->user();
+        $data = $request->validate([
+            'name' => 'sometimes|required|string|max:191',
+            'parent_id' => 'nullable|exists:categories,id',
+            'description' => 'nullable|string',
+            'is_active' => 'nullable|boolean',
+            'sort_order' => 'nullable|integer',
+        ]);
+
+        $sr = $this->service->updateCategory($vendor, $id, $data);
+        return $this->fromServiceResponse($sr);
+    }
+
+    public function toggleActive(Request $request, $id)
+    {
+        $vendor = $request->user();
+        $sr = $this->service->toggleActive($vendor, $id);
         return $this->fromServiceResponse($sr);
     }
 

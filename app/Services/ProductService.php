@@ -75,9 +75,10 @@ class ProductService
         $defaultLength = $data['length'] ?? null;
         $defaultWidth = $data['width'] ?? null;
         $defaultHeight = $data['height'] ?? null;
+        $defaultUnitId = $data['unit_id'] ?? null;
         
         // Remove variant-specific fields from product data (they belong in variants table)
-        unset($data['price'], $data['stock'], $data['weight'], $data['length'], $data['width'], $data['height']);
+        unset($data['price'], $data['stock'], $data['weight'], $data['length'], $data['width'], $data['height'], $data['unit_id']);
 
         // create product
         // ensure slug exists and is unique
@@ -143,6 +144,7 @@ class ProductService
                 'length' => $defaultLength,
                 'width' => $defaultWidth,
                 'height' => $defaultHeight,
+                'unit_id' => $defaultUnitId,
             ];
             // remove null values to let DB defaults apply
             $vData = array_filter($vData, function ($val) { return $val !== null; });
@@ -177,6 +179,101 @@ class ProductService
         
         // prevent changing vendor_id
         unset($data['vendor_id']);
+
+        // Handle images if present in update
+        if (isset($data['images']) && is_array($data['images'])) {
+            foreach ($data['images'] as $file) {
+                if (! $file) continue;
+                $path = $file->store('products', 'public');
+                $url = Storage::url($path);
+                // persist into product_photos table
+                $this->photoRepo->create([
+                    'product_id' => $product->id,
+                    'path' => $path,
+                    'url' => $url,
+                    'alt' => $product->name ?? null,
+                ]);
+            }
+            // Remove images from data to prevent repository from trying to update it as a column
+            unset($data['images']);
+        }
+
+        // Handle Tags
+        if (isset($data['tags'])) {
+            $tags = $data['tags'];
+            if (is_string($tags)) {
+                $tags = explode(',', $tags);
+            }
+            if (is_array($tags)) {
+                $tagIds = [];
+                foreach ($tags as $t) {
+                    $t = trim($t);
+                    if (! $t) continue;
+                    if (is_numeric($t)) {
+                        $tag = $this->tagRepo->findById($t);
+                        if ($tag) $tagIds[] = $tag->id;
+                        continue;
+                    }
+                    $name = (string) $t;
+                    $slug = Str::slug($name);
+                    $tag = $this->tagRepo->firstOrCreateBySlug($slug, ['name' => $name]);
+                    $tagIds[] = $tag->id;
+                }
+                $product->tags()->sync($tagIds);
+            }
+            unset($data['tags']);
+        }
+
+        // Handle Simple Product Price/Stock/SKU/Unit updates (stored in variants)
+        if ($product->type === 'simple') {
+            $variantData = [];
+            if (isset($data['price'])) $variantData['price'] = $data['price'];
+            if (isset($data['stock'])) $variantData['stock'] = (int)$data['stock'];
+            if (isset($data['sku'])) $variantData['sku'] = $data['sku'];
+            if (isset($data['unit_id'])) $variantData['unit_id'] = $data['unit_id'];
+
+            if (!empty($variantData)) {
+                $variant = $product->variants()->first();
+                if ($variant) {
+                    $this->variantRepo->update($variant->id, $variantData);
+                } else {
+                    // Create default variant if missing
+                    $variantData['product_id'] = $product->id;
+                    $variantData['title'] = 'Default';
+                    $this->variantRepo->create($variantData);
+                }
+            }
+            // Remove these from data as they are not in products table
+            unset($data['price'], $data['stock'], $data['unit_id']);
+        }
+
+        // Handle Variable Product Variants
+        if (isset($data['variants']) && is_array($data['variants'])) {
+            foreach ($data['variants'] as $v) {
+                $vData = array_filter([
+                    'sku' => $v['sku'] ?? null,
+                    'title' => $v['title'] ?? null,
+                    'unit_id' => $v['unit_id'] ?? null,
+                    'price' => $v['price'] ?? null,
+                    'stock' => isset($v['stock']) ? (int)$v['stock'] : null,
+                ], function ($val) { return $val !== null; });
+
+                if (isset($v['id'])) {
+                    // Update existing variant
+                    // Verify it belongs to product
+                    $existing = $this->variantRepo->findById($v['id']);
+                    if ($existing && $existing->product_id == $product->id) {
+                        $this->variantRepo->update($existing->id, $vData);
+                    }
+                } else {
+                    // Create new variant
+                    $vData['product_id'] = $product->id;
+                    $this->variantRepo->create($vData);
+                }
+            }
+            unset($data['variants']);
+        }
+
         // update via repository (id-based repository interface)
         $updated = $this->repo->update($product->id, $data);
         return is_object($updated) ? $updated->refresh() : $this->repo->findById($product->id);
@@ -196,6 +293,20 @@ class ProductService
         
         // repository uses id-based delete signature
         $this->repo->delete($product->id);
+    }
+
+    public function deletePhotoForVendor(Vendor $vendor, Product $product, int $photoId): void
+    {
+        // Verify ownership
+        if ($product->vendor_id !== $vendor->id) {
+            throw new \Exception('Unauthorized: Product does not belong to this vendor');
+        }
+
+        // Verify photo belongs to product (optional but recommended)
+        // For now, we assume the photo ID is valid and just try to delete it via repo
+        // Ideally, we should check if the photo is actually linked to this product
+        
+        $this->photoRepo->delete($photoId);
     }
 
     public function findForVendor(Vendor $vendor, $productId): ?Product

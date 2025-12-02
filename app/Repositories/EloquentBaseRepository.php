@@ -18,7 +18,7 @@ abstract class EloquentBaseRepository implements BaseRepositoryInterface
         return $this->model->where($filters)->get();
     }
 
-    public function find(int $id)
+    public function find($id)
     {
         return $this->model->find($id);
     }
@@ -28,14 +28,14 @@ abstract class EloquentBaseRepository implements BaseRepositoryInterface
         return $this->model->create($data);
     }
 
-    public function update(int $id, array $data)
+    public function update($id, array $data)
     {
         $record = $this->model->findOrFail($id);
         $record->update($data);
         return $record;
     }
 
-    public function delete(int $id): bool
+    public function delete($id): bool
     {
         $record = $this->model->findOrFail($id);
         return (bool) $record->delete();

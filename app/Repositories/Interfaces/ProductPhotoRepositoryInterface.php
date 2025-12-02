@@ -9,5 +9,5 @@ interface ProductPhotoRepositoryInterface
 {
     public function create(array $data): ProductPhoto;
     public function delete(int $id): bool;
-    public function listByProduct(int $productId): Collection;
+    public function listByProduct($productId): Collection;
 }

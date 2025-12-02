@@ -103,6 +103,7 @@ Route::prefix('v1/vendor')->group(function () {
         Route::get('products/{product}', [\App\Http\Controllers\Api\V1\Vendor\ProductController::class, 'show']);
         Route::put('products/{product}', [\App\Http\Controllers\Api\V1\Vendor\ProductController::class, 'update']);
         Route::delete('products/{product}', [\App\Http\Controllers\Api\V1\Vendor\ProductController::class, 'destroy']);
+        Route::delete('products/{product}/photos/{photo}', [\App\Http\Controllers\Api\V1\Vendor\ProductController::class, 'destroyPhoto']);
         // vendor profile endpoints (self-service)
         Route::put('profile', [VendorProfileController::class, 'update']);
         Route::delete('profile', [VendorProfileController::class, 'destroy']);
@@ -125,6 +126,8 @@ Route::prefix('v1/vendor')->group(function () {
         // vendor categories (self-service)
         Route::get('categories', [\App\Http\Controllers\Api\V1\Vendor\CategoryController::class, 'index']);
         Route::post('categories', [\App\Http\Controllers\Api\V1\Vendor\CategoryController::class, 'store']);
+        Route::put('categories/{id}', [\App\Http\Controllers\Api\V1\Vendor\CategoryController::class, 'update']);
+        Route::post('categories/{id}/toggle-active', [\App\Http\Controllers\Api\V1\Vendor\CategoryController::class, 'toggleActive']);
         Route::delete('categories/{id}', [\App\Http\Controllers\Api\V1\Vendor\CategoryController::class, 'destroy']);
         // onboarding completion (vendor marks their onboarding as finished)
         Route::post('onboarding/complete', [VendorProfileController::class, 'completeOnboarding']);

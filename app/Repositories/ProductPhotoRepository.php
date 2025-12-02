@@ -26,8 +26,8 @@ class ProductPhotoRepository implements ProductPhotoRepositoryInterface
         return (bool) $photo->delete();
     }
 
-    public function listByProduct(int $productId): Collection
+    public function listByProduct($productId): Collection
     {
-        return $this->model->where('product_id', $productId)->get();
+        return $this->model->where('product_id', $productId)->orderBy('sort_order')->get();
     }
 }

@@ -64,12 +64,30 @@ class ProductController extends Controller
         return $this->success(new ProductResource($product));
     }
 
-    public function update(UpdateProductRequest $request, Product $product)
+    public function update(UpdateProductRequest $request, $id)
     {
         $vendor = $request->user();
+        $product = $this->service->findForVendor($vendor, $id);
+
+        if (!$product) {
+            return $this->error('Product not found', 404);
+        }
         
         try {
-            $updated = $this->service->updateForVendor($vendor, $product, $request->validated());
+            $data = $request->validated();
+            
+            // Include files and complex fields if present
+            if ($request->hasFile('images')) {
+                $data['images'] = $request->file('images');
+            }
+            if ($request->has('tags')) {
+                $data['tags'] = $request->input('tags');
+            }
+            if ($request->has('variants')) {
+                $data['variants'] = $request->input('variants');
+            }
+
+            $updated = $this->service->updateForVendor($vendor, $product, $data);
             return $this->success(
                 new ProductResource($updated),
                 'Product updated'
@@ -79,13 +97,35 @@ class ProductController extends Controller
         }
     }
 
-    public function destroy(Request $request, Product $product)
+    public function destroy(Request $request, $id)
     {
         $vendor = $request->user();
+        $product = $this->service->findForVendor($vendor, $id);
+
+        if (!$product) {
+            return $this->error('Product not found', 404);
+        }
         
         try {
             $this->service->deleteForVendor($vendor, $product);
             return $this->success(null, 'Product deleted', 204);
+        } catch (\Exception $e) {
+            return $this->error($e->getMessage(), 403);
+        }
+    }
+
+    public function destroyPhoto(Request $request, $id, $photoId)
+    {
+        $vendor = $request->user();
+        $product = $this->service->findForVendor($vendor, $id);
+
+        if (!$product) {
+            return $this->error('Product not found', 404);
+        }
+        
+        try {
+            $this->service->deletePhotoForVendor($vendor, $product, (int)$photoId);
+            return $this->success(null, 'Photo deleted', 204);
         } catch (\Exception $e) {
             return $this->error($e->getMessage(), 403);
         }

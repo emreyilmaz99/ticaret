@@ -20,9 +20,11 @@ class StoreProductRequest extends FormRequest
             'description' => ['nullable','string'],
             'type' => ['required','in:simple,variable'],
             'price' => ['nullable','numeric','min:0'],
+            'stock' => ['nullable','integer','min:0'],
             'sku' => ['nullable','string','max:100'],
             'is_featured' => ['nullable','boolean'],
             'category_id' => ['nullable','exists:categories,id'],
+            'unit_id' => ['nullable','exists:units,id'],
             // extra fields for extended product creation
             'tags' => ['nullable','array'],
             'tags.*' => ['string'],
@@ -31,6 +33,7 @@ class StoreProductRequest extends FormRequest
             'variants.*.sku' => ['nullable','string'],
             'variants.*.price' => ['nullable','numeric'],
             'variants.*.stock' => ['nullable','integer'],
+            'variants.*.unit_id' => ['nullable','exists:units,id'],
             'images' => ['nullable'],
         ];
     }

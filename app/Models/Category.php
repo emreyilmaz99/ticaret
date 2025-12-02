@@ -10,9 +10,16 @@ class Category extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $fillable = ['parent_id','vendor_id','name','slug','description','settings','sort_order'];
+    protected $fillable = ['parent_id','vendor_id','name','slug','description','settings','sort_order','is_active'];
 
-    protected $casts = ['settings' => 'array'];
+    protected $casts = [
+        'settings' => 'array',
+        'is_active' => 'boolean',
+    ];
+
+    protected $attributes = [
+        'is_active' => true,
+    ];
 
     public function products()
     {

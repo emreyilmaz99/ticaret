@@ -14,8 +14,19 @@ const VendorLogin = () => {
   const loginMutation = useMutation({
     mutationFn: vendorLogin,
     onSuccess: (data) => {
+      // Debug: Log the full response
+      console.log('[VendorLogin] Full response:', data);
+      console.log('[VendorLogin] Token:', data.data?.token);
+      
       // Vendor login successful - has token and vendor account
-      localStorage.setItem('vendor_token', data.data.token);
+      const token = data.data?.token;
+      if (!token) {
+        console.error('[VendorLogin] Token not found in response!');
+        toast.error('Hata', 'Token alınamadı', 4000);
+        return;
+      }
+      localStorage.setItem('vendor_token', token);
+      console.log('[VendorLogin] Token saved to localStorage:', localStorage.getItem('vendor_token'));
       
       // Vendor account exists, go to dashboard
       // (Status and onboarding checks can be done in dashboard)
@@ -63,7 +74,9 @@ const VendorLogin = () => {
       justifyContent: 'center',
       backgroundColor: '#f0fdf4', // Light Green background
       backgroundImage: 'radial-gradient(#dcfce7 1px, transparent 1px)',
-      backgroundSize: '24px 24px'
+      backgroundSize: '24px 24px',
+      position: 'relative',
+      zIndex: 1
     }}>
       <div style={{
         backgroundColor: 'white',

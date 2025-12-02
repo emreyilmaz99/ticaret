@@ -23,10 +23,24 @@ export const createVendorProduct = async (payload) => {
 export const updateVendorProduct = async (id, payload) => {
   let body = payload;
   let config = {};
+  
   if (payload instanceof FormData) {
     body = payload;
+    // Laravel/PHP, PUT isteklerinde FormData'yı (dosyaları) düzgün okuyamaz.
+    // Bu yüzden POST kullanıp _method=PUT gönderiyoruz.
+    body.append('_method', 'PUT');
     config.headers = { 'Content-Type': 'multipart/form-data' };
+    
+    // Token'ı manuel olarak ekle (Interceptor bazen FormData ile sorun yaşayabilir)
+    const token = localStorage.getItem('vendor_token');
+    if (token) {
+      config.headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const res = await axios.post(`/v1/vendor/products/${id}`, body, config);
+    return res.data;
   }
+
   const res = await axios.put(`/v1/vendor/products/${id}`, body, config);
   return res.data;
 };
@@ -34,5 +48,11 @@ export const updateVendorProduct = async (id, payload) => {
 // Vendor: sil
 export const deleteVendorProduct = async (id) => {
   const res = await axios.delete(`/v1/vendor/products/${id}`);
+  return res.data;
+};
+
+// Vendor: fotoğraf sil
+export const deleteVendorProductPhoto = async (productId, photoId) => {
+  const res = await axios.delete(`/v1/vendor/products/${productId}/photos/${photoId}`);
   return res.data;
 };

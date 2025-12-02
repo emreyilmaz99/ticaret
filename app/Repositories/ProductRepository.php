@@ -13,12 +13,12 @@ class ProductRepository extends EloquentBaseRepository implements ProductReposit
         parent::__construct($model);
     }
 
-    public function findForVendor(int $vendorId, int $productId): ?Product
+    public function findForVendor(int $vendorId, $productId): ?Product
     {
         return $this->model->where('id', $productId)->where('vendor_id', $vendorId)->first();
     }
 
-    public function findById(int $id): ?Product
+    public function findById($id): ?Product
     {
         return $this->model->find($id);
     }
@@ -35,5 +35,17 @@ class ProductRepository extends EloquentBaseRepository implements ProductReposit
     public function existsBySlug(string $slug): bool
     {
         return $this->model->where('slug', $slug)->exists();
+    }
+
+    public function create(array $data): Product
+    {
+        /** @var Product */
+        return parent::create($data);
+    }
+
+    public function update($id, array $data): Product
+    {
+        /** @var Product */
+        return parent::update($id, $data);
     }
 }
