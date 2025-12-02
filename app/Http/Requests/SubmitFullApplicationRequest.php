@@ -23,20 +23,27 @@ class SubmitFullApplicationRequest extends FormRequest
             'city' => 'required|string|max:100',
             'country' => 'required|string|max:100',
             'postal_code' => 'nullable|string|max:20',
+            // Bank account fields
+            'bank_name' => 'required|string|max:100',
+            'account_holder' => 'required|string|max:255',
+            'iban' => 'required|string|max:34',
         ];
     }
 
     public function messages(): array
     {
         return [
-            'full_name.required' => 'Full name is required',
-            'company_name.required' => 'Company name is required',
-            'slug.required' => 'Store slug is required',
-            'slug.regex' => 'Slug can only contain lowercase letters, numbers and hyphens',
-            'phone.required' => 'Phone number is required',
-            'address_line.required' => 'Address is required',
-            'city.required' => 'City is required',
-            'country.required' => 'Country is required',
+            'full_name.required' => 'Ad soyad gereklidir',
+            'company_name.required' => 'Şirket adı gereklidir',
+            'slug.required' => 'Mağaza URL\'si gereklidir',
+            'slug.regex' => 'URL sadece küçük harf, rakam ve tire içerebilir',
+            'phone.required' => 'Telefon numarası gereklidir',
+            'address_line.required' => 'Adres gereklidir',
+            'city.required' => 'Şehir gereklidir',
+            'country.required' => 'Ülke gereklidir',
+            'bank_name.required' => 'Banka adı gereklidir',
+            'account_holder.required' => 'Hesap sahibi adı gereklidir',
+            'iban.required' => 'IBAN gereklidir',
         ];
     }
 }

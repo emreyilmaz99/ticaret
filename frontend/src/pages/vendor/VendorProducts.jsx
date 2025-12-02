@@ -52,10 +52,11 @@ const VendorProducts = () => {
     sku: '',
     unit_id: '',
     is_featured: false,
-    tags: '', // comma separated
+    tags: [], // array of tag strings
     variants: [],
     images: []
   });
+  const [tagInput, setTagInput] = useState('');
 
   // Queries
   const { data: productsData, isLoading } = useQuery({
@@ -185,10 +186,11 @@ const VendorProducts = () => {
       sku: '',
       unit_id: '',
       is_featured: false,
-      tags: '',
+      tags: [],
       variants: [],
       images: []
     });
+    setTagInput('');
     setActiveTab('general');
     setIsModalOpen(true);
   };
@@ -207,7 +209,7 @@ const VendorProducts = () => {
       sku: product.sku || '',
       unit_id: product.variants?.[0]?.unit_id || '',
       is_featured: product.is_featured || false,
-      tags: product.tags ? product.tags.map(t => t.name).join(', ') : '',
+      tags: product.tags ? product.tags.map(t => t.name) : [],
       variants: product.variants || [],
       images: [] // New images only
     });
@@ -230,7 +232,25 @@ const VendorProducts = () => {
   const handleImageChange = (e) => {
     if (e.target.files) {
       const newFiles = Array.from(e.target.files);
-      setFormData(prev => ({ ...prev, images: [...prev.images, ...newFiles] }));
+      const maxSize = 5 * 1024 * 1024; // 5MB
+      const validFiles = [];
+      const invalidFiles = [];
+      
+      newFiles.forEach(file => {
+        if (file.size > maxSize) {
+          invalidFiles.push(file.name);
+        } else {
+          validFiles.push(file);
+        }
+      });
+      
+      if (invalidFiles.length > 0) {
+        toast.warning('Uyarı', `Şu dosyalar 5MB'dan büyük olduğu için eklenmedi: ${invalidFiles.join(', ')}`);
+      }
+      
+      if (validFiles.length > 0) {
+        setFormData(prev => ({ ...prev, images: [...prev.images, ...validFiles] }));
+      }
     }
   };
 
@@ -244,9 +264,36 @@ const VendorProducts = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     
+    // Validasyonlar
+    if (!formData.name || formData.name.trim().length < 2) {
+      toast.warning('Uyarı', 'Ürün adı en az 2 karakter olmalıdır.');
+      return;
+    }
+    
+    if (!formData.category_id) {
+      toast.warning('Uyarı', 'Lütfen bir kategori seçiniz.');
+      return;
+    }
+    
+    if (formData.type === 'simple') {
+      if (!formData.price || parseFloat(formData.price) <= 0) {
+        toast.warning('Uyarı', 'Lütfen geçerli bir satış fiyatı giriniz.');
+        return;
+      }
+      if (formData.stock === '' || formData.stock === null || parseInt(formData.stock) < 0) {
+        toast.warning('Uyarı', 'Lütfen geçerli bir stok adedi giriniz.');
+        return;
+      }
+    }
+    
+    if (formData.type === 'variable' && formData.variants.length === 0) {
+      toast.warning('Uyarı', 'Varyantlı ürün için en az bir varyant eklemelisiniz.');
+      return;
+    }
+    
     const fd = new FormData();
     fd.append('name', formData.name);
-    if (formData.category_id) fd.append('category_id', formData.category_id);
+    fd.append('category_id', formData.category_id);
     fd.append('type', formData.type);
     fd.append('description', formData.description);
     fd.append('short_description', formData.short_description);
@@ -260,9 +307,8 @@ const VendorProducts = () => {
     }
 
     // Tags
-    if (formData.tags) {
-      const tagsArr = formData.tags.split(',').map(t => t.trim()).filter(Boolean);
-      tagsArr.forEach((t, i) => fd.append(`tags[${i}]`, t));
+    if (formData.tags && formData.tags.length > 0) {
+      formData.tags.forEach((t, i) => fd.append(`tags[${i}]`, t));
     }
 
     // Variants
@@ -624,7 +670,7 @@ const VendorProducts = () => {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                       <div style={styles.grid2}>
                         <div style={{ gridColumn: '1 / -1' }}>
-                          <label style={styles.label}>Ürün Adı</label>
+                          <label style={styles.label}>Ürün Adı *</label>
                           <input 
                             required
                             value={formData.name}
@@ -632,17 +678,19 @@ const VendorProducts = () => {
                             disabled={modalMode === 'view'}
                             style={styles.formInput}
                             placeholder="Örn: Kablosuz Kulaklık"
+                            minLength={2}
                           />
                         </div>
                         <div>
-                          <label style={styles.label}>Kategori</label>
+                          <label style={styles.label}>Kategori *</label>
                           <select 
+                            required
                             value={formData.category_id}
                             onChange={(e) => setFormData({...formData, category_id: e.target.value})}
                             disabled={modalMode === 'view'}
-                            style={styles.formInput}
+                            style={{...styles.formInput, borderColor: !formData.category_id && modalMode !== 'view' ? '#fca5a5' : '#e2e8f0'}}
                           >
-                            <option value="">Seçiniz</option>
+                            <option value="">Kategori Seçiniz</option>
                             {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                           </select>
                         </div>
@@ -679,26 +727,86 @@ const VendorProducts = () => {
                           />
                         </div>
                         <div style={{ gridColumn: '1 / -1' }}>
-                          <label style={styles.label}>Etiketler</label>
-                          <input 
-                            value={formData.tags}
-                            onChange={(e) => setFormData({...formData, tags: e.target.value})}
-                            disabled={modalMode === 'view'}
-                            style={styles.formInput}
-                            placeholder="Virgülle ayırarak yazın (örn: yeni, indirim, yaz)"
-                          />
-                          {formData.tags && (
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '8px' }}>
-                              {formData.tags.split(',').map(t => t.trim()).filter(Boolean).map((tag, i) => (
-                                <span key={i} style={{ 
-                                  backgroundColor: '#e2e8f0', color: '#475569', padding: '4px 12px', 
-                                  borderRadius: '16px', fontSize: '12px', fontWeight: '500' 
-                                }}>
-                                  #{tag}
-                                </span>
-                              ))}
-                            </div>
-                          )}
+                          <label style={styles.label}>Etiketler <span style={{fontWeight: 400, color: '#94a3b8'}}>(Opsiyonel)</span></label>
+                          <div style={{
+                            border: '1px solid #e2e8f0',
+                            borderRadius: '8px',
+                            padding: '8px 12px',
+                            minHeight: '44px',
+                            display: 'flex',
+                            flexWrap: 'wrap',
+                            gap: '8px',
+                            alignItems: 'center',
+                            backgroundColor: modalMode === 'view' ? '#f8fafc' : 'white'
+                          }}>
+                            {formData.tags.map((tag, i) => (
+                              <span key={i} style={{ 
+                                backgroundColor: '#059669', 
+                                color: 'white', 
+                                padding: '4px 10px', 
+                                borderRadius: '16px', 
+                                fontSize: '13px', 
+                                fontWeight: '500',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px'
+                              }}>
+                                #{tag}
+                                {modalMode !== 'view' && (
+                                  <button
+                                    type="button"
+                                    onClick={() => setFormData(prev => ({...prev, tags: prev.tags.filter((_, idx) => idx !== i)}))}
+                                    style={{
+                                      background: 'rgba(255,255,255,0.3)',
+                                      border: 'none',
+                                      borderRadius: '50%',
+                                      width: '16px',
+                                      height: '16px',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      cursor: 'pointer',
+                                      color: 'white',
+                                      fontSize: '10px',
+                                      padding: 0,
+                                      lineHeight: 1
+                                    }}
+                                  >
+                                    ×
+                                  </button>
+                                )}
+                              </span>
+                            ))}
+                            {modalMode !== 'view' && (
+                              <input 
+                                value={tagInput}
+                                onChange={(e) => setTagInput(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if ((e.key === 'Enter' || e.key === ',') && tagInput.trim()) {
+                                    e.preventDefault();
+                                    const newTag = tagInput.trim().replace(/,/g, '');
+                                    if (newTag && !formData.tags.includes(newTag)) {
+                                      setFormData(prev => ({...prev, tags: [...prev.tags, newTag]}));
+                                    }
+                                    setTagInput('');
+                                  }
+                                  if (e.key === 'Backspace' && !tagInput && formData.tags.length > 0) {
+                                    setFormData(prev => ({...prev, tags: prev.tags.slice(0, -1)}));
+                                  }
+                                }}
+                                style={{
+                                  border: 'none',
+                                  outline: 'none',
+                                  flex: 1,
+                                  minWidth: '120px',
+                                  fontSize: '14px',
+                                  padding: '4px 0'
+                                }}
+                                placeholder={formData.tags.length === 0 ? "Etiket yazıp Enter'a basın..." : ''}
+                              />
+                            )}
+                          </div>
+                          <p style={{ fontSize: '12px', color: '#94a3b8', marginTop: '4px' }}>Enter veya virgül ile etiket ekleyin, Backspace ile son etiketi silin</p>
                         </div>
                       </div>
                     </div>
@@ -714,39 +822,47 @@ const VendorProducts = () => {
                       ) : (
                         <div style={styles.grid2}>
                           <div>
-                            <label style={styles.label}>Satış Fiyatı</label>
+                            <label style={styles.label}>Satış Fiyatı *</label>
                             <div style={{ position: 'relative' }}>
                               <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }}>₺</span>
                               <input 
                                 type="number"
+                                required
+                                min="0.01"
+                                step="0.01"
                                 value={formData.price}
                                 onChange={(e) => setFormData({...formData, price: e.target.value})}
                                 disabled={modalMode === 'view'}
-                                style={{...styles.formInput, paddingLeft: '32px'}}
+                                style={{...styles.formInput, paddingLeft: '32px', borderColor: (!formData.price || parseFloat(formData.price) <= 0) && modalMode !== 'view' ? '#fca5a5' : '#e2e8f0'}}
+                                placeholder="0.00"
                               />
                             </div>
                           </div>
                           <div>
-                            <label style={styles.label}>Stok Adedi</label>
+                            <label style={styles.label}>Stok Adedi *</label>
                             <input 
                               type="number"
+                              required
+                              min="0"
                               value={formData.stock}
                               onChange={(e) => setFormData({...formData, stock: e.target.value})}
                               disabled={modalMode === 'view'}
                               style={styles.formInput}
+                              placeholder="0"
                             />
                           </div>
                           <div>
-                            <label style={styles.label}>SKU (Stok Kodu)</label>
+                            <label style={styles.label}>SKU (Stok Kodu) <span style={{fontWeight: 400, color: '#94a3b8'}}>(Opsiyonel)</span></label>
                             <input 
                               value={formData.sku}
                               onChange={(e) => setFormData({...formData, sku: e.target.value})}
                               disabled={modalMode === 'view'}
                               style={styles.formInput}
+                              placeholder="Örn: PRD-001"
                             />
                           </div>
                           <div>
-                            <label style={styles.label}>Birim (Opsiyonel)</label>
+                            <label style={styles.label}>Birim <span style={{fontWeight: 400, color: '#94a3b8'}}>(Opsiyonel)</span></label>
                             <select 
                               value={formData.unit_id}
                               onChange={(e) => setFormData({...formData, unit_id: e.target.value})}

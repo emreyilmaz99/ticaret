@@ -1,10 +1,9 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaWallet, FaShoppingBag, FaBox, FaStar, FaArrowUp, FaArrowDown, FaBell, FaCalendarAlt } from 'react-icons/fa';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useQuery } from '@tanstack/react-query';
 import { getVendorProfile } from '../../features/vendor/api/vendorAuthApi';
-import VendorOnboarding from './VendorOnboarding';
 
 const VendorDashboard = () => {
   const navigate = useNavigate();
@@ -77,47 +76,94 @@ const VendorDashboard = () => {
 
   const vendor = meData?.data?.vendor;
 
-  // Eğer satıcı henüz aktif değilse (ön başvuru / onay bekliyor vb.) farklı bir görünüm göster
-  if (vendor && vendor.status && vendor.status !== 'active') {
-    // pre_pending: sadece bilgilendirme
-    if (vendor.status === 'pre_pending') {
-      return (
-        <div style={{ padding: 24 }}>
-          <h1>Başvurunuz İnceleniyor</h1>
-          <p style={{ color: '#64748b' }}>Ön başvurunuz başarılı şekilde alınmıştır. Admin ekibi başvurunuzu inceliyor. Onaylandığında size bildirilecektir.</p>
+  // Eğer satıcı henüz aktif değilse farklı bir görünüm göster
+  if (vendor && vendor.status === 'inactive') {
+    return (
+      <div style={{ padding: 24 }}>
+        <div style={{ 
+          backgroundColor: '#fef3c7', 
+          border: '1px solid #f59e0b', 
+          borderRadius: 16, 
+          padding: 32, 
+          marginBottom: 24,
+          textAlign: 'center'
+        }}>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>⏳</div>
+          <h1 style={{ fontSize: 24, fontWeight: 700, color: '#92400e', marginBottom: 8 }}>Hesabınız Onay Bekliyor</h1>
+          <p style={{ color: '#a16207', fontSize: 16 }}>
+            Tam başvurunuz admin ekibi tarafından inceleniyor. Onaylandığında mağazanız aktifleştirilecektir.
+          </p>
+        </div>
 
-          <div style={{ marginTop: 20, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-            <div style={{ background: 'white', padding: 16, borderRadius: 8, border: '1px solid #e2e8f0' }}>
-              <h4>Gönderilen Bilgiler</h4>
-              <p><strong>Mağaza / Şirket:</strong> {vendor.company_name || '-'}</p>
-              <p><strong>Vergi No:</strong> {vendor.tax_id || '-'}</p>
-              <p><strong>Telefon:</strong> {vendor.phone || '-'}</p>
-              <p><strong>E-posta:</strong> {vendor.email || '-'}</p>
-            </div>
-
-            <div style={{ background: 'white', padding: 16, borderRadius: 8, border: '1px solid #e2e8f0' }}>
-              <h4>Ek Bilgiler</h4>
-              <p><strong>Adres Sayısı:</strong> {(vendor.addresses || []).length}</p>
-              <p><strong>Banka Hesapları:</strong> {(vendor.bank_accounts || []).length}</p>
-              <p style={{ marginTop: 8, color: '#94a3b8' }}>Gerekli bilgiler tamamlandıktan ve admin onay verdikten sonra ürünlerinizi ekleyebilirsiniz.</p>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+          <div style={{ background: 'white', padding: 24, borderRadius: 16, border: '1px solid #e2e8f0' }}>
+            <h4 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16, color: '#0f172a' }}>📋 Mağaza Bilgileriniz</h4>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: '#64748b' }}>Mağaza / Şirket:</span>
+                <span style={{ fontWeight: 500 }}>{vendor.company_name || '-'}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: '#64748b' }}>E-posta:</span>
+                <span style={{ fontWeight: 500 }}>{vendor.email || '-'}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: '#64748b' }}>Telefon:</span>
+                <span style={{ fontWeight: 500 }}>{vendor.phone || '-'}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: '#64748b' }}>Vergi No:</span>
+                <span style={{ fontWeight: 500 }}>{vendor.tax_id || '-'}</span>
+              </div>
             </div>
           </div>
-        </div>
-      );
-    }
 
-    // pre_approved: admin ön onay verdi, satıcı ayrıntılı kayıtları tamamlamalı -> onboarding görünümü göm
-    if (vendor.status === 'pre_approved') {
-      return (
-        <div style={{ padding: 24 }}>
-          <h1>Ek Kayıt İşlemleri</h1>
-          <p style={{ color: '#64748b' }}>Ön başvurunuz onaylandı. Lütfen mağaza detaylarınızı tamamlayın.</p>
-          <div style={{ marginTop: 16 }}>
-            <VendorOnboarding />
+          <div style={{ background: 'white', padding: 24, borderRadius: 16, border: '1px solid #e2e8f0' }}>
+            <h4 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16, color: '#0f172a' }}>📍 Kayıtlı Bilgiler</h4>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: '#64748b' }}>Adres Sayısı:</span>
+                <span style={{ fontWeight: 500, color: (vendor.addresses || []).length > 0 ? '#059669' : '#ef4444' }}>
+                  {(vendor.addresses || []).length > 0 ? `${(vendor.addresses || []).length} adres` : 'Eklenmemiş'}
+                </span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: '#64748b' }}>Banka Hesabı:</span>
+                <span style={{ fontWeight: 500, color: (vendor.bank_accounts || []).length > 0 ? '#059669' : '#ef4444' }}>
+                  {(vendor.bank_accounts || []).length > 0 ? `${(vendor.bank_accounts || []).length} hesap` : 'Eklenmemiş'}
+                </span>
+              </div>
+            </div>
+            <p style={{ marginTop: 16, color: '#94a3b8', fontSize: 13 }}>
+              Admin onayından sonra ürünlerinizi ekleyebilir ve satışa başlayabilirsiniz.
+            </p>
           </div>
         </div>
-      );
-    }
+      </div>
+    );
+  }
+
+  // Eğer satıcı suspended veya banned ise uyarı göster
+  if (vendor && (vendor.status === 'suspended' || vendor.status === 'banned')) {
+    return (
+      <div style={{ padding: 24 }}>
+        <div style={{ 
+          backgroundColor: '#fef2f2', 
+          border: '1px solid #ef4444', 
+          borderRadius: 16, 
+          padding: 32, 
+          textAlign: 'center'
+        }}>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>🚫</div>
+          <h1 style={{ fontSize: 24, fontWeight: 700, color: '#991b1b', marginBottom: 8 }}>
+            {vendor.status === 'suspended' ? 'Hesabınız Askıya Alındı' : 'Hesabınız Yasaklandı'}
+          </h1>
+          <p style={{ color: '#b91c1c', fontSize: 16 }}>
+            Detaylı bilgi için lütfen destek ekibi ile iletişime geçin.
+          </p>
+        </div>
+      </div>
+    );
   }
 
   return (

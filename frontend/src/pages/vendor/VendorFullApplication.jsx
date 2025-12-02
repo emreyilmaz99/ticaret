@@ -4,7 +4,7 @@ import { useMutation } from '@tanstack/react-query';
 import { submitFullApplication } from '../../features/vendor/api/vendorAuthApi';
 import { useToast } from '../../components/Toast';
 import axios from '../../lib/axios';
-import { FaStore, FaPhone, FaIdCard, FaCheckCircle, FaUser, FaLink, FaMapMarkerAlt, FaCity, FaGlobe, FaMailBulk } from 'react-icons/fa';
+import { FaStore, FaPhone, FaIdCard, FaCheckCircle, FaUser, FaLink, FaMapMarkerAlt, FaCity, FaGlobe, FaMailBulk, FaUniversity, FaCreditCard } from 'react-icons/fa';
 
 const VendorFullApplication = () => {
   const { id } = useParams();
@@ -20,7 +20,11 @@ const VendorFullApplication = () => {
     address_line: '',
     city: '',
     country: 'Türkiye',
-    postal_code: ''
+    postal_code: '',
+    // Bank account fields
+    bank_name: '',
+    account_holder: '',
+    iban: ''
   });
   const [acceptTerms, setAcceptTerms] = useState(false);
 
@@ -384,6 +388,62 @@ const VendorFullApplication = () => {
                 placeholder="Türkiye" 
               />
             </div>
+          </div>
+
+          <div style={{...styles.subtitle, textAlign: 'left', marginTop: '32px', marginBottom: '16px', fontWeight: '600', color: '#047857'}}>
+            🏦 Banka Hesap Bilgileri
+          </div>
+
+          <div style={styles.formGroup}>
+            <label style={styles.label}>Banka Adı *</label>
+            <div style={styles.inputWrapper}>
+              <FaUniversity style={styles.inputIcon} />
+              <input 
+                style={styles.input} 
+                onFocus={handleFocus} 
+                onBlur={handleBlur}
+                value={form.bank_name} 
+                onChange={(e) => setForm({...form, bank_name: e.target.value})} 
+                required 
+                placeholder="Örn: Ziraat Bankası, Garanti BBVA" 
+              />
+            </div>
+          </div>
+
+          <div style={styles.formGroup}>
+            <label style={styles.label}>Hesap Sahibi *</label>
+            <div style={styles.inputWrapper}>
+              <FaUser style={styles.inputIcon} />
+              <input 
+                style={styles.input} 
+                onFocus={handleFocus} 
+                onBlur={handleBlur}
+                value={form.account_holder} 
+                onChange={(e) => setForm({...form, account_holder: e.target.value})} 
+                required 
+                placeholder="Hesap sahibinin adı soyadı" 
+              />
+            </div>
+          </div>
+
+          <div style={styles.formGroup}>
+            <label style={styles.label}>IBAN *</label>
+            <div style={styles.inputWrapper}>
+              <FaCreditCard style={styles.inputIcon} />
+              <input 
+                style={styles.input} 
+                onFocus={handleFocus} 
+                onBlur={handleBlur}
+                value={form.iban} 
+                onChange={(e) => setForm({...form, iban: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '')})} 
+                required 
+                placeholder="TR00 0000 0000 0000 0000 0000 00"
+                maxLength={26}
+              />
+            </div>
+            <small style={{color: '#64748b', fontSize: '12px', marginTop: '4px', display: 'block'}}>
+              Ödemeleriniz bu hesaba aktarılacaktır.
+            </small>
           </div>
 
           <div style={{ marginBottom: '24px', display: 'flex', alignItems: 'flex-start', gap: '12px', padding: '16px', backgroundColor: '#f0fdf4', borderRadius: '12px', border: '1px solid #dcfce7' }}>

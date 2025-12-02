@@ -58,8 +58,9 @@ class ProfileController extends BaseVendorController
     }
 
     /**
-     * Mark onboarding complete — vendor indicates they've finished step 2.
-     * Only allowed when vendor currently has status `pre_approved`.
+     * Mark onboarding complete — vendor indicates they've finished setup.
+     * This is now mainly for backward compatibility.
+     * Vendors created via full application flow already have onboarding_completed set appropriately.
      */
     public function completeOnboarding(Request $request)
     {
@@ -68,9 +69,14 @@ class ProfileController extends BaseVendorController
             return $this->error('Yetkisiz', 401);
         }
 
-        // Basic guards: only transition pre_approved -> pending
-        if ($vendor->status !== 'pre_approved') {
-            return $this->error('Onboarding tamamlanamaz: mevcut statü uygun değil', 422);
+        // Only allow if vendor is active
+        if ($vendor->status !== 'active') {
+            return $this->error('Onboarding tamamlanamaz: Hesabınız henüz aktif değil', 422);
+        }
+
+        // If already completed, just return success
+        if ($vendor->onboarding_completed) {
+            return $this->success(new VendorResource($vendor), 'Onboarding zaten tamamlanmış', 200);
         }
 
         // Optionally verify required fields exist (company_name, at least one address and bank account)
@@ -79,12 +85,12 @@ class ProfileController extends BaseVendorController
         $hasBank = $vendor->bankAccounts()->exists();
 
         if (!($hasCompany && $hasAddress && $hasBank)) {
-            return $this->error('Onboarding tamamlanmadan önce tüm zorunlu bilgiler doldurulmalıdır', 422);
+            return $this->error('Onboarding tamamlanmadan önce tüm zorunlu bilgiler doldurulmalıdır (şirket adı, adres, banka hesabı)', 422);
         }
 
-        // Update status to pending so admin can review full application
-        $updated = $this->service->update($vendor->getKey(), ['status' => 'pending']);
+        // Update onboarding_completed flag
+        $updated = $this->service->update($vendor->getKey(), ['onboarding_completed' => true]);
 
-        return $this->success(new VendorResource($updated), 'Onboarding tamamlandı; admin onayı bekleniyor', 200);
+        return $this->success(new VendorResource($updated), 'Onboarding tamamlandı', 200);
     }
 }

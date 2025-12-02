@@ -112,7 +112,7 @@ const VendorOnboarding = () => {
           <label>Mağaza / Şirket Adı</label>
           <input value={basic.company_name} onChange={e => setBasic({...basic, company_name: e.target.value})} style={{ width: '100%', padding: 8, marginTop: 8 }} />
 
-          <label style={{ marginTop: 12 }}>Vergi Numarası (opsiyonel)</label>
+          <label style={{ marginTop: 12 }}>Vergi Numarası</label>
           <input value={basic.tax_id} onChange={e => setBasic({...basic, tax_id: e.target.value})} style={{ width: '100%', padding: 8, marginTop: 8 }} />
 
           <label style={{ marginTop: 12 }}>Telefon</label>

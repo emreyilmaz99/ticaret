@@ -40,6 +40,16 @@ const VendorRegister = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
 
+    if (!form.company_name || form.company_name.trim().length < 2) {
+      toast.warning('Uyarı', 'Mağaza/Şirket adı zorunludur!', 4000);
+      return;
+    }
+
+    if (!form.phone || form.phone.length < 10) {
+      toast.warning('Uyarı', 'Geçerli bir telefon numarası giriniz!', 4000);
+      return;
+    }
+
     if (form.password !== form.password_confirmation) {
       toast.warning('Uyarı', 'Şifreler eşleşmiyor!', 4000);
       return;
@@ -53,8 +63,8 @@ const VendorRegister = () => {
     const payload = {
       full_name: form.full_name,
       email: form.email,
-      company_name: form.company_name || null,
-      phone: form.phone || null,
+      company_name: form.company_name,
+      phone: form.phone,
       tax_id: form.tax_id || null,
       password: form.password,
       password_confirmation: form.password_confirmation,
@@ -278,7 +288,7 @@ const VendorRegister = () => {
           {step === 2 && (
             <div style={{ animation: 'fadeIn 0.5s ease' }}>
               <div style={styles.formGroup}>
-                <label style={styles.label}>Mağaza / Şirket Adı <span style={{fontWeight: 400, color: '#94a3b8'}}>(Opsiyonel)</span></label>
+                <label style={styles.label}>Mağaza / Şirket Adı *</label>
                 <div style={styles.inputWrapper}>
                   <FaStore style={styles.inputIcon} />
                   <input 
@@ -287,13 +297,14 @@ const VendorRegister = () => {
                     onBlur={handleBlur}
                     value={form.company_name} 
                     onChange={(e) => setForm({...form, company_name: e.target.value})} 
+                    required
                     placeholder="Mağaza adınız" 
                   />
                 </div>
               </div>
 
               <div style={styles.formGroup}>
-                <label style={styles.label}>Telefon Numarası <span style={{fontWeight: 400, color: '#94a3b8'}}>(Opsiyonel)</span></label>
+                <label style={styles.label}>Telefon Numarası *</label>
                 <div style={styles.inputWrapper}>
                   <FaPhone style={styles.inputIcon} />
                   <input 
@@ -306,6 +317,7 @@ const VendorRegister = () => {
                       const value = e.target.value.replace(/\D/g, '').slice(0, 11);
                       setForm({...form, phone: value});
                     }} 
+                    required
                     placeholder="05xxxxxxxxx"
                     maxLength={11}
                   />

@@ -221,6 +221,18 @@ class VendorApplicationService extends BaseService
                 'is_primary' => true,
             ]);
 
+            // Create vendor bank account
+            if (!empty($data['bank_name']) && !empty($data['iban'])) {
+                \App\Models\VendorBankAccount::create([
+                    'vendor_id' => $vendor->id,
+                    'bank_name' => $data['bank_name'],
+                    'account_holder' => $data['account_holder'] ?? $data['full_name'] ?? $preApp->full_name,
+                    'iban' => $data['iban'],
+                    'currency' => 'TRY',
+                    'is_primary' => true,
+                ]);
+            }
+
             // Link vendor to application
             $this->applicationRepository->update($application->id, [
                 'vendor_id' => $vendor->id

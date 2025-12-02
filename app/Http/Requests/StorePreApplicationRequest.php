@@ -24,8 +24,8 @@ class StorePreApplicationRequest extends FormRequest
         return [
             'email' => 'required|email|max:255',
             'full_name' => 'required|string|max:255',
-            'company_name' => 'nullable|string|max:255',
-            'phone' => 'nullable|string|max:20',
+            'company_name' => 'required|string|min:2|max:255',
+            'phone' => 'required|string|min:10|max:20',
             'tax_id' => 'nullable|string|max:50',
             'password' => 'required|string|min:8|confirmed',
         ];
@@ -34,12 +34,16 @@ class StorePreApplicationRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'email.required' => 'Email address is required',
-            'email.email' => 'Please provide a valid email address',
-            'full_name.required' => 'Full name is required',
-            'password.required' => 'Password is required',
-            'password.min' => 'Password must be at least 8 characters',
-            'password.confirmed' => 'Password confirmation does not match',
+            'email.required' => 'Email adresi zorunludur',
+            'email.email' => 'Geçerli bir email adresi giriniz',
+            'full_name.required' => 'Ad soyad zorunludur',
+            'company_name.required' => 'Mağaza/Şirket adı zorunludur',
+            'company_name.min' => 'Mağaza/Şirket adı en az 2 karakter olmalıdır',
+            'phone.required' => 'Telefon numarası zorunludur',
+            'phone.min' => 'Geçerli bir telefon numarası giriniz',
+            'password.required' => 'Şifre zorunludur',
+            'password.min' => 'Şifre en az 8 karakter olmalıdır',
+            'password.confirmed' => 'Şifreler eşleşmiyor',
         ];
     }
 }
