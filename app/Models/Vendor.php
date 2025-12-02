@@ -55,10 +55,19 @@ class Vendor extends Authenticatable
         'activated_at' => 'datetime',
     ];
     
+    /**
+     * Set the password attribute.
+     * Only hash if the value is not already hashed (bcrypt hashes start with $2y$)
+     */
     public function setPasswordAttribute($value)
     {
         if ($value !== null && $value !== '') {
-            $this->attributes['password'] = bcrypt($value);
+            // Check if already hashed (bcrypt format)
+            if (str_starts_with($value, '$2y$') || str_starts_with($value, '$2a$') || str_starts_with($value, '$2b$')) {
+                $this->attributes['password'] = $value;
+            } else {
+                $this->attributes['password'] = bcrypt($value);
+            }
         }
     }
 

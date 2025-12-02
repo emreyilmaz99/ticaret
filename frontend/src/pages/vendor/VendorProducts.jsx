@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   FaPlus, FaSearch, FaFilter, FaEdit, FaTrash, FaEye, 
   FaBox, FaTag, FaImages, FaList, FaCog, FaSave, FaTimes, FaCheck,
@@ -12,8 +13,16 @@ import { useToast } from '../../components/Toast';
 import axios from '../../lib/axios';
 
 const VendorProducts = () => {
+  const navigate = useNavigate();
   const qc = useQueryClient();
   const toast = useToast();
+
+  useEffect(() => {
+    const token = localStorage.getItem('vendor_token');
+    if (!token) {
+      navigate('/vendor/login');
+    }
+  }, [navigate]);
   
   // State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -51,12 +60,21 @@ const VendorProducts = () => {
   // Queries
   const { data: productsData, isLoading } = useQuery({
     queryKey: ['vendorProducts'],
-    queryFn: async () => {
-      const res = await getVendorProducts();
-      return res.data ?? res;
-    }
+    queryFn: getVendorProducts
   });
-  const products = productsData?.data?.data ?? productsData?.data ?? productsData ?? [];
+  const products = productsData?.data ?? [];
+
+  const { data: categoriesData } = useQuery({ 
+    queryKey: ['vendorCategories'], 
+    queryFn: getVendorCategories 
+  });
+  const categories = categoriesData?.data ?? [];
+
+  const { data: unitsData } = useQuery({ 
+    queryKey: ['units'], 
+    queryFn: getUnits 
+  });
+  const units = unitsData?.data ?? [];
 
   const filteredProducts = products.filter(p => {
     if (!filterText) return true;
@@ -79,18 +97,6 @@ const VendorProducts = () => {
       default: return 0;
     }
   });
-
-  const { data: categoriesData } = useQuery({ 
-    queryKey: ['vendorCategories'], 
-    queryFn: getVendorCategories 
-  });
-  const categories = categoriesData?.data?.data ?? categoriesData?.data ?? [];
-
-  const { data: unitsData } = useQuery({ 
-    queryKey: ['units'], 
-    queryFn: getUnits 
-  });
-  const units = unitsData?.data ?? unitsData ?? [];
 
   // Mutations
   const createMutation = useMutation({

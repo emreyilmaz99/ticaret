@@ -1,12 +1,21 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { FaPlus, FaTrash, FaSearch, FaEdit, FaTags, FaLayerGroup, FaTimes, FaSortAmountDown, FaSortAmountUp, FaCheck, FaToggleOn, FaToggleOff, FaChevronRight, FaBox, FaFolderOpen } from 'react-icons/fa';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getVendorCategories, createVendorCategory, updateVendorCategory, deleteVendorCategory, toggleVendorCategoryActive } from '../../features/vendor/api/categoryApi';
 import { useToast } from '../../components/Toast';
 
 export default function VendorCategories() {
+  const navigate = useNavigate();
   const qc = useQueryClient();
   const toast = useToast();
+
+  useEffect(() => {
+    const token = localStorage.getItem('vendor_token');
+    if (!token) {
+      navigate('/vendor/login');
+    }
+  }, [navigate]);
   const { data, isLoading, isError } = useQuery({ queryKey: ['vendorCategories'], queryFn: getVendorCategories });
   
   // State'ler
@@ -129,7 +138,7 @@ export default function VendorCategories() {
     toggleActiveMutation.mutate(category.id);
   };
 
-  const items = data?.data?.data ?? data?.data ?? [];
+  const items = data?.data ?? [];
 
   // Get root categories for parent selection
   const rootCategories = useMemo(() => {

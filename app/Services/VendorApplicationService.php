@@ -146,48 +146,63 @@ class VendorApplicationService extends BaseService
 
     /**
      * Submit full application and create vendor account
+     * Updates the existing pre-application to full_application type
      */
     public function submitFullApplication(int $preApplicationId, array $data)
     {
         try {
             $preApp = $this->applicationRepository->find($preApplicationId);
 
-            if (!$preApp || !$preApp->isPreApplication() || !$preApp->isApproved()) {
-                return $this->errorResponse('Invalid or unapproved pre-application', 400);
+            if (!$preApp) {
+                return $this->errorResponse('Application not found', 404);
+            }
+
+            if (!$preApp->isPreApplication()) {
+                return $this->errorResponse('This application has already been converted to full application', 400);
+            }
+
+            if (!$preApp->isApproved()) {
+                return $this->errorResponse('Pre-application must be approved first', 400);
             }
 
             // Check if vendor already exists with this email
             $existingVendor = \App\Models\Vendor::where('email', $preApp->email)->first();
             if ($existingVendor) {
-                // If vendor is active, redirect to dashboard
+                // If vendor exists and is active, redirect to login
                 if ($existingVendor->status === 'active') {
-                    return $this->errorResponse('Vendor account already exists and is active', 403, [
-                        'redirect_to_dashboard' => true
+                    return $this->errorResponse('Vendor account already exists and is active. Please login.', 403, [
+                        'redirect_to_login' => true
                     ]);
                 }
-                return $this->errorResponse('A vendor account already exists with this email address', 400);
+                // If vendor exists but inactive, redirect to login (admin will activate)
+                return $this->errorResponse('Vendor account already exists. Please login or wait for admin approval.', 400, [
+                    'redirect_to_login' => true,
+                    'vendor_status' => $existingVendor->status
+                ]);
             }
 
             DB::beginTransaction();
 
-            // Create full application record
-            $fullApplication = $this->applicationRepository->create([
+            // Update existing application to full_application type
+            $this->applicationRepository->update($preApplicationId, [
                 'type' => VendorApplication::TYPE_FULL_APPLICATION,
-                'status' => VendorApplication::STATUS_PENDING,
-                'email' => $preApp->email,
-                'full_name' => $preApp->full_name,
+                'status' => VendorApplication::STATUS_PENDING, // Back to pending for admin review
                 'company_name' => $data['company_name'],
                 'phone' => $data['phone'],
                 'tax_id' => $data['tax_id'] ?? $preApp->tax_id,
-                'password' => $preApp->password, // Use password from pre-application
+                'reviewed_by' => null, // Reset review info for full application review
+                'reviewed_at' => null,
             ]);
 
-            // Create vendor account
+            // Reload the updated application
+            $application = $this->applicationRepository->find($preApplicationId);
+
+            // Create vendor account with the password from pre-application (already hashed)
             $vendor = $this->vendorRepository->create([
-                'application_id' => $fullApplication->id,
-                'name' => $data['full_name'],
+                'application_id' => $application->id,
+                'name' => $data['full_name'] ?? $preApp->full_name,
                 'email' => $preApp->email,
-                'password' => $preApp->password, // Already hashed in pre-application
+                'password' => $preApp->password, // Already hashed - Vendor model will detect this
                 'company_name' => $data['company_name'],
                 'slug' => $data['slug'],
                 'tax_id' => $data['tax_id'] ?? $preApp->tax_id,
@@ -207,16 +222,16 @@ class VendorApplicationService extends BaseService
             ]);
 
             // Link vendor to application
-            $this->applicationRepository->update($fullApplication->id, [
+            $this->applicationRepository->update($application->id, [
                 'vendor_id' => $vendor->id
             ]);
 
             DB::commit();
 
             return $this->successResponse([
-                'application' => $fullApplication,
+                'application' => $application,
                 'vendor' => $vendor
-            ], 'Vendor account created successfully. Please complete onboarding.', 201);
+            ], 'Full application submitted successfully. Waiting for admin approval.', 201);
 
         } catch (\Exception $e) {
             DB::rollBack();

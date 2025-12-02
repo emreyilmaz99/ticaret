@@ -1,8 +1,17 @@
-import React from 'react';
-import { Outlet } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { Outlet, useNavigate } from 'react-router-dom';
 import VendorSidebar from './VendorSidebar';
 
 const VendorLayout = () => {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const token = localStorage.getItem('vendor_token');
+    if (!token) {
+      navigate('/vendor/login');
+    }
+  }, [navigate]);
+
   return (
     <div style={{ display: 'flex', backgroundColor: '#f8fafc', minHeight: '100vh' }}>
       {/* Sol taraf: Sidebar */}

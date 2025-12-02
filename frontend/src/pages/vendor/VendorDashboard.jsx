@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { FaWallet, FaShoppingBag, FaBox, FaStar, FaArrowUp, FaArrowDown, FaBell, FaCalendarAlt } from 'react-icons/fa';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import { useQuery } from '@tanstack/react-query';
@@ -6,6 +7,15 @@ import { getVendorProfile } from '../../features/vendor/api/vendorAuthApi';
 import VendorOnboarding from './VendorOnboarding';
 
 const VendorDashboard = () => {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const token = localStorage.getItem('vendor_token');
+    if (!token) {
+      navigate('/vendor/login');
+    }
+  }, [navigate]);
+
   // Mock Data - Backend bağlandığında burası API'den gelecek
   const stats = [
     { title: 'Toplam Kazanç', value: '₺124,500', icon: <FaWallet />, change: '+12.5%', isPositive: true, color: '#10b981' },
