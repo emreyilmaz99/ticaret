@@ -1,7 +1,12 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
+import { ToastProvider } from './components/Toast';
+import { FavoritesProvider } from './context/FavoritesContext';
+import { CartProvider } from './context/CartContext';
 
 // --- LAYOUTS (DÜZENLER) ---
 import Navbar from './components/Navbar';
+import Footer from './components/Footer';
 import AdminLayout from './components/AdminLayout'; // Sidebar yapısı burada
 
 // --- GÜVENLİK ---
@@ -11,6 +16,9 @@ import AdminPrivateRoute from './components/AdminPrivateRoute';
 // 1. Müşteri Sayfaları
 import Home from './pages/Home';
 import Login from './pages/Login'; // Müşteri Girişi (Dosya: src/pages/Login.jsx)
+import Register from './pages/Register'; // Müşteri Kayıt
+import Favorites from './pages/Favorites'; // Favorilerim Sayfası
+import Cart from './pages/Cart'; // Sepet Sayfası
 
 // 2. Admin Sayfaları (Senin klasör yapına göre: src/pages/admin/...)
 import AdminLogin from './pages/admin/AdminLogin'; // Admin Girişi
@@ -40,84 +48,115 @@ import VendorCategories from './pages/vendor/VendorCategories';
 
 function App() {
   return (
-    <Router>
-      <div className="App">
-        {/* Not: Navbar'ı buradan kaldırdık, aşağıda sadece müşteri sayfalarına ekledik */}
-        
-        <Routes>
-          
-          {/* ======================================= */}
-          {/* 1. MÜŞTERİ BÖLÜMÜ (Navbar GÖRÜNSÜN)     */}
-          {/* ======================================= */}
-          <Route path="/" element={
-            <>
-              <Navbar />
-              <Home />
-            </>
-          } />
-          
-          <Route path="/login" element={
-            <>
-              <Navbar />
-              <Login />
-            </>
-          } />
-
-
-          {/* ======================================= */}
-          {/* 2. ADMIN GİRİŞ (Sade Sayfa, Navbar YOK) */}
-          {/* ======================================= */}
-          <Route path="/admin/login" element={<AdminLogin />} />
-
-
-          {/* ======================================= */}
-          {/* 3. GÜVENLİ ADMIN PANELİ (Sidebar VAR)   */}
-          {/* ======================================= */}
-          
-          {/* AŞAMA 1: Güvenlik Kontrolü (Token var mı?) */}
-          <Route element={<AdminPrivateRoute />}>
-            
-            {/* AŞAMA 2: Tasarım Kontrolü (Sidebar gelsin) */}
-            <Route element={<AdminLayout />}>
+    <AuthProvider>
+      <ToastProvider>
+        <FavoritesProvider>
+          <CartProvider>
+            <Router>
+              <div className="App">
+                {/* Not: Navbar'ı buradan kaldırdık, aşağıda sadece müşteri sayfalarına ekledik */}
+                
+                <Routes>
               
-              {/* İçerik: Dashboard */}
-              <Route path="/admin/dashboard" element={<Dashboard />} />
-              <Route path="/admin/active-vendors" element={<ActiveVendorsPage />} />
-              <Route path="/admin/vendors" element={<FullApplicationsPage />} />
-              <Route path="/admin/vendor-applications" element={<VendorApplications />} />
-              <Route path="/admin/commission-plans" element={<CommissionPlans />} />
-              <Route path="/admin/products" element={<ProductsPage />} />
-              <Route path="/admin/categories" element={<CategoriesPage />} />
-              <Route path="/admin/admins" element={<AdminsPage />} />
-              <Route path="/admin/users" element={<UsersPage />} />
+              {/* ======================================= */}
+              {/* 1. MÜŞTERİ BÖLÜMÜ (Navbar GÖRÜNSÜN)     */}
+              {/* ======================================= */}
+              <Route path="/" element={
+                <>
+                  <Navbar />
+                  <Home />
+                  <Footer />
+                </>
+              } />
               
-              {/* İleride eklenecekler buraya gelecek */}
-              {/* <Route path="/admin/products" element={<ProductList />} /> */}
+              <Route path="/login" element={
+                <>
+                  <Navbar />
+                  <Login />
+                  <Footer />
+                </>
+              } />
 
-            </Route>
+              <Route path="/register" element={
+                <>
+                  <Navbar />
+                  <Register />
+                  <Footer />
+                </>
+              } />
 
-          </Route>
+              <Route path="/favorites" element={
+                <>
+                  <Navbar />
+                  <Favorites />
+                  <Footer />
+                </>
+              } />
 
-          {/* ======================================= */}
-          {/* 4. SATICI (VENDOR) BÖLÜMÜ               */}
-          {/* ======================================= */}
-          <Route path="/vendor/login" element={<VendorLogin />} />
-          <Route path="/vendor/register" element={<VendorRegister />} />
-          <Route path="/vendor/full-application/:id" element={<VendorFullApplication />} />
-          <Route path="/vendor/onboarding" element={<VendorOnboarding />} />
+              <Route path="/cart" element={
+                <>
+                  <Navbar />
+                  <Cart />
+                  <Footer />
+                </>
+              } />
 
-          <Route path="/vendor" element={<VendorLayout />}>
-             <Route path="dashboard" element={<VendorDashboard />} />
-             <Route path="products" element={<VendorProducts />} />
-             <Route path="categories" element={<VendorCategories />} />
-             <Route path="orders" element={<VendorOrders />} />
-             <Route path="finance" element={<VendorFinance />} />
-             <Route path="settings" element={<VendorSettings />} />
-          </Route>
 
-        </Routes>
-      </div>
-    </Router>
+              {/* ======================================= */}
+              {/* 2. ADMIN GİRİŞ (Sade Sayfa, Navbar YOK) */}
+              {/* ======================================= */}
+              <Route path="/admin/login" element={<AdminLogin />} />
+
+
+              {/* ======================================= */}
+              {/* 3. GÜVENLİ ADMIN PANELİ (Sidebar VAR)   */}
+              {/* ======================================= */}
+              
+              {/* AŞAMA 1: Güvenlik Kontrolü (Token var mı?) */}
+              <Route element={<AdminPrivateRoute />}>
+                
+                {/* AŞAMA 2: Tasarım Kontrolü (Sidebar gelsin) */}
+                <Route element={<AdminLayout />}>
+                  
+                  {/* İçerik: Dashboard */}
+                  <Route path="/admin/dashboard" element={<Dashboard />} />
+                  <Route path="/admin/active-vendors" element={<ActiveVendorsPage />} />
+                  <Route path="/admin/vendors" element={<FullApplicationsPage />} />
+                  <Route path="/admin/vendor-applications" element={<VendorApplications />} />
+                  <Route path="/admin/commission-plans" element={<CommissionPlans />} />
+                  <Route path="/admin/products" element={<ProductsPage />} />
+                  <Route path="/admin/categories" element={<CategoriesPage />} />
+                  <Route path="/admin/admins" element={<AdminsPage />} />
+                  <Route path="/admin/users" element={<UsersPage />} />
+                  
+                </Route>
+
+              </Route>
+
+              {/* ======================================= */}
+              {/* 4. SATICI (VENDOR) BÖLÜMÜ               */}
+              {/* ======================================= */}
+              <Route path="/vendor/login" element={<VendorLogin />} />
+              <Route path="/vendor/register" element={<VendorRegister />} />
+              <Route path="/vendor/full-application/:id" element={<VendorFullApplication />} />
+              <Route path="/vendor/onboarding" element={<VendorOnboarding />} />
+
+              <Route path="/vendor" element={<VendorLayout />}>
+                 <Route path="dashboard" element={<VendorDashboard />} />
+                 <Route path="products" element={<VendorProducts />} />
+                 <Route path="categories" element={<VendorCategories />} />
+                 <Route path="orders" element={<VendorOrders />} />
+                 <Route path="finance" element={<VendorFinance />} />
+                 <Route path="settings" element={<VendorSettings />} />
+              </Route>
+
+              </Routes>
+              </div>
+            </Router>
+          </CartProvider>
+        </FavoritesProvider>
+      </ToastProvider>
+    </AuthProvider>
   );
 }
 

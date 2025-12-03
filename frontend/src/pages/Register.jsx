@@ -1,16 +1,18 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { FaEnvelope, FaLock, FaEye, FaEyeSlash, FaGoogle, FaFacebookF, FaArrowRight } from 'react-icons/fa';
+import { FaUser, FaEnvelope, FaLock, FaEye, FaEyeSlash, FaGoogle, FaFacebookF, FaArrowRight } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/Toast';
 
-const Login = () => {
+const Register = () => {
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   
-  const { login } = useAuth();
+  const { register, login } = useAuth(); // We might auto-login after register
   const navigate = useNavigate();
   const toast = useToast();
 
@@ -18,23 +20,38 @@ const Login = () => {
     e.preventDefault();
     setIsLoading(true);
 
+    // Basic validation
+    if (password !== confirmPassword) {
+      toast.error('Hata', 'Şifreler eşleşmiyor.');
+      setIsLoading(false);
+      return;
+    }
+
+    if (password.length < 6) {
+      toast.warning('Uyarı', 'Şifre en az 6 karakter olmalıdır.');
+      setIsLoading(false);
+      return;
+    }
+
     // Simulate API call delay
     setTimeout(() => {
-      if (email && password) {
-        const result = login(email, password);
+      if (name && email && password) {
+        // Register the user
+        const result = register({ name, email, password });
+        
         if (result.success) {
-          toast.success('Giriş Başarılı', 'Yönlendiriliyorsunuz...');
-          setIsLoading(false);
+          // Auto login after successful registration
+          login(email, password);
+          toast.success('Başarılı', 'Kayıt başarılı! Hoş geldiniz.');
           navigate('/');
         } else {
           toast.error('Hata', result.message);
-          setIsLoading(false);
         }
       } else {
         toast.warning('Uyarı', 'Lütfen tüm alanları doldurun.');
-        setIsLoading(false);
       }
-    }, 1000);
+      setIsLoading(false);
+    }, 1500);
   };
 
   const styles = {
@@ -83,7 +100,7 @@ const Login = () => {
     },
     header: {
       textAlign: 'center',
-      marginBottom: '40px',
+      marginBottom: '32px',
     },
     title: {
       fontFamily: '"DM Sans", sans-serif',
@@ -101,7 +118,7 @@ const Login = () => {
     form: {
       display: 'flex',
       flexDirection: 'column',
-      gap: '24px',
+      gap: '20px',
     },
     inputGroup: {
       position: 'relative',
@@ -138,33 +155,6 @@ const Login = () => {
       border: 'none',
       fontSize: '18px',
     },
-    optionsRow: {
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      fontSize: '14px',
-    },
-    checkboxLabel: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '8px',
-      color: '#64748b',
-      cursor: 'pointer',
-      userSelect: 'none',
-    },
-    checkbox: {
-      width: '18px',
-      height: '18px',
-      borderRadius: '4px',
-      accentColor: '#059669',
-      cursor: 'pointer',
-    },
-    forgotLink: {
-      color: '#059669',
-      textDecoration: 'none',
-      fontWeight: '600',
-      transition: 'color 0.2s',
-    },
     submitBtn: {
       backgroundColor: '#059669',
       color: 'white',
@@ -180,11 +170,12 @@ const Login = () => {
       justifyContent: 'center',
       gap: '10px',
       boxShadow: '0 10px 20px -5px rgba(5, 150, 105, 0.3)',
+      marginTop: '10px',
     },
     divider: {
       display: 'flex',
       alignItems: 'center',
-      margin: '32px 0',
+      margin: '24px 0',
       color: '#94a3b8',
       fontSize: '14px',
     },
@@ -218,11 +209,11 @@ const Login = () => {
     },
     footer: {
       textAlign: 'center',
-      marginTop: '32px',
+      marginTop: '24px',
       fontSize: '15px',
       color: '#64748b',
     },
-    registerLink: {
+    loginLink: {
       color: '#059669',
       fontWeight: '700',
       textDecoration: 'none',
@@ -237,13 +228,35 @@ const Login = () => {
 
       <div style={styles.card}>
         <div style={styles.header}>
-          <h1 style={styles.title}>Tekrar Hoş Geldiniz</h1>
+          <h1 style={styles.title}>Aramıza Katılın</h1>
           <p style={styles.subtitle}>
-            Alışveriş deneyiminize kaldığınız yerden devam etmek için lütfen giriş yapın.
+            Ayrıcalıklı alışveriş dünyasına adım atmak için hemen ücretsiz üye olun.
           </p>
         </div>
 
         <form style={styles.form} onSubmit={handleSubmit}>
+          <div style={styles.inputGroup}>
+            <FaUser style={styles.inputIcon} />
+            <input 
+              type="text" 
+              placeholder="Adınız Soyadınız" 
+              style={styles.input}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              onFocus={(e) => {
+                e.target.style.borderColor = '#059669';
+                e.target.style.backgroundColor = 'white';
+                e.target.previousSibling.style.color = '#059669';
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = '#e2e8f0';
+                e.target.style.backgroundColor = '#f8fafc';
+                e.target.previousSibling.style.color = '#94a3b8';
+              }}
+              required
+            />
+          </div>
+
           <div style={styles.inputGroup}>
             <FaEnvelope style={styles.inputIcon} />
             <input 
@@ -270,7 +283,7 @@ const Login = () => {
             <FaLock style={styles.inputIcon} />
             <input 
               type={showPassword ? "text" : "password"} 
-              placeholder="Şifreniz" 
+              placeholder="Şifre Belirleyin" 
               style={styles.input}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -295,51 +308,67 @@ const Login = () => {
             </button>
           </div>
 
-          <div style={styles.optionsRow}>
-            <label style={styles.checkboxLabel}>
-              <input type="checkbox" style={styles.checkbox} />
-              Beni Hatırla
-            </label>
-            <a href="#" style={styles.forgotLink}>Şifremi Unuttum?</a>
+          <div style={styles.inputGroup}>
+            <FaLock style={styles.inputIcon} />
+            <input 
+              type={showPassword ? "text" : "password"} 
+              placeholder="Şifrenizi Tekrar Girin" 
+              style={styles.input}
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              onFocus={(e) => {
+                e.target.style.borderColor = '#059669';
+                e.target.style.backgroundColor = 'white';
+                e.target.previousSibling.style.color = '#059669';
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = '#e2e8f0';
+                e.target.style.backgroundColor = '#f8fafc';
+                e.target.previousSibling.style.color = '#94a3b8';
+              }}
+              required
+            />
           </div>
 
           <button 
             type="submit" 
-            style={{ 
-              ...styles.submitBtn, 
-              opacity: isLoading ? 0.7 : 1,
-              transform: isLoading ? 'scale(0.98)' : 'scale(1)'
-            }}
+            style={styles.submitBtn}
             disabled={isLoading}
+            onMouseEnter={(e) => e.target.style.transform = 'translateY(-2px)'}
+            onMouseLeave={(e) => e.target.style.transform = 'translateY(0)'}
           >
-            {isLoading ? 'Giriş Yapılıyor...' : (
-              <>Giriş Yap <FaArrowRight /></>
+            {isLoading ? 'Kayıt Yapılıyor...' : (
+              <>
+                Kayıt Ol <FaArrowRight />
+              </>
             )}
           </button>
         </form>
 
         <div style={styles.divider}>
           <div style={styles.dividerLine}></div>
-          <span style={styles.dividerText}>veya şununla devam et</span>
+          <span style={styles.dividerText}>veya şununla kayıt olun</span>
           <div style={styles.dividerLine}></div>
         </div>
 
         <div style={styles.socialButtons}>
           <button style={styles.socialBtn}>
-            <FaGoogle color="#DB4437" /> Google
+            <FaGoogle color="#DB4437" size={20} />
+            Google
           </button>
           <button style={styles.socialBtn}>
-            <FaFacebookF color="#4267B2" /> Facebook
+            <FaFacebookF color="#4267B2" size={20} />
+            Facebook
           </button>
         </div>
 
         <div style={styles.footer}>
-          Hesabınız yok mu? 
-          <Link to="/register" style={styles.registerLink}>Hemen Kayıt Ol</Link>
+          Zaten hesabınız var mı? 
+          <Link to="/login" style={styles.loginLink}>Giriş Yap</Link>
         </div>
       </div>
     </div>
   );
 };
 
-export default Login;
+export default Register;
