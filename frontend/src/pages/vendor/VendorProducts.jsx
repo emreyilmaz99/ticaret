@@ -11,6 +11,7 @@ import { getVendorProducts, createVendorProduct, deleteVendorProduct, updateVend
 import { getMyCategoriesForProducts } from '../../features/vendor/api/categoryApi';
 import { getUnits } from '../../features/public/api/unitsApi';
 import { useToast } from '../../components/Toast';
+import Pagination from '../../components/ui/Pagination';
 import axios from '../../lib/axios';
 
 const VendorProducts = () => {
@@ -41,6 +42,10 @@ const VendorProducts = () => {
     onConfirm: null
   });
   
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const [perPage] = useState(12);
+  
   // Form State
   const [formData, setFormData] = useState({
     name: '',
@@ -61,10 +66,12 @@ const VendorProducts = () => {
 
   // Queries
   const { data: productsData, isLoading } = useQuery({
-    queryKey: ['vendorProducts'],
-    queryFn: getVendorProducts
+    queryKey: ['vendorProducts', currentPage, perPage],
+    queryFn: () => getVendorProducts({ page: currentPage, per_page: perPage }),
+    keepPreviousData: true
   });
   const products = productsData?.data ?? [];
+  const paginationMeta = productsData?.meta ?? null;
 
   const { data: categoriesData, isLoading: categoriesLoading } = useQuery({ 
     queryKey: ['myCategoriesForProducts'], 
@@ -133,6 +140,11 @@ const VendorProducts = () => {
     );
   });
 
+  // Reset to page 1 when filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterText]);
+
   const sortedProducts = [...filteredProducts].sort((a, b) => {
     switch (sortOrder) {
       case 'name_asc': return a.name.localeCompare(b.name);
@@ -150,6 +162,7 @@ const VendorProducts = () => {
     mutationFn: (payload) => createVendorProduct(payload),
     onSuccess: () => {
       qc.invalidateQueries(['vendorProducts']);
+      setCurrentPage(1); // Reset to first page after create
       closeModal();
       toast.success('Başarılı', 'Ürün başarıyla oluşturuldu.');
     },
@@ -800,6 +813,19 @@ const VendorProducts = () => {
             ))
           )}
         </div>
+      )}
+
+      {/* Pagination */}
+      {paginationMeta && paginationMeta.last_page > 1 && (
+        <Pagination
+          currentPage={paginationMeta.current_page}
+          totalPages={paginationMeta.last_page}
+          totalItems={paginationMeta.total}
+          perPage={paginationMeta.per_page}
+          onPageChange={(page) => setCurrentPage(page)}
+          showInfo={true}
+          showFirstLast={true}
+        />
       )}
 
       {/* Modal */}
