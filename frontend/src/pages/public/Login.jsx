@@ -16,25 +16,27 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (!email || !password) {
+      toast.warning('Uyarı', 'Lütfen tüm alanları doldurun.');
+      return;
+    }
+    
     setIsLoading(true);
 
-    // Simulate API call delay
-    setTimeout(() => {
-      if (email && password) {
-        const result = login(email, password);
-        if (result.success) {
-          toast.success('Giriş Başarılı', 'Yönlendiriliyorsunuz...');
-          setIsLoading(false);
-          navigate('/');
-        } else {
-          toast.error('Hata', result.message);
-          setIsLoading(false);
-        }
+    try {
+      const result = await login(email, password);
+      if (result.success) {
+        toast.success('Giriş Başarılı', 'Yönlendiriliyorsunuz...');
+        navigate('/account/profile');
       } else {
-        toast.warning('Uyarı', 'Lütfen tüm alanları doldurun.');
-        setIsLoading(false);
+        toast.error('Hata', result.message);
       }
-    }, 1000);
+    } catch (error) {
+      toast.error('Hata', error.message || 'Giriş yapılamadı.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const styles = {

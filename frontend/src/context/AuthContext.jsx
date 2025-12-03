@@ -1,4 +1,5 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
+import { registerUser, loginUser, logoutUser, getUserMe } from '../features/user/api/userAuthApi';
 
 const AuthContext = createContext();
 
@@ -7,53 +8,94 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check local storage for existing session on mount
-    const storedUser = localStorage.getItem('customer_user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-    setLoading(false);
+    // Check for existing token and fetch user data
+    const checkAuth = async () => {
+      const token = localStorage.getItem('user_token');
+      if (token) {
+        try {
+          const response = await getUserMe();
+          if (response.success && response.data?.user) {
+            setUser(response.data.user);
+          } else {
+            // Token invalid, clear it
+            localStorage.removeItem('user_token');
+          }
+        } catch (error) {
+          // Token expired or invalid
+          localStorage.removeItem('user_token');
+        }
+      }
+      setLoading(false);
+    };
+
+    checkAuth();
   }, []);
 
-  const register = (userData) => {
-    // Simulate backend registration
-    const users = JSON.parse(localStorage.getItem('mock_users_db') || '[]');
-    const existingUser = users.find(u => u.email === userData.email);
-    
-    if (existingUser) {
-      return { success: false, message: 'Bu e-posta adresi zaten kayıtlı.' };
+  const register = async (userData) => {
+    try {
+      const response = await registerUser({
+        name: userData.name,
+        email: userData.email,
+        password: userData.password,
+        password_confirmation: userData.password_confirmation || userData.password,
+        phone: userData.phone || null,
+      });
+
+      if (response.success) {
+        // Auto-login after registration
+        localStorage.setItem('user_token', response.data.token);
+        setUser(response.data.user);
+        return { success: true, message: response.message };
+      }
+      
+      return { success: false, message: response.message || 'Kayıt başarısız.' };
+    } catch (error) {
+      const message = error.response?.data?.message || 'Kayıt işlemi başarısız.';
+      return { success: false, message };
     }
-    
-    users.push(userData);
-    localStorage.setItem('mock_users_db', JSON.stringify(users));
-    return { success: true, message: 'Kayıt başarılı.' };
   };
 
-  const login = (email, password) => {
-    // Simulate backend login validation
-    const users = JSON.parse(localStorage.getItem('mock_users_db') || '[]');
-    
-    // Also allow a hardcoded demo user for testing if needed, or just rely on registration
-    // For this request, we strictly check the "database"
-    const user = users.find(u => u.email === email && u.password === password);
+  const login = async (email, password) => {
+    try {
+      const response = await loginUser(email, password);
+      
+      if (response.success) {
+        localStorage.setItem('user_token', response.data.token);
+        setUser(response.data.user);
+        return { success: true };
+      }
 
-    if (user) {
-      const userObj = { name: user.name, email: user.email, role: 'customer' };
-      setUser(userObj);
-      localStorage.setItem('customer_user', JSON.stringify(userObj));
-      return { success: true };
+      return { success: false, message: response.message || 'Giriş başarısız.' };
+    } catch (error) {
+      const message = error.response?.data?.message || 'Giriş işlemi başarısız.';
+      return { success: false, message };
     }
-    
-    return { success: false, message: 'Kayıt bulunamadı veya şifre hatalı.' };
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('customer_user');
+  const logout = async () => {
+    try {
+      await logoutUser();
+    } catch (error) {
+      // Ignore logout errors
+    } finally {
+      setUser(null);
+      localStorage.removeItem('user_token');
+    }
+  };
+
+  const refreshUser = async () => {
+    try {
+      const response = await getUserMe();
+      if (response.success && response.data?.user) {
+        setUser(response.data.user);
+      }
+    } catch (error) {
+      // Ignore errors
+    }
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, loading }}>
+    <AuthContext.Provider value={{ user, login, register, logout, loading, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

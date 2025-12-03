@@ -1,57 +1,71 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { FaUser, FaEnvelope, FaLock, FaEye, FaEyeSlash, FaGoogle, FaFacebookF, FaArrowRight } from 'react-icons/fa';
+import { FaUser, FaEnvelope, FaLock, FaEye, FaEyeSlash, FaPhone, FaGoogle, FaFacebookF, FaArrowRight } from 'react-icons/fa';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../components/Toast';
 
 const Register = () => {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    password: '',
+    password_confirmation: '',
+  });
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   
-  const { register, login } = useAuth(); // We might auto-login after register
+  const { register } = useAuth();
   const navigate = useNavigate();
   const toast = useToast();
 
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsLoading(true);
 
     // Basic validation
-    if (password !== confirmPassword) {
+    if (!formData.name || !formData.email || !formData.password) {
+      toast.warning('Uyarı', 'Lütfen zorunlu alanları doldurun.');
+      return;
+    }
+
+    if (formData.password !== formData.password_confirmation) {
       toast.error('Hata', 'Şifreler eşleşmiyor.');
-      setIsLoading(false);
       return;
     }
 
-    if (password.length < 6) {
-      toast.warning('Uyarı', 'Şifre en az 6 karakter olmalıdır.');
-      setIsLoading(false);
+    if (formData.password.length < 8) {
+      toast.warning('Uyarı', 'Şifre en az 8 karakter olmalıdır.');
       return;
     }
 
-    // Simulate API call delay
-    setTimeout(() => {
-      if (name && email && password) {
-        // Register the user
-        const result = register({ name, email, password });
-        
-        if (result.success) {
-          // Auto login after successful registration
-          login(email, password);
-          toast.success('Başarılı', 'Kayıt başarılı! Hoş geldiniz.');
-          navigate('/');
-        } else {
-          toast.error('Hata', result.message);
-        }
+    // Phone validation (optional but if provided must be valid)
+    if (formData.phone && !/^[0-9]{10,11}$/.test(formData.phone.replace(/\s/g, ''))) {
+      toast.warning('Uyarı', 'Geçerli bir telefon numarası giriniz.');
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const result = await register(formData);
+      
+      if (result.success) {
+        toast.success('Başarılı', 'Kayıt başarılı! Hoş geldiniz.');
+        navigate('/account/profile');
       } else {
-        toast.warning('Uyarı', 'Lütfen tüm alanları doldurun.');
+        toast.error('Hata', result.message);
       }
+    } catch (error) {
+      toast.error('Hata', error.message || 'Kayıt yapılamadı.');
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
   };
 
   const styles = {
@@ -239,10 +253,11 @@ const Register = () => {
             <FaUser style={styles.inputIcon} />
             <input 
               type="text" 
-              placeholder="Adınız Soyadınız" 
+              name="name"
+              placeholder="Adınız Soyadınız *" 
               style={styles.input}
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              value={formData.name}
+              onChange={handleChange}
               onFocus={(e) => {
                 e.target.style.borderColor = '#059669';
                 e.target.style.backgroundColor = 'white';
@@ -261,10 +276,11 @@ const Register = () => {
             <FaEnvelope style={styles.inputIcon} />
             <input 
               type="email" 
-              placeholder="E-posta Adresiniz" 
+              name="email"
+              placeholder="E-posta Adresiniz *" 
               style={styles.input}
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              value={formData.email}
+              onChange={handleChange}
               onFocus={(e) => {
                 e.target.style.borderColor = '#059669';
                 e.target.style.backgroundColor = 'white';
@@ -280,13 +296,36 @@ const Register = () => {
           </div>
 
           <div style={styles.inputGroup}>
+            <FaPhone style={styles.inputIcon} />
+            <input 
+              type="tel" 
+              name="phone"
+              placeholder="Telefon Numaranız (İsteğe bağlı)" 
+              style={styles.input}
+              value={formData.phone}
+              onChange={handleChange}
+              onFocus={(e) => {
+                e.target.style.borderColor = '#059669';
+                e.target.style.backgroundColor = 'white';
+                e.target.previousSibling.style.color = '#059669';
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = '#e2e8f0';
+                e.target.style.backgroundColor = '#f8fafc';
+                e.target.previousSibling.style.color = '#94a3b8';
+              }}
+            />
+          </div>
+
+          <div style={styles.inputGroup}>
             <FaLock style={styles.inputIcon} />
             <input 
               type={showPassword ? "text" : "password"} 
-              placeholder="Şifre Belirleyin" 
+              name="password"
+              placeholder="Şifre Belirleyin (Min. 8 karakter) *" 
               style={styles.input}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              value={formData.password}
+              onChange={handleChange}
               onFocus={(e) => {
                 e.target.style.borderColor = '#059669';
                 e.target.style.backgroundColor = 'white';
@@ -311,11 +350,12 @@ const Register = () => {
           <div style={styles.inputGroup}>
             <FaLock style={styles.inputIcon} />
             <input 
-              type={showPassword ? "text" : "password"} 
-              placeholder="Şifrenizi Tekrar Girin" 
+              type={showConfirmPassword ? "text" : "password"} 
+              name="password_confirmation"
+              placeholder="Şifrenizi Tekrar Girin *" 
               style={styles.input}
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
+              value={formData.password_confirmation}
+              onChange={handleChange}
               onFocus={(e) => {
                 e.target.style.borderColor = '#059669';
                 e.target.style.backgroundColor = 'white';
@@ -328,13 +368,24 @@ const Register = () => {
               }}
               required
             />
+            <button 
+              type="button"
+              style={styles.passwordToggle}
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+            >
+              {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
+            </button>
           </div>
 
           <button 
             type="submit" 
-            style={styles.submitBtn}
+            style={{
+              ...styles.submitBtn,
+              opacity: isLoading ? 0.7 : 1,
+              cursor: isLoading ? 'not-allowed' : 'pointer',
+            }}
             disabled={isLoading}
-            onMouseEnter={(e) => e.target.style.transform = 'translateY(-2px)'}
+            onMouseEnter={(e) => !isLoading && (e.target.style.transform = 'translateY(-2px)')}
             onMouseLeave={(e) => e.target.style.transform = 'translateY(0)'}
           >
             {isLoading ? 'Kayıt Yapılıyor...' : (

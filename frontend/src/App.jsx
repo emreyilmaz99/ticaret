@@ -3,11 +3,13 @@ import { AuthProvider } from './context/AuthContext';
 import { ToastProvider } from './components/Toast';
 import { FavoritesProvider } from './context/FavoritesContext';
 import { CartProvider } from './context/CartContext';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 // --- LAYOUTS (DÜZENLER) ---
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import AdminLayout from './components/AdminLayout'; // Sidebar yapısı burada
+import UserLayout from './components/UserLayout'; // User panel layout
 
 // --- GÜVENLİK ---
 import AdminPrivateRoute from './components/AdminPrivateRoute'; 
@@ -19,6 +21,8 @@ import Login from './pages/public/Login'; // Müşteri Girişi
 import Register from './pages/public/Register'; // Müşteri Kayıt
 import Favorites from './pages/user/Favorites'; // Favorilerim Sayfası
 import Cart from './pages/user/Cart'; // Sepet Sayfası
+import UserProfile from './pages/user/UserProfile'; // Kullanıcı Profil
+import UserAddresses from './pages/user/UserAddresses'; // Kullanıcı Adresleri
 
 // 2. Admin Sayfaları (Senin klasör yapına göre: src/pages/admin/...)
 import AdminLogin from './pages/admin/AdminLogin'; // Admin Girişi
@@ -46,17 +50,28 @@ import VendorSettings from './pages/vendor/VendorSettings';
 import VendorLayout from './components/VendorLayout';
 import VendorCategories from './pages/vendor/VendorCategories';
 
+// QueryClient for React Query
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      retry: 1,
+    },
+  },
+});
+
 function App() {
   return (
-    <AuthProvider>
-      <ToastProvider>
-        <FavoritesProvider>
-          <CartProvider>
-            <Router>
-              <div className="App">
-                {/* Not: Navbar'ı buradan kaldırdık, aşağıda sadece müşteri sayfalarına ekledik */}
-                
-                <Routes>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <ToastProvider>
+          <FavoritesProvider>
+            <CartProvider>
+              <Router>
+                <div className="App">
+                  {/* Not: Navbar'ı buradan kaldırdık, aşağıda sadece müşteri sayfalarına ekledik */}
+                  
+                  <Routes>
               
               {/* ======================================= */}
               {/* 1. MÜŞTERİ BÖLÜMÜ (Navbar GÖRÜNSÜN)     */}
@@ -150,6 +165,18 @@ function App() {
                  <Route path="settings" element={<VendorSettings />} />
               </Route>
 
+              {/* ======================================= */}
+              {/* 5. KULLANICI HESABI (USER ACCOUNT)      */}
+              {/* ======================================= */}
+              <Route path="/account" element={<UserLayout />}>
+                <Route path="profile" element={<UserProfile />} />
+                <Route path="addresses" element={<UserAddresses />} />
+                {/* İleride eklenecekler */}
+                {/* <Route path="orders" element={<UserOrders />} /> */}
+                {/* <Route path="favorites" element={<UserFavorites />} /> */}
+                {/* <Route path="reviews" element={<UserReviews />} /> */}
+              </Route>
+
               </Routes>
               </div>
             </Router>
@@ -157,6 +184,7 @@ function App() {
         </FavoritesProvider>
       </ToastProvider>
     </AuthProvider>
+    </QueryClientProvider>
   );
 }
 

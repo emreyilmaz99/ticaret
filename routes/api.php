@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Middleware\EnsureAdmin;
 use App\Http\Middleware\EnsureVendor;
+use App\Http\Middleware\EnsureUser;
 
 // Admin controllers
 use App\Http\Controllers\Api\V1\Admin\AdminAuthController;
@@ -22,6 +23,11 @@ use App\Http\Controllers\Api\V1\Vendor\ProfileController as VendorProfileControl
 use App\Http\Controllers\Api\V1\Vendor\AddressController as VendorAddressController;
 use App\Http\Controllers\Api\V1\Vendor\BankAccountController as VendorBankAccountController;
 use App\Http\Controllers\Api\V1\Vendor\PayoutController as SelfVendorPayoutController;
+
+// User controllers
+use App\Http\Controllers\Api\V1\User\UserAuthController;
+use App\Http\Controllers\Api\V1\User\UserProfileController;
+use App\Http\Controllers\Api\V1\User\UserAddressController;
 
 // Public controllers
 use App\Http\Controllers\Api\V1\Public\VendorController as PublicVendorController;
@@ -170,3 +176,31 @@ Route::get('v1/units', [\App\Http\Controllers\Api\V1\Public\UnitsController::cla
 Route::get('v1/categories', [\App\Http\Controllers\Api\V1\Public\CategoryController::class, 'index']);
 Route::get('v1/categories/tree', [\App\Http\Controllers\Api\V1\Public\CategoryController::class, 'tree']);
 Route::get('v1/categories/{slug}', [\App\Http\Controllers\Api\V1\Public\CategoryController::class, 'show']);
+
+// User API
+Route::prefix('v1/user')->group(function () {
+    // Public routes
+    Route::post('register', [UserAuthController::class, 'register']);
+    Route::post('login', [UserAuthController::class, 'login']);
+
+    // Protected user routes
+    Route::middleware(['auth:sanctum', 'ability:user:*'])->group(function () {
+        Route::post('logout', [UserAuthController::class, 'logout']);
+        Route::get('me', [UserAuthController::class, 'me']);
+
+        // Profile
+        Route::get('profile', [UserProfileController::class, 'show']);
+        Route::put('profile', [UserProfileController::class, 'update']);
+        Route::put('password', [UserProfileController::class, 'updatePassword']);
+        Route::post('avatar', [UserProfileController::class, 'updateAvatar']);
+        Route::delete('avatar', [UserProfileController::class, 'deleteAvatar']);
+
+        // Addresses
+        Route::get('addresses', [UserAddressController::class, 'index']);
+        Route::post('addresses', [UserAddressController::class, 'store']);
+        Route::get('addresses/{address}', [UserAddressController::class, 'show']);
+        Route::put('addresses/{address}', [UserAddressController::class, 'update']);
+        Route::delete('addresses/{address}', [UserAddressController::class, 'destroy']);
+        Route::put('addresses/{address}/default', [UserAddressController::class, 'setDefault']);
+    });
+});

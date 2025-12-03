@@ -17,21 +17,17 @@ axiosInstance.interceptors.request.use((config) => {
   // URL'ye göre doğru token'ı seç
   if (url.includes('/v1/vendor')) {
     token = localStorage.getItem('vendor_token');
-    console.log('[Axios] Vendor request to:', url);
-    console.log('[Axios] Token from localStorage:', token ? token.substring(0, 20) + '...' : 'NULL');
-    console.log('[Axios] All localStorage keys:', Object.keys(localStorage));
   } else if (url.includes('/v1/admin')) {
     token = localStorage.getItem('admin_token');
+  } else if (url.includes('/v1/user')) {
+    token = localStorage.getItem('user_token');
   } else {
-    // Müşteri veya genel istekler için
-    token = localStorage.getItem('token'); 
+    // Genel istekler için user token kullan
+    token = localStorage.getItem('user_token'); 
   }
 
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
-    console.log('[Axios] Authorization header set');
-  } else {
-    console.warn('[Axios] No token found for request!');
   }
   return config;
 }, (error) => {

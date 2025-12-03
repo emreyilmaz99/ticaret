@@ -3,8 +3,30 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getVendorProfile, updateVendorProfile } from '../../features/vendor/api/vendorAuthApi';
 import { useToast } from '../../components/Toast';
-import { FaStore, FaImage, FaMapMarkerAlt, FaSave, FaPhone, FaEnvelope, FaIdCard, FaUser, FaSpinner, FaCamera, FaTimes, FaUniversity, FaPlus, FaTrash, FaEdit } from 'react-icons/fa';
+import { FaStore, FaImage, FaMapMarkerAlt, FaSave, FaPhone, FaEnvelope, FaIdCard, FaUser, FaSpinner, FaCamera, FaTimes, FaUniversity, FaPlus, FaTrash, FaEdit, FaCheckCircle } from 'react-icons/fa';
 import axios from '../../lib/axios';
+
+// Türkiye şehirleri
+const TURKEY_CITIES = [
+  'Adana', 'Adıyaman', 'Afyonkarahisar', 'Ağrı', 'Aksaray', 'Amasya', 'Ankara', 'Antalya', 'Ardahan', 'Artvin',
+  'Aydın', 'Balıkesir', 'Bartın', 'Batman', 'Bayburt', 'Bilecik', 'Bingöl', 'Bitlis', 'Bolu', 'Burdur',
+  'Bursa', 'Çanakkale', 'Çankırı', 'Çorum', 'Denizli', 'Diyarbakır', 'Düzce', 'Edirne', 'Elazığ', 'Erzincan',
+  'Erzurum', 'Eskişehir', 'Gaziantep', 'Giresun', 'Gümüşhane', 'Hakkari', 'Hatay', 'Iğdır', 'Isparta', 'İstanbul',
+  'İzmir', 'Kahramanmaraş', 'Karabük', 'Karaman', 'Kars', 'Kastamonu', 'Kayseri', 'Kırıkkale', 'Kırklareli', 'Kırşehir',
+  'Kilis', 'Kocaeli', 'Konya', 'Kütahya', 'Malatya', 'Manisa', 'Mardin', 'Mersin', 'Muğla', 'Muş',
+  'Nevşehir', 'Niğde', 'Ordu', 'Osmaniye', 'Rize', 'Sakarya', 'Samsun', 'Siirt', 'Sinop', 'Sivas',
+  'Şanlıurfa', 'Şırnak', 'Tekirdağ', 'Tokat', 'Trabzon', 'Tunceli', 'Uşak', 'Van', 'Yalova', 'Yozgat', 'Zonguldak'
+];
+
+// Türkiye bankaları
+const TURKEY_BANKS = [
+  'Akbank', 'Denizbank', 'Finansbank (QNB)', 'Garanti BBVA', 'Halkbank', 'HSBC', 'ING Bank',
+  'İş Bankası', 'Kuveyt Türk', 'Odeabank', 'Şekerbank', 'TEB', 'Türkiye Finans',
+  'Vakıfbank', 'Yapı Kredi', 'Ziraat Bankası', 'Albaraka Türk', 'Fibabanka', 'Diğer'
+];
+
+// Adres etiketleri
+const ADDRESS_LABELS = ['İş Yeri', 'Depo', 'Merkez Ofis', 'Şube', 'Fabrika', 'Diğer'];
 
 const VendorSettings = () => {
   const navigate = useNavigate();
@@ -55,24 +77,25 @@ const VendorSettings = () => {
   // Fetch vendor profile
   const { data: meData, isLoading } = useQuery({
     queryKey: ['vendor', 'me'],
-    queryFn: getVendorProfile,
-    onSuccess: (res) => {
-      const v = res.data?.vendor;
-      if (v) {
-        setForm({
-          name: v.name || '',
-          company_name: v.company_name || '',
-          phone: v.phone || '',
-          tax_id: v.tax_id || '',
-          description: v.description || ''
-        });
-        if (v.logo_path) setLogoPreview(v.logo_path);
-        if (v.cover_path) setCoverPreview(v.cover_path);
-      }
-    }
+    queryFn: getVendorProfile
   });
 
   const vendor = meData?.data?.vendor;
+
+  // Populate form when vendor data is loaded
+  useEffect(() => {
+    if (vendor) {
+      setForm({
+        name: vendor.name || '',
+        company_name: vendor.company_name || '',
+        phone: vendor.phone || '',
+        tax_id: vendor.tax_id || '',
+        description: vendor.description || ''
+      });
+      if (vendor.logo_path) setLogoPreview(vendor.logo_path);
+      if (vendor.cover_path) setCoverPreview(vendor.cover_path);
+    }
+  }, [vendor]);
 
   // Update profile mutation
   const updateMutation = useMutation({
@@ -386,31 +409,86 @@ const VendorSettings = () => {
           <form onSubmit={handleAddressSubmit}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
               <div>
-                <label style={labelStyle}>Adres Etiketi</label>
-                <input type="text" value={addressForm.label} onChange={(e) => setAddressForm({...addressForm, label: e.target.value})} style={{ ...inputStyle, paddingLeft: 12 }} placeholder="Örn: İş Yeri, Depo" />
+                <label style={labelStyle}>Adres Etiketi *</label>
+                <select 
+                  value={addressForm.label} 
+                  onChange={(e) => setAddressForm({...addressForm, label: e.target.value})} 
+                  style={{ ...inputStyle, paddingLeft: 12 }}
+                  required
+                >
+                  {ADDRESS_LABELS.map(label => (
+                    <option key={label} value={label}>{label}</option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label style={labelStyle}>Ülke</label>
-                <input type="text" value={addressForm.country} onChange={(e) => setAddressForm({...addressForm, country: e.target.value})} style={{ ...inputStyle, paddingLeft: 12 }} placeholder="Türkiye" />
+                <select 
+                  value={addressForm.country} 
+                  onChange={(e) => setAddressForm({...addressForm, country: e.target.value})} 
+                  style={{ ...inputStyle, paddingLeft: 12 }}
+                >
+                  <option value="Türkiye">🇹🇷 Türkiye</option>
+                </select>
               </div>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
               <div>
-                <label style={labelStyle}>Şehir</label>
-                <input type="text" value={addressForm.city} onChange={(e) => setAddressForm({...addressForm, city: e.target.value})} style={{ ...inputStyle, paddingLeft: 12 }} placeholder="İstanbul" required />
+                <label style={labelStyle}>Şehir *</label>
+                <select 
+                  value={addressForm.city} 
+                  onChange={(e) => setAddressForm({...addressForm, city: e.target.value})} 
+                  style={{ ...inputStyle, paddingLeft: 12 }}
+                  required
+                >
+                  <option value="">Şehir Seçiniz</option>
+                  {TURKEY_CITIES.map(city => (
+                    <option key={city} value={city}>{city}</option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label style={labelStyle}>Posta Kodu</label>
-                <input type="text" value={addressForm.postal_code} onChange={(e) => setAddressForm({...addressForm, postal_code: e.target.value})} style={{ ...inputStyle, paddingLeft: 12 }} placeholder="34000" />
+                <input 
+                  type="text" 
+                  value={addressForm.postal_code} 
+                  onChange={(e) => setAddressForm({...addressForm, postal_code: e.target.value.replace(/\D/g, '').slice(0, 5)})} 
+                  style={{ ...inputStyle, paddingLeft: 12 }} 
+                  placeholder="34000" 
+                  maxLength={5}
+                />
               </div>
             </div>
             <div style={{ marginBottom: '16px' }}>
-              <label style={labelStyle}>Açık Adres</label>
-              <textarea value={addressForm.address_line} onChange={(e) => setAddressForm({...addressForm, address_line: e.target.value})} style={{ ...inputStyle, paddingLeft: 12, minHeight: 80 }} placeholder="Mahalle, cadde, sokak, bina no..." required />
+              <label style={labelStyle}>Açık Adres *</label>
+              <textarea 
+                value={addressForm.address_line} 
+                onChange={(e) => setAddressForm({...addressForm, address_line: e.target.value})} 
+                style={{ ...inputStyle, paddingLeft: 12, minHeight: 80, resize: 'vertical' }} 
+                placeholder="Mahalle, cadde, sokak, bina no, daire no..." 
+                required 
+              />
+              <p style={{ fontSize: '12px', color: '#94a3b8', marginTop: '4px' }}>
+                Detaylı adres bilgisi giriniz (min. 10 karakter)
+              </p>
             </div>
             <div style={{ display: 'flex', gap: 12 }}>
-              <button type="submit" style={{ backgroundColor: '#059669', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '8px', fontWeight: '600', cursor: 'pointer' }}>
-                <FaPlus style={{ marginRight: 6 }} /> {editingAddressId ? 'Güncelle' : 'Adres Ekle'}
+              <button 
+                type="submit" 
+                disabled={createAddressMutation.isLoading || updateAddressMutation.isLoading}
+                style={{ 
+                  backgroundColor: '#059669', color: 'white', border: 'none', padding: '10px 20px', 
+                  borderRadius: '8px', fontWeight: '600', cursor: 'pointer',
+                  opacity: (createAddressMutation.isLoading || updateAddressMutation.isLoading) ? 0.7 : 1,
+                  display: 'flex', alignItems: 'center', gap: '6px'
+                }}
+              >
+                {(createAddressMutation.isLoading || updateAddressMutation.isLoading) ? (
+                  <FaSpinner className="spin" />
+                ) : (
+                  <FaPlus />
+                )}
+                {editingAddressId ? 'Güncelle' : 'Adres Ekle'}
               </button>
               {editingAddressId && (
                 <button type="button" onClick={resetAddressForm} style={{ backgroundColor: '#f1f5f9', color: '#64748b', border: 'none', padding: '10px 20px', borderRadius: '8px', fontWeight: '600', cursor: 'pointer' }}>
@@ -423,21 +501,61 @@ const VendorSettings = () => {
           {/* Address List */}
           {(vendor?.addresses || []).length > 0 && (
             <div style={{ marginTop: '32px' }}>
-              <h4 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '16px', color: '#64748b' }}>Kayıtlı Adresler</h4>
+              <h4 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '16px', color: '#64748b' }}>
+                Kayıtlı Adresler ({vendor.addresses.length})
+              </h4>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {vendor.addresses.map((addr) => (
                   <div key={addr.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', backgroundColor: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-                    <div>
-                      <div style={{ fontWeight: '600', color: '#0f172a' }}>{addr.label} {addr.is_primary && <span style={{ fontSize: 11, backgroundColor: '#dcfce7', color: '#059669', padding: '2px 8px', borderRadius: 12, marginLeft: 8 }}>Birincil</span>}</div>
-                      <div style={{ fontSize: '13px', color: '#64748b', marginTop: 4 }}>{addr.address_line}, {addr.city}, {addr.country}</div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: '600', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <FaMapMarkerAlt style={{ color: '#059669' }} />
+                        {addr.label} 
+                        {addr.is_primary && (
+                          <span style={{ fontSize: 11, backgroundColor: '#dcfce7', color: '#059669', padding: '2px 8px', borderRadius: 12, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                            <FaCheckCircle size={10} /> Birincil
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ fontSize: '13px', color: '#64748b', marginTop: 4 }}>
+                        {addr.address_line}
+                      </div>
+                      <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: 2 }}>
+                        {addr.postal_code && `${addr.postal_code} - `}{addr.city}, {addr.country}
+                      </div>
                     </div>
                     <div style={{ display: 'flex', gap: '8px' }}>
-                      <button onClick={() => editAddress(addr)} style={{ padding: '8px', backgroundColor: '#eff6ff', color: '#2563eb', border: 'none', borderRadius: '6px', cursor: 'pointer' }}><FaEdit /></button>
-                      <button onClick={() => deleteAddressMutation.mutate(addr.id)} style={{ padding: '8px', backgroundColor: '#fef2f2', color: '#dc2626', border: 'none', borderRadius: '6px', cursor: 'pointer' }}><FaTrash /></button>
+                      <button 
+                        onClick={() => editAddress(addr)} 
+                        title="Düzenle"
+                        style={{ padding: '8px', backgroundColor: '#eff6ff', color: '#2563eb', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
+                      >
+                        <FaEdit />
+                      </button>
+                      <button 
+                        onClick={() => {
+                          if (window.confirm('Bu adresi silmek istediğinize emin misiniz?')) {
+                            deleteAddressMutation.mutate(addr.id);
+                          }
+                        }} 
+                        title="Sil"
+                        style={{ padding: '8px', backgroundColor: '#fef2f2', color: '#dc2626', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
+                      >
+                        <FaTrash />
+                      </button>
                     </div>
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* Empty state */}
+          {(vendor?.addresses || []).length === 0 && (
+            <div style={{ marginTop: '24px', padding: '32px', backgroundColor: '#f8fafc', borderRadius: '12px', textAlign: 'center', border: '2px dashed #e2e8f0' }}>
+              <FaMapMarkerAlt size={32} style={{ color: '#cbd5e1', marginBottom: '12px' }} />
+              <p style={{ color: '#64748b', margin: 0 }}>Henüz adres eklenmemiş</p>
+              <p style={{ color: '#94a3b8', fontSize: '13px', marginTop: '4px' }}>Yukarıdaki formu kullanarak ilk adresinizi ekleyin.</p>
             </div>
           )}
         </div>
@@ -455,7 +573,17 @@ const VendorSettings = () => {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
               <div>
                 <label style={labelStyle}>Banka Adı</label>
-                <input type="text" value={bankForm.bank_name} onChange={(e) => setBankForm({...bankForm, bank_name: e.target.value})} style={{ ...inputStyle, paddingLeft: 12 }} placeholder="Örn: Ziraat Bankası" required />
+                <select 
+                  value={bankForm.bank_name} 
+                  onChange={(e) => setBankForm({...bankForm, bank_name: e.target.value})} 
+                  style={{ ...inputStyle, paddingLeft: 12, cursor: 'pointer' }} 
+                  required
+                >
+                  <option value="">-- Banka Seçin --</option>
+                  {TURKEY_BANKS.map(bank => (
+                    <option key={bank} value={bank}>{bank}</option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label style={labelStyle}>Hesap Sahibi</label>
@@ -465,14 +593,31 @@ const VendorSettings = () => {
             <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '16px', marginBottom: '16px' }}>
               <div>
                 <label style={labelStyle}>IBAN</label>
-                <input type="text" value={bankForm.iban} onChange={(e) => setBankForm({...bankForm, iban: e.target.value.toUpperCase()})} style={{ ...inputStyle, paddingLeft: 12 }} placeholder="TR00 0000 0000 0000 0000 0000 00" required />
+                <div style={{ position: 'relative' }}>
+                  <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#64748b', fontWeight: '600', fontSize: '14px' }}>TR</span>
+                  <input 
+                    type="text" 
+                    value={bankForm.iban.startsWith('TR') ? bankForm.iban.slice(2) : bankForm.iban} 
+                    onChange={(e) => {
+                      // Sadece rakam ve boşluk izin ver
+                      const value = e.target.value.replace(/[^0-9\s]/g, '');
+                      setBankForm({...bankForm, iban: 'TR' + value.toUpperCase()});
+                    }} 
+                    style={{ ...inputStyle, paddingLeft: 36 }} 
+                    placeholder="00 0000 0000 0000 0000 0000 00" 
+                    maxLength={30}
+                    required 
+                  />
+                </div>
+                <small style={{ color: '#64748b', fontSize: '12px' }}>Türk IBAN'ı TR ile başlar ve 26 karakter içerir</small>
               </div>
               <div>
                 <label style={labelStyle}>Para Birimi</label>
-                <select value={bankForm.currency} onChange={(e) => setBankForm({...bankForm, currency: e.target.value})} style={{ ...inputStyle, paddingLeft: 12 }}>
-                  <option value="TRY">TRY (₺)</option>
-                  <option value="USD">USD ($)</option>
-                  <option value="EUR">EUR (€)</option>
+                <select value={bankForm.currency} onChange={(e) => setBankForm({...bankForm, currency: e.target.value})} style={{ ...inputStyle, paddingLeft: 12, cursor: 'pointer' }}>
+                  <option value="TRY">🇹🇷 TRY - Türk Lirası (₺)</option>
+                  <option value="USD">🇺🇸 USD - Amerikan Doları ($)</option>
+                  <option value="EUR">🇪🇺 EUR - Euro (€)</option>
+                  <option value="GBP">🇬🇧 GBP - İngiliz Sterlini (£)</option>
                 </select>
               </div>
             </div>
