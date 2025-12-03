@@ -93,4 +93,117 @@ class ProfileController extends BaseVendorController
 
         return $this->success(new VendorResource($updated), 'Onboarding tamamlandı', 200);
     }
+
+    /**
+     * Get vendor's selected categories
+     */
+    public function myCategories(Request $request)
+    {
+        $vendor = $request->user();
+        if (! $vendor) {
+            return $this->error('Yetkisiz', 401);
+        }
+
+        $categories = $vendor->allowedCategories()
+            ->with('parent:id,name,slug')
+            ->orderBy('name')
+            ->get(['categories.id', 'categories.name', 'categories.slug', 'categories.icon', 'categories.parent_id']);
+
+        return $this->success([
+            'categories' => $categories,
+            'total' => $categories->count()
+        ]);
+    }
+
+    /**
+     * Get vendor's allowed categories for product creation (selected + all children)
+     */
+    public function myCategoriesForProducts(Request $request)
+    {
+        $vendor = $request->user();
+        if (! $vendor) {
+            return $this->error('Yetkisiz', 401);
+        }
+
+        // Get vendor's selected category IDs
+        $selectedCategoryIds = $vendor->allowedCategories()->pluck('categories.id')->toArray();
+
+        if (empty($selectedCategoryIds)) {
+            return $this->success([
+                'categories' => [],
+                'total' => 0
+            ]);
+        }
+
+        // Get all descendant category IDs recursively
+        $allCategoryIds = $this->getAllDescendantIds($selectedCategoryIds);
+
+        // Fetch all these categories with parent info
+        $categories = \App\Models\Category::whereIn('id', $allCategoryIds)
+            ->where('is_active', true)
+            ->with('parent:id,name,slug')
+            ->orderBy('name')
+            ->get(['id', 'name', 'slug', 'icon', 'image', 'parent_id']);
+
+        return $this->success([
+            'categories' => $categories,
+            'total' => $categories->count()
+        ]);
+    }
+
+    /**
+     * Helper: Get all descendant category IDs including given IDs
+     */
+    private function getAllDescendantIds(array $categoryIds): array
+    {
+        $allIds = $categoryIds;
+        
+        // Get children of these categories
+        $childIds = \App\Models\Category::whereIn('parent_id', $categoryIds)
+            ->where('is_active', true)
+            ->pluck('id')
+            ->toArray();
+        
+        if (!empty($childIds)) {
+            // Recursively get children's children
+            $allIds = array_merge($allIds, $this->getAllDescendantIds($childIds));
+        }
+        
+        return array_unique($allIds);
+    }
+
+    /**
+     * Update vendor's selected categories (vendor can freely choose)
+     */
+    public function updateMyCategories(Request $request)
+    {
+        $vendor = $request->user();
+        if (! $vendor) {
+            return $this->error('Yetkisiz', 401);
+        }
+
+        $request->validate([
+            'category_ids' => 'required|array|min:1',
+            'category_ids.*' => 'exists:categories,id'
+        ], [
+            'category_ids.required' => 'En az bir kategori seçmelisiniz',
+            'category_ids.min' => 'En az bir kategori seçmelisiniz',
+            'category_ids.*.exists' => 'Geçersiz kategori'
+        ]);
+
+        $categoryIds = $request->input('category_ids');
+
+        // Sync categories - vendor freely chooses
+        $vendor->allowedCategories()->sync($categoryIds);
+
+        $categories = $vendor->allowedCategories()
+            ->with('parent:id,name,slug')
+            ->orderBy('name')
+            ->get(['categories.id', 'categories.name', 'categories.slug', 'categories.icon', 'categories.parent_id']);
+
+        return $this->success([
+            'categories' => $categories,
+            'total' => $categories->count()
+        ], 'Kategoriler güncellendi');
+    }
 }

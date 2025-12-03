@@ -23,6 +23,8 @@ const ProductsPage = () => {
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, action: null, data: null });
   const [rejectModal, setRejectModal] = useState({ isOpen: false, productId: null, productName: '', isBulk: false });
   const [rejectionReason, setRejectionReason] = useState('');
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [lightboxImage, setLightboxImage] = useState(null);
 
   // Backend URL for images
   const backendOrigin = (axios.defaults.baseURL || '').replace(/\/api\/?$/i, '');
@@ -339,7 +341,7 @@ const ProductsPage = () => {
               <td style={{...styles.td, textAlign: 'right'}}>
                 <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
                   <button 
-                    onClick={() => setViewProduct(product)} 
+                    onClick={() => { setSelectedImage(null); setViewProduct(product); }} 
                     style={{ ...styles.btn(), padding: '8px' }}
                     title="Görüntüle"
                   >
@@ -413,7 +415,7 @@ const ProductsPage = () => {
 
       {/* Product Detail Modal */}
       {viewProduct && (
-        <div style={styles.modalOverlay} onClick={() => setViewProduct(null)}>
+        <div style={styles.modalOverlay} onClick={() => { setSelectedImage(null); setViewProduct(null); }}>
           <div style={{...styles.modalContent, maxWidth: '1000px'}} onClick={e => e.stopPropagation()}>
             {/* Modal Header */}
             <div style={{ padding: '20px 24px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#f8fafc' }}>
@@ -421,7 +423,7 @@ const ProductsPage = () => {
                 <h2 style={{ fontSize: '18px', fontWeight: '700', color: '#0f172a' }}>Ürün Detayı</h2>
                 {getStatusBadge(viewProduct.status)}
               </div>
-              <button onClick={() => setViewProduct(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', padding: '8px' }}>
+              <button onClick={() => { setSelectedImage(null); setViewProduct(null); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', padding: '8px' }}>
                 <FaTimes size={20} />
               </button>
             </div>
@@ -433,9 +435,19 @@ const ProductsPage = () => {
                 {/* Sol Kolon - Görseller */}
                 <div>
                   {/* Ana Görsel */}
-                  <div style={{ aspectRatio: '1/1', borderRadius: '12px', backgroundColor: '#f1f5f9', overflow: 'hidden', marginBottom: '12px', border: '1px solid #e2e8f0' }}>
-                    {viewProduct.thumbnail ? (
-                      <img src={toFullUrl(viewProduct.thumbnail)} alt={viewProduct.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <div 
+                    style={{ aspectRatio: '1/1', borderRadius: '12px', backgroundColor: '#f1f5f9', overflow: 'hidden', marginBottom: '12px', border: '1px solid #e2e8f0', cursor: 'pointer' }}
+                    onClick={() => {
+                      const imgUrl = selectedImage || toFullUrl(viewProduct.thumbnail) || (viewProduct.photos?.[0] && toFullUrl(viewProduct.photos[0].url));
+                      if (imgUrl) setLightboxImage(imgUrl);
+                    }}
+                  >
+                    {(selectedImage || viewProduct.thumbnail || viewProduct.photos?.[0]) ? (
+                      <img 
+                        src={selectedImage || toFullUrl(viewProduct.thumbnail) || toFullUrl(viewProduct.photos?.[0]?.url)} 
+                        alt={viewProduct.name} 
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                      />
                     ) : (
                       <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '8px' }}>
                         <FaImage size={48} color="#cbd5e1" />
@@ -447,11 +459,28 @@ const ProductsPage = () => {
                   {/* Diğer Görseller */}
                   {viewProduct.photos && viewProduct.photos.length > 0 && (
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
-                      {viewProduct.photos.map((photo, i) => (
-                        <div key={i} style={{ aspectRatio: '1/1', borderRadius: '8px', overflow: 'hidden', backgroundColor: '#f1f5f9', border: '1px solid #e2e8f0', cursor: 'pointer' }}>
-                          <img src={toFullUrl(photo.url)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                        </div>
-                      ))}
+                      {viewProduct.photos.map((photo, i) => {
+                        const photoUrl = toFullUrl(photo.url);
+                        const isSelected = selectedImage === photoUrl;
+                        return (
+                          <div 
+                            key={i} 
+                            style={{ 
+                              aspectRatio: '1/1', 
+                              borderRadius: '8px', 
+                              overflow: 'hidden', 
+                              backgroundColor: '#f1f5f9', 
+                              border: isSelected ? '2px solid #4f46e5' : '1px solid #e2e8f0', 
+                              cursor: 'pointer',
+                              transition: 'all 0.2s',
+                              opacity: isSelected ? 1 : 0.8
+                            }}
+                            onClick={() => setSelectedImage(photoUrl)}
+                          >
+                            <img src={photoUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                   
@@ -732,6 +761,33 @@ const ProductsPage = () => {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Lightbox */}
+      {lightboxImage && (
+        <div 
+          style={{
+            position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.9)', zIndex: 2000,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px'
+          }}
+          onClick={() => setLightboxImage(null)}
+        >
+          <button 
+            style={{
+              position: 'absolute', top: '20px', right: '20px', background: 'none', border: 'none', 
+              color: 'white', cursor: 'pointer'
+            }}
+            onClick={() => setLightboxImage(null)}
+          >
+            <FaTimes size={32} />
+          </button>
+          <img 
+            src={lightboxImage} 
+            alt="Full size" 
+            style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', borderRadius: '8px' }} 
+            onClick={(e) => e.stopPropagation()}
+          />
         </div>
       )}
     </div>

@@ -1,13 +1,48 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaPlus, FaTrash, FaSearch, FaEdit, FaTags, FaLayerGroup, FaTimes, FaSortAmountDown, FaSortAmountUp, FaCheck, FaToggleOn, FaToggleOff, FaChevronRight, FaBox, FaFolderOpen } from 'react-icons/fa';
+import { FaSearch, FaLayerGroup, FaChevronRight, FaChevronDown, FaInfoCircle, FaCheck, FaSave } from 'react-icons/fa';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getVendorCategories, createVendorCategory, updateVendorCategory, deleteVendorCategory, toggleVendorCategoryActive } from '../../features/vendor/api/categoryApi';
+import { getVendorCategoryTree, getMySelectedCategories, updateMyCategories } from '../../features/vendor/api/categoryApi';
 import { useToast } from '../../components/Toast';
+
+// Icon mapping - emojiler kullanıyoruz
+const iconMap = {
+  FaMobileAlt: '📱', FaMobile: '📱', FaApple: '🍎', FaLaptop: '💻', FaDesktop: '🖥️',
+  FaTabletAlt: '📱', FaMicrochip: '🔧', FaTv: '📺', FaVolumeUp: '🔊', FaHeadphones: '🎧',
+  FaCamera: '📷', FaCameraRetro: '📸', FaVideo: '🎥', FaGamepad: '🎮', FaPlaystation: '🎮',
+  FaXbox: '🎮', FaTshirt: '👕', FaFemale: '👩', FaMale: '👨', FaChild: '👶', FaBaby: '👶',
+  FaShoePrints: '👟', FaRunning: '🏃', FaGem: '💎', FaShoppingBag: '👜', FaClock: '⏰',
+  FaGlasses: '👓', FaHome: '🏠', FaCouch: '🛋️', FaBed: '🛏️', FaChair: '🪑', FaArchive: '📦',
+  FaPalette: '🎨', FaLightbulb: '💡', FaImage: '🖼️', FaSquare: '⬜', FaUtensils: '🍴',
+  FaGlassMartini: '🍸', FaBlender: '🔌', FaBox: '📦', FaBath: '🛁', FaSoap: '🧼',
+  FaShower: '🚿', FaLeaf: '🍃', FaSeedling: '🌱', FaDumbbell: '💪', FaSpa: '💆',
+  FaBicycle: '🚲', FaFutbol: '⚽', FaBasketballBall: '🏀', FaVolleyballBall: '🏐',
+  FaTableTennis: '🏓', FaCampground: '⛺', FaFire: '🔥', FaMountain: '⛰️', FaSwimmer: '🏊',
+  FaWater: '💧', FaPaintBrush: '🖌️', FaEye: '👁️', FaKissWinkHeart: '💋', FaHandSparkles: '✨',
+  FaTint: '💧', FaSun: '☀️', FaCut: '✂️', FaPumpSoap: '🧴', FaSprayCan: '🧴',
+  FaPuzzlePiece: '🧩', FaDog: '🐕', FaBook: '📚', FaBrain: '🧠', FaBookOpen: '📖',
+  FaGraduationCap: '🎓', FaMusic: '🎵', FaGuitar: '🎸', FaDrum: '🥁', FaPen: '✒️',
+  FaPaperclip: '📎', FaCubes: '🧊', FaCar: '🚗', FaOilCan: '🛢️', FaCogs: '⚙️',
+  FaCircle: '⭕', FaSnowflake: '❄️', FaCircleNotch: '⭕', FaMotorcycle: '🏍️', FaHardHat: '⛑️',
+  FaPaw: '🐾', FaBone: '🦴', FaFirstAid: '🩹', FaCat: '🐱', FaFish: '🐟', FaDove: '🕊️',
+  FaShoppingCart: '🛒', FaBreadSlice: '🍞', FaCookie: '🍪', FaCoffee: '☕', FaBroom: '🧹',
+  FaToiletPaper: '🧻', FaScroll: '📜'
+};
+
+const getIconEmoji = (iconName) => {
+  return iconMap[iconName] || '📁';
+};
+
+const BACKEND_URL = 'http://127.0.0.1:8000';
+const toFullUrl = (u) => {
+  if (!u) return null;
+  if (u.startsWith('http')) return u;
+  return `${BACKEND_URL}${u.startsWith('/') ? '' : '/'}${u}`;
+};
 
 export default function VendorCategories() {
   const navigate = useNavigate();
-  const qc = useQueryClient();
+  const queryClient = useQueryClient();
   const toast = useToast();
 
   useEffect(() => {
@@ -16,1165 +51,498 @@ export default function VendorCategories() {
       navigate('/vendor/login');
     }
   }, [navigate]);
-  const { data, isLoading, isError } = useQuery({ queryKey: ['vendorCategories'], queryFn: getVendorCategories });
+
+  // All categories
+  const { data: allCategoriesData, isLoading: loadingAll } = useQuery({ 
+    queryKey: ['vendorCategoryTree'], 
+    queryFn: getVendorCategoryTree 
+  });
+
+  // My selected categories
+  const { data: myCategories, isLoading: loadingMy } = useQuery({
+    queryKey: ['mySelectedCategories'],
+    queryFn: getMySelectedCategories
+  });
   
-  // State'ler
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editModalOpen, setEditModalOpen] = useState(false);
-  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState(null);
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [parentId, setParentId] = useState('');
-  const [editName, setEditName] = useState('');
-  const [editDescription, setEditDescription] = useState('');
-  const [editParentId, setEditParentId] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState('name'); // name, date
-  const [sortOrder, setSortOrder] = useState('asc');
-  const [viewMode, setViewMode] = useState('grid'); // grid, list
+  const [expandedCategories, setExpandedCategories] = useState({});
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [hasChanges, setHasChanges] = useState(false);
 
-  const createMutation = useMutation({
-    mutationFn: (payload) => createVendorCategory(payload),
+  const categories = allCategoriesData?.data || [];
+  const initialSelectedIds = useMemo(() => 
+    (myCategories?.data?.categories || []).map(c => c.id), 
+    [myCategories]
+  );
+
+  // Initialize selected IDs when data loads
+  useEffect(() => {
+    if (initialSelectedIds.length > 0 || (myCategories && selectedIds.length === 0)) {
+      setSelectedIds(initialSelectedIds);
+    }
+  }, [initialSelectedIds, myCategories]);
+
+  // Check for changes
+  useEffect(() => {
+    const sortedInitial = [...initialSelectedIds].sort((a, b) => a - b);
+    const sortedSelected = [...selectedIds].sort((a, b) => a - b);
+    const changed = JSON.stringify(sortedInitial) !== JSON.stringify(sortedSelected);
+    setHasChanges(changed);
+  }, [selectedIds, initialSelectedIds]);
+
+  // Save mutation
+  const saveMutation = useMutation({
+    mutationFn: updateMyCategories,
     onSuccess: () => {
-      qc.invalidateQueries(['vendorCategories']);
-      setName('');
-      setDescription('');
-      setParentId('');
-      setModalOpen(false);
-      toast.success('Kategori Oluşturuldu', 'Yeni kategori başarıyla eklendi.', 3000);
+      queryClient.invalidateQueries(['mySelectedCategories']);
+      toast.success('Başarılı', 'Kategorileriniz güncellendi.');
+      setHasChanges(false);
     },
     onError: (err) => {
-      toast.error('Kategori Oluşturulamadı', err?.response?.data?.message || 'Bir hata oluştu', 4000);
+      toast.error('Hata', err.response?.data?.message || 'Kategoriler kaydedilemedi.');
     }
   });
 
-  const updateMutation = useMutation({
-    mutationFn: ({ id, payload }) => updateVendorCategory(id, payload),
-    onSuccess: () => {
-      qc.invalidateQueries(['vendorCategories']);
-      setEditModalOpen(false);
-      setSelectedCategory(null);
-      toast.success('Kategori Güncellendi', 'Kategori başarıyla güncellendi.', 3000);
-    },
-    onError: (err) => {
-      toast.error('Güncellenemedi', err?.response?.data?.message || 'Kategori güncellenirken hata oluştu', 4000);
-    }
-  });
-
-  const toggleActiveMutation = useMutation({
-    mutationFn: (id) => toggleVendorCategoryActive(id),
-    onSuccess: () => {
-      qc.invalidateQueries(['vendorCategories']);
-      toast.success('Durum Güncellendi', 'Kategori durumu değiştirildi.', 3000);
-    },
-    onError: (err) => {
-      toast.error('Hata', err?.response?.data?.message || 'Durum değiştirilemedi', 4000);
-    }
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: (id) => deleteVendorCategory(id),
-    onSuccess: () => {
-      qc.invalidateQueries(['vendorCategories']);
-      setDeleteModalOpen(false);
-      setSelectedCategory(null);
-      toast.success('Kategori Silindi', 'Kategori başarıyla silindi.', 3000);
-    },
-    onError: (err) => {
-      toast.error('Silinemedi', err?.response?.data?.message || 'Kategori silinirken hata oluştu', 4000);
-    }
-  });
-
-  const handleCreate = (e) => {
-    e.preventDefault();
-    if (!name.trim()) {
-      toast.warning('Uyarı', 'Kategori adı boş olamaz', 3000);
+  const handleSave = () => {
+    if (selectedIds.length === 0) {
+      toast.warning('Uyarı', 'En az bir kategori seçmelisiniz.');
       return;
     }
-    createMutation.mutate({ 
-      name, 
-      description,
-      parent_id: parentId || null
-    });
+    saveMutation.mutate(selectedIds);
   };
 
-  const handleEditClick = (category) => {
-    setSelectedCategory(category);
-    setEditName(category.name);
-    setEditDescription(category.description || '');
-    setEditParentId(category.parent_id || '');
-    setEditModalOpen(true);
+  // Toggle category selection
+  const toggleCategory = (categoryId) => {
+    setSelectedIds(prev => 
+      prev.includes(categoryId)
+        ? prev.filter(id => id !== categoryId)
+        : [...prev, categoryId]
+    );
   };
 
-  const handleUpdate = (e) => {
-    e.preventDefault();
-    if (!editName.trim()) {
-      toast.warning('Uyarı', 'Kategori adı boş olamaz', 3000);
-      return;
-    }
-    updateMutation.mutate({
-      id: selectedCategory.id,
-      payload: {
-        name: editName,
-        description: editDescription,
-        parent_id: editParentId || null
-      }
-    });
+  // Toggle category expand/collapse
+  const toggleExpand = (categoryId, e) => {
+    e.stopPropagation();
+    setExpandedCategories(prev => ({
+      ...prev,
+      [categoryId]: !prev[categoryId]
+    }));
   };
 
-  const handleDeleteClick = (category) => {
-    setSelectedCategory(category);
-    setDeleteModalOpen(true);
-  };
-
-  const confirmDelete = () => {
-    if (selectedCategory) {
-      deleteMutation.mutate(selectedCategory.id);
-    }
-  };
-
-  const handleToggleActive = (category) => {
-    toggleActiveMutation.mutate(category.id);
-  };
-
-  const items = data?.data ?? [];
-
-  // Get root categories for parent selection
-  const rootCategories = useMemo(() => {
-    return items.filter(item => !item.parent_id);
-  }, [items]);
-
-  // Get available parents for edit (exclude self and children)
-  const getAvailableParents = (categoryId) => {
-    const getChildIds = (id) => {
-      const children = items.filter(item => item.parent_id === id);
-      let ids = [id];
-      children.forEach(child => {
-        ids = [...ids, ...getChildIds(child.id)];
+  // Expand all
+  const expandAll = () => {
+    const allExpanded = {};
+    const setAllExpanded = (cats) => {
+      cats.forEach(cat => {
+        allExpanded[cat.id] = true;
+        if (cat.active_children?.length > 0) {
+          setAllExpanded(cat.active_children);
+        }
       });
-      return ids;
+    };
+    setAllExpanded(categories);
+    setExpandedCategories(allExpanded);
+  };
+
+  // Collapse all
+  const collapseAll = () => {
+    setExpandedCategories({});
+  };
+
+  // Filter categories by search
+  const filterCategories = (cats) => {
+    if (!searchQuery) return cats;
+    
+    const search = searchQuery.toLowerCase();
+    
+    const filterRecursive = (categories) => {
+      return categories.reduce((acc, cat) => {
+        const matches = cat.name.toLowerCase().includes(search);
+        const children = cat.active_children || [];
+        const filteredChildren = filterRecursive(children);
+        
+        if (matches || filteredChildren.length > 0) {
+          acc.push({
+            ...cat,
+            active_children: filteredChildren.length > 0 ? filteredChildren : children
+          });
+        }
+        
+        return acc;
+      }, []);
     };
     
-    const excludeIds = getChildIds(categoryId);
-    return items.filter(item => !excludeIds.includes(item.id));
+    return filterRecursive(cats);
   };
 
-  // Arama ve sıralama
-  const filteredAndSortedItems = useMemo(() => {
-    let result = [...items];
-    
-    // Arama filtresi
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      result = result.filter(item => 
-        item.name?.toLowerCase().includes(query) ||
-        item.slug?.toLowerCase().includes(query) ||
-        item.description?.toLowerCase().includes(query)
-      );
-    }
-    
-    // Sıralama
-    result.sort((a, b) => {
-      let comparison = 0;
-      if (sortBy === 'name') {
-        comparison = (a.name || '').localeCompare(b.name || '');
-      } else if (sortBy === 'date') {
-        comparison = new Date(a.created_at) - new Date(b.created_at);
+  const filteredCategories = filterCategories(categories);
+
+  // Count total categories
+  const countCategories = (cats) => {
+    let count = cats.length;
+    cats.forEach(cat => {
+      if (cat.active_children?.length > 0) {
+        count += countCategories(cat.active_children);
       }
-      return sortOrder === 'asc' ? comparison : -comparison;
     });
+    return count;
+  };
+
+  // Render category item
+  const renderCategory = (category, level = 0) => {
+    const isExpanded = expandedCategories[category.id];
+    const hasChildren = category.active_children && category.active_children.length > 0;
+    const isSelected = selectedIds.includes(category.id);
     
-    return result;
-  }, [items, searchQuery, sortBy, sortOrder]);
+    return (
+      <div key={category.id}>
+        <div 
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            padding: '14px 16px',
+            paddingLeft: `${16 + level * 28}px`,
+            backgroundColor: isSelected ? '#f0fdf4' : (level === 0 ? '#f8fafc' : 'white'),
+            borderBottom: '1px solid #e2e8f0',
+            borderLeft: isSelected ? '3px solid #22c55e' : '3px solid transparent',
+            transition: 'all 0.15s',
+            cursor: 'pointer',
+          }}
+          onClick={() => toggleCategory(category.id)}
+          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = isSelected ? '#dcfce7' : '#f1f5f9'}
+          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = isSelected ? '#f0fdf4' : (level === 0 ? '#f8fafc' : 'white')}
+        >
+          {/* Checkbox */}
+          <div style={{
+            width: '22px',
+            height: '22px',
+            borderRadius: '6px',
+            border: isSelected ? '2px solid #22c55e' : '2px solid #cbd5e1',
+            backgroundColor: isSelected ? '#22c55e' : 'white',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginRight: '12px',
+            flexShrink: 0,
+            transition: 'all 0.15s'
+          }}>
+            {isSelected && <FaCheck size={12} color="white" />}
+          </div>
 
-  // Stats
-  const stats = useMemo(() => {
-    const total = items.length;
-    const active = items.filter(i => i.is_active !== false).length;
-    const inactive = total - active;
-    const parents = items.filter(i => !i.parent_id).length;
-    const children = items.filter(i => i.parent_id).length;
-    const totalProducts = items.reduce((sum, i) => sum + (i.products_count || 0), 0);
-    return { total, active, inactive, parents, children, totalProducts };
-  }, [items]);
+          {/* Expand/Collapse Icon */}
+          {hasChildren && (
+            <div 
+              onClick={(e) => toggleExpand(category.id, e)}
+              style={{
+                width: '24px',
+                height: '24px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#64748b',
+                marginRight: '8px',
+                borderRadius: '4px',
+                cursor: 'pointer'
+              }}
+            >
+              {isExpanded ? <FaChevronDown size={12} /> : <FaChevronRight size={12} />}
+            </div>
+          )}
+          {!hasChildren && <div style={{ width: '32px' }} />}
 
-  // Stiller
+          {/* Icon or Image */}
+          <span style={{ fontSize: '22px', marginRight: '14px', display: 'flex', alignItems: 'center' }}>
+            {category.image ? (
+              <img 
+                src={toFullUrl(category.image)} 
+                alt={category.name}
+                style={{ width: '28px', height: '28px', borderRadius: '6px', objectFit: 'cover' }}
+                onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'inline'; }}
+              />
+            ) : null}
+            <span style={{ display: category.image ? 'none' : 'inline' }}>
+              {getIconEmoji(category.icon)}
+            </span>
+          </span>
+
+          {/* Name */}
+          <div style={{ flex: 1 }}>
+            <div style={{ 
+              fontWeight: level === 0 ? '600' : '500', 
+              color: isSelected ? '#166534' : '#1e293b',
+              fontSize: level === 0 ? '15px' : '14px'
+            }}>
+              {category.name}
+            </div>
+            {category.description && (
+              <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>
+                {category.description.substring(0, 60)}{category.description.length > 60 ? '...' : ''}
+              </div>
+            )}
+          </div>
+
+          {/* Children count */}
+          {hasChildren && (
+            <span style={{
+              padding: '4px 10px',
+              borderRadius: '12px',
+              fontSize: '12px',
+              fontWeight: '500',
+              backgroundColor: '#e0f2fe',
+              color: '#0369a1'
+            }}>
+              {category.active_children.length} alt
+            </span>
+          )}
+        </div>
+
+        {/* Children */}
+        {hasChildren && isExpanded && (
+          <div style={{ backgroundColor: '#fafafa' }}>
+            {category.active_children.map(child => renderCategory(child, level + 1))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const isLoading = loadingAll || loadingMy;
+
+  // Styles
   const styles = {
-    container: {
-      padding: '32px',
-      maxWidth: '1400px',
-      margin: '0 auto',
+    container: { 
+      padding: '24px', 
+      fontFamily: "'Inter', sans-serif", 
+      color: '#1e293b',
+      maxWidth: '1200px',
+      margin: '0 auto'
     },
-    header: {
-      marginBottom: '32px',
-    },
-    headerTop: {
+    header: { 
       display: 'flex',
-      alignItems: 'flex-start',
       justifyContent: 'space-between',
-      marginBottom: '24px',
-      flexWrap: 'wrap',
-      gap: '16px',
+      alignItems: 'flex-start',
+      marginBottom: '24px'
     },
-    titleSection: {},
-    title: {
-      fontSize: '28px',
-      fontWeight: '700',
-      color: '#1f2937',
-      marginBottom: '8px',
+    title: { 
+      fontSize: '24px', 
+      fontWeight: '700', 
+      color: '#0f172a',
       display: 'flex',
       alignItems: 'center',
-      gap: '12px',
+      gap: '12px'
     },
-    titleIcon: {
-      width: '40px',
-      height: '40px',
-      background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+    subtitle: { 
+      color: '#64748b', 
+      fontSize: '14px', 
+      marginTop: '8px',
+      lineHeight: '1.6'
+    },
+    infoBox: {
+      backgroundColor: '#eff6ff',
+      border: '1px solid #bfdbfe',
       borderRadius: '12px',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      color: 'white',
-    },
-    subtitle: {
-      fontSize: '15px',
-      color: '#6b7280',
-      lineHeight: '1.5',
-    },
-    statsRow: {
-      display: 'flex',
-      gap: '12px',
-      marginTop: '16px',
-      flexWrap: 'wrap',
-    },
-    statBadge: (color = 'green') => ({
-      display: 'inline-flex',
-      alignItems: 'center',
-      gap: '6px',
-      padding: '6px 12px',
-      background: color === 'green' ? '#ecfdf5' : color === 'blue' ? '#eff6ff' : color === 'orange' ? '#fff7ed' : '#f3f4f6',
-      color: color === 'green' ? '#059669' : color === 'blue' ? '#2563eb' : color === 'orange' ? '#ea580c' : '#6b7280',
-      borderRadius: '20px',
-      fontSize: '13px',
-      fontWeight: '500',
-    }),
-    addButton: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '8px',
-      padding: '12px 24px',
-      background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-      color: 'white',
-      border: 'none',
-      borderRadius: '12px',
-      fontSize: '15px',
-      fontWeight: '600',
-      cursor: 'pointer',
-      boxShadow: '0 4px 14px rgba(16, 185, 129, 0.35)',
-      transition: 'all 0.2s ease',
-    },
-    toolbar: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '12px',
       padding: '16px 20px',
-      background: 'white',
-      borderRadius: '16px',
-      boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
-      flexWrap: 'wrap',
-    },
-    searchWrapper: {
-      flex: '1',
-      minWidth: '250px',
-      position: 'relative',
-    },
-    searchIcon: {
-      position: 'absolute',
-      left: '14px',
-      top: '50%',
-      transform: 'translateY(-50%)',
-      color: '#9ca3af',
-      fontSize: '14px',
-    },
-    searchInput: {
-      width: '100%',
-      padding: '12px 14px 12px 42px',
-      border: '2px solid #e5e7eb',
-      borderRadius: '10px',
-      fontSize: '14px',
-      transition: 'all 0.2s ease',
-      outline: 'none',
-    },
-    filterGroup: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '8px',
-    },
-    filterLabel: {
-      fontSize: '13px',
-      color: '#6b7280',
-      fontWeight: '500',
-    },
-    select: {
-      padding: '10px 14px',
-      border: '2px solid #e5e7eb',
-      borderRadius: '10px',
-      fontSize: '14px',
-      color: '#374151',
-      background: 'white',
-      cursor: 'pointer',
-      outline: 'none',
-    },
-    sortButton: {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      width: '40px',
-      height: '40px',
-      border: '2px solid #e5e7eb',
-      borderRadius: '10px',
-      background: 'white',
-      cursor: 'pointer',
-      color: '#6b7280',
-      transition: 'all 0.2s ease',
-    },
-    viewToggle: {
-      display: 'flex',
-      border: '2px solid #e5e7eb',
-      borderRadius: '10px',
-      overflow: 'hidden',
-    },
-    viewButton: (active) => ({
-      padding: '10px 14px',
-      border: 'none',
-      background: active ? '#10b981' : 'white',
-      color: active ? 'white' : '#6b7280',
-      cursor: 'pointer',
-      transition: 'all 0.2s ease',
-    }),
-    grid: {
-      display: 'grid',
-      gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
-      gap: '20px',
-      marginTop: '24px',
-    },
-    list: {
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '12px',
-      marginTop: '24px',
-    },
-    card: (isActive = true) => ({
-      background: 'white',
-      borderRadius: '16px',
-      padding: '24px',
-      boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
-      transition: 'all 0.2s ease',
-      border: isActive ? '1px solid #f3f4f6' : '2px solid #fecaca',
-      opacity: isActive ? 1 : 0.7,
-    }),
-    cardHeader: {
+      marginBottom: '24px',
       display: 'flex',
       alignItems: 'flex-start',
-      justifyContent: 'space-between',
-      marginBottom: '16px',
+      gap: '12px'
     },
-    cardIcon: (isChild = false) => ({
-      width: '48px',
-      height: '48px',
-      background: isChild 
-        ? 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)'
-        : 'linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)',
-      borderRadius: '12px',
-      display: 'flex',
+    toolbar: { 
+      backgroundColor: 'white', 
+      padding: '14px 16px', 
+      borderRadius: '12px', 
+      marginBottom: '16px', 
+      border: '1px solid #e2e8f0', 
+      display: 'flex', 
+      justifyContent: 'space-between', 
       alignItems: 'center',
-      justifyContent: 'center',
-      color: isChild ? '#d97706' : '#059669',
-      fontSize: '20px',
-    }),
-    cardActions: {
-      display: 'flex',
-      gap: '8px',
+      gap: '12px',
+      flexWrap: 'wrap'
     },
-    actionButton: (color) => ({
-      width: '36px',
-      height: '36px',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      border: 'none',
-      borderRadius: '10px',
+    searchInput: { 
+      padding: '10px 16px', 
+      paddingLeft: '40px', 
+      borderRadius: '8px', 
+      border: '1px solid #e2e8f0', 
+      width: '300px', 
+      outline: 'none', 
+      fontSize: '14px' 
+    },
+    categoryContainer: { 
+      backgroundColor: 'white', 
+      borderRadius: '12px', 
+      border: '1px solid #e2e8f0', 
+      overflow: 'hidden',
+      boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
+    },
+    btnSecondary: { 
+      backgroundColor: 'white', 
+      color: '#64748b', 
+      border: '1px solid #e2e8f0', 
+      padding: '8px 16px', 
+      borderRadius: '8px', 
+      fontWeight: '500', 
       cursor: 'pointer',
-      transition: 'all 0.2s ease',
-      background: color === 'red' ? '#fef2f2' : color === 'blue' ? '#eff6ff' : color === 'green' ? '#ecfdf5' : '#f3f4f6',
-      color: color === 'red' ? '#dc2626' : color === 'blue' ? '#2563eb' : color === 'green' ? '#059669' : '#6b7280',
-    }),
-    cardName: {
-      fontSize: '18px',
-      fontWeight: '600',
-      color: '#1f2937',
-      marginBottom: '4px',
-    },
-    cardSlug: {
       fontSize: '13px',
-      color: '#9ca3af',
-      fontFamily: 'monospace',
-      background: '#f9fafb',
-      padding: '4px 8px',
-      borderRadius: '6px',
-      display: 'inline-block',
-    },
-    cardDescription: {
-      fontSize: '14px',
-      color: '#6b7280',
-      marginTop: '12px',
-      lineHeight: '1.5',
-    },
-    cardMeta: {
       display: 'flex',
       alignItems: 'center',
-      gap: '12px',
-      marginTop: '12px',
-      flexWrap: 'wrap',
+      gap: '6px'
     },
-    metaBadge: (color = 'gray') => ({
-      display: 'inline-flex',
-      alignItems: 'center',
-      gap: '4px',
-      padding: '4px 10px',
-      background: color === 'blue' ? '#eff6ff' : color === 'orange' ? '#fff7ed' : color === 'green' ? '#ecfdf5' : '#f9fafb',
-      color: color === 'blue' ? '#2563eb' : color === 'orange' ? '#ea580c' : color === 'green' ? '#059669' : '#6b7280',
-      borderRadius: '6px',
-      fontSize: '12px',
-      fontWeight: '500',
-    }),
-    cardFooter: {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      marginTop: '16px',
-      paddingTop: '16px',
-      borderTop: '1px solid #f3f4f6',
-    },
-    cardDate: {
-      fontSize: '12px',
-      color: '#9ca3af',
-    },
-    statusBadge: (isActive) => ({
-      display: 'inline-flex',
-      alignItems: 'center',
-      gap: '4px',
-      padding: '4px 10px',
-      background: isActive ? '#ecfdf5' : '#fef2f2',
-      color: isActive ? '#059669' : '#dc2626',
-      borderRadius: '20px',
-      fontSize: '12px',
-      fontWeight: '500',
-    }),
-    listCard: (isActive = true) => ({
-      background: 'white',
-      borderRadius: '12px',
-      padding: '16px 24px',
-      boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      border: isActive ? '1px solid #f3f4f6' : '2px solid #fecaca',
-      transition: 'all 0.2s ease',
-      opacity: isActive ? 1 : 0.7,
-    }),
-    listCardLeft: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '16px',
-      flex: 1,
-    },
-    listCardInfo: {
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '4px',
-    },
-    listCardMeta: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '16px',
-    },
-    emptyState: {
-      textAlign: 'center',
-      padding: '60px 24px',
-      background: 'white',
-      borderRadius: '16px',
-      boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
-      marginTop: '24px',
-    },
-    emptyIcon: {
-      width: '80px',
-      height: '80px',
-      background: 'linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)',
-      borderRadius: '20px',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      margin: '0 auto 24px',
-      color: '#059669',
-      fontSize: '32px',
-    },
-    emptyTitle: {
-      fontSize: '20px',
-      fontWeight: '600',
-      color: '#1f2937',
-      marginBottom: '8px',
-    },
-    emptyText: {
-      fontSize: '15px',
-      color: '#6b7280',
-      marginBottom: '24px',
-    },
-    modal: {
-      position: 'fixed',
-      inset: 0,
-      background: 'rgba(0,0,0,0.5)',
-      backdropFilter: 'blur(4px)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 1000,
-      padding: '20px',
-    },
-    modalContent: {
-      background: 'white',
-      borderRadius: '20px',
-      padding: '32px',
-      width: '100%',
-      maxWidth: '480px',
-      boxShadow: '0 25px 50px rgba(0,0,0,0.15)',
-    },
-    modalHeader: {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      marginBottom: '24px',
-    },
-    modalTitle: {
-      fontSize: '20px',
-      fontWeight: '700',
-      color: '#1f2937',
-    },
-    modalClose: {
-      width: '36px',
-      height: '36px',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      border: 'none',
-      borderRadius: '10px',
-      background: '#f3f4f6',
-      color: '#6b7280',
-      cursor: 'pointer',
-      transition: 'all 0.2s ease',
-    },
-    formGroup: {
-      marginBottom: '20px',
-    },
-    label: {
-      display: 'block',
-      fontSize: '14px',
-      fontWeight: '600',
-      color: '#374151',
-      marginBottom: '8px',
-    },
-    input: {
-      width: '100%',
-      padding: '14px 16px',
-      border: '2px solid #e5e7eb',
-      borderRadius: '12px',
-      fontSize: '15px',
-      outline: 'none',
-      transition: 'all 0.2s ease',
-      boxSizing: 'border-box',
-    },
-    textarea: {
-      width: '100%',
-      padding: '14px 16px',
-      border: '2px solid #e5e7eb',
-      borderRadius: '12px',
-      fontSize: '15px',
-      outline: 'none',
-      transition: 'all 0.2s ease',
-      minHeight: '100px',
-      resize: 'vertical',
-      boxSizing: 'border-box',
-      fontFamily: 'inherit',
-    },
-    modalActions: {
-      display: 'flex',
-      gap: '12px',
-      marginTop: '24px',
-    },
-    cancelButton: {
-      flex: '1',
-      padding: '14px',
-      border: '2px solid #e5e7eb',
-      borderRadius: '12px',
-      background: 'white',
-      color: '#6b7280',
-      fontSize: '15px',
-      fontWeight: '600',
-      cursor: 'pointer',
-      transition: 'all 0.2s ease',
-    },
-    submitButton: {
-      flex: '1',
-      padding: '14px',
-      border: 'none',
-      borderRadius: '12px',
-      background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+    btnPrimary: {
+      backgroundColor: '#059669',
       color: 'white',
-      fontSize: '15px',
-      fontWeight: '600',
-      cursor: 'pointer',
-      transition: 'all 0.2s ease',
-    },
-    deleteModalContent: {
-      background: 'white',
-      borderRadius: '20px',
-      padding: '32px',
-      width: '100%',
-      maxWidth: '400px',
-      textAlign: 'center',
-    },
-    deleteIcon: {
-      width: '64px',
-      height: '64px',
-      background: '#fef2f2',
-      borderRadius: '16px',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      margin: '0 auto 20px',
-      color: '#dc2626',
-      fontSize: '28px',
-    },
-    deleteTitle: {
-      fontSize: '20px',
-      fontWeight: '700',
-      color: '#1f2937',
-      marginBottom: '8px',
-    },
-    deleteText: {
-      fontSize: '15px',
-      color: '#6b7280',
-      marginBottom: '24px',
-    },
-    deleteName: {
-      fontWeight: '600',
-      color: '#1f2937',
-    },
-    deleteActions: {
-      display: 'flex',
-      gap: '12px',
-    },
-    deleteButton: {
-      flex: '1',
-      padding: '14px',
       border: 'none',
-      borderRadius: '12px',
-      background: '#dc2626',
-      color: 'white',
-      fontSize: '15px',
-      fontWeight: '600',
-      cursor: 'pointer',
-    },
-    loadingCard: {
-      background: 'white',
-      borderRadius: '16px',
-      padding: '24px',
-      boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
-      border: '1px solid #f3f4f6',
-    },
-    skeleton: {
-      background: 'linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%)',
-      backgroundSize: '200% 100%',
-      animation: 'shimmer 1.5s infinite',
+      padding: '12px 24px',
       borderRadius: '8px',
+      fontWeight: '600',
+      cursor: 'pointer',
+      fontSize: '14px',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '8px',
+      boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
     },
+    statsCard: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '12px',
+      backgroundColor: 'white',
+      padding: '16px 20px',
+      borderRadius: '12px',
+      border: '1px solid #e2e8f0'
+    }
   };
 
   return (
     <div style={styles.container}>
-      {/* Shimmer Animation */}
-      <style>{`
-        @keyframes shimmer {
-          0% { background-position: 200% 0; }
-          100% { background-position: -200% 0; }
-        }
-      `}</style>
-
       {/* Header */}
       <div style={styles.header}>
-        <div style={styles.headerTop}>
-          <div style={styles.titleSection}>
-            <h1 style={styles.title}>
-              <div style={styles.titleIcon}>
-                <FaLayerGroup />
-              </div>
-              Kategorilerim
-            </h1>
-            <p style={styles.subtitle}>
-              Ürünlerinizi düzenlemek için kategoriler oluşturun ve yönetin. 
-              Kategoriler sayesinde müşterileriniz ürünlerinizi daha kolay bulabilir.
-            </p>
-            <div style={styles.statsRow}>
-              <span style={styles.statBadge('green')}>
-                <FaTags /> {stats.total} Kategori
-              </span>
-              <span style={styles.statBadge('blue')}>
-                <FaFolderOpen /> {stats.parents} Ana Kategori
-              </span>
-              <span style={styles.statBadge('orange')}>
-                <FaChevronRight /> {stats.children} Alt Kategori
-              </span>
-              <span style={styles.statBadge('gray')}>
-                <FaBox /> {stats.totalProducts} Ürün
-              </span>
-              {stats.inactive > 0 && (
-                <span style={styles.statBadge('gray')}>
-                  <FaToggleOff /> {stats.inactive} Pasif
-                </span>
-              )}
-            </div>
-          </div>
-          <button 
-            onClick={() => setModalOpen(true)} 
-            style={styles.addButton}
-            onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
-            onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
-          >
-            <FaPlus /> Yeni Kategori
-          </button>
+        <div>
+          <h1 style={styles.title}>
+            <FaLayerGroup color="#059669" />
+            Kategori Seçimi
+          </h1>
+          <p style={styles.subtitle}>
+            Satış yapmak istediğiniz kategorileri seçin. 
+            Seçtiğiniz kategorilerde ürün ekleyebilirsiniz.
+          </p>
         </div>
+        <button 
+          onClick={handleSave}
+          disabled={!hasChanges || saveMutation.isLoading}
+          style={{
+            ...styles.btnPrimary,
+            opacity: (!hasChanges || saveMutation.isLoading) ? 0.5 : 1,
+            cursor: (!hasChanges || saveMutation.isLoading) ? 'not-allowed' : 'pointer'
+          }}
+        >
+          <FaSave /> {saveMutation.isLoading ? 'Kaydediliyor...' : 'Değişiklikleri Kaydet'}
+        </button>
+      </div>
 
-        {/* Toolbar */}
-        <div style={styles.toolbar}>
-          <div style={styles.searchWrapper}>
-            <FaSearch style={styles.searchIcon} />
-            <input
-              type="text"
-              placeholder="Kategori ara..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              style={styles.searchInput}
-              onFocus={(e) => e.target.style.borderColor = '#10b981'}
-              onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
-            />
+      {/* Info Box */}
+      <div style={styles.infoBox}>
+        <FaInfoCircle size={20} color="#2563eb" style={{ marginTop: '2px', flexShrink: 0 }} />
+        <div>
+          <div style={{ fontWeight: '600', color: '#1e40af', marginBottom: '4px' }}>
+            Kategori Seçimi Hakkında
           </div>
-
-          <div style={styles.filterGroup}>
-            <span style={styles.filterLabel}>Sırala:</span>
-            <select 
-              value={sortBy} 
-              onChange={(e) => setSortBy(e.target.value)}
-              style={styles.select}
-            >
-              <option value="name">İsim</option>
-              <option value="date">Tarih</option>
-            </select>
-            <button 
-              onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-              style={styles.sortButton}
-              title={sortOrder === 'asc' ? 'Artan' : 'Azalan'}
-            >
-              {sortOrder === 'asc' ? <FaSortAmountUp /> : <FaSortAmountDown />}
-            </button>
-          </div>
-
-          <div style={styles.viewToggle}>
-            <button 
-              onClick={() => setViewMode('grid')}
-              style={styles.viewButton(viewMode === 'grid')}
-            >
-              Grid
-            </button>
-            <button 
-              onClick={() => setViewMode('list')}
-              style={styles.viewButton(viewMode === 'list')}
-            >
-              Liste
-            </button>
-          </div>
+          <p style={{ fontSize: '14px', color: '#3b82f6', lineHeight: '1.5', margin: 0 }}>
+            İstediğiniz kategorileri seçebilirsiniz. Seçtiğiniz kategoriler mağazanızın profili olarak görüntülenecektir.
+            Tüm kategorilerde ürün ekleyebilirsiniz.
+          </p>
         </div>
       </div>
 
-      {/* Content */}
-      {isLoading ? (
-        <div style={styles.grid}>
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} style={styles.loadingCard}>
-              <div style={{ ...styles.skeleton, width: '48px', height: '48px', marginBottom: '16px' }} />
-              <div style={{ ...styles.skeleton, width: '70%', height: '20px', marginBottom: '8px' }} />
-              <div style={{ ...styles.skeleton, width: '50%', height: '16px', marginBottom: '16px' }} />
-              <div style={{ ...styles.skeleton, width: '100%', height: '40px' }} />
+      {/* Stats */}
+      <div style={{ display: 'flex', gap: '16px', marginBottom: '20px', flexWrap: 'wrap' }}>
+        <div style={styles.statsCard}>
+          <div style={{ 
+            width: '40px', 
+            height: '40px', 
+            borderRadius: '10px', 
+            backgroundColor: '#dcfce7', 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center' 
+          }}>
+            <FaCheck size={18} color="#16a34a" />
+          </div>
+          <div>
+            <div style={{ fontSize: '20px', fontWeight: '700', color: '#0f172a' }}>
+              {selectedIds.length}
             </div>
-          ))}
-        </div>
-      ) : isError ? (
-        <div style={{ ...styles.emptyState, background: '#fef2f2' }}>
-          <div style={{ ...styles.emptyIcon, background: '#fef2f2', color: '#dc2626' }}>
-            <FaTimes />
+            <div style={{ fontSize: '13px', color: '#64748b' }}>Seçili Kategori</div>
           </div>
-          <div style={{ ...styles.emptyTitle, color: '#dc2626' }}>Bir Hata Oluştu</div>
-          <div style={styles.emptyText}>Kategoriler yüklenirken bir sorun oluştu. Lütfen sayfayı yenileyin.</div>
         </div>
-      ) : filteredAndSortedItems.length === 0 ? (
-        <div style={styles.emptyState}>
-          <div style={styles.emptyIcon}>
-            <FaLayerGroup />
+        <div style={styles.statsCard}>
+          <div style={{ 
+            width: '40px', 
+            height: '40px', 
+            borderRadius: '10px', 
+            backgroundColor: '#e0f2fe', 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center' 
+          }}>
+            <FaLayerGroup size={18} color="#0284c7" />
           </div>
-          {searchQuery ? (
-            <>
-              <div style={styles.emptyTitle}>Sonuç Bulunamadı</div>
-              <div style={styles.emptyText}>"{searchQuery}" aramasına uygun kategori bulunamadı.</div>
-              <button onClick={() => setSearchQuery('')} style={styles.cancelButton}>
-                Aramayı Temizle
-              </button>
-            </>
-          ) : (
-            <>
-              <div style={styles.emptyTitle}>Henüz Kategori Yok</div>
-              <div style={styles.emptyText}>
-                İlk kategorinizi oluşturarak ürünlerinizi düzenlemeye başlayın.
-              </div>
-              <button onClick={() => setModalOpen(true)} style={styles.addButton}>
-                <FaPlus /> İlk Kategoriyi Oluştur
-              </button>
-            </>
-          )}
+          <div>
+            <div style={{ fontSize: '20px', fontWeight: '700', color: '#0f172a' }}>
+              {countCategories(categories)}
+            </div>
+            <div style={{ fontSize: '13px', color: '#64748b' }}>Toplam Kategori</div>
+          </div>
         </div>
-      ) : viewMode === 'grid' ? (
-        <div style={styles.grid}>
-          {filteredAndSortedItems.map((category) => {
-            const isActive = category.is_active !== false;
-            return (
-              <div 
-                key={category.id} 
-                style={styles.card(isActive)}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-4px)';
-                  e.currentTarget.style.boxShadow = '0 12px 24px rgba(0,0,0,0.1)';
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.08)';
-                }}
-              >
-                <div style={styles.cardHeader}>
-                  <div style={styles.cardIcon(!!category.parent_id)}>
-                    {category.parent_id ? <FaFolderOpen /> : <FaTags />}
-                  </div>
-                  <div style={styles.cardActions}>
-                    <button 
-                      onClick={() => handleToggleActive(category)}
-                      style={styles.actionButton(isActive ? 'green' : 'gray')}
-                      title={isActive ? 'Pasif Yap' : 'Aktif Yap'}
-                    >
-                      {isActive ? <FaToggleOn size={16} /> : <FaToggleOff size={16} />}
-                    </button>
-                    <button 
-                      onClick={() => handleEditClick(category)}
-                      style={styles.actionButton('blue')}
-                      title="Düzenle"
-                    >
-                      <FaEdit size={14} />
-                    </button>
-                    <button 
-                      onClick={() => handleDeleteClick(category)}
-                      style={styles.actionButton('red')}
-                      title="Sil"
-                    >
-                      <FaTrash size={14} />
-                    </button>
-                  </div>
-                </div>
-                <div style={styles.cardName}>{category.name}</div>
-                {category.slug && (
-                  <div style={styles.cardSlug}>{category.slug}</div>
-                )}
-                {category.description && (
-                  <div style={styles.cardDescription}>{category.description}</div>
-                )}
-                <div style={styles.cardMeta}>
-                  <span style={styles.metaBadge('blue')}>
-                    <FaBox size={10} /> {category.products_count || 0} ürün
-                  </span>
-                  {category.children_count > 0 && (
-                    <span style={styles.metaBadge('orange')}>
-                      <FaFolderOpen size={10} /> {category.children_count} alt kategori
-                    </span>
-                  )}
-                  {category.parent && (
-                    <span style={styles.metaBadge('gray')}>
-                      ↳ {category.parent.name}
-                    </span>
-                  )}
-                </div>
-                <div style={styles.cardFooter}>
-                  <span style={styles.cardDate}>
-                    {category.created_at ? new Date(category.created_at).toLocaleDateString('tr-TR', {
-                      day: 'numeric',
-                      month: 'long',
-                      year: 'numeric'
-                    }) : ''}
-                  </span>
-                  <span style={styles.statusBadge(isActive)}>
-                    {isActive ? <><FaCheck size={10} /> Aktif</> : <><FaTimes size={10} /> Pasif</>}
-                  </span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      ) : (
-        <div style={styles.list}>
-          {filteredAndSortedItems.map((category) => {
-            const isActive = category.is_active !== false;
-            return (
-              <div 
-                key={category.id} 
-                style={styles.listCard(isActive)}
-                onMouseOver={(e) => e.currentTarget.style.background = '#fafafa'}
-                onMouseOut={(e) => e.currentTarget.style.background = 'white'}
-              >
-                <div style={styles.listCardLeft}>
-                  <div style={{ ...styles.cardIcon(!!category.parent_id), width: '44px', height: '44px', fontSize: '18px' }}>
-                    {category.parent_id ? <FaFolderOpen /> : <FaTags />}
-                  </div>
-                  <div style={styles.listCardInfo}>
-                    <span style={{ fontSize: '16px', fontWeight: '600', color: '#1f2937' }}>
-                      {category.name}
-                      {category.parent && (
-                        <span style={{ fontSize: '13px', fontWeight: '400', color: '#9ca3af', marginLeft: '8px' }}>
-                          ↳ {category.parent.name}
-                        </span>
-                      )}
-                    </span>
-                    <span style={{ fontSize: '13px', color: '#9ca3af' }}>
-                      {category.slug} • {category.created_at ? new Date(category.created_at).toLocaleDateString('tr-TR') : ''} 
-                      • {category.products_count || 0} ürün
-                      {category.children_count > 0 && ` • ${category.children_count} alt kategori`}
-                    </span>
-                  </div>
-                </div>
-                <div style={styles.listCardMeta}>
-                  <span style={styles.statusBadge(isActive)}>
-                    {isActive ? <><FaCheck size={10} /> Aktif</> : <><FaTimes size={10} /> Pasif</>}
-                  </span>
-                  <div style={styles.cardActions}>
-                    <button 
-                      onClick={() => handleToggleActive(category)}
-                      style={styles.actionButton(isActive ? 'green' : 'gray')}
-                      title={isActive ? 'Pasif Yap' : 'Aktif Yap'}
-                    >
-                      {isActive ? <FaToggleOn size={16} /> : <FaToggleOff size={16} />}
-                    </button>
-                    <button 
-                      onClick={() => handleEditClick(category)}
-                      style={styles.actionButton('blue')}
-                      title="Düzenle"
-                    >
-                      <FaEdit size={14} />
-                    </button>
-                    <button 
-                      onClick={() => handleDeleteClick(category)}
-                      style={styles.actionButton('red')}
-                      title="Sil"
-                    >
-                      <FaTrash size={14} />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
+        {hasChanges && (
+          <div style={{
+            ...styles.statsCard,
+            backgroundColor: '#fef3c7',
+            borderColor: '#fcd34d'
+          }}>
+            <div style={{ fontSize: '14px', color: '#92400e', fontWeight: '500' }}>
+              ⚠️ Kaydedilmemiş değişiklikler var
+            </div>
+          </div>
+        )}
+      </div>
 
-      {/* Create Modal */}
-      {modalOpen && (
-        <div style={styles.modal} onClick={() => setModalOpen(false)}>
-          <div style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-            <div style={styles.modalHeader}>
-              <h2 style={styles.modalTitle}>Yeni Kategori Oluştur</h2>
-              <button onClick={() => setModalOpen(false)} style={styles.modalClose}>
-                <FaTimes />
-              </button>
-            </div>
-            <form onSubmit={handleCreate}>
-              <div style={styles.formGroup}>
-                <label style={styles.label}>Kategori Adı *</label>
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Örneğin: Elektronik"
-                  style={styles.input}
-                  onFocus={(e) => e.target.style.borderColor = '#10b981'}
-                  onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
-                  autoFocus
-                />
-              </div>
-              <div style={styles.formGroup}>
-                <label style={styles.label}>Üst Kategori (Opsiyonel)</label>
-                <select
-                  value={parentId}
-                  onChange={(e) => setParentId(e.target.value)}
-                  style={styles.input}
-                >
-                  <option value="">Ana Kategori (Üst kategori yok)</option>
-                  {rootCategories.map(cat => (
-                    <option key={cat.id} value={cat.id}>{cat.name}</option>
-                  ))}
-                </select>
-              </div>
-              <div style={styles.formGroup}>
-                <label style={styles.label}>Açıklama (Opsiyonel)</label>
-                <textarea
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Kategori hakkında kısa bir açıklama..."
-                  style={styles.textarea}
-                  onFocus={(e) => e.target.style.borderColor = '#10b981'}
-                  onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
-                />
-              </div>
-              <div style={styles.modalActions}>
-                <button type="button" onClick={() => setModalOpen(false)} style={styles.cancelButton}>
-                  İptal
-                </button>
-                <button 
-                  type="submit" 
-                  style={{
-                    ...styles.submitButton,
-                    opacity: createMutation.isLoading ? 0.7 : 1,
-                    cursor: createMutation.isLoading ? 'not-allowed' : 'pointer',
-                  }}
-                  disabled={createMutation.isLoading}
-                >
-                  {createMutation.isLoading ? 'Oluşturuluyor...' : 'Kategori Oluştur'}
-                </button>
-              </div>
-            </form>
-          </div>
+      {/* Toolbar */}
+      <div style={styles.toolbar}>
+        <div style={{ position: 'relative' }}>
+          <FaSearch style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+          <input
+            type="text"
+            placeholder="Kategori ara..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            style={styles.searchInput}
+          />
         </div>
-      )}
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button onClick={expandAll} style={styles.btnSecondary}>
+            <FaChevronDown size={12} /> Tümünü Aç
+          </button>
+          <button onClick={collapseAll} style={styles.btnSecondary}>
+            <FaChevronRight size={12} /> Tümünü Kapat
+          </button>
+        </div>
+      </div>
 
-      {/* Edit Modal */}
-      {editModalOpen && selectedCategory && (
-        <div style={styles.modal} onClick={() => setEditModalOpen(false)}>
-          <div style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-            <div style={styles.modalHeader}>
-              <h2 style={styles.modalTitle}>Kategori Düzenle</h2>
-              <button onClick={() => setEditModalOpen(false)} style={styles.modalClose}>
-                <FaTimes />
-              </button>
-            </div>
-            <form onSubmit={handleUpdate}>
-              <div style={styles.formGroup}>
-                <label style={styles.label}>Kategori Adı *</label>
-                <input
-                  type="text"
-                  value={editName}
-                  onChange={(e) => setEditName(e.target.value)}
-                  placeholder="Örneğin: Elektronik"
-                  style={styles.input}
-                  onFocus={(e) => e.target.style.borderColor = '#10b981'}
-                  onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
-                  autoFocus
-                />
-              </div>
-              <div style={styles.formGroup}>
-                <label style={styles.label}>Üst Kategori (Opsiyonel)</label>
-                <select
-                  value={editParentId}
-                  onChange={(e) => setEditParentId(e.target.value)}
-                  style={styles.input}
-                >
-                  <option value="">Ana Kategori (Üst kategori yok)</option>
-                  {getAvailableParents(selectedCategory.id)
-                    .filter(cat => !cat.parent_id) // Only show root categories as parents
-                    .map(cat => (
-                      <option key={cat.id} value={cat.id}>{cat.name}</option>
-                    ))}
-                </select>
-              </div>
-              <div style={styles.formGroup}>
-                <label style={styles.label}>Açıklama (Opsiyonel)</label>
-                <textarea
-                  value={editDescription}
-                  onChange={(e) => setEditDescription(e.target.value)}
-                  placeholder="Kategori hakkında kısa bir açıklama..."
-                  style={styles.textarea}
-                  onFocus={(e) => e.target.style.borderColor = '#10b981'}
-                  onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
-                />
-              </div>
-              <div style={styles.modalActions}>
-                <button type="button" onClick={() => setEditModalOpen(false)} style={styles.cancelButton}>
-                  İptal
-                </button>
-                <button 
-                  type="submit" 
-                  style={{
-                    ...styles.submitButton,
-                    opacity: updateMutation.isLoading ? 0.7 : 1,
-                    cursor: updateMutation.isLoading ? 'not-allowed' : 'pointer',
-                  }}
-                  disabled={updateMutation.isLoading}
-                >
-                  {updateMutation.isLoading ? 'Güncelleniyor...' : 'Kaydet'}
-                </button>
-              </div>
-            </form>
+      {/* Category List */}
+      <div style={styles.categoryContainer}>
+        {isLoading ? (
+          <div style={{ padding: '48px', textAlign: 'center', color: '#64748b' }}>
+            Kategoriler yükleniyor...
           </div>
-        </div>
-      )}
-
-      {/* Delete Confirmation Modal */}
-      {deleteModalOpen && selectedCategory && (
-        <div style={styles.modal} onClick={() => setDeleteModalOpen(false)}>
-          <div style={styles.deleteModalContent} onClick={(e) => e.stopPropagation()}>
-            <div style={styles.deleteIcon}>
-              <FaTrash />
-            </div>
-            <h2 style={styles.deleteTitle}>Kategoriyi Sil</h2>
-            <p style={styles.deleteText}>
-              <span style={styles.deleteName}>"{selectedCategory.name}"</span> kategorisini silmek istediğinize emin misiniz? 
-              {selectedCategory.children_count > 0 && (
-                <><br /><span style={{ color: '#dc2626' }}>⚠️ Bu kategorinin {selectedCategory.children_count} alt kategorisi var. Önce onları silmeniz gerekiyor.</span></>
-              )}
-              {!selectedCategory.children_count && ' Bu işlem geri alınamaz.'}
-            </p>
-            <div style={styles.deleteActions}>
-              <button 
-                onClick={() => setDeleteModalOpen(false)} 
-                style={styles.cancelButton}
-              >
-                İptal
-              </button>
-              <button 
-                onClick={confirmDelete}
-                style={{
-                  ...styles.deleteButton,
-                  opacity: deleteMutation.isLoading ? 0.7 : 1,
-                }}
-                disabled={deleteMutation.isLoading || selectedCategory.children_count > 0}
-              >
-                {deleteMutation.isLoading ? 'Siliniyor...' : 'Evet, Sil'}
-              </button>
-            </div>
+        ) : filteredCategories.length === 0 ? (
+          <div style={{ padding: '48px', textAlign: 'center', color: '#64748b' }}>
+            {searchQuery ? 'Arama sonucu bulunamadı.' : 'Henüz kategori eklenmemiş.'}
           </div>
-        </div>
-      )}
+        ) : (
+          filteredCategories.map(category => renderCategory(category))
+        )}
+      </div>
     </div>
   );
 }

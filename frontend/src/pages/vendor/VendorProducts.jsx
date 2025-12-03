@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   FaPlus, FaSearch, FaFilter, FaEdit, FaTrash, FaEye, 
@@ -8,7 +8,7 @@ import {
 } from 'react-icons/fa';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getVendorProducts, createVendorProduct, deleteVendorProduct, updateVendorProduct, deleteVendorProductPhoto, updateVendorProductStatus } from '../../features/vendor/api/productApi';
-import { getVendorCategories } from '../../features/vendor/api/categoryApi';
+import { getMyCategoriesForProducts } from '../../features/vendor/api/categoryApi';
 import { getUnits } from '../../features/public/api/unitsApi';
 import { useToast } from '../../components/Toast';
 import axios from '../../lib/axios';
@@ -66,11 +66,56 @@ const VendorProducts = () => {
   });
   const products = productsData?.data ?? [];
 
-  const { data: categoriesData } = useQuery({ 
-    queryKey: ['vendorCategories'], 
-    queryFn: getVendorCategories 
+  const { data: categoriesData, isLoading: categoriesLoading } = useQuery({ 
+    queryKey: ['myCategoriesForProducts'], 
+    queryFn: getMyCategoriesForProducts 
   });
-  const categories = categoriesData?.data ?? [];
+  const categories = categoriesData?.data?.categories ?? [];
+  const hasFetchedCategories = !categoriesLoading && categoriesData !== undefined;
+
+  // Group categories by parent for better UX
+  const groupedCategories = useMemo(() => {
+    // Separate root categories and child categories
+    const rootCategories = categories.filter(c => !c.parent_id);
+    const childCategories = categories.filter(c => c.parent_id);
+    
+    // Group children by parent
+    const groups = [];
+    
+    rootCategories.forEach(root => {
+      const children = childCategories.filter(c => c.parent_id === root.id);
+      groups.push({
+        parent: root,
+        children: children
+      });
+    });
+    
+    // Add orphan children (whose parent is not in root but exists)
+    const orphanChildren = childCategories.filter(c => 
+      !rootCategories.find(r => r.id === c.parent_id)
+    );
+    
+    if (orphanChildren.length > 0) {
+      // Group by their parent name
+      const orphanGroups = {};
+      orphanChildren.forEach(c => {
+        const parentName = c.parent?.name || 'Diğer';
+        if (!orphanGroups[parentName]) {
+          orphanGroups[parentName] = [];
+        }
+        orphanGroups[parentName].push(c);
+      });
+      
+      Object.entries(orphanGroups).forEach(([parentName, children]) => {
+        groups.push({
+          parent: { name: parentName, id: null },
+          children: children
+        });
+      });
+    }
+    
+    return groups;
+  }, [categories]);
 
   const { data: unitsData } = useQuery({ 
     queryKey: ['units'], 
@@ -233,6 +278,21 @@ const VendorProducts = () => {
   const openViewModal = (product) => {
     setModalMode('view');
     setSelectedProduct(product);
+    setFormData({
+      name: product.name || '',
+      category_id: product.category_id || '',
+      price: product.price || '',
+      stock: product.stock || 0,
+      description: product.description || '',
+      short_description: product.short_description || '',
+      type: product.type || 'simple',
+      sku: product.sku || '',
+      unit_id: product.variants?.[0]?.unit_id || '',
+      is_featured: product.is_featured || false,
+      tags: product.tags ? product.tags.map(t => t.name) : [],
+      variants: product.variants || [],
+      images: []
+    });
     setActiveTab('general');
     setIsModalOpen(true);
   };
@@ -421,28 +481,91 @@ const VendorProducts = () => {
       <div style={styles.header}>
         <div>
           <h1 style={styles.title}>Ürün Yönetimi</h1>
-          <p style={styles.subtitle}>Ürünlerinizi düzenlemek için kategoriler oluşturun ve yönetin. Kategoriler sayesinde müşterileriniz ürünlerinizi daha kolay bulabilir.</p>
+          <p style={styles.subtitle}>
+            {!hasFetchedCategories 
+              ? 'Kategoriler yükleniyor...'
+              : categories.length > 0 
+                ? 'Ürünlerinizi buradan yönetebilirsiniz. Seçtiğiniz kategorilerde ürün ekleyebilirsiniz.'
+                : 'Ürün eklemek için önce Kategoriler sayfasından satış yapacağınız kategorileri seçin.'}
+          </p>
         </div>
-        <button onClick={openCreateModal} style={styles.btnPrimary}>
+        <button 
+          onClick={openCreateModal} 
+          style={{
+            ...styles.btnPrimary,
+            opacity: (!hasFetchedCategories || categories.length === 0) ? 0.5 : 1,
+            cursor: (!hasFetchedCategories || categories.length === 0) ? 'not-allowed' : 'pointer'
+          }}
+          disabled={!hasFetchedCategories || categories.length === 0}
+          title={!hasFetchedCategories ? 'Yükleniyor...' : categories.length === 0 ? 'Önce kategori seçmelisiniz' : 'Yeni ürün ekle'}
+        >
           <FaPlus size={14} /> Yeni Ürün Ekle
         </button>
       </div>
 
       {/* Stats Bar */}
       <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', flexWrap: 'wrap' }}>
-        <div style={{...styles.statBadge, backgroundColor: '#ecfdf5', color: '#059669'}}>
-          <FaTag /> {categories.length} Kategori
-        </div>
-        <div style={{...styles.statBadge, backgroundColor: '#eff6ff', color: '#2563eb'}}>
-          <FaFolder /> {categories.filter(c => !c.parent_id).length} Ana Kategori
-        </div>
-        <div style={{...styles.statBadge, backgroundColor: '#fff7ed', color: '#ea580c'}}>
-          <FaLayerGroup /> {categories.filter(c => c.parent_id).length} Alt Kategori
+        <div style={{
+          ...styles.statBadge, 
+          backgroundColor: !hasFetchedCategories ? '#f1f5f9' : categories.length > 0 ? '#ecfdf5' : '#fef3c7', 
+          color: !hasFetchedCategories ? '#64748b' : categories.length > 0 ? '#059669' : '#92400e'
+        }}>
+          <FaFolder /> {categoriesLoading ? '...' : categories.length} Seçili Kategori
         </div>
         <div style={{...styles.statBadge, backgroundColor: '#f1f5f9', color: '#475569'}}>
           <FaBox /> {products.length} Ürün
         </div>
       </div>
+
+      {/* No Category Warning - Only show after data is loaded */}
+      {hasFetchedCategories && categories.length === 0 && (
+        <div style={{
+          padding: '20px 24px',
+          backgroundColor: '#fef3c7',
+          border: '1px solid #fcd34d',
+          borderRadius: '12px',
+          marginBottom: '24px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '16px'
+        }}>
+          <div style={{
+            width: '48px',
+            height: '48px',
+            borderRadius: '12px',
+            backgroundColor: '#fde68a',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '24px'
+          }}>
+            ⚠️
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontWeight: '600', color: '#92400e', marginBottom: '4px' }}>
+              Kategori Seçimi Gerekli
+            </div>
+            <p style={{ margin: 0, color: '#a16207', fontSize: '14px', lineHeight: '1.5' }}>
+              Ürün ekleyebilmek için önce satış yapmak istediğiniz kategorileri seçmeniz gerekiyor.
+            </p>
+          </div>
+          <a 
+            href="/vendor/categories" 
+            style={{
+              padding: '10px 20px',
+              backgroundColor: '#f59e0b',
+              color: 'white',
+              borderRadius: '8px',
+              textDecoration: 'none',
+              fontWeight: '600',
+              fontSize: '14px',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            Kategori Seç
+          </a>
+        </div>
+      )}
 
       {/* Filters & Toolbar */}
       <div style={{...styles.filterContainer, alignItems: 'center', justifyContent: 'space-between'}}>
@@ -733,16 +856,82 @@ const VendorProducts = () => {
                         </div>
                         <div>
                           <label style={styles.label}>Kategori *</label>
-                          <select 
-                            required
-                            value={formData.category_id}
-                            onChange={(e) => setFormData({...formData, category_id: e.target.value})}
-                            disabled={modalMode === 'view'}
-                            style={{...styles.formInput, borderColor: !formData.category_id && modalMode !== 'view' ? '#fca5a5' : '#e2e8f0'}}
-                          >
-                            <option value="">Kategori Seçiniz</option>
-                            {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                          </select>
+                          {categories.length === 0 ? (
+                            <div style={{
+                              padding: '12px 16px',
+                              backgroundColor: '#fef3c7',
+                              border: '1px solid #fcd34d',
+                              borderRadius: '8px',
+                              fontSize: '14px',
+                              color: '#92400e'
+                            }}>
+                              ⚠️ Henüz kategori seçmediniz. Ürün eklemeden önce{' '}
+                              <a href="/vendor/categories" style={{ color: '#d97706', fontWeight: '600' }}>
+                                Kategoriler
+                              </a>{' '}
+                              sayfasından satış yapacağınız kategorileri seçin.
+                            </div>
+                          ) : (
+                            <select 
+                              required
+                              value={formData.category_id}
+                              onChange={(e) => setFormData({...formData, category_id: e.target.value})}
+                              disabled={modalMode === 'view'}
+                              style={{...styles.formInput, borderColor: !formData.category_id && modalMode !== 'view' ? '#fca5a5' : '#e2e8f0'}}
+                            >
+                              <option value="">Kategori Seçiniz</option>
+                              {groupedCategories.map(group => (
+                                group.children.length > 0 ? (
+                                  <optgroup key={group.parent.id || group.parent.name} label={`📁 ${group.parent.name}`}>
+                                    {/* Parent category itself if selectable */}
+                                    {group.parent.id && (
+                                      <option value={group.parent.id}>
+                                        {group.parent.name} (Ana Kategori)
+                                      </option>
+                                    )}
+                                    {/* Child categories */}
+                                    {group.children.map(child => (
+                                      <option key={child.id} value={child.id}>
+                                        ↳ {child.name}
+                                      </option>
+                                    ))}
+                                  </optgroup>
+                                ) : (
+                                  // Single category without children
+                                  <option key={group.parent.id} value={group.parent.id}>
+                                    📁 {group.parent.name}
+                                  </option>
+                                )
+                              ))}
+                            </select>
+                          )}
+                          {/* Show selected category path */}
+                          {formData.category_id && categories.length > 0 && (() => {
+                            const selected = categories.find(c => c.id == formData.category_id);
+                            if (!selected) return null;
+                            return (
+                              <div style={{
+                                marginTop: '8px',
+                                padding: '8px 12px',
+                                backgroundColor: '#f0fdf4',
+                                border: '1px solid #bbf7d0',
+                                borderRadius: '6px',
+                                fontSize: '13px',
+                                color: '#166534',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px'
+                              }}>
+                                <FaCheck size={12} />
+                                <span>
+                                  {selected.parent 
+                                    ? <><strong>{selected.parent.name}</strong> → {selected.name}</>
+                                    : <strong>{selected.name}</strong>
+                                  }
+                                </span>
+                              </div>
+                            );
+                          })()}
                         </div>
                         <div>
                           <label style={styles.label}>Ürün Tipi</label>

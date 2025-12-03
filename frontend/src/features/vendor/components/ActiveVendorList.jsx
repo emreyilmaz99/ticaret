@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { FaSearch, FaFilter, FaStore, FaStar, FaEdit, FaBan, FaEye } from 'react-icons/fa';
+import { FaSearch, FaFilter, FaStore, FaStar, FaEdit, FaBan, FaEye, FaFolder } from 'react-icons/fa';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import VendorEditModal from './VendorEditModal';
+import VendorCategoryModal from '../../admin/components/VendorCategoryModal';
 import { getVendors, updateVendorStatus } from '../api/vendorApi';
 import { useToast } from '../../../components/Toast';
 
@@ -11,6 +12,7 @@ const ActiveVendorList = () => {
   
   // Modal State
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [selectedVendor, setSelectedVendor] = useState(null);
   
   // Sayfalama State'leri
@@ -54,6 +56,12 @@ const ActiveVendorList = () => {
   const handleEditClick = (vendor) => {
     setSelectedVendor(vendor);
     setIsEditModalOpen(true);
+  };
+
+  // Kategori Modal İşlemleri
+  const handleCategoryClick = (vendor) => {
+    setSelectedVendor(vendor);
+    setIsCategoryModalOpen(true);
   };
 
   const handleSaveVendor = (id, updatedData) => {
@@ -138,6 +146,7 @@ const ActiveVendorList = () => {
                 <td style={{ padding: '16px 24px' }}><div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#f59e0b' }}><FaStar /><span style={{ fontWeight: '600', color: 'var(--text-main)' }}>{vendor.rating}</span></div></td>
                 <td style={{ padding: '16px 24px', textAlign: 'right' }}>
                   <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                    <button onClick={() => handleCategoryClick(vendor)} title="Kategoriler" style={{ padding: '8px', borderRadius: '6px', border: '1px solid #e2e8f0', backgroundColor: 'white', color: 'var(--primary)', cursor: 'pointer' }}><FaFolder /></button>
                     <button onClick={() => handleEditClick(vendor)} title="Düzenle" style={{ padding: '8px', borderRadius: '6px', border: '1px solid #e2e8f0', backgroundColor: 'white', color: 'var(--text-muted)', cursor: 'pointer' }}><FaEdit /></button>
                     <button title="Yasakla" onClick={() => { if (!confirm('Bu satıcıyı yasaklamak istiyor musunuz?')) return; updateStatusMutation.mutate({ id: vendor.id, status: 'banned' }); }} style={{ padding: '8px', borderRadius: '6px', border: '1px solid #fee2e2', backgroundColor: '#fff1f2', color: '#ef4444', cursor: 'pointer' }}><FaBan /></button>
                   </div>
@@ -162,6 +171,7 @@ const ActiveVendorList = () => {
       </div>
 
       <VendorEditModal isOpen={isEditModalOpen} onClose={() => { setIsEditModalOpen(false); setSelectedVendor(null); }} vendor={selectedVendor} onSave={handleSaveVendor} />
+      <VendorCategoryModal isOpen={isCategoryModalOpen} onClose={() => { setIsCategoryModalOpen(false); setSelectedVendor(null); }} vendor={selectedVendor} />
     </div>
   );
 };

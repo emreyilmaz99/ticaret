@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { FaHome, FaBox, FaUsers, FaSignOutAlt, FaChartLine, FaStore, FaUserShield, FaPercentage, FaLeaf } from 'react-icons/fa';
+import { FaHome, FaBox, FaUsers, FaSignOutAlt, FaChartLine, FaStore, FaUserShield, FaPercentage, FaLeaf, FaLayerGroup } from 'react-icons/fa';
 
 const AdminSidebar = () => {
   const navigate = useNavigate();
@@ -22,6 +22,7 @@ const AdminSidebar = () => {
       { path: '/admin/vendors', icon: FaStore, label: 'Satıcı Başvuruları' },
       { path: '/admin/vendor-applications', icon: FaUsers, label: 'Ön Başvurular' },
       { path: '/admin/commission-plans', icon: FaPercentage, label: 'Komisyon Planları' },
+      { path: '/admin/categories', icon: FaLayerGroup, label: 'Kategoriler' },
       { path: '/admin/products', icon: FaBox, label: 'Ürünler' },
       { path: '/admin/users', icon: FaUsers, label: 'Kullanıcılar' },
       { path: '/admin/admins', icon: FaUserShield, label: 'Yöneticiler' },

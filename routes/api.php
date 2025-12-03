@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\V1\Admin\AdminPermissionsController;
 use App\Http\Controllers\Api\V1\Admin\VendorPayoutController as AdminVendorPayoutController;
 use App\Http\Controllers\Admin\CommissionPlanController;
 use App\Http\Controllers\Api\V1\Admin\ProductController as AdminProductController;
+use App\Http\Controllers\Api\V1\Admin\CategoryController as AdminCategoryController;
 
 // Vendor controllers
 use App\Http\Controllers\Api\V1\Vendor\VendorAuthController;
@@ -49,6 +50,8 @@ Route::prefix('v1/admin')->group(function () {
         Route::put('vendors/{vendor}', [AdminVendorController::class, 'update']);
         Route::delete('vendors/{vendor}', [AdminVendorController::class, 'destroy']);
         Route::put('vendors/{vendor}/status', [AdminVendorController::class, 'updateStatus']);
+        // vendor categories (read-only for admin)
+        Route::get('vendors/{vendor}/categories', [AdminVendorController::class, 'getVendorCategories']);
         // admin management
         Route::get('admins', [AdminController::class, 'index']);
         Route::post('admins', [AdminController::class, 'store']);
@@ -93,6 +96,17 @@ Route::prefix('v1/admin')->group(function () {
         Route::put('products/{id}/status', [AdminProductController::class, 'updateStatus']);
         Route::post('products/bulk-status', [AdminProductController::class, 'bulkUpdateStatus']);
         Route::delete('products/{id}', [AdminProductController::class, 'destroy']);
+
+        // categories management
+        Route::get('categories', [AdminCategoryController::class, 'index']);
+        Route::get('categories/tree', [AdminCategoryController::class, 'tree']);
+        Route::get('categories/statistics', [AdminCategoryController::class, 'statistics']);
+        Route::post('categories', [AdminCategoryController::class, 'store']);
+        Route::get('categories/{category}', [AdminCategoryController::class, 'show']);
+        Route::put('categories/{category}', [AdminCategoryController::class, 'update']);
+        Route::delete('categories/{category}', [AdminCategoryController::class, 'destroy']);
+        Route::post('categories/bulk-status', [AdminCategoryController::class, 'bulkUpdateStatus']);
+        Route::post('categories/update-order', [AdminCategoryController::class, 'updateOrder']);
     });
 });
 
@@ -117,6 +131,9 @@ Route::prefix('v1/vendor')->group(function () {
         // vendor profile endpoints (self-service)
         Route::put('profile', [VendorProfileController::class, 'update']);
         Route::delete('profile', [VendorProfileController::class, 'destroy']);
+        Route::get('my-categories', [VendorProfileController::class, 'myCategories']);
+        Route::get('my-categories/for-products', [VendorProfileController::class, 'myCategoriesForProducts']);
+        Route::put('my-categories', [VendorProfileController::class, 'updateMyCategories']);
 
         // vendor addresses
         Route::get('addresses', [VendorAddressController::class, 'index']);
@@ -133,12 +150,6 @@ Route::prefix('v1/vendor')->group(function () {
         // vendor payouts
         Route::get('payouts', [SelfVendorPayoutController::class, 'index']);
         Route::post('payouts', [SelfVendorPayoutController::class, 'store']);
-        // vendor categories (self-service)
-        Route::get('categories', [\App\Http\Controllers\Api\V1\Vendor\CategoryController::class, 'index']);
-        Route::post('categories', [\App\Http\Controllers\Api\V1\Vendor\CategoryController::class, 'store']);
-        Route::put('categories/{id}', [\App\Http\Controllers\Api\V1\Vendor\CategoryController::class, 'update']);
-        Route::post('categories/{id}/toggle-active', [\App\Http\Controllers\Api\V1\Vendor\CategoryController::class, 'toggleActive']);
-        Route::delete('categories/{id}', [\App\Http\Controllers\Api\V1\Vendor\CategoryController::class, 'destroy']);
         // onboarding completion (vendor marks their onboarding as finished)
         Route::post('onboarding/complete', [VendorProfileController::class, 'completeOnboarding']);
     });
@@ -154,3 +165,8 @@ Route::post('v1/vendor-applications/{preApplicationId}/submit-full', [PublicVend
 
 // units (public)
 Route::get('v1/units', [\App\Http\Controllers\Api\V1\Public\UnitsController::class, 'index']);
+
+// categories (public)
+Route::get('v1/categories', [\App\Http\Controllers\Api\V1\Public\CategoryController::class, 'index']);
+Route::get('v1/categories/tree', [\App\Http\Controllers\Api\V1\Public\CategoryController::class, 'tree']);
+Route::get('v1/categories/{slug}', [\App\Http\Controllers\Api\V1\Public\CategoryController::class, 'show']);

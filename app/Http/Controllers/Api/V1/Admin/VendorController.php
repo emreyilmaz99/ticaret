@@ -87,4 +87,23 @@ class VendorController extends BaseAdminController
 
         return $this->success(new \App\Http\Resources\VendorResource($vendor), 'Satıcı durumu güncellendi');
     }
+
+    /**
+     * Satıcının seçtiği kategorileri getir (read-only for admin)
+     */
+    public function getVendorCategories(int $id)
+    {
+        $vendor = $this->service->find($id);
+        if (! $vendor) {
+            return $this->error('Satıcı bulunamadı', 404);
+        }
+
+        $categories = $vendor->allowedCategories()->with('parent:id,name')->get();
+
+        return $this->success([
+            'vendor_id' => $vendor->id,
+            'vendor_name' => $vendor->name,
+            'categories' => $categories
+        ]);
+    }
 }

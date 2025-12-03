@@ -127,6 +127,57 @@ class Vendor extends Authenticatable
         return $this->hasMany(VendorRating::class)->approved();
     }
 
+    /**
+     * Satıcının yetkili olduğu kategoriler
+     */
+    public function categories()
+    {
+        return $this->belongsToMany(Category::class, 'vendor_categories')
+                    ->withTimestamps();
+    }
+
+    /**
+     * Satıcının seçtiği/yetkili kategoriler (alias for categories)
+     */
+    public function allowedCategories()
+    {
+        return $this->belongsToMany(Category::class, 'vendor_categories')
+                    ->withTimestamps();
+    }
+
+    /**
+     * Satıcının yetkili olduğu kategori ID'leri
+     */
+    public function getCategoryIdsAttribute(): array
+    {
+        return $this->categories()->pluck('categories.id')->toArray();
+    }
+
+    /**
+     * Satıcının bu kategoride ürün ekleyip ekleyemeyeceğini kontrol et
+     */
+    public function canAddProductInCategory(int $categoryId): bool
+    {
+        // Eğer satıcının hiç kategorisi yoksa, tüm kategorilere ekleyebilir (eski davranış)
+        if ($this->categories()->count() === 0) {
+            return true;
+        }
+        
+        // Satıcının yetkili kategorilerini kontrol et
+        $allowedCategoryIds = $this->categories()->pluck('categories.id')->toArray();
+        
+        // Kategori veya üst kategorilerinden biri yetkili mi?
+        $category = Category::find($categoryId);
+        while ($category) {
+            if (in_array($category->id, $allowedCategoryIds)) {
+                return true;
+            }
+            $category = $category->parent;
+        }
+        
+        return false;
+    }
+
     // Vendor status constants (simplified - application status moved to vendor_applications)
     public const STATUS_ACTIVE = 'active';       // Aktif - işlem yapabilir
     public const STATUS_INACTIVE = 'inactive';   // Pasif - geçici durduruldu

@@ -23,7 +23,7 @@ class StoreProductRequest extends FormRequest
             'stock' => ['required_if:type,simple','nullable','integer','min:0'],
             'sku' => ['nullable','string','max:100'],
             'is_featured' => ['nullable','boolean'],
-            'category_id' => ['required','exists:categories,id'],
+            'category_id' => ['required', 'exists:categories,id'],
             'unit_id' => ['nullable','exists:units,id'],
             // extra fields for extended product creation
             'tags' => ['nullable','array'],

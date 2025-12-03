@@ -1,26 +1,36 @@
 import axios from '../../../lib/axios';
 
+// Get all public categories (admin managed)
 export const getVendorCategories = async () => {
-  const res = await axios.get('/v1/vendor/categories');
+  const res = await axios.get('/v1/categories');
   return res.data;
 };
 
-export const createVendorCategory = async (payload) => {
-  const res = await axios.post('/v1/vendor/categories', payload);
+// Get category tree (hierarchical) - public
+export const getVendorCategoryTree = async () => {
+  const res = await axios.get('/v1/categories/tree');
   return res.data;
 };
 
-export const updateVendorCategory = async (id, payload) => {
-  const res = await axios.put(`/v1/vendor/categories/${id}`, payload);
+// Get vendor's selected categories
+export const getMySelectedCategories = async () => {
+  const res = await axios.get('/v1/vendor/my-categories');
   return res.data;
 };
 
-export const toggleVendorCategoryActive = async (id) => {
-  const res = await axios.post(`/v1/vendor/categories/${id}/toggle-active`);
+// Get vendor's categories for product creation (selected + all children)
+export const getMyCategoriesForProducts = async () => {
+  const res = await axios.get('/v1/vendor/my-categories/for-products');
   return res.data;
 };
 
-export const deleteVendorCategory = async (id) => {
-  const res = await axios.delete(`/v1/vendor/categories/${id}`);
+// Update vendor's selected categories
+export const updateMyCategories = async (categoryIds) => {
+  const res = await axios.put('/v1/vendor/my-categories', {
+    category_ids: categoryIds
+  });
   return res.data;
 };
+
+// Backward compatibility alias
+export const getMyAllowedCategories = getMySelectedCategories;
