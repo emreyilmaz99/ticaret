@@ -14,11 +14,11 @@ import AdminPrivateRoute from './components/AdminPrivateRoute';
 
 // --- SAYFALAR ---
 // 1. Müşteri Sayfaları
-import Home from './pages/Home';
-import Login from './pages/Login'; // Müşteri Girişi (Dosya: src/pages/Login.jsx)
-import Register from './pages/Register'; // Müşteri Kayıt
-import Favorites from './pages/Favorites'; // Favorilerim Sayfası
-import Cart from './pages/Cart'; // Sepet Sayfası
+import Home from './pages/public/Home';
+import Login from './pages/public/Login'; // Müşteri Girişi
+import Register from './pages/public/Register'; // Müşteri Kayıt
+import Favorites from './pages/user/Favorites'; // Favorilerim Sayfası
+import Cart from './pages/user/Cart'; // Sepet Sayfası
 
 // 2. Admin Sayfaları (Senin klasör yapına göre: src/pages/admin/...)
 import AdminLogin from './pages/admin/AdminLogin'; // Admin Girişi

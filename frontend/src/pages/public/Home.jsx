@@ -5,10 +5,10 @@ import {
   FaCheck, FaTimes, FaCookieBite, FaUsers, FaStore, FaBox, FaShieldAlt, FaTruck, FaArrowRight,
   FaEye, FaClock
 } from 'react-icons/fa';
-import { useToast } from '../components/Toast';
-import { useAuth } from '../context/AuthContext';
-import QuickViewModal from '../components/QuickViewModal';
-import ProductCard from '../components/ProductCard';
+import { useToast } from '../../components/Toast';
+import { useAuth } from '../../context/AuthContext';
+import QuickViewModal from '../../components/QuickViewModal';
+import ProductCard from '../../components/ProductCard';
 
 const Home = () => {
   const [searchParams] = useSearchParams();

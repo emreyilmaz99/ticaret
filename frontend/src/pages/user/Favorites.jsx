@@ -4,9 +4,9 @@ import {
   FaTrash, FaShoppingCart, FaHeartBroken, FaArrowLeft, 
   FaSortAmountDown, FaFilter, FaCheck, FaTimes 
 } from 'react-icons/fa';
-import { useFavorites } from '../context/FavoritesContext';
-import { useCart } from '../context/CartContext';
-import { useToast } from '../components/Toast';
+import { useFavorites } from '../../context/FavoritesContext';
+import { useCart } from '../../context/CartContext';
+import { useToast } from '../../components/Toast';
 
 const Favorites = () => {
   const { favorites, removeFromFavorites, clearFavorites } = useFavorites();
