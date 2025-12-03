@@ -9,10 +9,17 @@ import { useAuth } from '../context/AuthContext';
 import { useFavorites } from '../context/FavoritesContext';
 import { useCart } from '../context/CartContext';
 import CategoryMenu from './CategoryMenu';
+import AddressModal from './AddressModal';
 
 const Navbar = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
+  const [currentAddress, setCurrentAddress] = useState(() => {
+    const saved = localStorage.getItem('user_address');
+    return saved ? JSON.parse(saved) : null;
+  });
+
   const toast = useToast();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
@@ -40,7 +47,13 @@ const Navbar = () => {
   };
 
   const handleAddressClick = () => {
-    toast.info('Bilgi', 'Konum seçimi modalı açılacak.');
+    setIsAddressModalOpen(true);
+  };
+
+  const handleSaveAddress = (address) => {
+    setCurrentAddress(address);
+    localStorage.setItem('user_address', JSON.stringify(address));
+    toast.success('Adres Kaydedildi', 'Teslimat adresi başarıyla güncellendi.');
   };
 
 
@@ -361,12 +374,21 @@ const Navbar = () => {
       <div style={styles.bottomBar}>
         <div style={{ ...styles.container, justifyContent: 'space-between', position: 'relative' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
-            <button style={styles.addressBtn} onClick={handleAddressClick}>
-              <FaMapMarkerAlt color="#059669" />
-              <span>Teslimat Adresi Seçin</span>
-              <FaChevronDown size={10} />
-            </button>
-            <div style={{ width: '1px', height: '20px', backgroundColor: '#cbd5e1' }}></div>
+            {user && (
+              <>
+                <button style={styles.addressBtn} onClick={handleAddressClick}>
+                  <FaMapMarkerAlt color="#059669" />
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', lineHeight: '1.2' }}>
+                    <span style={{ fontSize: '10px', color: '#64748b' }}>Teslimat Adresi</span>
+                    <span style={{ fontWeight: '600', color: '#1e293b' }}>
+                      {currentAddress ? `${currentAddress.title} - ${currentAddress.district}/${currentAddress.city}` : 'Adres Seçin'}
+                    </span>
+                  </div>
+                  <FaChevronDown size={10} style={{ marginLeft: '4px' }} />
+                </button>
+                <div style={{ width: '1px', height: '20px', backgroundColor: '#cbd5e1' }}></div>
+              </>
+            )}
             <CategoryMenu />
           </div>
           <div 
@@ -377,6 +399,13 @@ const Navbar = () => {
           </div>
         </div>
       </div>
+
+      <AddressModal 
+        isOpen={isAddressModalOpen} 
+        onClose={() => setIsAddressModalOpen(false)} 
+        onSave={handleSaveAddress}
+        initialAddress={currentAddress}
+      />
     </>
   );
 };
