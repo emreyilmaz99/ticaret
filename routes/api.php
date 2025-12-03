@@ -33,6 +33,7 @@ use App\Http\Controllers\Api\V1\User\UserAddressController;
 use App\Http\Controllers\Api\V1\Public\VendorController as PublicVendorController;
 use App\Http\Controllers\Api\V1\Public\VendorApplicationController as PublicVendorApplicationController;
 use App\Http\Controllers\Api\V1\Admin\VendorApplicationController as AdminVendorApplicationController;
+use App\Http\Controllers\Api\V1\Public\ProductController as PublicProductController;
 
 // Admin API
 // Note: the application's routing already prefixes API routes with '/api',
@@ -176,6 +177,11 @@ Route::get('v1/units', [\App\Http\Controllers\Api\V1\Public\UnitsController::cla
 Route::get('v1/categories', [\App\Http\Controllers\Api\V1\Public\CategoryController::class, 'index']);
 Route::get('v1/categories/tree', [\App\Http\Controllers\Api\V1\Public\CategoryController::class, 'tree']);
 Route::get('v1/categories/{slug}', [\App\Http\Controllers\Api\V1\Public\CategoryController::class, 'show']);
+
+// products (public)
+Route::get('v1/products', [PublicProductController::class, 'index']);
+Route::get('v1/products/featured', [PublicProductController::class, 'featured']);
+Route::get('v1/products/{slug}', [PublicProductController::class, 'show']);
 
 // User API
 Route::prefix('v1/user')->group(function () {

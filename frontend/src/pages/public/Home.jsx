@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { 
   FaStar, FaShoppingCart, FaHeart, FaRegHeart, FaFilter, FaChevronDown, 
   FaCheck, FaTimes, FaCookieBite, FaUsers, FaStore, FaBox, FaShieldAlt, FaTruck, FaArrowRight,
-  FaEye, FaClock
+  FaEye, FaClock, FaSpinner
 } from 'react-icons/fa';
 import { useToast } from '../../components/Toast';
 import { useAuth } from '../../context/AuthContext';
 import QuickViewModal from '../../components/QuickViewModal';
 import ProductCard from '../../components/ProductCard';
+import { getProducts, getCategories, getFeaturedProducts } from '../../api/publicApi';
 
 const Home = () => {
   const [searchParams] = useSearchParams();
@@ -31,45 +33,50 @@ const Home = () => {
     }
   }, [searchParams]);
 
-  const [priceRange, setPriceRange] = useState([0, 10000]);
+  const [priceRange, setPriceRange] = useState([0, 100000]);
   const [minRating, setMinRating] = useState(0);
   const [sortOrder, setSortOrder] = useState('featured'); // featured, price-asc, price-desc, rating-desc
 
-  // Mock Data
-  const products = [
-    { id: 1, name: 'Kablosuz Kulaklık Pro', price: 1299.90, rating: 4.8, reviews: 124, image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&q=80', category: 'elektronik', discount: 15 },
-    { id: 2, name: 'Akıllı Saat Series 5', price: 2499.00, rating: 4.6, reviews: 89, image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500&q=80', category: 'elektronik' },
-    { id: 3, name: 'Premium Deri Çanta', price: 899.50, rating: 4.9, reviews: 56, image: 'https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=500&q=80', category: 'moda' },
-    { id: 4, name: 'Minimalist Spor Ayakkabı', price: 1450.00, rating: 4.5, reviews: 210, image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=500&q=80', category: 'moda', discount: 20 },
-    { id: 5, name: 'Organik Yüz Kremi', price: 345.00, rating: 4.7, reviews: 145, image: 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=500&q=80', category: 'kozmetik' },
-    { id: 6, name: 'Ahşap Masa Lambası', price: 450.00, rating: 4.4, reviews: 34, image: 'https://images.unsplash.com/photo-1507473888900-52e1adad5420?w=500&q=80', category: 'ev' },
-    { id: 7, name: 'Profesyonel Kamera Lens', price: 8500.00, rating: 5.0, reviews: 12, image: 'https://images.unsplash.com/photo-1617005082133-548c4dd27f35?w=500&q=80', category: 'elektronik' },
-    { id: 8, name: 'Vintage Güneş Gözlüğü', price: 299.90, rating: 4.3, reviews: 67, image: 'https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=500&q=80', category: 'moda' },
-  ];
+  // Fetch categories from API
+  const { data: categoriesData } = useQuery({
+    queryKey: ['public-categories'],
+    queryFn: getCategories,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
 
+  // Fetch products from API
+  const { data: productsData, isLoading: productsLoading, error: productsError } = useQuery({
+    queryKey: ['public-products', selectedCategory, priceRange, sortOrder],
+    queryFn: () => getProducts({
+      category_id: selectedCategory !== 'all' ? selectedCategory : undefined,
+      min_price: priceRange[0] > 0 ? priceRange[0] : undefined,
+      max_price: priceRange[1] < 100000 ? priceRange[1] : undefined,
+      sort_by: sortOrder === 'price-asc' ? 'price_asc' : sortOrder === 'price-desc' ? 'price_desc' : 'featured',
+      per_page: 12,
+    }),
+    staleTime: 1 * 60 * 1000, // 1 minute
+  });
+
+  // Transform API categories to local format
   const categories = [
     { id: 'all', name: 'Tüm Ürünler' },
-    { id: 'elektronik', name: 'Elektronik' },
-    { id: 'moda', name: 'Moda & Giyim' },
-    { id: 'ev', name: 'Ev & Yaşam' },
-    { id: 'kozmetik', name: 'Kozmetik' },
-    { id: 'spor', name: 'Spor & Outdoor' },
+    ...(categoriesData?.data?.categories || []).map(cat => ({
+      id: cat.id,
+      name: cat.name,
+      slug: cat.slug,
+      icon: cat.icon,
+      image: cat.image,
+    })),
   ];
 
-  // Filter Logic
-  const filteredProducts = products
-    .filter(product => {
-      const matchesCategory = selectedCategory === 'all' || product.category === selectedCategory;
-      const matchesPrice = product.price >= priceRange[0] && product.price <= priceRange[1];
-      const matchesRating = product.rating >= minRating;
-      return matchesCategory && matchesPrice && matchesRating;
-    })
-    .sort((a, b) => {
-      if (sortOrder === 'price-asc') return a.price - b.price;
-      if (sortOrder === 'price-desc') return b.price - a.price;
-      if (sortOrder === 'rating-desc') return b.rating - a.rating;
-      return 0; // featured
-    });
+  // Get products from API response
+  const products = productsData?.data?.products || [];
+
+  // Filter by rating (client-side since API doesn't support it yet)
+  const filteredProducts = products.filter(product => {
+    const matchesRating = (product.rating || 0) >= minRating;
+    return matchesRating;
+  });
 
   const addToCart = (product) => {
     if (!user) {
@@ -654,14 +661,20 @@ const Home = () => {
 
       {/* Popular Categories */}
       <div style={styles.popularCategories}>
-        {categories.filter(c => c.id !== 'all').map(cat => (
-          <Link to={`/?category=${cat.id}`} key={cat.id} style={styles.categoryCircle}>
-            <div style={{ ...styles.catImg, backgroundColor: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px' }}>
-              {cat.id === 'elektronik' && '📱'}
-              {cat.id === 'moda' && '👗'}
-              {cat.id === 'ev' && '🏠'}
-              {cat.id === 'kozmetik' && '💄'}
-              {cat.id === 'spor' && '⚽'}
+        {categories.filter(c => c.id !== 'all').slice(0, 5).map(cat => (
+          <Link to={`/?category=${cat.id}`} key={cat.id} style={styles.categoryCircle} onClick={() => setSelectedCategory(cat.id)}>
+            <div style={{ 
+              ...styles.catImg, 
+              backgroundColor: '#e2e8f0', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              fontSize: '32px',
+              backgroundImage: cat.image ? `url(${cat.image})` : 'none',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+            }}>
+              {!cat.image && (cat.icon || '📦')}
             </div>
             <span>{cat.name}</span>
           </Link>
@@ -769,12 +782,26 @@ const Home = () => {
         {/* Main Content */}
         <main style={styles.content}>
           {/* Product Grid */}
-          {filteredProducts.length > 0 ? (
+          {productsLoading ? (
+            <div style={{ textAlign: 'center', padding: '60px', backgroundColor: 'white', borderRadius: '24px', boxShadow: '0 10px 30px -10px rgba(0,0,0,0.05)' }}>
+              <FaSpinner style={{ fontSize: '48px', color: '#059669', animation: 'spin 1s linear infinite' }} />
+              <p style={{ color: '#64748b', marginTop: '16px' }}>Ürünler yükleniyor...</p>
+            </div>
+          ) : productsError ? (
+            <div style={{ textAlign: 'center', padding: '60px', backgroundColor: 'white', borderRadius: '24px', boxShadow: '0 10px 30px -10px rgba(0,0,0,0.05)' }}>
+              <div style={{ fontSize: '48px', marginBottom: '16px' }}>⚠️</div>
+              <h3 style={{ fontSize: '20px', fontWeight: '700', color: '#1e293b', marginBottom: '8px' }}>Bir Hata Oluştu</h3>
+              <p style={{ color: '#64748b' }}>Ürünler yüklenirken bir hata oluştu. Lütfen tekrar deneyin.</p>
+            </div>
+          ) : filteredProducts.length > 0 ? (
             <div style={styles.grid}>
               {filteredProducts.map(product => (
                 <ProductCard 
                   key={product.id} 
-                  product={product} 
+                  product={{
+                    ...product,
+                    reviews: product.reviews_count || 0,
+                  }} 
                   favorites={favorites}
                   toggleFavorite={toggleFavorite}
                   setQuickViewProduct={setQuickViewProduct}
@@ -788,7 +815,7 @@ const Home = () => {
               <h3 style={{ fontSize: '20px', fontWeight: '700', color: '#1e293b', marginBottom: '8px' }}>Ürün Bulunamadı</h3>
               <p style={{ color: '#64748b' }}>Seçtiğiniz kriterlere uygun ürün bulunmamaktadır. Filtreleri temizleyip tekrar deneyin.</p>
               <button 
-                onClick={() => { setSelectedCategory('all'); setPriceRange([0, 10000]); setMinRating(0); }}
+                onClick={() => { setSelectedCategory('all'); setPriceRange([0, 100000]); setMinRating(0); }}
                 style={{ marginTop: '20px', padding: '10px 24px', backgroundColor: '#059669', color: 'white', border: 'none', borderRadius: '12px', cursor: 'pointer', fontWeight: '600' }}
               >
                 Filtreleri Temizle
@@ -941,6 +968,10 @@ const Home = () => {
         @keyframes fadeIn {
           from { opacity: 0; transform: scale(0.9); }
           to { opacity: 1; transform: scale(1); }
+        }
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
         }
       `}</style>
     </div>

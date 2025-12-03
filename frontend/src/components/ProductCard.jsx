@@ -187,12 +187,14 @@ const ProductCard = ({ product, setQuickViewProduct }) => {
 
       <img src={product.image} alt={product.name} style={styles.cardImage} />
       <div style={styles.cardBody}>
-        <div style={styles.cardCategory}>{product.category}</div>
+        <div style={styles.cardCategory}>
+          {typeof product.category === 'object' ? product.category?.name : product.category}
+        </div>
         <h3 style={styles.cardTitle}>{product.name}</h3>
         <div style={styles.rating}>
           <FaStar />
-          <span>{product.rating}</span>
-          <span style={{ color: '#94a3b8' }}>({product.reviews})</span>
+          <span>{product.rating || 0}</span>
+          <span style={{ color: '#94a3b8' }}>({product.reviews || product.reviews_count || 0})</span>
         </div>
         <div style={styles.priceRow}>
           <div style={styles.price}>
