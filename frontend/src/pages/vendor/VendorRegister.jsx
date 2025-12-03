@@ -313,10 +313,11 @@ const VendorRegister = () => {
                     onBlur={handleBlur}
                     value={form.phone} 
                     onChange={(e) => {
-                      // Sadece rakam kabul et ve 11 haneden fazla yazdırma
-                      const value = e.target.value.replace(/\D/g, '').slice(0, 11);
+                      // Sadece rakam kabul et ve 10 haneden fazla yazdırma
+                      const value = e.target.value.replace(/\D/g, '').slice(0, 10);
                       setForm({...form, phone: value});
                     }} 
+                    maxLength={10}
                     required
                     placeholder="05xxxxxxxxx"
                     maxLength={11}

@@ -1,7 +1,8 @@
 import React, { useEffect } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
-import UserSidebar from './UserSidebar';
 import { useAuth } from '../context/AuthContext';
+import Navbar from './Navbar';
+import Footer from './Footer';
 
 const UserLayout = () => {
   const navigate = useNavigate();
@@ -46,20 +47,12 @@ const UserLayout = () => {
   }
 
   return (
-    <div style={{ display: 'flex', backgroundColor: '#f8fafc', minHeight: '100vh' }}>
-      {/* Sol taraf: Sidebar */}
-      <UserSidebar />
-
-      {/* Sağ taraf: İçerik Alanı */}
-      <div style={{ 
-        marginLeft: '280px', 
-        width: 'calc(100% - 280px)', 
-        padding: '32px', 
-        backgroundColor: '#f8fafc',
-        minHeight: '100vh' 
-      }}>
-        <Outlet /> 
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: '#f8fafc' }}>
+      <Navbar />
+      <div style={{ flex: 1 }}>
+        <Outlet />
       </div>
+      <Footer />
     </div>
   );
 };

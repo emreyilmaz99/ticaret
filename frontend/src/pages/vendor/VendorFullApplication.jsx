@@ -4,7 +4,8 @@ import { useMutation } from '@tanstack/react-query';
 import { submitFullApplication } from '../../features/vendor/api/vendorAuthApi';
 import { useToast } from '../../components/Toast';
 import axios from '../../lib/axios';
-import { FaStore, FaPhone, FaIdCard, FaCheckCircle, FaUser, FaLink, FaMapMarkerAlt, FaCity, FaGlobe, FaMailBulk, FaUniversity, FaCreditCard } from 'react-icons/fa';
+import { FaStore, FaPhone, FaEnvelope, FaIdCard, FaMapMarkerAlt, FaCity, FaCheckCircle, FaArrowRight, FaMailBulk, FaGlobe, FaUniversity, FaCreditCard } from 'react-icons/fa';
+import { cities, cityPlateCodes } from '../../data/turkeyData';
 
 const VendorFullApplication = () => {
   const { id } = useParams();
@@ -299,9 +300,10 @@ const VendorFullApplication = () => {
                 onFocus={handleFocus} 
                 onBlur={handleBlur}
                 value={form.phone} 
-                onChange={(e) => setForm({...form, phone: e.target.value})} 
+                onChange={(e) => setForm({...form, phone: e.target.value.replace(/\D/g, '').slice(0, 10)})} 
+                maxLength={10}
                 required 
-                placeholder="05xx xxx xx xx" 
+                placeholder="5XX XXX XX XX" 
               />
             </div>
           </div>
@@ -346,15 +348,23 @@ const VendorFullApplication = () => {
               <label style={styles.label}>Şehir *</label>
               <div style={styles.inputWrapper}>
                 <FaCity style={styles.inputIcon} />
-                <input 
+                <select 
                   style={styles.input} 
                   onFocus={handleFocus} 
                   onBlur={handleBlur}
                   value={form.city} 
-                  onChange={(e) => setForm({...form, city: e.target.value})} 
+                  onChange={(e) => {
+                    const city = e.target.value;
+                    const postalCode = city && cityPlateCodes[city] ? cityPlateCodes[city] + '000' : '';
+                    setForm({...form, city: city, postal_code: postalCode});
+                  }} 
                   required 
-                  placeholder="İstanbul" 
-                />
+                >
+                  <option value="">Şehir Seçiniz</option>
+                  {cities.map(city => (
+                    <option key={city} value={city}>{city}</option>
+                  ))}
+                </select>
               </div>
             </div>
 

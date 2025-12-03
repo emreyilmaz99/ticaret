@@ -5,6 +5,7 @@ import { getVendorProfile, updateVendorProfile } from '../../features/vendor/api
 import { useToast } from '../../components/Toast';
 import { FaStore, FaImage, FaMapMarkerAlt, FaSave, FaPhone, FaEnvelope, FaIdCard, FaUser, FaSpinner, FaCamera, FaTimes, FaUniversity, FaPlus, FaTrash, FaEdit, FaCheckCircle } from 'react-icons/fa';
 import axios from '../../lib/axios';
+import { cityPlateCodes } from '../../data/turkeyData';
 
 // Türkiye şehirleri
 const TURKEY_CITIES = [
@@ -365,7 +366,7 @@ const VendorSettings = () => {
                 <label style={labelStyle}>Telefon</label>
                 <div style={{ position: 'relative' }}>
                   <FaPhone style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
-                  <input type="text" value={form.phone} onChange={(e) => setForm({...form, phone: e.target.value})} style={inputStyle} placeholder="05xx xxx xx xx" />
+                  <input type="text" value={form.phone} onChange={(e) => setForm({...form, phone: e.target.value.replace(/\D/g, '').slice(0, 10)})} maxLength={10} style={inputStyle} placeholder="5XX XXX XX XX" />
                 </div>
               </div>
               <div>
@@ -437,7 +438,11 @@ const VendorSettings = () => {
                 <label style={labelStyle}>Şehir *</label>
                 <select 
                   value={addressForm.city} 
-                  onChange={(e) => setAddressForm({...addressForm, city: e.target.value})} 
+                  onChange={(e) => {
+                    const city = e.target.value;
+                    const postalCode = city && cityPlateCodes[city] ? cityPlateCodes[city] + '000' : '';
+                    setAddressForm({...addressForm, city: city, postal_code: postalCode});
+                  }} 
                   style={{ ...inputStyle, paddingLeft: 12 }}
                   required
                 >

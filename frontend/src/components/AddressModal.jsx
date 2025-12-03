@@ -1,57 +1,110 @@
 import React, { useState, useEffect } from 'react';
-import { FaTimes, FaMapMarkerAlt, FaSearch, FaCheck, FaChevronDown } from 'react-icons/fa';
-import { cities, districts, getNeighborhoods } from '../data/turkeyData';
+import { useQuery } from '@tanstack/react-query';
+import { getUserAddresses } from '../features/user/api/userAddressApi';
+import { FaTimes, FaMapMarkerAlt, FaCheck, FaChevronDown, FaUser, FaPhone } from 'react-icons/fa';
+import { cities, districts, getNeighborhoods, cityPlateCodes } from '../data/turkeyData';
 import { useToast } from './Toast';
+import { useAuth } from '../context/AuthContext';
+import LocationMap from './LocationMap';
 
 const AddressModal = ({ isOpen, onClose, onSave, initialAddress }) => {
-  const [step, setStep] = useState(1); // 1: İl/İlçe Seçimi, 2: Detaylar
+  const { user } = useAuth();
+  const [fullName, setFullName] = useState(initialAddress?.full_name || user?.name || '');
+  const [phone, setPhone] = useState(initialAddress?.phone || user?.phone || '');
   const [selectedCity, setSelectedCity] = useState(initialAddress?.city || '');
   const [selectedDistrict, setSelectedDistrict] = useState(initialAddress?.district || '');
   const [selectedNeighborhood, setSelectedNeighborhood] = useState(initialAddress?.neighborhood || '');
-  const [openAddress, setOpenAddress] = useState(initialAddress?.openAddress || '');
-  const [addressTitle, setAddressTitle] = useState(initialAddress?.title || 'Ev');
+  const [postalCode, setPostalCode] = useState(initialAddress?.postal_code || '');
+  const [addressLine, setAddressLine] = useState(initialAddress?.address_line || '');
+  const [addressLabel, setAddressLabel] = useState(initialAddress?.label || 'Ev');
+  const [selectedId, setSelectedId] = useState(null);
   
-  const [searchTerm, setSearchTerm] = useState('');
-  const [activeDropdown, setActiveDropdown] = useState(null); // 'city', 'district', 'neighborhood'
-
   const toast = useToast();
+
+  const { data: addressData } = useQuery({
+    queryKey: ['user', 'addresses'],
+    queryFn: getUserAddresses,
+    enabled: !!user && isOpen,
+  });
+
+  const savedAddresses = addressData?.data?.addresses || [];
+
+  const handleSelectAddress = (addr) => {
+    setSelectedId(addr.id);
+    setFullName(addr.full_name);
+    setPhone(addr.phone);
+    setSelectedCity(addr.city);
+    setSelectedDistrict(addr.district);
+    setSelectedNeighborhood(addr.neighborhood);
+    setPostalCode(addr.postal_code || '');
+    setAddressLine(addr.address_line);
+    setAddressLabel(addr.label);
+    toast.success('Adres Seçildi', 'Kayıtlı adres bilgileri forma dolduruldu.');
+  };
 
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
+      if (!initialAddress && user) {
+        setFullName(user.name || '');
+        setPhone(user.phone || '');
+      }
+      if (initialAddress?.postal_code) {
+        setPostalCode(initialAddress.postal_code);
+      }
     } else {
       document.body.style.overflow = 'unset';
     }
     return () => {
       document.body.style.overflow = 'unset';
     };
-  }, [isOpen]);
+  }, [isOpen, user, initialAddress]);
 
   if (!isOpen) return null;
 
   const handleSave = () => {
-    if (!selectedCity || !selectedDistrict || !selectedNeighborhood || !openAddress) {
+    if (!fullName || !phone || !selectedCity || !selectedDistrict || !selectedNeighborhood || !addressLine) {
       toast.warning('Eksik Bilgi', 'Lütfen tüm alanları doldurunuz.');
       return;
     }
     
     const fullAddress = {
+      id: selectedId,
+      full_name: fullName,
+      phone: phone,
       city: selectedCity,
       district: selectedDistrict,
       neighborhood: selectedNeighborhood,
-      openAddress,
-      title: addressTitle
+      address_line: addressLine,
+      label: addressLabel,
+      country: 'Türkiye',
+      postal_code: postalCode,
+      is_default: initialAddress?.is_default || false
     };
     
     onSave(fullAddress);
     onClose();
   };
 
-  const filteredCities = cities.filter(c => c.toLowerCase().includes(searchTerm.toLowerCase()));
-  const currentDistricts = districts[selectedCity] || ["Merkez", "Diğer"]; // Fallback
-  const filteredDistricts = currentDistricts.filter(d => d.toLowerCase().includes(searchTerm.toLowerCase()));
-  const currentNeighborhoods = getNeighborhoods(selectedDistrict);
-  const filteredNeighborhoods = currentNeighborhoods.filter(n => n.toLowerCase().includes(searchTerm.toLowerCase()));
+  const handleCityChange = (e) => {
+    setSelectedId(null);
+    const city = e.target.value;
+    setSelectedCity(city);
+    setSelectedDistrict('');
+    setSelectedNeighborhood('');
+    
+    if (city && cityPlateCodes[city]) {
+      setPostalCode(cityPlateCodes[city] + '000');
+    } else {
+      setPostalCode('');
+    }
+  };
+
+  const handleDistrictChange = (e) => {
+    setSelectedId(null);
+    setSelectedDistrict(e.target.value);
+    setSelectedNeighborhood('');
+  };
 
   const styles = {
     overlay: {
@@ -60,22 +113,21 @@ const AddressModal = ({ isOpen, onClose, onSave, initialAddress }) => {
       left: 0,
       right: 0,
       bottom: 0,
-      backgroundColor: 'rgba(15, 23, 42, 0.6)',
-      backdropFilter: 'blur(8px)',
-      zIndex: 2000,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      animation: 'fadeIn 0.2s ease-out',
+      zIndex: 2000,
+      backdropFilter: 'blur(4px)',
     },
     modal: {
       backgroundColor: 'white',
-      width: '90%',
-      maxWidth: '800px',
+      width: '95%',
+      maxWidth: '1100px',
       height: 'auto',
       maxHeight: '90vh',
       borderRadius: '24px',
-      boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+      boxShadow: 'rgba(0, 0, 0, 0.25) 0px 25px 50px -12px',
       display: 'flex',
       flexDirection: 'column',
       overflow: 'hidden',
@@ -83,395 +135,393 @@ const AddressModal = ({ isOpen, onClose, onSave, initialAddress }) => {
     },
     header: {
       padding: '24px',
-      borderBottom: '1px solid #e2e8f0',
+      borderBottom: '1px solid rgb(226, 232, 240)',
       display: 'flex',
       justifyContent: 'space-between',
       alignItems: 'center',
-      backgroundColor: '#f8fafc',
+      backgroundColor: 'rgb(248, 250, 252)',
     },
     title: {
       fontSize: '20px',
       fontWeight: '700',
-      color: '#1e293b',
+      color: 'rgb(30, 41, 59)',
       display: 'flex',
       alignItems: 'center',
       gap: '10px',
     },
-    closeBtn: {
+    iconWrapper: {
+      width: '32px',
+      height: '32px',
+      borderRadius: '8px',
+      backgroundColor: 'rgb(236, 253, 245)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      color: 'rgb(5, 150, 105)',
+    },
+    closeButton: {
       background: 'none',
       border: 'none',
       cursor: 'pointer',
-      color: '#64748b',
+      color: 'rgb(100, 116, 139)',
       fontSize: '20px',
       padding: '8px',
       borderRadius: '50%',
       transition: 'background 0.2s',
     },
-    body: {
+    content: {
       padding: '32px',
       overflowY: 'auto',
       display: 'flex',
       gap: '32px',
+      flexDirection: 'row',
     },
-    leftCol: {
-      flex: 1,
+    formColumn: {
+      flex: '1',
       display: 'flex',
       flexDirection: 'column',
       gap: '20px',
+      minWidth: '350px',
     },
-    rightCol: {
-      flex: 1,
-      backgroundColor: '#f1f5f9',
+    mapColumn: {
+      flex: '1',
+      backgroundColor: 'rgb(241, 245, 249)',
       borderRadius: '16px',
       padding: '20px',
       display: 'flex',
       flexDirection: 'column',
       gap: '16px',
-      minHeight: '300px',
-    },
-    label: {
-      fontSize: '13px',
-      fontWeight: '600',
-      color: '#475569',
-      marginBottom: '8px',
-      display: 'block',
+      minHeight: '400px',
+      minWidth: '350px',
     },
     inputGroup: {
       position: 'relative',
     },
-    selectBtn: {
+    label: {
+      fontSize: '13px',
+      fontWeight: '600',
+      color: 'rgb(71, 85, 105)',
+      marginBottom: '8px',
+      display: 'block',
+    },
+    input: {
       width: '100%',
       padding: '14px 16px',
       backgroundColor: 'white',
-      border: '1px solid #e2e8f0',
+      border: '1px solid rgb(226, 232, 240)',
       borderRadius: '12px',
-      textAlign: 'left',
       fontSize: '14px',
-      color: '#1e293b',
-      cursor: 'pointer',
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      transition: 'all 0.2s',
-    },
-    dropdown: {
-      position: 'absolute',
-      top: '100%',
-      left: 0,
-      right: 0,
-      backgroundColor: 'white',
-      border: '1px solid #e2e8f0',
-      borderRadius: '12px',
-      marginTop: '8px',
-      maxHeight: '240px',
-      overflowY: 'auto',
-      zIndex: 10,
-      boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
-      padding: '8px',
-    },
-    searchInput: {
-      width: '100%',
-      padding: '10px',
-      border: '1px solid #e2e8f0',
-      borderRadius: '8px',
-      marginBottom: '8px',
-      fontSize: '13px',
+      color: 'rgb(30, 41, 59)',
       outline: 'none',
+      transition: '0.2s',
     },
-    option: {
-      padding: '10px 12px',
-      cursor: 'pointer',
-      borderRadius: '8px',
+    select: {
+      width: '100%',
+      padding: '14px 16px',
+      backgroundColor: 'white',
+      border: '1px solid rgb(226, 232, 240)',
+      borderRadius: '12px',
       fontSize: '14px',
-      color: '#334155',
-      transition: 'background 0.1s',
+      color: 'rgb(30, 41, 59)',
+      outline: 'none',
+      cursor: 'pointer',
+      appearance: 'none',
     },
-    textArea: {
+    textarea: {
       width: '100%',
       padding: '16px',
-      border: '1px solid #e2e8f0',
+      border: '1px solid rgb(226, 232, 240)',
       borderRadius: '12px',
       fontSize: '14px',
-      minHeight: '120px',
+      minHeight: '100px',
       resize: 'vertical',
       outline: 'none',
       fontFamily: 'inherit',
     },
-    mapPlaceholder: {
-      flex: 1,
-      backgroundColor: '#e2e8f0',
-      borderRadius: '12px',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      color: '#64748b',
-      fontSize: '14px',
-      flexDirection: 'column',
-      gap: '12px',
-      backgroundImage: 'url("https://maps.googleapis.com/maps/api/staticmap?center=Turkey&zoom=5&size=400x300&sensor=false")', // Fake URL for visual
-      backgroundSize: 'cover',
-      backgroundPosition: 'center',
-      position: 'relative',
-    },
-    mapOverlay: {
-      position: 'absolute',
-      inset: 0,
-      backgroundColor: 'rgba(255,255,255,0.5)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      flexDirection: 'column',
-      gap: '8px',
-    },
-    footer: {
-      padding: '24px',
-      borderTop: '1px solid #e2e8f0',
-      display: 'flex',
-      justifyContent: 'flex-end',
-      gap: '12px',
-      backgroundColor: '#f8fafc',
-    },
-    btnSecondary: {
-      padding: '12px 24px',
-      borderRadius: '12px',
-      border: '1px solid #cbd5e1',
-      backgroundColor: 'white',
-      color: '#475569',
-      fontWeight: '600',
-      cursor: 'pointer',
-    },
-    btnPrimary: {
-      padding: '12px 32px',
-      borderRadius: '12px',
-      border: 'none',
-      backgroundColor: '#059669',
-      color: 'white',
-      fontWeight: '600',
-      cursor: 'pointer',
-      boxShadow: '0 4px 6px -1px rgba(5, 150, 105, 0.2)',
-    },
-    tagContainer: {
+    labelOptions: {
       display: 'flex',
       gap: '8px',
       marginTop: '8px',
     },
-    tag: {
+    labelOption: (isActive) => ({
       padding: '6px 12px',
       borderRadius: '20px',
       fontSize: '12px',
       fontWeight: '600',
       cursor: 'pointer',
-      border: '1px solid',
+      border: isActive ? '1px solid rgb(5, 150, 105)' : '1px solid rgb(226, 232, 240)',
+      backgroundColor: isActive ? 'rgb(236, 253, 245)' : 'white',
+      color: isActive ? 'rgb(5, 150, 105)' : 'rgb(100, 116, 139)',
+      transition: 'all 0.2s',
+    }),
+    footer: {
+      padding: '24px',
+      borderTop: '1px solid rgb(226, 232, 240)',
+      display: 'flex',
+      justifyContent: 'flex-end',
+      gap: '12px',
+      backgroundColor: 'rgb(248, 250, 252)',
+    },
+    cancelButton: {
+      padding: '12px 24px',
+      borderRadius: '12px',
+      border: '1px solid rgb(203, 213, 225)',
+      backgroundColor: 'white',
+      color: 'rgb(71, 85, 105)',
+      fontWeight: '600',
+      cursor: 'pointer',
+    },
+    saveButton: {
+      padding: '12px 32px',
+      borderRadius: '12px',
+      border: 'none',
+      backgroundColor: 'rgb(5, 150, 105)',
+      color: 'white',
+      fontWeight: '600',
+      cursor: 'pointer',
+      boxShadow: 'rgba(5, 150, 105, 0.2) 0px 4px 6px -1px',
+    },
+    mapPlaceholder: {
+      flex: '1 1 0%',
+      backgroundColor: 'rgb(226, 232, 240)',
+      borderRadius: '12px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      color: 'rgb(100, 116, 139)',
+      fontSize: '14px',
+      flexDirection: 'column',
+      gap: '12px',
+      backgroundImage: 'url("https://maps.googleapis.com/maps/api/staticmap?center=Turkey&zoom=5&size=400x300&sensor=false")',
+      backgroundSize: 'cover',
+      backgroundPosition: 'center center',
+      position: 'relative',
+    },
+    mapOverlay: {
+      position: 'absolute',
+      inset: 0,
+      backgroundColor: 'rgba(255, 255, 255, 0.5)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexDirection: 'column',
+      gap: '8px',
     }
   };
 
   return (
     <div style={styles.overlay}>
       <div style={styles.modal}>
+        {/* Header */}
         <div style={styles.header}>
           <div style={styles.title}>
-            <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: '#ecfdf5', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#059669' }}>
+            <div style={styles.iconWrapper}>
               <FaMapMarkerAlt />
             </div>
-            Teslimat Adresi Ekle
+            {initialAddress ? 'Adresi Düzenle' : 'Teslimat Adresi Ekle'}
           </div>
-          <button style={styles.closeBtn} onClick={onClose}><FaTimes /></button>
+          <button style={styles.closeButton} onClick={onClose}>
+            <FaTimes />
+          </button>
         </div>
 
-        <div style={styles.body}>
-          {/* Sol Kolon: Form */}
-          <div style={styles.leftCol}>
+        {/* Content */}
+        <div style={styles.content}>
+          {/* Form Column */}
+          <div style={styles.formColumn}>
             
-            {/* İl Seçimi */}
+            {/* Saved Addresses Section */}
+            {user && savedAddresses && savedAddresses.length > 0 && (
+              <div style={{ marginBottom: '8px' }}>
+                <label style={styles.label}>Kayıtlı Adreslerimden Seç</label>
+                <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '8px', scrollbarWidth: 'thin' }}>
+                  {savedAddresses.map((addr) => (
+                    <div 
+                      key={addr.id}
+                      onClick={() => handleSelectAddress(addr)}
+                      style={{
+                        minWidth: '180px',
+                        padding: '12px',
+                        border: '1px solid #e2e8f0',
+                        borderRadius: '12px',
+                        cursor: 'pointer',
+                        backgroundColor: '#f8fafc',
+                        fontSize: '12px',
+                        transition: 'all 0.2s',
+                        flexShrink: 0
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.borderColor = '#059669';
+                        e.currentTarget.style.backgroundColor = '#ecfdf5';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.borderColor = '#e2e8f0';
+                        e.currentTarget.style.backgroundColor = '#f8fafc';
+                      }}
+                    >
+                      <div style={{ fontWeight: '700', marginBottom: '4px', color: '#334155' }}>{addr.label}</div>
+                      <div style={{ color: '#64748b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {addr.city} / {addr.district}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Name & Phone Row */}
+            <div style={{ display: 'flex', gap: '16px' }}>
+              <div style={{ ...styles.inputGroup, flex: 1 }}>
+                <label style={styles.label}>Ad Soyad</label>
+                <div style={{ position: 'relative' }}>
+                  <FaUser style={{ position: 'absolute', left: '12px', top: '14px', color: '#94a3b8', fontSize: '12px' }} />
+                  <input 
+                    type="text" 
+                    style={{ ...styles.input, paddingLeft: '32px' }}
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    placeholder="Ad Soyad"
+                  />
+                </div>
+              </div>
+              <div style={{ ...styles.inputGroup, flex: 1 }}>
+                <label style={styles.label}>Telefon</label>
+                <div style={{ position: 'relative' }}>
+                  <FaPhone style={{ position: 'absolute', left: '12px', top: '14px', color: '#94a3b8', fontSize: '12px' }} />
+                  <input 
+                    type="text" 
+                    style={{ ...styles.input, paddingLeft: '32px' }}
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                    maxLength={10}
+                    placeholder="5XX XXX XX XX"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* City */}
             <div style={styles.inputGroup}>
               <label style={styles.label}>İl Seçiniz</label>
-              <div 
-                style={styles.selectBtn} 
-                onClick={() => { setActiveDropdown(activeDropdown === 'city' ? null : 'city'); setSearchTerm(''); }}
-              >
-                {selectedCity || 'İl Seçiniz'}
-                <FaChevronDown size={12} color="#94a3b8" />
-              </div>
-              
-              {activeDropdown === 'city' && (
-                <div style={styles.dropdown}>
-                  <div style={{ padding: '0 8px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '0 8px', marginBottom: '8px' }}>
-                      <FaSearch color="#cbd5e1" />
-                      <input 
-                        autoFocus
-                        type="text" 
-                        placeholder="İl ara..." 
-                        style={{ ...styles.searchInput, border: 'none', marginBottom: 0 }}
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                      />
-                    </div>
-                  </div>
-                  {filteredCities.map(city => (
-                    <div 
-                      key={city} 
-                      style={{ ...styles.option, backgroundColor: selectedCity === city ? '#f1f5f9' : 'transparent' }}
-                      onClick={() => {
-                        setSelectedCity(city);
-                        setSelectedDistrict('');
-                        setSelectedNeighborhood('');
-                        setActiveDropdown(null);
-                      }}
-                      onMouseEnter={(e) => e.target.style.backgroundColor = '#f8fafc'}
-                      onMouseLeave={(e) => e.target.style.backgroundColor = selectedCity === city ? '#f1f5f9' : 'transparent'}
-                    >
-                      {city}
-                    </div>
+              <div style={{ position: 'relative' }}>
+                <select 
+                  style={styles.select} 
+                  value={selectedCity} 
+                  onChange={handleCityChange}
+                >
+                  <option value="">Seçiniz</option>
+                  {cities.map(city => (
+                    <option key={city} value={city}>{city}</option>
                   ))}
-                </div>
-              )}
+                </select>
+                <FaChevronDown style={{ position: 'absolute', right: '16px', top: '16px', color: '#94a3b8', pointerEvents: 'none' }} size={12} />
+              </div>
             </div>
 
-            {/* İlçe Seçimi */}
+            {/* District */}
             <div style={styles.inputGroup}>
               <label style={styles.label}>İlçe Seçiniz</label>
-              <div 
-                style={{ ...styles.selectBtn, opacity: !selectedCity ? 0.5 : 1, cursor: !selectedCity ? 'not-allowed' : 'pointer' }}
-                onClick={() => { if(selectedCity) { setActiveDropdown(activeDropdown === 'district' ? null : 'district'); setSearchTerm(''); } }}
-              >
-                {selectedDistrict || 'İlçe Seçiniz'}
-                <FaChevronDown size={12} color="#94a3b8" />
-              </div>
-
-              {activeDropdown === 'district' && (
-                <div style={styles.dropdown}>
-                   <div style={{ padding: '0 8px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '0 8px', marginBottom: '8px' }}>
-                      <FaSearch color="#cbd5e1" />
-                      <input 
-                        autoFocus
-                        type="text" 
-                        placeholder="İlçe ara..." 
-                        style={{ ...styles.searchInput, border: 'none', marginBottom: 0 }}
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                      />
-                    </div>
-                  </div>
-                  {filteredDistricts.map(district => (
-                    <div 
-                      key={district} 
-                      style={{ ...styles.option, backgroundColor: selectedDistrict === district ? '#f1f5f9' : 'transparent' }}
-                      onClick={() => {
-                        setSelectedDistrict(district);
-                        setSelectedNeighborhood('');
-                        setActiveDropdown(null);
-                      }}
-                      onMouseEnter={(e) => e.target.style.backgroundColor = '#f8fafc'}
-                      onMouseLeave={(e) => e.target.style.backgroundColor = selectedDistrict === district ? '#f1f5f9' : 'transparent'}
-                    >
-                      {district}
-                    </div>
+              <div style={{ position: 'relative' }}>
+                <select 
+                  style={{ ...styles.select, opacity: selectedCity ? 1 : 0.6 }} 
+                  value={selectedDistrict} 
+                  onChange={handleDistrictChange}
+                  disabled={!selectedCity}
+                >
+                  <option value="">Seçiniz</option>
+                  {selectedCity && districts[selectedCity]?.map(dist => (
+                    <option key={dist} value={dist}>{dist}</option>
                   ))}
-                </div>
-              )}
+                </select>
+                <FaChevronDown style={{ position: 'absolute', right: '16px', top: '16px', color: '#94a3b8', pointerEvents: 'none' }} size={12} />
+              </div>
             </div>
 
-            {/* Mahalle Seçimi */}
+            {/* Neighborhood */}
             <div style={styles.inputGroup}>
               <label style={styles.label}>Mahalle Seçiniz</label>
-              <div 
-                style={{ ...styles.selectBtn, opacity: !selectedDistrict ? 0.5 : 1, cursor: !selectedDistrict ? 'not-allowed' : 'pointer' }}
-                onClick={() => { if(selectedDistrict) { setActiveDropdown(activeDropdown === 'neighborhood' ? null : 'neighborhood'); setSearchTerm(''); } }}
-              >
-                {selectedNeighborhood || 'Mahalle Seçiniz'}
-                <FaChevronDown size={12} color="#94a3b8" />
-              </div>
-
-              {activeDropdown === 'neighborhood' && (
-                <div style={styles.dropdown}>
-                   <div style={{ padding: '0 8px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '0 8px', marginBottom: '8px' }}>
-                      <FaSearch color="#cbd5e1" />
-                      <input 
-                        autoFocus
-                        type="text" 
-                        placeholder="Mahalle ara..." 
-                        style={{ ...styles.searchInput, border: 'none', marginBottom: 0 }}
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                      />
-                    </div>
-                  </div>
-                  {filteredNeighborhoods.map(neighborhood => (
-                    <div 
-                      key={neighborhood} 
-                      style={{ ...styles.option, backgroundColor: selectedNeighborhood === neighborhood ? '#f1f5f9' : 'transparent' }}
-                      onClick={() => {
-                        setSelectedNeighborhood(neighborhood);
-                        setActiveDropdown(null);
-                      }}
-                      onMouseEnter={(e) => e.target.style.backgroundColor = '#f8fafc'}
-                      onMouseLeave={(e) => e.target.style.backgroundColor = selectedNeighborhood === neighborhood ? '#f1f5f9' : 'transparent'}
-                    >
-                      {neighborhood}
-                    </div>
+              <div style={{ position: 'relative' }}>
+                <select 
+                  style={{ ...styles.select, opacity: selectedDistrict ? 1 : 0.6 }} 
+                  value={selectedNeighborhood} 
+                  onChange={(e) => setSelectedNeighborhood(e.target.value)}
+                  disabled={!selectedDistrict}
+                >
+                  <option value="">Seçiniz</option>
+                  {selectedDistrict && getNeighborhoods(selectedDistrict).map(n => (
+                    <option key={n} value={n}>{n}</option>
                   ))}
-                </div>
-              )}
+                </select>
+                <FaChevronDown style={{ position: 'absolute', right: '16px', top: '16px', color: '#94a3b8', pointerEvents: 'none' }} size={12} />
+              </div>
             </div>
 
-            {/* Açık Adres */}
+            {/* Postal Code */}
             <div style={styles.inputGroup}>
-              <label style={styles.label}>Açık Adres (Cadde, Sokak, Kapı No vb.)</label>
-              <textarea 
-                style={styles.textArea} 
-                placeholder="Örn: Atatürk Cad. Lale Sok. No:5 D:3"
-                value={openAddress}
-                onChange={(e) => setOpenAddress(e.target.value)}
+              <label style={styles.label}>Posta Kodu</label>
+              <input 
+                type="text" 
+                style={styles.input}
+                value={postalCode}
+                onChange={(e) => setPostalCode(e.target.value)}
+                placeholder="34000"
               />
             </div>
 
-            {/* Adres Başlığı */}
+            {/* Address Line */}
+            <div style={styles.inputGroup}>
+              <label style={styles.label}>Açık Adres (Cadde, Sokak, Kapı No vb.)</label>
+              <textarea 
+                style={styles.textarea}
+                value={addressLine}
+                onChange={(e) => setAddressLine(e.target.value)}
+                placeholder="Örn: Atatürk Cad. Lale Sok. No:5 D:3"
+              />
+            </div>
+
+            {/* Label */}
             <div style={styles.inputGroup}>
               <label style={styles.label}>Adres Başlığı</label>
-              <div style={styles.tagContainer}>
-                {['Ev', 'İş', 'Diğer'].map(tag => (
+              <div style={styles.labelOptions}>
+                {['Ev', 'İş', 'Diğer'].map(label => (
                   <div 
-                    key={tag}
-                    style={{ 
-                      ...styles.tag, 
-                      backgroundColor: addressTitle === tag ? '#ecfdf5' : 'white',
-                      borderColor: addressTitle === tag ? '#059669' : '#e2e8f0',
-                      color: addressTitle === tag ? '#059669' : '#64748b'
-                    }}
-                    onClick={() => setAddressTitle(tag)}
+                    key={label}
+                    style={styles.labelOption(addressLabel === label)}
+                    onClick={() => setAddressLabel(label)}
                   >
-                    {tag}
+                    {label}
                   </div>
                 ))}
               </div>
             </div>
-
           </div>
 
-          {/* Sağ Kolon: Harita & Özet */}
-          <div style={styles.rightCol}>
-            <div style={styles.mapPlaceholder}>
-              <div style={styles.mapOverlay}>
-                <FaMapMarkerAlt size={32} color="#ef4444" />
-                <span style={{ fontWeight: '600', color: '#1e293b' }}>Konum İşaretle</span>
-                <span style={{ fontSize: '12px', textAlign: 'center', maxWidth: '200px' }}>
-                  Tam konumu harita üzerinden seçerek kuryenin sizi daha kolay bulmasını sağlayın.
-                </span>
-              </div>
+          {/* Map Column */}
+          <div style={styles.mapColumn}>
+            <div style={{ flex: 1, borderRadius: '12px', overflow: 'hidden', minHeight: '300px', position: 'relative', zIndex: 0 }}>
+              <LocationMap 
+                city={selectedCity} 
+                district={selectedDistrict} 
+                neighborhood={selectedNeighborhood}
+                onLocationSelect={(latlng) => {
+                  // Optional: You can store coordinates if backend supports it
+                  console.log('Selected location:', latlng);
+                }}
+              />
             </div>
-            <div style={{ fontSize: '13px', color: '#64748b', lineHeight: '1.5' }}>
-              <strong>Seçilen Konum:</strong><br/>
-              {selectedCity ? `${selectedNeighborhood}, ${selectedDistrict}/${selectedCity}` : 'Henüz seçim yapılmadı'}
+            <div style={{ fontSize: '13px', color: 'rgb(100, 116, 139)', lineHeight: '1.5' }}>
+              <strong>Seçilen Konum:</strong><br />
+              {selectedNeighborhood ? `${selectedNeighborhood}, ` : ''}
+              {selectedDistrict ? `${selectedDistrict}/` : ''}
+              {selectedCity || '-'}
             </div>
           </div>
         </div>
 
+        {/* Footer */}
         <div style={styles.footer}>
-          <button style={styles.btnSecondary} onClick={onClose}>Vazgeç</button>
-          <button style={styles.btnPrimary} onClick={handleSave}>Adresi Kaydet</button>
+          <button style={styles.cancelButton} onClick={onClose}>Vazgeç</button>
+          <button style={styles.saveButton} onClick={handleSave}>Adresi Kaydet</button>
         </div>
       </div>
     </div>

@@ -303,7 +303,11 @@ const Register = () => {
               placeholder="Telefon Numaranız (İsteğe bağlı)" 
               style={styles.input}
               value={formData.phone}
-              onChange={handleChange}
+              onChange={(e) => {
+                const val = e.target.value.replace(/\D/g, '').slice(0, 10);
+                setFormData(prev => ({ ...prev, phone: val }));
+              }}
+              maxLength={10}
               onFocus={(e) => {
                 e.target.style.borderColor = '#059669';
                 e.target.style.backgroundColor = 'white';

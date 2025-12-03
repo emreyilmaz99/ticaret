@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getVendorProfile, updateVendorProfile, createVendorAddress, createVendorBankAccount, completeOnboarding } from '../../features/vendor/api/vendorAuthApi';
 import { useToast } from '../../components/Toast';
+import { cities, cityPlateCodes } from '../../data/turkeyData';
 
 const VendorOnboarding = () => {
   const navigate = useNavigate();
@@ -116,7 +117,7 @@ const VendorOnboarding = () => {
           <input value={basic.tax_id} onChange={e => setBasic({...basic, tax_id: e.target.value})} style={{ width: '100%', padding: 8, marginTop: 8 }} />
 
           <label style={{ marginTop: 12 }}>Telefon</label>
-          <input value={basic.phone} onChange={e => setBasic({...basic, phone: e.target.value})} style={{ width: '100%', padding: 8, marginTop: 8 }} />
+          <input value={basic.phone} onChange={e => setBasic({...basic, phone: e.target.value.replace(/\D/g, '').slice(0, 10)})} maxLength={10} style={{ width: '100%', padding: 8, marginTop: 8 }} />
 
           <label style={{ marginTop: 12 }}>Logo (opsiyonel)</label>
           <input type="file" accept="image/*" onChange={e => setLogoFile(e.target.files[0])} />
@@ -134,7 +135,20 @@ const VendorOnboarding = () => {
         <div style={{ marginTop: 16 }}>
           <h4>Adres Bilgisi</h4>
           <label>Şehir</label>
-          <input value={address.city} onChange={e => setAddress({...address, city: e.target.value})} style={{ width: '100%', padding: 8, marginTop: 8 }} />
+          <select 
+            value={address.city} 
+            onChange={e => {
+              const city = e.target.value;
+              const postalCode = city && cityPlateCodes[city] ? cityPlateCodes[city] + '000' : '';
+              setAddress({...address, city: city, postal_code: postalCode});
+            }} 
+            style={{ width: '100%', padding: 8, marginTop: 8 }}
+          >
+            <option value="">Şehir Seçiniz</option>
+            {cities.map(city => (
+              <option key={city} value={city}>{city}</option>
+            ))}
+          </select>
           <label style={{ marginTop: 12 }}>Açık Adres</label>
           <textarea value={address.address_line} onChange={e => setAddress({...address, address_line: e.target.value})} style={{ width: '100%', padding: 8, marginTop: 8 }} />
           <label style={{ marginTop: 12 }}>Posta Kodu</label>

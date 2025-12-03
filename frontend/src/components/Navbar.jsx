@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { createUserAddress } from '../features/user/api/userAddressApi';
 import { 
   FaSearch, FaUser, FaShoppingBag, FaHeart, FaMapMarkerAlt, 
   FaBars, FaChevronDown, FaPhoneAlt, FaSignOutAlt 
@@ -22,9 +24,38 @@ const Navbar = () => {
 
   const toast = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, logout } = useAuth();
   const { favorites } = useFavorites();
   const { cartItems } = useCart();
+  const queryClient = useQueryClient();
+
+  const createAddressMutation = useMutation({
+    mutationFn: createUserAddress,
+    onSuccess: (response) => {
+      // API yanıtından adresi çıkar (response.data veya response.address veya direkt response)
+      const addressData = response.data || response.address || response;
+      
+      setCurrentAddress(addressData);
+      localStorage.setItem('user_address', JSON.stringify(addressData));
+      queryClient.invalidateQueries(['user-addresses']);
+      toast.success('Adres Kaydedildi', 'Teslimat adresi başarıyla eklendi.');
+      setIsAddressModalOpen(false);
+    },
+    onError: (error) => {
+      console.error('Adres ekleme hatası:', error);
+      toast.error('Hata', 'Adres eklenirken bir sorun oluştu.');
+    }
+  });
+
+  const getLinkStyle = (path) => {
+    const isActive = location.pathname === path || (path === '/account/profile' && location.pathname.startsWith('/account'));
+    return {
+      ...styles.actionItem,
+      color: isActive ? '#059669' : '#334155',
+      fontWeight: isActive ? '700' : 'normal'
+    };
+  };
 
   const handleLogout = () => {
     logout();
@@ -51,9 +82,23 @@ const Navbar = () => {
   };
 
   const handleSaveAddress = (address) => {
-    setCurrentAddress(address);
-    localStorage.setItem('user_address', JSON.stringify(address));
-    toast.success('Adres Kaydedildi', 'Teslimat adresi başarıyla güncellendi.');
+    if (user) {
+      if (address.id) {
+        // Existing address selected
+        setCurrentAddress(address);
+        localStorage.setItem('user_address', JSON.stringify(address));
+        toast.success('Adres Seçildi', 'Teslimat adresi güncellendi.');
+        setIsAddressModalOpen(false);
+      } else {
+        // New address created
+        createAddressMutation.mutate(address);
+      }
+    } else {
+      setCurrentAddress(address);
+      localStorage.setItem('user_address', JSON.stringify(address));
+      toast.success('Adres Kaydedildi', 'Teslimat adresi geçici olarak kaydedildi.');
+      setIsAddressModalOpen(false);
+    }
   };
 
 
@@ -306,20 +351,20 @@ const Navbar = () => {
                   <span>Çıkış Yap</span>
                 </div>
                 
-                <Link to="/favorites" style={styles.actionItem}>
+                <Link to="/favorites" style={getLinkStyle('/favorites')}>
                   <div style={styles.iconBox}>
                     <FaHeart />
                     {favorites.length > 0 && <span style={styles.badge}>{favorites.length}</span>}
                   </div>
                   <span>Favorilerim</span>
                 </Link>
-                
+
                 <div 
                   style={{ position: 'relative', height: '100%', display: 'flex', alignItems: 'center' }}
                   onMouseEnter={() => setIsCartOpen(true)}
                   onMouseLeave={() => setIsCartOpen(false)}
                 >
-                  <Link to="/cart" style={styles.actionItem}>
+                  <Link to="/cart" style={getLinkStyle('/cart')}>
                     <div style={styles.iconBox}>
                       <FaShoppingBag />
                       {cartItems.length > 0 && (
@@ -364,6 +409,11 @@ const Navbar = () => {
                     </div>
                   )}
                 </div>
+
+                <Link to="/account/profile" style={getLinkStyle('/account/profile')}>
+                  <div style={styles.iconBox}><FaUser /></div>
+                  <span>{user?.name || 'Hesabım'}</span>
+                </Link>
               </>
             )}
           </div>
@@ -381,7 +431,14 @@ const Navbar = () => {
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', lineHeight: '1.2' }}>
                     <span style={{ fontSize: '10px', color: '#64748b' }}>Teslimat Adresi</span>
                     <span style={{ fontWeight: '600', color: '#1e293b' }}>
-                      {currentAddress ? `${currentAddress.title} - ${currentAddress.district}/${currentAddress.city}` : 'Adres Seçin'}
+                      {currentAddress ? (
+                        <>
+                          {currentAddress.label || currentAddress.title || 'Adres'}
+                          {(currentAddress.district || currentAddress.city) 
+                            ? ` - ${currentAddress.district || ''}${currentAddress.district && currentAddress.city ? '/' : ''}${currentAddress.city || ''}`
+                            : (currentAddress.address_line ? ` - ${currentAddress.address_line.substring(0, 20)}${currentAddress.address_line.length > 20 ? '...' : ''}` : '')}
+                        </>
+                      ) : 'Adres Seçin'}
                     </span>
                   </div>
                   <FaChevronDown size={10} style={{ marginLeft: '4px' }} />
