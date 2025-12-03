@@ -1056,7 +1056,7 @@ const VendorProducts = () => {
                     <div>
                       {formData.type === 'variable' ? (
                         <div style={{ padding: '16px', backgroundColor: '#fffbeb', color: '#92400e', borderRadius: '8px', fontSize: '14px' }}>
-                          Bu ürün varyantlı olduğu için fiyat ve stok bilgileri varyantlar sekmesinden yönetilir.
+                          ℹ️ Bu ürün varyantlı olduğu için fiyat ve stok bilgileri <strong>Varyantlar</strong> sekmesinden yönetilir.
                         </div>
                       ) : (
                         <div style={styles.grid2}>
@@ -1078,7 +1078,12 @@ const VendorProducts = () => {
                             </div>
                           </div>
                           <div>
-                            <label style={styles.label}>Stok Adedi *</label>
+                            <label style={styles.label}>
+                              Stok Sayısı *
+                              <span style={{fontWeight: 400, color: '#64748b', fontSize: '12px', marginLeft: '8px'}}>
+                                (Mevcut stok adedi)
+                              </span>
+                            </label>
                             <input 
                               type="number"
                               required
@@ -1087,30 +1092,28 @@ const VendorProducts = () => {
                               onChange={(e) => setFormData({...formData, stock: e.target.value})}
                               disabled={modalMode === 'view'}
                               style={styles.formInput}
-                              placeholder="0"
+                              placeholder="Örn: 100"
                             />
                           </div>
                           <div>
-                            <label style={styles.label}>SKU (Stok Kodu) <span style={{fontWeight: 400, color: '#94a3b8'}}>(Opsiyonel)</span></label>
-                            <input 
-                              value={formData.sku}
-                              onChange={(e) => setFormData({...formData, sku: e.target.value})}
-                              disabled={modalMode === 'view'}
-                              style={styles.formInput}
-                              placeholder="Örn: PRD-001"
-                            />
-                          </div>
-                          <div>
-                            <label style={styles.label}>Birim <span style={{fontWeight: 400, color: '#94a3b8'}}>(Opsiyonel)</span></label>
+                            <label style={styles.label}>
+                              Birim
+                              <span style={{fontWeight: 400, color: '#64748b', fontSize: '12px', marginLeft: '8px'}}>
+                                (Ürün satış birimi)
+                              </span>
+                            </label>
                             <select 
                               value={formData.unit_id}
                               onChange={(e) => setFormData({...formData, unit_id: e.target.value})}
                               disabled={modalMode === 'view'}
                               style={styles.formInput}
                             >
-                              <option value="">Seçiniz</option>
+                              <option value="">Adet (Varsayılan)</option>
                               {units.map(u => <option key={u.id} value={u.id}>{u.name} ({u.symbol})</option>)}
                             </select>
+                            <p style={{ fontSize: '12px', color: '#94a3b8', marginTop: '4px' }}>
+                              Örn: Adet, Kg, Litre, Metre vb.
+                            </p>
                           </div>
                         </div>
                       )}
@@ -1215,12 +1218,17 @@ const VendorProducts = () => {
                     <div>
                       {formData.type !== 'variable' ? (
                         <div style={{ padding: '16px', backgroundColor: '#f1f5f9', color: '#475569', borderRadius: '8px', fontSize: '14px' }}>
-                          Varyant eklemek için ürün tipini "Varyantlı Ürün" olarak seçmelisiniz.
+                          ℹ️ Varyant eklemek için <strong>Genel Bilgiler</strong> sekmesinden ürün tipini "Varyantlı Ürün" olarak seçmelisiniz.
                         </div>
                       ) : (
                         <div>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                            <h3 style={{ fontWeight: '600', color: '#0f172a' }}>Ürün Varyantları</h3>
+                            <div>
+                              <h3 style={{ fontWeight: '600', color: '#0f172a', marginBottom: '4px' }}>Ürün Varyantları</h3>
+                              <p style={{ fontSize: '13px', color: '#64748b' }}>
+                                Renk, beden gibi farklı seçenekler için varyant ekleyin. Her varyantın kendi fiyatı ve stoğu olabilir.
+                              </p>
+                            </div>
                             {modalMode !== 'view' && (
                               <button 
                                 type="button" 
@@ -1231,6 +1239,18 @@ const VendorProducts = () => {
                               </button>
                             )}
                           </div>
+                          
+                          {/* Column Headers */}
+                          {formData.variants.length > 0 && (
+                            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr', gap: '8px', marginBottom: '8px', paddingLeft: '8px', paddingRight: '32px' }}>
+                              <span style={{ fontSize: '12px', fontWeight: '600', color: '#64748b' }}>Varyant Adı</span>
+                              <span style={{ fontSize: '12px', fontWeight: '600', color: '#64748b' }}>SKU (Stok Kodu)</span>
+                              <span style={{ fontSize: '12px', fontWeight: '600', color: '#64748b' }}>Fiyat (₺)</span>
+                              <span style={{ fontSize: '12px', fontWeight: '600', color: '#64748b' }}>Stok Sayısı</span>
+                              <span style={{ fontSize: '12px', fontWeight: '600', color: '#64748b' }}>Birim</span>
+                            </div>
+                          )}
+                          
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                             {formData.variants.map((variant, idx) => (
                               <div key={idx} style={styles.variantCard}>
@@ -1243,32 +1263,35 @@ const VendorProducts = () => {
                                     <FaTimes />
                                   </button>
                                 )}
-                                <div style={styles.grid2}>
+                                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr', gap: '8px' }}>
                                   <input 
-                                    placeholder="Varyant Adı (Örn: Kırmızı - L)"
+                                    placeholder="Örn: Kırmızı - L"
                                     value={variant.title}
                                     onChange={(e) => handleVariantChange(idx, 'title', e.target.value)}
                                     disabled={modalMode === 'view'}
                                     style={styles.formInput}
                                   />
                                   <input 
-                                    placeholder="SKU"
+                                    placeholder="Örn: PRD-RED-L"
                                     value={variant.sku}
                                     onChange={(e) => handleVariantChange(idx, 'sku', e.target.value)}
                                     disabled={modalMode === 'view'}
                                     style={styles.formInput}
                                   />
                                   <input 
-                                    placeholder="Fiyat"
+                                    placeholder="0.00"
                                     type="number"
+                                    min="0"
+                                    step="0.01"
                                     value={variant.price}
                                     onChange={(e) => handleVariantChange(idx, 'price', e.target.value)}
                                     disabled={modalMode === 'view'}
                                     style={styles.formInput}
                                   />
                                   <input 
-                                    placeholder="Stok"
+                                    placeholder="0"
                                     type="number"
+                                    min="0"
                                     value={variant.stock}
                                     onChange={(e) => handleVariantChange(idx, 'stock', e.target.value)}
                                     disabled={modalMode === 'view'}
@@ -1280,12 +1303,41 @@ const VendorProducts = () => {
                                     disabled={modalMode === 'view'}
                                     style={styles.formInput}
                                   >
-                                    <option value="">Birim Seçiniz</option>
-                                    {units.map(u => <option key={u.id} value={u.id}>{u.name} ({u.symbol})</option>)}
+                                    <option value="">Adet</option>
+                                    {units.map(u => <option key={u.id} value={u.id}>{u.symbol}</option>)}
                                   </select>
                                 </div>
                               </div>
                             ))}
+                            
+                            {formData.variants.length === 0 && (
+                              <div style={{ 
+                                padding: '32px', 
+                                textAlign: 'center', 
+                                backgroundColor: '#f8fafc', 
+                                borderRadius: '8px',
+                                border: '2px dashed #e2e8f0'
+                              }}>
+                                <p style={{ color: '#64748b', marginBottom: '12px' }}>Henüz varyant eklenmemiş</p>
+                                {modalMode !== 'view' && (
+                                  <button 
+                                    type="button" 
+                                    onClick={addVariant}
+                                    style={{ 
+                                      padding: '8px 16px',
+                                      backgroundColor: '#059669',
+                                      color: 'white',
+                                      border: 'none',
+                                      borderRadius: '6px',
+                                      cursor: 'pointer',
+                                      fontWeight: '500'
+                                    }}
+                                  >
+                                    + İlk Varyantı Ekle
+                                  </button>
+                                )}
+                              </div>
+                            )}
                           </div>
                         </div>
                       )}
