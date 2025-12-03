@@ -130,4 +130,36 @@ class ProductController extends Controller
             return $this->error($e->getMessage(), 403);
         }
     }
+
+    /**
+     * Update product status (vendor can only toggle between active/inactive)
+     */
+    public function updateStatus(Request $request, $id)
+    {
+        $request->validate([
+            'status' => 'required|in:active,inactive'
+        ]);
+
+        $vendor = $request->user();
+        $product = $this->service->findForVendor($vendor, $id);
+
+        if (!$product) {
+            return $this->error('Ürün bulunamadı', 404);
+        }
+
+        // Sadece active olan ürünler inactive yapılabilir ve tam tersi
+        if (!in_array($product->status, ['active', 'inactive'])) {
+            return $this->error('Bu ürünün durumu değiştirilemez. Sadece yayında veya pasif durumundaki ürünlerin durumu değiştirilebilir.', 403);
+        }
+
+        $product->status = $request->status;
+        $product->save();
+
+        $message = $request->status === 'active' ? 'Ürün yayına alındı' : 'Ürün pasife alındı';
+
+        return $this->success(
+            new ProductResource($product->fresh(['vendor', 'category', 'photos', 'variants', 'tags'])),
+            $message
+        );
+    }
 }

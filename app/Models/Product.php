@@ -15,7 +15,8 @@ class Product extends Model
     public $incrementing = false;
 
     protected $fillable = [
-        'id','vendor_id','category_id','sku','slug','name','short_description','description','type','status','is_featured','tax_class','commission_rate'
+        'id','vendor_id','category_id','sku','slug','name','short_description','description','type','status','is_featured','tax_class','commission_rate',
+        'rejection_reason','rejected_at','rejected_by'
         // Removed variant-specific fields: 'price','compare_at_price','weight','length','width','height'
         // These now live in product_variants table only
         // Removed: 'settings', 'metadata' - now in separate tables
@@ -23,6 +24,7 @@ class Product extends Model
 
     protected $casts = [
         'is_featured' => 'boolean',
+        'rejected_at' => 'datetime',
         // Removed: 'settings' => 'array', 'metadata' => 'array'
     ];
 
@@ -64,6 +66,11 @@ class Product extends Model
     public function productMetadata()
     {
         return $this->hasMany(ProductMetadata::class);
+    }
+
+    public function rejectedByAdmin()
+    {
+        return $this->belongsTo(Admin::class, 'rejected_by');
     }
 
     protected static function booted()

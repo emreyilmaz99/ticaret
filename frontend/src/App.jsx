@@ -22,6 +22,7 @@ import AdminsPage from './pages/admin/AdminsPage'; // Yönetici Yönetimi
 import UsersPage from './pages/admin/UsersPage'; // Kullanıcı Yönetimi
 import VendorApplications from './pages/admin/VendorApplications'; // Satıcı Başvuruları
 import CommissionPlans from './pages/admin/CommissionPlans'; // Komisyon Planları
+import ProductsPage from './pages/admin/ProductsPage'; // Ürün Yönetimi
 
 // 3. Satıcı Sayfaları
 import VendorLogin from './pages/vendor/VendorLogin';
@@ -84,6 +85,7 @@ function App() {
               <Route path="/admin/vendors" element={<FullApplicationsPage />} />
               <Route path="/admin/vendor-applications" element={<VendorApplications />} />
               <Route path="/admin/commission-plans" element={<CommissionPlans />} />
+              <Route path="/admin/products" element={<ProductsPage />} />
               <Route path="/admin/admins" element={<AdminsPage />} />
               <Route path="/admin/users" element={<UsersPage />} />
               

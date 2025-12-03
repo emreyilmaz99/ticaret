@@ -56,3 +56,9 @@ export const deleteVendorProductPhoto = async (productId, photoId) => {
   const res = await axios.delete(`/v1/vendor/products/${productId}/photos/${photoId}`);
   return res.data;
 };
+
+// Vendor: ürün durumunu güncelle (active/inactive)
+export const updateVendorProductStatus = async (id, status) => {
+  const res = await axios.put(`/v1/vendor/products/${id}/status`, { status });
+  return res.data;
+};

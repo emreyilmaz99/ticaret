@@ -3,10 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { 
   FaPlus, FaSearch, FaFilter, FaEdit, FaTrash, FaEye, 
   FaBox, FaTag, FaImages, FaList, FaCog, FaSave, FaTimes, FaCheck,
-  FaThLarge, FaSortAmountDown, FaSortAmountUp, FaFolder, FaLayerGroup
+  FaThLarge, FaSortAmountDown, FaSortAmountUp, FaFolder, FaLayerGroup,
+  FaPause, FaPlay
 } from 'react-icons/fa';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getVendorProducts, createVendorProduct, deleteVendorProduct, updateVendorProduct, deleteVendorProductPhoto } from '../../features/vendor/api/productApi';
+import { getVendorProducts, createVendorProduct, deleteVendorProduct, updateVendorProduct, deleteVendorProductPhoto, updateVendorProductStatus } from '../../features/vendor/api/productApi';
 import { getVendorCategories } from '../../features/vendor/api/categoryApi';
 import { getUnits } from '../../features/public/api/unitsApi';
 import { useToast } from '../../components/Toast';
@@ -152,6 +153,18 @@ const VendorProducts = () => {
     onError: (err) => {
       console.error(err);
       toast.error('Hata', 'Fotoğraf silinemedi.');
+    }
+  });
+
+  const statusMutation = useMutation({
+    mutationFn: ({ id, status }) => updateVendorProductStatus(id, status),
+    onSuccess: (data) => {
+      qc.invalidateQueries(['vendorProducts']);
+      toast.success('Başarılı', data.message || 'Ürün durumu güncellendi.');
+    },
+    onError: (err) => {
+      console.error(err);
+      toast.error('Hata', err.response?.data?.message || 'Durum güncellenemedi.');
     }
   });
 
@@ -545,16 +558,34 @@ const VendorProducts = () => {
                     <td style={styles.td}>
                       <span style={{ 
                         padding: '4px 10px', borderRadius: '20px', fontSize: '12px', fontWeight: '600',
-                        backgroundColor: product.status === 'published' ? '#d1fae5' : product.status === 'pending' ? '#fef3c7' : '#f1f5f9',
-                        color: product.status === 'published' ? '#047857' : product.status === 'pending' ? '#b45309' : '#475569'
+                        backgroundColor: product.status === 'active' ? '#d1fae5' : product.status === 'pending' ? '#fef3c7' : product.status === 'rejected' ? '#fee2e2' : product.status === 'inactive' ? '#e2e8f0' : product.status === 'banned' ? '#fecaca' : '#f1f5f9',
+                        color: product.status === 'active' ? '#047857' : product.status === 'pending' ? '#b45309' : product.status === 'rejected' ? '#dc2626' : product.status === 'inactive' ? '#64748b' : product.status === 'banned' ? '#991b1b' : '#475569'
                       }}>
-                        {product.status === 'published' ? 'Yayında' : product.status === 'pending' ? 'Onay Bekleniyor' : 'Taslak'}
+                        {product.status === 'active' ? 'Yayında' : product.status === 'pending' ? 'Onay Bekliyor' : product.status === 'rejected' ? 'Reddedildi' : product.status === 'inactive' ? 'Pasif' : product.status === 'banned' ? 'Yasaklı' : 'Taslak'}
                       </span>
                     </td>
                     <td style={{...styles.td, textAlign: 'right'}}>
                       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
                         <button onClick={() => openViewModal(product)} style={{ padding: '8px', borderRadius: '6px', border: 'none', backgroundColor: '#f1f5f9', color: '#64748b', cursor: 'pointer' }} title="Görüntüle"><FaEye /></button>
                         <button onClick={() => openEditModal(product)} style={{ padding: '8px', borderRadius: '6px', border: 'none', backgroundColor: '#eff6ff', color: '#2563eb', cursor: 'pointer' }} title="Düzenle"><FaEdit /></button>
+                        {product.status === 'active' && (
+                          <button 
+                            onClick={() => statusMutation.mutate({ id: product.id, status: 'inactive' })} 
+                            style={{ padding: '8px', borderRadius: '6px', border: 'none', backgroundColor: '#fef3c7', color: '#b45309', cursor: 'pointer' }} 
+                            title="Pasife Al"
+                          >
+                            <FaPause />
+                          </button>
+                        )}
+                        {product.status === 'inactive' && (
+                          <button 
+                            onClick={() => statusMutation.mutate({ id: product.id, status: 'active' })} 
+                            style={{ padding: '8px', borderRadius: '6px', border: 'none', backgroundColor: '#d1fae5', color: '#059669', cursor: 'pointer' }} 
+                            title="Aktif Et"
+                          >
+                            <FaPlay />
+                          </button>
+                        )}
                         <button 
                           onClick={() => openConfirmModal(
                             'Ürünü Sil',
@@ -593,10 +624,11 @@ const VendorProducts = () => {
                   <div style={{ position: 'absolute', top: '12px', right: '12px', display: 'flex', gap: '8px' }}>
                     <span style={{ 
                       padding: '4px 8px', borderRadius: '12px', fontSize: '11px', fontWeight: '600',
-                      backgroundColor: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(4px)',
-                      color: product.status === 'published' ? '#059669' : product.status === 'pending' ? '#d97706' : '#64748b'
+                      backdropFilter: 'blur(4px)',
+                      backgroundColor: product.status === 'active' ? 'rgba(209, 250, 229, 0.95)' : product.status === 'pending' ? 'rgba(254, 243, 199, 0.95)' : product.status === 'rejected' ? 'rgba(254, 226, 226, 0.95)' : product.status === 'inactive' ? 'rgba(226, 232, 240, 0.95)' : product.status === 'banned' ? 'rgba(254, 202, 202, 0.95)' : 'rgba(241, 245, 249, 0.95)',
+                      color: product.status === 'active' ? '#047857' : product.status === 'pending' ? '#b45309' : product.status === 'rejected' ? '#dc2626' : product.status === 'inactive' ? '#475569' : product.status === 'banned' ? '#991b1b' : '#475569'
                     }}>
-                      {product.status === 'published' ? 'Yayında' : product.status === 'pending' ? 'Onay Bekleniyor' : 'Taslak'}
+                      {product.status === 'active' ? 'Yayında' : product.status === 'pending' ? 'Onay Bekliyor' : product.status === 'rejected' ? 'Reddedildi' : product.status === 'inactive' ? 'Pasif' : product.status === 'banned' ? 'Yasaklı' : 'Taslak'}
                     </span>
                   </div>
                 </div>
@@ -611,6 +643,24 @@ const VendorProducts = () => {
                   </div>
                   <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #f1f5f9', display: 'flex', gap: '8px' }}>
                     <button onClick={() => openEditModal(product)} style={{ flex: 1, padding: '8px', borderRadius: '6px', border: '1px solid #e2e8f0', backgroundColor: 'white', color: '#334155', cursor: 'pointer', fontSize: '13px', fontWeight: '500' }}>Düzenle</button>
+                    {product.status === 'active' && (
+                      <button 
+                        onClick={() => statusMutation.mutate({ id: product.id, status: 'inactive' })} 
+                        style={{ padding: '8px', borderRadius: '6px', border: '1px solid #fef3c7', backgroundColor: '#fffbeb', color: '#b45309', cursor: 'pointer' }}
+                        title="Pasife Al"
+                      >
+                        <FaPause />
+                      </button>
+                    )}
+                    {product.status === 'inactive' && (
+                      <button 
+                        onClick={() => statusMutation.mutate({ id: product.id, status: 'active' })} 
+                        style={{ padding: '8px', borderRadius: '6px', border: '1px solid #d1fae5', backgroundColor: '#ecfdf5', color: '#059669', cursor: 'pointer' }}
+                        title="Aktif Et"
+                      >
+                        <FaPlay />
+                      </button>
+                    )}
                     <button 
                       onClick={() => openConfirmModal(
                         'Ürünü Sil',

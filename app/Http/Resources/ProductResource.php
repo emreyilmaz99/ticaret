@@ -14,6 +14,14 @@ class ProductResource extends JsonResource
         return [
             'id' => $this->id,
             'vendor_id' => $this->vendor_id,
+            'vendor' => $this->whenLoaded('vendor', function () { 
+                return $this->vendor ? [
+                    'id' => $this->vendor->id, 
+                    'company_name' => $this->vendor->company_name,
+                    'full_name' => $this->vendor->full_name,
+                    'email' => $this->vendor->email,
+                ] : null; 
+            }),
             'category_id' => $this->category_id,
             'category' => $this->whenLoaded('category', function () { return $this->category ? ['id' => $this->category->id, 'name' => $this->category->name] : null; }),
             'sku' => $this->sku,
@@ -32,6 +40,9 @@ class ProductResource extends JsonResource
             'thumbnail' => $this->whenLoaded('photos', function () { return optional($this->photos->first())->url; }),
             'variants' => $this->whenLoaded('variants'),
             'tags' => $this->whenLoaded('tags'),
+            'rejection_reason' => $this->rejection_reason,
+            'rejected_at' => $this->rejected_at,
+            'rejected_by' => $this->rejected_by,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];

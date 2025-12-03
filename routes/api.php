@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\V1\Admin\AdminController;
 use App\Http\Controllers\Api\V1\Admin\AdminPermissionsController;
 use App\Http\Controllers\Api\V1\Admin\VendorPayoutController as AdminVendorPayoutController;
 use App\Http\Controllers\Admin\CommissionPlanController;
+use App\Http\Controllers\Api\V1\Admin\ProductController as AdminProductController;
 
 // Vendor controllers
 use App\Http\Controllers\Api\V1\Vendor\VendorAuthController;
@@ -84,6 +85,14 @@ Route::prefix('v1/admin')->group(function () {
         Route::post('vendor-applications/{id}/approve-pre', [AdminVendorApplicationController::class, 'approvePreApplication']);
         Route::post('vendor-applications/{id}/approve-full', [AdminVendorApplicationController::class, 'approveFullApplication']);
         Route::post('vendor-applications/{id}/reject', [AdminVendorApplicationController::class, 'reject']);
+
+        // products management
+        Route::get('products', [AdminProductController::class, 'index']);
+        Route::get('products/statistics', [AdminProductController::class, 'statistics']);
+        Route::get('products/{id}', [AdminProductController::class, 'show']);
+        Route::put('products/{id}/status', [AdminProductController::class, 'updateStatus']);
+        Route::post('products/bulk-status', [AdminProductController::class, 'bulkUpdateStatus']);
+        Route::delete('products/{id}', [AdminProductController::class, 'destroy']);
     });
 });
 
@@ -102,6 +111,7 @@ Route::prefix('v1/vendor')->group(function () {
         Route::post('products', [\App\Http\Controllers\Api\V1\Vendor\ProductController::class, 'store']);
         Route::get('products/{product}', [\App\Http\Controllers\Api\V1\Vendor\ProductController::class, 'show']);
         Route::put('products/{product}', [\App\Http\Controllers\Api\V1\Vendor\ProductController::class, 'update']);
+        Route::put('products/{product}/status', [\App\Http\Controllers\Api\V1\Vendor\ProductController::class, 'updateStatus']);
         Route::delete('products/{product}', [\App\Http\Controllers\Api\V1\Vendor\ProductController::class, 'destroy']);
         Route::delete('products/{product}/photos/{photo}', [\App\Http\Controllers\Api\V1\Vendor\ProductController::class, 'destroyPhoto']);
         // vendor profile endpoints (self-service)
