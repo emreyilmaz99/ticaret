@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useCart } from '../../context/CartContext';
 import { Link } from 'react-router-dom';
-import { FiTrash2, FiMinus, FiPlus, FiShoppingBag, FiArrowRight, FiTag, FiX } from 'react-icons/fi';
+import { FiTrash2, FiMinus, FiPlus, FiShoppingBag, FiArrowRight, FiTag, FiX, FiLoader } from 'react-icons/fi';
 
 const Cart = () => {
   const { 
@@ -12,7 +12,9 @@ const Cart = () => {
     applyCoupon, 
     removeCoupon, 
     coupon, 
-    totals 
+    totals,
+    loading,
+    initialized
   } = useCart();
 
   const [couponInput, setCouponInput] = useState('');
@@ -322,6 +324,18 @@ const Cart = () => {
     },
   };
 
+  // Yüklenirken göster
+  if (!initialized) {
+    return (
+      <div style={styles.container}>
+        <div style={styles.emptyState}>
+          <FiLoader size={48} color="#059669" style={{ animation: 'spin 1s linear infinite' }} />
+          <p style={{ marginTop: '16px', color: '#64748b' }}>Sepet yükleniyor...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (cartItems.length === 0) {
     return (
       <div style={styles.container}>
@@ -364,7 +378,7 @@ const Cart = () => {
             {/* Ürünler */}
             <div>
               {cartItems.map((item) => (
-                <div key={`${item.id}-${JSON.stringify(item.variant)}`} style={{
+                <div key={item.id} style={{
                   ...styles.cartItem,
                   gridTemplateColumns: window.innerWidth < 768 ? '1fr' : '2fr 1fr 1fr 1fr',
                   gap: window.innerWidth < 768 ? '16px' : '16px'
@@ -372,21 +386,30 @@ const Cart = () => {
                   
                   {/* Ürün Bilgisi */}
                   <div style={styles.productInfo}>
-                    <img 
-                      src={item.image} 
-                      alt={item.name} 
-                      style={styles.productImage}
-                    />
+                    {item.product?.image ? (
+                      <img 
+                        src={item.product.image} 
+                        alt={item.product?.name} 
+                        style={styles.productImage}
+                      />
+                    ) : (
+                      <div style={{...styles.productImage, backgroundColor: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
+                        <FiShoppingBag size={24} color="#cbd5e1" />
+                      </div>
+                    )}
                     <div style={styles.productDetails}>
-                      <h3 style={styles.productName}>{item.name}</h3>
+                      <Link to={`/product/${item.product?.slug}`} style={{...styles.productName, textDecoration: 'none'}}>
+                        {item.product?.name}
+                      </Link>
                       {item.variant && (
                         <p style={styles.variantText}>
-                          {Object.entries(item.variant).map(([key, val]) => `${key}: ${val}`).join(', ')}
+                          {item.variant.title || item.variant.sku}
                         </p>
                       )}
                       <button 
-                        onClick={() => removeFromCart(item.id, item.variant)}
+                        onClick={() => removeFromCart(item.id)}
                         style={styles.removeBtn}
+                        disabled={loading}
                       >
                         <FiTrash2 /> Sil
                       </button>
@@ -396,19 +419,20 @@ const Cart = () => {
                   {/* Mobil Fiyat ve Adet Kontrolü */}
                   {window.innerWidth < 768 && (
                     <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%'}}>
-                      <span style={{fontWeight: '700', color: '#059669'}}>{item.price.toLocaleString('tr-TR')} TL</span>
+                      <span style={{fontWeight: '700', color: '#059669'}}>{item.unit_price?.toLocaleString('tr-TR')} TL</span>
                       <div style={styles.quantityControl}>
                         <button 
-                          onClick={() => updateQuantity(item.id, item.variant, item.quantity - 1)}
-                          style={{...styles.qtyBtn, opacity: item.quantity <= 1 ? 0.5 : 1}}
-                          disabled={item.quantity <= 1}
+                          onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                          style={{...styles.qtyBtn, opacity: item.quantity <= 1 || loading ? 0.5 : 1}}
+                          disabled={item.quantity <= 1 || loading}
                         >
                           <FiMinus size={12} />
                         </button>
                         <span style={styles.qtyText}>{item.quantity}</span>
                         <button 
-                          onClick={() => updateQuantity(item.id, item.variant, item.quantity + 1)}
-                          style={styles.qtyBtn}
+                          onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                          style={{...styles.qtyBtn, opacity: loading ? 0.5 : 1}}
+                          disabled={loading}
                         >
                           <FiPlus size={12} />
                         </button>
@@ -418,22 +442,23 @@ const Cart = () => {
 
                   {/* Desktop Kolonlar */}
                   <div style={{textAlign: 'center', display: window.innerWidth < 768 ? 'none' : 'block', ...styles.priceText}}>
-                    {item.price.toLocaleString('tr-TR')} TL
+                    {item.unit_price?.toLocaleString('tr-TR')} TL
                   </div>
 
                   <div style={{display: window.innerWidth < 768 ? 'none' : 'flex', justifyContent: 'center'}}>
                     <div style={styles.quantityControl}>
                       <button 
-                        onClick={() => updateQuantity(item.id, item.variant, item.quantity - 1)}
-                        style={{...styles.qtyBtn, opacity: item.quantity <= 1 ? 0.5 : 1}}
-                        disabled={item.quantity <= 1}
+                        onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                        style={{...styles.qtyBtn, opacity: item.quantity <= 1 || loading ? 0.5 : 1}}
+                        disabled={item.quantity <= 1 || loading}
                       >
                         <FiMinus size={12} />
                       </button>
                       <span style={styles.qtyText}>{item.quantity}</span>
                       <button 
-                        onClick={() => updateQuantity(item.id, item.variant, item.quantity + 1)}
-                        style={styles.qtyBtn}
+                        onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                        style={{...styles.qtyBtn, opacity: loading ? 0.5 : 1}}
+                        disabled={loading}
                       >
                         <FiPlus size={12} />
                       </button>
@@ -441,7 +466,7 @@ const Cart = () => {
                   </div>
 
                   <div style={{...styles.totalText, display: window.innerWidth < 768 ? 'none' : 'block'}}>
-                    {(item.price * item.quantity).toLocaleString('tr-TR')} TL
+                    {item.line_total?.toLocaleString('tr-TR')} TL
                   </div>
 
                 </div>
@@ -502,22 +527,22 @@ const Cart = () => {
             <div style={{borderTop: '1px solid #f1f5f9', paddingTop: '24px'}}>
               <div style={styles.row}>
                 <span>Ara Toplam</span>
-                <span>{totals.subtotal.toLocaleString('tr-TR')} TL</span>
+                <span>{(totals?.subtotal || 0).toLocaleString('tr-TR')} TL</span>
               </div>
               
-              {totals.discount > 0 && (
+              {(totals?.discount || 0) > 0 && (
                 <div style={{...styles.row, color: '#16a34a'}}>
                   <span>İndirim ({coupon?.code})</span>
-                  <span>-{totals.discount.toLocaleString('tr-TR')} TL</span>
+                  <span>-{(totals?.discount || 0).toLocaleString('tr-TR')} TL</span>
                 </div>
               )}
 
               <div style={styles.row}>
                 <span>Kargo</span>
-                {totals.shipping === 0 ? (
+                {(totals?.shipping || 0) === 0 ? (
                   <span style={{color: '#16a34a', fontWeight: '600'}}>Bedava</span>
                 ) : (
-                  <span>{totals.shipping.toLocaleString('tr-TR')} TL</span>
+                  <span>{(totals?.shipping || 0).toLocaleString('tr-TR')} TL</span>
                 )}
               </div>
             </div>
@@ -525,7 +550,7 @@ const Cart = () => {
             {/* Toplam */}
             <div style={styles.totalRow}>
               <span>Genel Toplam</span>
-              <span style={{color: '#059669'}}>{totals.total.toLocaleString('tr-TR')} TL</span>
+              <span style={{color: '#059669'}}>{(totals?.total || 0).toLocaleString('tr-TR')} TL</span>
             </div>
 
             {/* Buton */}

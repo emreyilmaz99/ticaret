@@ -2,34 +2,86 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   FaTrash, FaShoppingCart, FaHeartBroken, FaArrowLeft, 
-  FaSortAmountDown, FaFilter, FaCheck, FaTimes 
+  FaSortAmountDown, FaCheck, FaTimes, FaSpinner 
 } from 'react-icons/fa';
 import { useFavorites } from '../../context/FavoritesContext';
 import { useCart } from '../../context/CartContext';
+import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../components/Toast';
 
 const Favorites = () => {
-  const { favorites, removeFromFavorites, clearFavorites } = useFavorites();
+  const { favorites, removeFromFavorites, clearFavorites, loading, count } = useFavorites();
   const { addToCart } = useCart();
+  const { user } = useAuth();
   const toast = useToast();
   const [sortBy, setSortBy] = useState('date'); // date, price-asc, price-desc
 
+  // Helper: API formatı veya localStorage formatı
+  const getProduct = (item) => {
+    // API formatı: { id, product: {...} }
+    // localStorage formatı: { id, title, price, image, ... }
+    if (item.product) {
+      return {
+        id: item.product.id,
+        title: item.product.name,
+        slug: item.product.slug,
+        image: item.product.image,
+        price: item.product.price,
+        oldPrice: item.product.compare_price,
+        inStock: item.product.in_stock,
+        stock: item.product.stock,
+        vendor: item.product.vendor,
+        dateAdded: item.added_at,
+      };
+    }
+    // localStorage formatı
+    return {
+      id: item.id,
+      title: item.title || item.name,
+      slug: item.slug,
+      image: item.image,
+      price: item.price,
+      oldPrice: item.oldPrice || item.compare_price,
+      inStock: item.inStock !== undefined ? item.inStock : true,
+      stock: item.stock,
+      dateAdded: item.dateAdded,
+    };
+  };
+
   // Sort logic
   const sortedFavorites = [...favorites].sort((a, b) => {
-    if (sortBy === 'price-asc') return a.price - b.price;
-    if (sortBy === 'price-desc') return b.price - a.price;
-    // Default: date added (assuming new items are added to the end, so reverse for newest first)
-    return new Date(b.dateAdded) - new Date(a.dateAdded);
+    const productA = getProduct(a);
+    const productB = getProduct(b);
+    
+    if (sortBy === 'price-asc') return (productA.price || 0) - (productB.price || 0);
+    if (sortBy === 'price-desc') return (productB.price || 0) - (productA.price || 0);
+    // Default: date added
+    return new Date(productB.dateAdded || 0) - new Date(productA.dateAdded || 0);
   });
 
   const handleAddToCart = (product) => {
-    addToCart(product);
+    addToCart({ id: product.id, name: product.title });
   };
 
   const handleMoveAllToCart = () => {
     if (favorites.length === 0) return;
-    favorites.forEach(product => addToCart(product));
-    toast.success('Başarılı', 'Tüm favori ürünleriniz sepete eklendi.');
+    favorites.forEach(item => {
+      const product = getProduct(item);
+      if (product.inStock) {
+        addToCart({ id: product.id, name: product.title });
+      }
+    });
+    toast.success('Başarılı', 'Stokta olan ürünler sepete eklendi.');
+  };
+
+  const handleRemove = async (productId) => {
+    await removeFromFavorites(productId);
+  };
+
+  const handleClearAll = async () => {
+    if (window.confirm('Tüm favorileri silmek istediğinize emin misiniz?')) {
+      await clearFavorites();
+    }
   };
 
   const styles = {
@@ -71,6 +123,7 @@ const Favorites = () => {
     actions: {
       display: 'flex',
       gap: '12px',
+      flexWrap: 'wrap',
     },
     actionBtn: {
       display: 'flex',
@@ -159,11 +212,10 @@ const Favorites = () => {
     content: {
       padding: '20px',
     },
-    category: {
+    vendorName: {
       fontSize: '12px',
       color: '#94a3b8',
       fontWeight: '600',
-      textTransform: 'uppercase',
       marginBottom: '8px',
     },
     productTitle: {
@@ -177,6 +229,7 @@ const Favorites = () => {
       WebkitBoxOrient: 'vertical',
       overflow: 'hidden',
       height: '44px',
+      textDecoration: 'none',
     },
     priceRow: {
       display: 'flex',
@@ -242,11 +295,49 @@ const Favorites = () => {
       maxWidth: '400px',
       margin: '0 auto 32px',
     },
+    loadingContainer: {
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      minHeight: '300px',
+    },
+    spinner: {
+      animation: 'spin 1s linear infinite',
+      fontSize: '32px',
+      color: '#059669',
+    },
+    loginPrompt: {
+      textAlign: 'center',
+      padding: '60px 20px',
+      backgroundColor: '#fef3c7',
+      borderRadius: '16px',
+      marginBottom: '24px',
+    },
   };
 
-  if (favorites.length === 0) {
+  if (loading) {
     return (
       <div style={styles.container}>
+        <div style={styles.loadingContainer}>
+          <FaSpinner style={styles.spinner} className="animate-spin" />
+        </div>
+      </div>
+    );
+  }
+
+  const itemCount = count || favorites.length;
+
+  if (itemCount === 0) {
+    return (
+      <div style={styles.container}>
+        {!user && (
+          <div style={styles.loginPrompt}>
+            <p style={{ margin: 0, color: '#92400e', fontWeight: '600' }}>
+              Favorilerinizi tüm cihazlarınızda senkronize etmek için{' '}
+              <Link to="/login" style={{ color: '#d97706', textDecoration: 'underline' }}>giriş yapın</Link>.
+            </p>
+          </div>
+        )}
         <div style={styles.emptyState}>
           <FaHeartBroken style={styles.emptyIcon} />
           <h2 style={styles.emptyTitle}>Favori Listeniz Boş</h2>
@@ -263,11 +354,21 @@ const Favorites = () => {
 
   return (
     <div style={styles.container}>
+      {/* Login Prompt */}
+      {!user && (
+        <div style={styles.loginPrompt}>
+          <p style={{ margin: 0, color: '#92400e', fontWeight: '600' }}>
+            Favorilerinizi tüm cihazlarınızda senkronize etmek için{' '}
+            <Link to="/login" style={{ color: '#d97706', textDecoration: 'underline' }}>giriş yapın</Link>.
+          </p>
+        </div>
+      )}
+
       {/* Header */}
       <div style={styles.header}>
         <div style={styles.titleGroup}>
           <h1 style={styles.title}>Favorilerim</h1>
-          <span style={styles.countBadge}>{favorites.length} Ürün</span>
+          <span style={styles.countBadge}>{itemCount} Ürün</span>
         </div>
 
         <div style={styles.actions}>
@@ -284,7 +385,7 @@ const Favorites = () => {
             <FaSortAmountDown style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', color: '#64748b', pointerEvents: 'none' }} />
           </div>
           
-          <button style={styles.actionBtn} onClick={clearFavorites}>
+          <button style={styles.actionBtn} onClick={handleClearAll}>
             <FaTrash size={14} /> Temizle
           </button>
           
@@ -299,9 +400,8 @@ const Favorites = () => {
 
       {/* Grid */}
       <div style={styles.grid}>
-        {sortedFavorites.map((product) => {
-          // Simulate random stock status for demo purposes if not present
-          const inStock = product.inStock !== undefined ? product.inStock : Math.random() > 0.2;
+        {sortedFavorites.map((item) => {
+          const product = getProduct(item);
           const discount = product.oldPrice ? Math.round(((product.oldPrice - product.price) / product.oldPrice) * 100) : 0;
 
           return (
@@ -317,49 +417,59 @@ const Favorites = () => {
                 e.currentTarget.style.boxShadow = styles.card.boxShadow;
               }}
             >
-              <div style={styles.imageContainer}>
+              <Link to={`/product/${product.slug || product.id}`} style={styles.imageContainer}>
                 {discount > 0 && (
                   <span style={styles.discountBadge}>%{discount} İndirim</span>
                 )}
-                <button 
-                  style={styles.removeBtn}
-                  onClick={() => removeFromFavorites(product.id)}
-                  title="Favorilerden Kaldır"
-                >
-                  <FaTimes />
-                </button>
-                <img src={product.image} alt={product.title} style={styles.image} />
-              </div>
+                <img 
+                  src={product.image || '/placeholder-product.jpg'} 
+                  alt={product.title} 
+                  style={styles.image} 
+                  onError={(e) => { e.target.src = '/placeholder-product.jpg'; }}
+                />
+              </Link>
+              
+              <button 
+                style={styles.removeBtn}
+                onClick={() => handleRemove(product.id)}
+                title="Favorilerden Kaldır"
+              >
+                <FaTimes />
+              </button>
 
               <div style={styles.content}>
-                <div style={styles.category}>{product.category || 'Genel'}</div>
-                <h3 style={styles.productTitle}>{product.title}</h3>
+                {product.vendor && (
+                  <div style={styles.vendorName}>{product.vendor.name}</div>
+                )}
+                <Link to={`/product/${product.slug || product.id}`} style={styles.productTitle}>
+                  {product.title}
+                </Link>
                 
                 <div style={styles.priceRow}>
-                  <span style={styles.price}>{product.price.toLocaleString('tr-TR')} TL</span>
-                  {product.oldPrice && (
+                  <span style={styles.price}>{(product.price || 0).toLocaleString('tr-TR')} TL</span>
+                  {product.oldPrice && product.oldPrice > product.price && (
                     <span style={styles.oldPrice}>{product.oldPrice.toLocaleString('tr-TR')} TL</span>
                   )}
                 </div>
 
                 <div style={{ 
                   ...styles.stockStatus, 
-                  color: inStock ? '#059669' : '#ef4444' 
+                  color: product.inStock ? '#059669' : '#ef4444' 
                 }}>
-                  {inStock ? <FaCheck size={12} /> : <FaTimesCircle size={12} />}
-                  {inStock ? 'Stokta Var' : 'Tükendi'}
+                  {product.inStock ? <FaCheck size={12} /> : <FaTimes size={12} />}
+                  {product.inStock ? 'Stokta Var' : 'Tükendi'}
                 </div>
 
                 <button 
                   style={{ 
                     ...styles.addToCartBtn,
-                    opacity: inStock ? 1 : 0.5,
-                    cursor: inStock ? 'pointer' : 'not-allowed'
+                    opacity: product.inStock ? 1 : 0.5,
+                    cursor: product.inStock ? 'pointer' : 'not-allowed'
                   }}
-                  onClick={() => inStock && handleAddToCart(product)}
-                  disabled={!inStock}
+                  onClick={() => product.inStock && handleAddToCart(product)}
+                  disabled={!product.inStock}
                 >
-                  <FaShoppingCart /> {inStock ? 'Sepete Ekle' : 'Stokta Yok'}
+                  <FaShoppingCart /> {product.inStock ? 'Sepete Ekle' : 'Stokta Yok'}
                 </button>
               </div>
             </div>

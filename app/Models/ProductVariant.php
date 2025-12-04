@@ -24,6 +24,11 @@ class ProductVariant extends Model
         return $this->belongsTo(Product::class);
     }
 
+    public function unit()
+    {
+        return $this->belongsTo(Unit::class);
+    }
+
     public function media()
     {
         return $this->morphMany(Media::class, 'model');

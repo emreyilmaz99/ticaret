@@ -1,0 +1,100 @@
+import axios from '../lib/axios';
+
+// Session ID'yi localStorage'dan al veya oluştur
+const getCartSessionId = () => {
+  let sessionId = localStorage.getItem('cartSessionId');
+  if (!sessionId) {
+    sessionId = crypto.randomUUID();
+    localStorage.setItem('cartSessionId', sessionId);
+  }
+  return sessionId;
+};
+
+// Axios instance'ına session header ekle
+// Token varsa Authorization header'ı axios interceptor'ı ekliyor
+const cartAxios = () => {
+  const sessionId = getCartSessionId();
+  const headers = {
+    'X-Cart-Session': sessionId,
+  };
+  
+  // User token varsa ekle (authenticated user için sepet sync'i)
+  const userToken = localStorage.getItem('user_token');
+  if (userToken) {
+    headers['Authorization'] = `Bearer ${userToken}`;
+  }
+  
+  return { headers };
+};
+
+/**
+ * Sepeti getir
+ */
+export const getCart = async () => {
+  const response = await axios.get('/v1/cart', cartAxios());
+  return response.data;
+};
+
+/**
+ * Sepete ürün ekle
+ */
+export const addToCart = async (productId, variantId = null, quantity = 1) => {
+  const response = await axios.post('/v1/cart/items', {
+    product_id: productId,
+    variant_id: variantId,
+    quantity,
+  }, cartAxios());
+  return response.data;
+};
+
+/**
+ * Sepet öğesi miktarını güncelle
+ */
+export const updateCartItem = async (itemId, quantity) => {
+  const response = await axios.put(`/v1/cart/items/${itemId}`, {
+    quantity,
+  }, cartAxios());
+  return response.data;
+};
+
+/**
+ * Sepetten ürün kaldır
+ */
+export const removeFromCart = async (itemId) => {
+  const response = await axios.delete(`/v1/cart/items/${itemId}`, cartAxios());
+  return response.data;
+};
+
+/**
+ * Sepeti temizle
+ */
+export const clearCart = async () => {
+  const response = await axios.delete('/v1/cart/clear', cartAxios());
+  return response.data;
+};
+
+/**
+ * Kupon uygula
+ */
+export const applyCoupon = async (code) => {
+  const response = await axios.post('/v1/cart/coupon', { code }, cartAxios());
+  return response.data;
+};
+
+/**
+ * Kuponu kaldır
+ */
+export const removeCoupon = async () => {
+  const response = await axios.delete('/v1/cart/coupon', cartAxios());
+  return response.data;
+};
+
+/**
+ * Misafir sepetini kullanıcıya aktar (giriş yaptıktan sonra çağrılır)
+ */
+export const mergeCart = async () => {
+  const response = await axios.post('/v1/cart/merge', {}, cartAxios());
+  // Başarılı merge sonrası session ID'yi temizle
+  localStorage.removeItem('cartSessionId');
+  return response.data;
+};

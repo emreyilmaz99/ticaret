@@ -26,8 +26,8 @@ const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout } = useAuth();
-  const { favorites } = useFavorites();
-  const { cartItems } = useCart();
+  const { favorites, count: favoriteCount } = useFavorites();
+  const { cartItems, totals, itemCount } = useCart();
   const queryClient = useQueryClient();
 
   const createAddressMutation = useMutation({
@@ -354,7 +354,9 @@ const Navbar = () => {
                 <Link to="/favorites" style={getLinkStyle('/favorites')}>
                   <div style={styles.iconBox}>
                     <FaHeart />
-                    {favorites.length > 0 && <span style={styles.badge}>{favorites.length}</span>}
+                    {(favoriteCount || favorites.length) > 0 && (
+                      <span style={styles.badge}>{favoriteCount || favorites.length}</span>
+                    )}
                   </div>
                   <span>Favorilerim</span>
                 </Link>
@@ -368,7 +370,7 @@ const Navbar = () => {
                     <div style={styles.iconBox}>
                       <FaShoppingBag />
                       {cartItems.length > 0 && (
-                        <span style={styles.badge}>{cartItems.length}</span>
+                        <span style={styles.badge}>{itemCount || cartItems.length}</span>
                       )}
                     </div>
                     <span>Sepetim</span>
@@ -382,11 +384,17 @@ const Navbar = () => {
                       </div>
                       
                       {cartItems.slice(0, 3).map((item, index) => (
-                        <div key={index} style={styles.miniCartItem}>
-                          <img src={item.image} alt={item.name} style={styles.miniCartImg} />
+                        <div key={item.id || index} style={styles.miniCartItem}>
+                          {item.product?.image ? (
+                            <img src={item.product.image} alt={item.product?.name} style={styles.miniCartImg} />
+                          ) : (
+                            <div style={{...styles.miniCartImg, backgroundColor: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
+                              <FaShoppingBag size={16} color="#cbd5e1" />
+                            </div>
+                          )}
                           <div style={styles.miniCartInfo}>
-                            <div style={styles.miniCartTitle}>{item.name}</div>
-                            <div style={styles.miniCartPrice}>{item.price.toLocaleString('tr-TR')} TL</div>
+                            <div style={styles.miniCartTitle}>{item.product?.name}</div>
+                            <div style={styles.miniCartPrice}>{item.unit_price?.toLocaleString('tr-TR')} TL</div>
                             <div style={{ fontSize: '12px', color: '#64748b' }}>Adet: {item.quantity}</div>
                           </div>
                         </div>
@@ -401,7 +409,7 @@ const Navbar = () => {
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                         <span style={{ fontSize: '14px', color: '#64748b' }}>Toplam:</span>
                         <span style={{ fontSize: '18px', fontWeight: '700', color: '#059669' }}>
-                          {cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0).toLocaleString('tr-TR')} TL
+                          {(totals?.subtotal || 0).toLocaleString('tr-TR')} TL
                         </span>
                       </div>
                       

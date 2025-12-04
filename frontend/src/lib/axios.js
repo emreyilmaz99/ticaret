@@ -19,7 +19,8 @@ axiosInstance.interceptors.request.use((config) => {
     token = localStorage.getItem('vendor_token');
   } else if (url.includes('/v1/admin')) {
     token = localStorage.getItem('admin_token');
-  } else if (url.includes('/v1/user')) {
+  } else if (url.includes('/v1/user') || url.includes('/v1/cart')) {
+    // Cart için de user token kullan (giriş yapmış kullanıcının sepeti için)
     token = localStorage.getItem('user_token');
   } else {
     // Genel istekler için user token kullan

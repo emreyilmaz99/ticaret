@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FaUser, FaEnvelope, FaLock, FaEye, FaEyeSlash, FaPhone, FaGoogle, FaFacebookF, FaArrowRight } from 'react-icons/fa';
 import { useAuth } from '../../context/AuthContext';
+import { useCart } from '../../context/CartContext';
 import { useToast } from '../../components/Toast';
 
 const Register = () => {
@@ -17,6 +18,7 @@ const Register = () => {
   const [isLoading, setIsLoading] = useState(false);
   
   const { register } = useAuth();
+  const { mergeGuestCart, fetchCart } = useCart();
   const navigate = useNavigate();
   const toast = useToast();
 
@@ -57,6 +59,15 @@ const Register = () => {
       
       if (result.success) {
         toast.success('Başarılı', 'Kayıt başarılı! Hoş geldiniz.');
+        
+        // Misafir sepetini kullanıcıya aktar ve sepeti yenile
+        try {
+          await mergeGuestCart();
+          await fetchCart();
+        } catch (cartError) {
+          console.error('Sepet aktarılırken hata:', cartError);
+        }
+        
         navigate('/account/profile');
       } else {
         toast.error('Hata', result.message);

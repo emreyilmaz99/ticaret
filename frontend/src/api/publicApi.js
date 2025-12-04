@@ -25,6 +25,14 @@ export const getProduct = async (slug) => {
 };
 
 /**
+ * Get related products by slug
+ */
+export const getRelatedProducts = async (slug, limit = 4) => {
+  const response = await axios.get(`/v1/products/${slug}/related`, { params: { limit } });
+  return response.data;
+};
+
+/**
  * Get all categories
  */
 export const getCategories = async () => {

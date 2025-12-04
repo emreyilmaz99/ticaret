@@ -183,6 +183,20 @@ Route::get('v1/categories/{slug}', [\App\Http\Controllers\Api\V1\Public\Category
 Route::get('v1/products', [PublicProductController::class, 'index']);
 Route::get('v1/products/featured', [PublicProductController::class, 'featured']);
 Route::get('v1/products/{slug}', [PublicProductController::class, 'show']);
+Route::get('v1/products/{slug}/related', [PublicProductController::class, 'related']);
+
+// Cart API (supports both guest and authenticated users)
+// Uses optional auth - will authenticate if token present, otherwise continue as guest
+Route::prefix('v1/cart')->middleware(['auth.optional:sanctum'])->group(function () {
+    Route::get('/', [\App\Http\Controllers\Api\V1\CartController::class, 'index']);
+    Route::post('/items', [\App\Http\Controllers\Api\V1\CartController::class, 'addItem']);
+    Route::put('/items/{itemId}', [\App\Http\Controllers\Api\V1\CartController::class, 'updateItem']);
+    Route::delete('/items/{itemId}', [\App\Http\Controllers\Api\V1\CartController::class, 'removeItem']);
+    Route::delete('/clear', [\App\Http\Controllers\Api\V1\CartController::class, 'clear']);
+    Route::post('/coupon', [\App\Http\Controllers\Api\V1\CartController::class, 'applyCoupon']);
+    Route::delete('/coupon', [\App\Http\Controllers\Api\V1\CartController::class, 'removeCoupon']);
+    Route::post('/merge', [\App\Http\Controllers\Api\V1\CartController::class, 'merge']);
+});
 
 // User API
 Route::prefix('v1/user')->group(function () {
@@ -209,5 +223,14 @@ Route::prefix('v1/user')->group(function () {
         Route::put('addresses/{address}', [UserAddressController::class, 'update']);
         Route::delete('addresses/{address}', [UserAddressController::class, 'destroy']);
         Route::put('addresses/{address}/default', [UserAddressController::class, 'setDefault']);
+
+        // Favorites
+        Route::get('favorites', [\App\Http\Controllers\Api\V1\FavoriteController::class, 'index']);
+        Route::post('favorites', [\App\Http\Controllers\Api\V1\FavoriteController::class, 'store']);
+        Route::post('favorites/toggle', [\App\Http\Controllers\Api\V1\FavoriteController::class, 'toggle']);
+        Route::post('favorites/check', [\App\Http\Controllers\Api\V1\FavoriteController::class, 'check']);
+        Route::delete('favorites/clear', [\App\Http\Controllers\Api\V1\FavoriteController::class, 'clear']);
+        Route::get('favorites/count', [\App\Http\Controllers\Api\V1\FavoriteController::class, 'count']);
+        Route::delete('favorites/{productId}', [\App\Http\Controllers\Api\V1\FavoriteController::class, 'destroy']);
     });
 });

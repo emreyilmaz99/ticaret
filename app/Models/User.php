@@ -89,4 +89,28 @@ class User extends Authenticatable
         
         return asset('storage/' . $this->avatar);
     }
+
+    /**
+     * Kullanıcının favorileri
+     */
+    public function favorites()
+    {
+        return $this->hasMany(Favorite::class);
+    }
+
+    /**
+     * Kullanıcının favori ürünleri
+     */
+    public function favoriteProducts()
+    {
+        return $this->belongsToMany(Product::class, 'favorites')->withTimestamps();
+    }
+
+    /**
+     * Ürünün favorilerde olup olmadığını kontrol et
+     */
+    public function hasFavorited(string $productId): bool
+    {
+        return $this->favorites()->where('product_id', $productId)->exists();
+    }
 }
