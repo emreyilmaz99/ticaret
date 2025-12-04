@@ -143,8 +143,13 @@ class AuthService extends BaseService
         $vendor = Vendor::where('email', $data['email'])->first();
 
         if ($vendor && Hash::check($data['password'], $vendor->password)) {
+            // Check if vendor is banned
+            if ($vendor->status === Vendor::STATUS_BANNED) {
+                return $this->errorResponse('Hesabınız yasaklanmış. Destek ile iletişime geçin.', 403);
+            }
+
             // Vendor account exists - allow login regardless of status
-            // Frontend will handle onboarding/activation checks
+            // Frontend will handle application status flow
             $token = $vendor->createToken('vendor-token', ['vendor:*'])->plainTextToken;
 
             $payload = [
@@ -153,14 +158,22 @@ class AuthService extends BaseService
                     'id' => $vendor->id,
                     'name' => $vendor->name,
                     'email' => $vendor->email,
+                    'company_name' => $vendor->company_name,
                     'status' => $vendor->status,
+                    'status_label' => $vendor->status_label,
+                    'iyzico_status' => $vendor->iyzico_status,
+                    'iyzico_status_label' => $vendor->iyzico_status_label,
                     'onboarding_completed' => $vendor->onboarding_completed,
+                    'needs_full_application' => $vendor->needsFullApplication(),
+                    'is_awaiting_approval' => $vendor->isAwaitingFullApproval(),
+                    'can_receive_payments' => $vendor->canReceivePayments(),
+                    'latest_rejection_reason' => $vendor->latest_rejection_reason,
                     'roles' => $vendor->roles->pluck('name'),
                     'created_at' => $vendor->created_at?->toIso8601String(),
                 ],
             ];
 
-            return $this->successResponse($payload, 'Logged in');
+            return $this->successResponse($payload, 'Giriş başarılı');
         }
 
         // If not found in vendors, check vendor_applications
@@ -170,15 +183,15 @@ class AuthService extends BaseService
             ->first();
 
         if ($application && Hash::check($data['password'], $application->password)) {
-            // Application exists - return status info
+            // Application exists but no vendor account yet
             $statusMessages = [
-                'pending' => 'Your application is pending admin review',
-                'approved' => 'Your application has been approved. Please complete the full application.',
-                'rejected' => 'Your application was rejected. Reason: ' . $application->rejection_reason,
+                'pending' => 'Ön başvurunuz admin onayı bekliyor',
+                'approved' => 'Ön başvurunuz onaylandı. Lütfen giriş yapın.',
+                'rejected' => 'Ön başvurunuz reddedildi. Sebep: ' . $application->rejection_reason,
             ];
 
             return $this->errorResponse(
-                $statusMessages[$application->status] ?? 'Application found but vendor account not created yet',
+                $statusMessages[$application->status] ?? 'Başvurunuz henüz işleme alınmadı',
                 403,
                 [
                     'is_application' => true,
@@ -190,7 +203,7 @@ class AuthService extends BaseService
         }
 
         // Invalid credentials
-        return $this->errorResponse('Invalid credentials', 401);
+        return $this->errorResponse('E-posta veya şifre hatalı', 401);
     }
 
     public function logout($user): ServiceResponse

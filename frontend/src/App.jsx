@@ -44,6 +44,7 @@ import CategoriesPage from './pages/admin/CategoriesPage'; // Kategori Yönetimi
 import VendorLogin from './pages/vendor/VendorLogin';
 import VendorRegister from './pages/vendor/VendorRegister';
 import VendorFullApplication from './pages/vendor/VendorFullApplication';
+import VendorStatusPage from './pages/vendor/VendorStatusPage';
 import VendorDashboard from './pages/vendor/VendorDashboard';
 import VendorOnboarding from './pages/vendor/VendorOnboarding';
 import VendorProducts from './pages/vendor/VendorProducts';
@@ -126,7 +127,8 @@ function App() {
               {/* ======================================= */}
               <Route path="/vendor/login" element={<VendorLogin />} />
               <Route path="/vendor/register" element={<VendorRegister />} />
-              <Route path="/vendor/full-application/:id" element={<VendorFullApplication />} />
+              <Route path="/vendor/application" element={<VendorFullApplication />} />
+              <Route path="/vendor/status" element={<VendorStatusPage />} />
               <Route path="/vendor/onboarding" element={<VendorOnboarding />} />
 
               <Route path="/vendor" element={<VendorLayout />}>

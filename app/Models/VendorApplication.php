@@ -20,6 +20,18 @@ class VendorApplication extends Model
         'reviewed_by',
         'reviewed_at',
         'rejection_reason',
+        // iyzico SubMerchant fields (full_application için)
+        'merchant_type',
+        'identity_number',
+        'contact_name',
+        'contact_surname',
+        'tax_office',
+        'legal_company_title',
+        'iban',
+        'address',
+        'city',
+        'district',
+        'postal_code',
     ];
 
     protected $hidden = [
@@ -28,6 +40,7 @@ class VendorApplication extends Model
 
     protected $casts = [
         'reviewed_at' => 'datetime',
+        'merchant_type' => 'string',
     ];
 
     // Types
@@ -38,6 +51,64 @@ class VendorApplication extends Model
     public const STATUS_PENDING = 'pending';
     public const STATUS_APPROVED = 'approved';
     public const STATUS_REJECTED = 'rejected';
+
+    // Merchant Types (same as Vendor model)
+    public const MERCHANT_TYPE_PERSONAL = 'personal';
+    public const MERCHANT_TYPE_PRIVATE_COMPANY = 'private_company';
+    public const MERCHANT_TYPE_LIMITED_COMPANY = 'limited_company';
+
+    public static function merchantTypes(): array
+    {
+        return [
+            self::MERCHANT_TYPE_PERSONAL,
+            self::MERCHANT_TYPE_PRIVATE_COMPANY,
+            self::MERCHANT_TYPE_LIMITED_COMPANY,
+        ];
+    }
+
+    /**
+     * Get full address string for iyzico
+     */
+    public function getFullAddressAttribute(): ?string
+    {
+        $parts = array_filter([
+            $this->address,
+            $this->district,
+            $this->city,
+        ]);
+        
+        return !empty($parts) ? implode(', ', $parts) : null;
+    }
+
+    /**
+     * iyzico için gerekli tüm bilgiler mevcut mu?
+     */
+    public function hasCompleteIyzicoData(): bool
+    {
+        // Temel alanlar
+        if (empty($this->merchant_type) || empty($this->iban) || empty($this->address)) {
+            return false;
+        }
+
+        return match($this->merchant_type) {
+            self::MERCHANT_TYPE_PERSONAL => 
+                !empty($this->identity_number) && 
+                !empty($this->contact_name) && 
+                !empty($this->contact_surname),
+            
+            self::MERCHANT_TYPE_PRIVATE_COMPANY => 
+                !empty($this->identity_number) && 
+                !empty($this->tax_office) && 
+                !empty($this->legal_company_title),
+            
+            self::MERCHANT_TYPE_LIMITED_COMPANY => 
+                !empty($this->tax_id) && 
+                !empty($this->tax_office) && 
+                !empty($this->legal_company_title),
+            
+            default => false,
+        };
+    }
 
     /**
      * Get the vendor that owns this application

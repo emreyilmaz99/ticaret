@@ -1,26 +1,38 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { useMutation } from '@tanstack/react-query';
-import { submitFullApplication } from '../../features/vendor/api/vendorAuthApi';
+import { useNavigate } from 'react-router-dom';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { useToast } from '../../components/Toast';
 import axios from '../../lib/axios';
-import { FaStore, FaPhone, FaEnvelope, FaIdCard, FaMapMarkerAlt, FaCity, FaCheckCircle, FaArrowRight, FaMailBulk, FaGlobe, FaUniversity, FaCreditCard } from 'react-icons/fa';
+import { FaStore, FaPhone, FaIdCard, FaMapMarkerAlt, FaCity, FaCheckCircle, FaMailBulk, FaUniversity, FaCreditCard, FaUser, FaLink, FaBuilding, FaUserTie, FaFileInvoice, FaArrowLeft, FaExclamationTriangle } from 'react-icons/fa';
 import { cities, cityPlateCodes } from '../../data/turkeyData';
 
+// Satıcı türleri
+const MERCHANT_TYPES = {
+  personal: { value: 'personal', label: 'Bireysel Satıcı', description: 'Şahıs olarak satış yapacaksınız' },
+  private_company: { value: 'private_company', label: 'Şahıs Şirketi', description: 'Şahıs şirketi olarak satış yapacaksınız' },
+  limited_company: { value: 'limited_company', label: 'Limited / Anonim Şirket', description: 'Tüzel kişilik olarak satış yapacaksınız' }
+};
+
 const VendorFullApplication = () => {
-  const { id } = useParams();
   const navigate = useNavigate();
   const toast = useToast();
-  const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({
     full_name: '',
     company_name: '',
     slug: '',
     phone: '',
+    // iyzico SubMerchant fields
+    merchant_type: '',
+    identity_number: '',
+    contact_name: '',
+    contact_surname: '',
     tax_id: '',
-    address_line: '',
+    tax_office: '',
+    legal_company_title: '',
+    // Address fields
+    address: '',
     city: '',
-    country: 'Türkiye',
+    district: '',
     postal_code: '',
     // Bank account fields
     bank_name: '',
@@ -29,61 +41,53 @@ const VendorFullApplication = () => {
   });
   const [acceptTerms, setAcceptTerms] = useState(false);
 
-  // Fetch pre-application data
-  useEffect(() => {
-    const fetchPreApplication = async () => {
-      try {
-        const response = await axios.get(`/v1/vendor-applications/${id}`);
-        const app = response.data.data;
-        
-        // Pre-fill form with existing data
-        setForm({
-          full_name: app.full_name || '',
-          company_name: app.company_name || '',
-          slug: app.company_name ? app.company_name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') : '',
-          phone: app.phone || '',
-          tax_id: app.tax_id || '',
-          address_line: '',
-          city: '',
-          country: 'Türkiye',
-          postal_code: ''
-        });
-        setLoading(false);
-      } catch (error) {
-        console.error('Failed to fetch pre-application:', error);
-        const response = error.response?.data;
-        
-        // Check if vendor is already active
-        if (response?.data?.redirect_to_dashboard) {
-          toast.success('Hesabınız Zaten Aktif', 'Dashboard sayfasına yönlendiriliyorsunuz.', 4000);
-          setTimeout(() => navigate('/vendor/dashboard'), 600);
-        } else {
-          toast.error('Hata', 'Ön başvuru bilgileri yüklenemedi. Lütfen tekrar deneyin.', 4000);
-          setTimeout(() => navigate('/vendor/login'), 600);
-        }
-      }
-    };
+  // Fetch vendor status
+  const { data: statusData, isLoading, error: statusError } = useQuery({
+    queryKey: ['vendorStatus'],
+    queryFn: async () => {
+      const response = await axios.get('/v1/vendor/status');
+      return response.data.data;
+    }
+  });
 
-    fetchPreApplication();
-  }, [id, navigate, toast]);
+  // Pre-fill form with vendor data
+  useEffect(() => {
+    if (statusData?.vendor) {
+      const vendor = statusData.vendor;
+      setForm(prev => ({
+        ...prev,
+        full_name: vendor.full_name || '',
+        company_name: vendor.company_name || '',
+        slug: vendor.slug || (vendor.company_name ? vendor.company_name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') : ''),
+        phone: vendor.phone || '',
+        contact_name: vendor.full_name ? vendor.full_name.split(' ')[0] : '',
+        contact_surname: vendor.full_name ? vendor.full_name.split(' ').slice(1).join(' ') : '',
+        account_holder: vendor.full_name || ''
+      }));
+    }
+  }, [statusData]);
+
+  // Check if vendor can submit full application
+  useEffect(() => {
+    if (statusData && !statusData.can_submit_full_application) {
+      toast.warning('Erişim Engellendi', 'Tam başvuru yapmak için yetkiniz bulunmuyor.', 4000);
+      setTimeout(() => navigate('/vendor/status'), 600);
+    }
+  }, [statusData, navigate, toast]);
 
   const submitMutation = useMutation({
-    mutationFn: (data) => submitFullApplication(id, data),
+    mutationFn: async (data) => {
+      const response = await axios.post('/v1/vendor/application', data);
+      return response.data;
+    },
     onSuccess: (data) => {
-      toast.success('Tam Başvurunuz Tamamlandı!', 'Vendor hesabınız oluşturuldu. Admin onayından sonra aktifleştirilecektir.', 5000);
-      setTimeout(() => navigate('/vendor/login'), 600);
+      toast.success('Tam Başvurunuz Tamamlandı!', 'Başvurunuz admin onayına gönderildi. Onaylandıktan sonra hesabınız aktifleştirilecektir.', 5000);
+      setTimeout(() => navigate('/vendor/status'), 600);
     },
     onError: (err) => {
       const response = err.response?.data;
-      
-      // Check if vendor is already active
-      if (response?.data?.redirect_to_dashboard) {
-        toast.success('Hesabınız Zaten Aktif', 'Dashboard sayfasına yönlendiriliyorsunuz.', 4000);
-        setTimeout(() => navigate('/vendor/dashboard'), 600);
-      } else {
-        const errorMsg = response?.message || err.message || 'Bir hata oluştu';
-        toast.error('Tam Başvuru Başarısız', errorMsg, 5000);
-      }
+      const errorMsg = response?.message || err.message || 'Bir hata oluştu';
+      toast.error('Tam Başvuru Başarısız', errorMsg, 5000);
     }
   });
 
@@ -203,7 +207,7 @@ const VendorFullApplication = () => {
     e.target.style.backgroundColor = '#f8fafc';
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div style={styles.container}>
         <div style={styles.card}>
@@ -212,7 +216,55 @@ const VendorFullApplication = () => {
               <FaStore />
             </div>
             <h1 style={styles.title}>Yükleniyor...</h1>
-            <p style={styles.subtitle}>Ön başvuru bilgileriniz getiriliyor.</p>
+            <p style={styles.subtitle}>Hesap bilgileriniz getiriliyor.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (statusError) {
+    return (
+      <div style={styles.container}>
+        <div style={styles.card}>
+          <div style={styles.header}>
+            <div style={{...styles.iconWrapper, backgroundColor: '#fee2e2', color: '#dc2626'}}>
+              <FaExclamationTriangle />
+            </div>
+            <h1 style={{...styles.title, color: '#dc2626'}}>Hata Oluştu</h1>
+            <p style={styles.subtitle}>Hesap bilgileriniz yüklenemedi. Lütfen giriş yapın.</p>
+            <button 
+              onClick={() => navigate('/vendor/login')}
+              style={{...styles.buttonPrimary, marginTop: '24px', maxWidth: '200px', margin: '24px auto 0'}}
+            >
+              Giriş Yap
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (statusData && !statusData.can_submit_full_application) {
+    return (
+      <div style={styles.container}>
+        <div style={styles.card}>
+          <div style={styles.header}>
+            <div style={{...styles.iconWrapper, backgroundColor: '#fef3c7', color: '#d97706'}}>
+              <FaExclamationTriangle />
+            </div>
+            <h1 style={{...styles.title, color: '#d97706'}}>Erişim Engellendi</h1>
+            <p style={styles.subtitle}>
+              Mevcut hesap durumunuz: <strong>{statusData.vendor?.status_label}</strong>
+              <br />
+              Bu aşamada tam başvuru yapamazsınız.
+            </p>
+            <button 
+              onClick={() => navigate('/vendor/status')}
+              style={{...styles.buttonPrimary, marginTop: '24px', maxWidth: '200px', margin: '24px auto 0'}}
+            >
+              <FaArrowLeft /> Duruma Dön
+            </button>
           </div>
         </div>
       </div>
@@ -221,18 +273,39 @@ const VendorFullApplication = () => {
 
   return (
     <div style={styles.container}>
-      <div style={styles.card}>
+      <div style={{...styles.card, maxWidth: '700px'}}>
+        {/* Back Button */}
+        <button 
+          onClick={() => navigate('/vendor/status')}
+          style={{
+            position: 'absolute',
+            top: '24px',
+            left: '24px',
+            background: 'none',
+            border: 'none',
+            color: '#64748b',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            fontSize: '14px'
+          }}
+        >
+          <FaArrowLeft /> Duruma Dön
+        </button>
+
         <div style={styles.header}>
           <div style={styles.iconWrapper}>
             <FaStore />
           </div>
           <h1 style={styles.title}>Tam Başvuru Formu</h1>
           <p style={styles.subtitle}>
-            Ön başvurunuz onaylandı! Lütfen hesabınızı oluşturmak için kalan bilgileri tamamlayın.
+            Merhaba <strong>{statusData?.vendor?.full_name}</strong>! Hesabınızı aktifleştirmek için kalan bilgileri tamamlayın.
           </p>
         </div>
 
         <form onSubmit={handleSubmit}>
+          {/* Temel Bilgiler */}
           <div style={styles.formGroup}>
             <label style={styles.label}>Ad Soyad *</label>
             <div style={styles.inputWrapper}>
@@ -308,21 +381,157 @@ const VendorFullApplication = () => {
             </div>
           </div>
 
-          <div style={styles.formGroup}>
-            <label style={styles.label}>Vergi Numarası <span style={{fontWeight: 400, color: '#94a3b8'}}>(Opsiyonel)</span></label>
-            <div style={styles.inputWrapper}>
-              <FaIdCard style={styles.inputIcon} />
-              <input 
-                style={styles.input} 
-                onFocus={handleFocus} 
-                onBlur={handleBlur}
-                value={form.tax_id} 
-                onChange={(e) => setForm({...form, tax_id: e.target.value})} 
-                placeholder="Vergi numaranız" 
-              />
-            </div>
+          {/* Satıcı Türü Seçimi */}
+          <div style={{...styles.subtitle, textAlign: 'left', marginTop: '32px', marginBottom: '16px', fontWeight: '600', color: '#047857'}}>
+            🏢 Satıcı Türü Seçimi *
           </div>
 
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginBottom: '24px' }}>
+            {Object.values(MERCHANT_TYPES).map((type) => (
+              <div 
+                key={type.value}
+                onClick={() => setForm({...form, merchant_type: type.value})}
+                style={{
+                  padding: '16px',
+                  borderRadius: '12px',
+                  border: form.merchant_type === type.value ? '2px solid #047857' : '1px solid #e2e8f0',
+                  backgroundColor: form.merchant_type === type.value ? '#f0fdf4' : '#f8fafc',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  textAlign: 'center'
+                }}
+              >
+                <div style={{ fontSize: '24px', marginBottom: '8px' }}>
+                  {type.value === 'personal' ? '👤' : type.value === 'private_company' ? '🏪' : '🏢'}
+                </div>
+                <div style={{ fontWeight: '600', color: '#1e293b', fontSize: '14px' }}>{type.label}</div>
+                <div style={{ fontSize: '11px', color: '#64748b', marginTop: '4px' }}>{type.description}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Satıcı Türüne Göre Dinamik Alanlar */}
+          {form.merchant_type && (
+            <>
+              <div style={{...styles.subtitle, textAlign: 'left', marginTop: '24px', marginBottom: '16px', fontWeight: '600', color: '#047857'}}>
+                📋 {form.merchant_type === 'personal' ? 'Kişisel Bilgiler' : 'Şirket Bilgileri'}
+              </div>
+
+              {/* TC Kimlik - Personal ve Private Company için zorunlu */}
+              {(form.merchant_type === 'personal' || form.merchant_type === 'private_company') && (
+                <div style={styles.formGroup}>
+                  <label style={styles.label}>TC Kimlik Numarası *</label>
+                  <div style={styles.inputWrapper}>
+                    <FaIdCard style={styles.inputIcon} />
+                    <input 
+                      style={styles.input} 
+                      onFocus={handleFocus} 
+                      onBlur={handleBlur}
+                      value={form.identity_number} 
+                      onChange={(e) => setForm({...form, identity_number: e.target.value.replace(/\D/g, '').slice(0, 11)})} 
+                      maxLength={11}
+                      required 
+                      placeholder="11 haneli TC Kimlik No" 
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* İletişim Kişisi - Sadece Personal için zorunlu */}
+              {form.merchant_type === 'personal' && (
+                <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px'}}>
+                  <div style={styles.formGroup}>
+                    <label style={styles.label}>İletişim Kişisi Adı *</label>
+                    <div style={styles.inputWrapper}>
+                      <FaUserTie style={styles.inputIcon} />
+                      <input 
+                        style={styles.input} 
+                        onFocus={handleFocus} 
+                        onBlur={handleBlur}
+                        value={form.contact_name} 
+                        onChange={(e) => setForm({...form, contact_name: e.target.value})} 
+                        required 
+                        placeholder="Ad" 
+                      />
+                    </div>
+                  </div>
+                  <div style={styles.formGroup}>
+                    <label style={styles.label}>İletişim Kişisi Soyadı *</label>
+                    <div style={styles.inputWrapper}>
+                      <FaUserTie style={styles.inputIcon} />
+                      <input 
+                        style={styles.input} 
+                        onFocus={handleFocus} 
+                        onBlur={handleBlur}
+                        value={form.contact_surname} 
+                        onChange={(e) => setForm({...form, contact_surname: e.target.value})} 
+                        required 
+                        placeholder="Soyad" 
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Vergi Numarası - Sadece Limited için zorunlu */}
+              {form.merchant_type === 'limited_company' && (
+                <div style={styles.formGroup}>
+                  <label style={styles.label}>Vergi Numarası *</label>
+                  <div style={styles.inputWrapper}>
+                    <FaFileInvoice style={styles.inputIcon} />
+                    <input 
+                      style={styles.input} 
+                      onFocus={handleFocus} 
+                      onBlur={handleBlur}
+                      value={form.tax_id} 
+                      onChange={(e) => setForm({...form, tax_id: e.target.value.replace(/\D/g, '').slice(0, 10)})} 
+                      maxLength={10}
+                      required 
+                      placeholder="10 haneli Vergi No" 
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Vergi Dairesi ve Yasal Ünvan - Private ve Limited için zorunlu */}
+              {(form.merchant_type === 'private_company' || form.merchant_type === 'limited_company') && (
+                <>
+                  <div style={styles.formGroup}>
+                    <label style={styles.label}>Vergi Dairesi *</label>
+                    <div style={styles.inputWrapper}>
+                      <FaBuilding style={styles.inputIcon} />
+                      <input 
+                        style={styles.input} 
+                        onFocus={handleFocus} 
+                        onBlur={handleBlur}
+                        value={form.tax_office} 
+                        onChange={(e) => setForm({...form, tax_office: e.target.value})} 
+                        required 
+                        placeholder="Örn: Kadıköy Vergi Dairesi" 
+                      />
+                    </div>
+                  </div>
+                  <div style={styles.formGroup}>
+                    <label style={styles.label}>Yasal Şirket Ünvanı *</label>
+                    <div style={styles.inputWrapper}>
+                      <FaBuilding style={styles.inputIcon} />
+                      <input 
+                        style={styles.input} 
+                        onFocus={handleFocus} 
+                        onBlur={handleBlur}
+                        value={form.legal_company_title} 
+                        onChange={(e) => setForm({...form, legal_company_title: e.target.value})} 
+                        required 
+                        placeholder="Ticaret sicilindeki tam ünvan" 
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
+            </>
+          )}
+
+          {/* Adres Bilgileri */}
           <div style={{...styles.subtitle, textAlign: 'left', marginTop: '32px', marginBottom: '16px', fontWeight: '600', color: '#047857'}}>
             📍 Adres Bilgileri
           </div>
@@ -335,10 +544,10 @@ const VendorFullApplication = () => {
                 style={styles.input} 
                 onFocus={handleFocus} 
                 onBlur={handleBlur}
-                value={form.address_line} 
-                onChange={(e) => setForm({...form, address_line: e.target.value})} 
+                value={form.address} 
+                onChange={(e) => setForm({...form, address: e.target.value})} 
                 required 
-                placeholder="Cadde, sokak, bina no" 
+                placeholder="Mahalle, cadde, sokak, bina no, daire no" 
               />
             </div>
           </div>
@@ -369,37 +578,37 @@ const VendorFullApplication = () => {
             </div>
 
             <div style={styles.formGroup}>
-              <label style={styles.label}>Posta Kodu <span style={{fontWeight: 400, color: '#94a3b8'}}>(Opsiyonel)</span></label>
+              <label style={styles.label}>İlçe</label>
               <div style={styles.inputWrapper}>
-                <FaMailBulk style={styles.inputIcon} />
+                <FaCity style={styles.inputIcon} />
                 <input 
                   style={styles.input} 
                   onFocus={handleFocus} 
                   onBlur={handleBlur}
-                  value={form.postal_code} 
-                  onChange={(e) => setForm({...form, postal_code: e.target.value})} 
-                  placeholder="34000" 
+                  value={form.district} 
+                  onChange={(e) => setForm({...form, district: e.target.value})} 
+                  placeholder="İlçe adı" 
                 />
               </div>
             </div>
           </div>
 
           <div style={styles.formGroup}>
-            <label style={styles.label}>Ülke *</label>
+            <label style={styles.label}>Posta Kodu</label>
             <div style={styles.inputWrapper}>
-              <FaGlobe style={styles.inputIcon} />
+              <FaMailBulk style={styles.inputIcon} />
               <input 
                 style={styles.input} 
                 onFocus={handleFocus} 
                 onBlur={handleBlur}
-                value={form.country} 
-                onChange={(e) => setForm({...form, country: e.target.value})} 
-                required 
-                placeholder="Türkiye" 
+                value={form.postal_code} 
+                onChange={(e) => setForm({...form, postal_code: e.target.value})} 
+                placeholder="34000" 
               />
             </div>
           </div>
 
+          {/* Banka Hesap Bilgileri */}
           <div style={{...styles.subtitle, textAlign: 'left', marginTop: '32px', marginBottom: '16px', fontWeight: '600', color: '#047857'}}>
             🏦 Banka Hesap Bilgileri
           </div>
@@ -452,8 +661,16 @@ const VendorFullApplication = () => {
               />
             </div>
             <small style={{color: '#64748b', fontSize: '12px', marginTop: '4px', display: 'block'}}>
-              Ödemeleriniz bu hesaba aktarılacaktır.
+              Ödemeleriniz bu hesaba aktarılacaktır. IBAN "TR" ile başlamalıdır.
             </small>
+          </div>
+
+          {/* Bilgilendirme Kutusu */}
+          <div style={{ marginTop: '24px', marginBottom: '16px', padding: '16px', backgroundColor: '#fffbeb', borderRadius: '12px', border: '1px solid #fde68a' }}>
+            <div style={{ fontSize: '14px', color: '#92400e', lineHeight: '1.6' }}>
+              <strong>⚠️ Önemli:</strong> Girdiğiniz bilgiler ödeme sistemine (iyzico) kaydedilecektir. 
+              Lütfen TC Kimlik, Vergi Numarası ve IBAN bilgilerinizin doğruluğundan emin olun.
+            </div>
           </div>
 
           <div style={{ marginBottom: '24px', display: 'flex', alignItems: 'flex-start', gap: '12px', padding: '16px', backgroundColor: '#f0fdf4', borderRadius: '12px', border: '1px solid #dcfce7' }}>
@@ -471,8 +688,8 @@ const VendorFullApplication = () => {
 
           <button 
             type="submit" 
-            disabled={submitMutation.isPending || !acceptTerms} 
-            style={{ ...styles.buttonPrimary, opacity: (submitMutation.isPending || !acceptTerms) ? 0.7 : 1 }}
+            disabled={submitMutation.isPending || !acceptTerms || !form.merchant_type} 
+            style={{ ...styles.buttonPrimary, opacity: (submitMutation.isPending || !acceptTerms || !form.merchant_type) ? 0.7 : 1 }}
           >
             {submitMutation.isPending ? 'Gönderiliyor...' : 'Başvuruyu Tamamla'} <FaCheckCircle />
           </button>

@@ -17,28 +17,54 @@ export const getApplicationDetail = (id) => {
   return axios.get(`/v1/admin/vendor-applications/${id}`);
 };
 
-// Ön başvuru onayla
+// Ön başvuru onayla (creates Vendor with pending_full_application status)
 export const approvePreApplication = (id) => {
   return axios.post(`/v1/admin/vendor-applications/${id}/approve-pre`);
 };
 
+// Ön başvuru reddet
+export const rejectPreApplication = (id, reason) => {
+  return axios.post(`/v1/admin/vendor-applications/${id}/reject-pre`, {
+    rejection_reason: reason
+  });
+};
+
 // Tam başvuru onayla (Vendor aktifleştir) - komisyon planı ile
-export const approveFullApplication = (id, commissionPlanId = null) => {
-  return axios.post(`/v1/admin/vendor-applications/${id}/approve-full`, {
+export const approveFullApplication = (vendorId, commissionPlanId = null) => {
+  return axios.post(`/v1/admin/vendors/${vendorId}/approve-full`, {
     commission_plan_id: commissionPlanId
   });
 };
 
-// Başvuruyu reddet
+// Tam başvuru reddet
+export const rejectFullApplication = (vendorId, reason) => {
+  return axios.post(`/v1/admin/vendors/${vendorId}/reject-full`, {
+    rejection_reason: reason
+  });
+};
+
+// Deprecated: Use rejectPreApplication or rejectFullApplication
 export const rejectApplication = (id, reason) => {
-  return axios.post(`/v1/admin/vendor-applications/${id}/reject`, {
+  return axios.post(`/v1/admin/vendor-applications/${id}/reject-pre`, {
     rejection_reason: reason
   });
 };
 
 // --- PUBLIC ENDPOINTS ---
 
-// Yeni başvuru gönder
+// Yeni ön başvuru gönder
 export const submitApplication = (data) => {
   return axios.post('/v1/vendor-applications', data);
+};
+
+// --- VENDOR AUTHENTICATED ENDPOINTS ---
+
+// Vendor durumunu getir
+export const getVendorStatus = () => {
+  return axios.get('/v1/vendor/status');
+};
+
+// Tam başvuru gönder (authenticated vendor)
+export const submitFullApplication = (data) => {
+  return axios.post('/v1/vendor/application', data);
 };

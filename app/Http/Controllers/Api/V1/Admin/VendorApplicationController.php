@@ -73,12 +73,26 @@ class VendorApplicationController extends Controller
     }
 
     /**
-     * Reject application
+     * Reject pre-application
      */
-    public function reject(int $id, RejectApplicationRequest $request)
+    public function rejectPreApplication(int $id, RejectApplicationRequest $request)
     {
         $adminId = $request->user()->id;
-        $result = $this->applicationService->rejectApplication(
+        $result = $this->applicationService->rejectPreApplication(
+            $id,
+            $adminId,
+            $request->input('rejection_reason')
+        );
+        return $this->fromServiceResponse($result);
+    }
+
+    /**
+     * Reject full application
+     */
+    public function rejectFullApplication(int $id, RejectApplicationRequest $request)
+    {
+        $adminId = $request->user()->id;
+        $result = $this->applicationService->rejectFullApplication(
             $id,
             $adminId,
             $request->input('rejection_reason')

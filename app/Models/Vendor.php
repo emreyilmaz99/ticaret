@@ -37,6 +37,16 @@ class Vendor extends Authenticatable
         'status',
         'onboarding_completed',
         'activated_at',
+        // iyzico SubMerchant fields
+        'merchant_type',
+        'identity_number',
+        'contact_name',
+        'contact_surname',
+        'tax_office',
+        'legal_company_title',
+        'iyzico_submerchant_key',
+        'iyzico_status',
+        'iyzico_registered_at',
     ];
 
     protected $hidden = [
@@ -53,6 +63,10 @@ class Vendor extends Authenticatable
         'status' => 'string',
         'onboarding_completed' => 'boolean',
         'activated_at' => 'datetime',
+        // iyzico fields
+        'merchant_type' => 'string',
+        'iyzico_status' => 'string',
+        'iyzico_registered_at' => 'datetime',
     ];
     
     /**
@@ -178,20 +192,168 @@ class Vendor extends Authenticatable
         return false;
     }
 
-    // Vendor status constants (simplified - application status moved to vendor_applications)
-    public const STATUS_ACTIVE = 'active';       // Aktif - işlem yapabilir
-    public const STATUS_INACTIVE = 'inactive';   // Pasif - geçici durduruldu
-    public const STATUS_SUSPENDED = 'suspended'; // Askıya alındı
-    public const STATUS_BANNED = 'banned';       // Yasaklandı
+    // Vendor status constants - Full lifecycle
+    public const STATUS_PENDING_PRE_APPROVAL = 'pending_pre_approval';     // Ön başvuru bekliyor
+    public const STATUS_PRE_APPROVED = 'pre_approved';                     // Ön başvuru onaylandı, temel başvuru bekleniyor
+    public const STATUS_PENDING_FULL_APPROVAL = 'pending_full_approval';   // Temel başvuru onay bekliyor
+    public const STATUS_ACTIVE = 'active';                                 // Aktif - işlem yapabilir
+    public const STATUS_INACTIVE = 'inactive';                             // Pasif - geçici durduruldu
+    public const STATUS_SUSPENDED = 'suspended';                           // Askıya alındı
+    public const STATUS_BANNED = 'banned';                                 // Yasaklandı
+
+    // iyzico SubMerchant Type constants
+    public const MERCHANT_TYPE_PERSONAL = 'personal';                 // Bireysel satıcı
+    public const MERCHANT_TYPE_PRIVATE_COMPANY = 'private_company';   // Şahıs şirketi
+    public const MERCHANT_TYPE_LIMITED_COMPANY = 'limited_company';   // Limited/Anonim şirket
+
+    // iyzico Status constants
+    public const IYZICO_STATUS_NOT_REGISTERED = 'not_registered';
+    public const IYZICO_STATUS_PENDING = 'pending';
+    public const IYZICO_STATUS_ACTIVE = 'active';
+    public const IYZICO_STATUS_REJECTED = 'rejected';
 
     public static function statuses(): array
     {
         return [
+            self::STATUS_PENDING_PRE_APPROVAL,
+            self::STATUS_PRE_APPROVED,
+            self::STATUS_PENDING_FULL_APPROVAL,
             self::STATUS_ACTIVE,
             self::STATUS_INACTIVE,
             self::STATUS_SUSPENDED,
             self::STATUS_BANNED,
         ];
+    }
+
+    /**
+     * Human readable status labels (Turkish)
+     */
+    public static function statusLabels(): array
+    {
+        return [
+            self::STATUS_PENDING_PRE_APPROVAL => 'Ön Başvuru Bekleniyor',
+            self::STATUS_PRE_APPROVED => 'Ön Başvuru Onaylandı',
+            self::STATUS_PENDING_FULL_APPROVAL => 'Temel Başvuru İnceleniyor',
+            self::STATUS_ACTIVE => 'Aktif',
+            self::STATUS_INACTIVE => 'Pasif',
+            self::STATUS_SUSPENDED => 'Askıya Alındı',
+            self::STATUS_BANNED => 'Yasaklandı',
+        ];
+    }
+
+    /**
+     * Get human readable status label
+     */
+    public function getStatusLabelAttribute(): string
+    {
+        return self::statusLabels()[$this->status] ?? $this->status;
+    }
+
+    /**
+     * Check if vendor needs to complete full application
+     */
+    public function needsFullApplication(): bool
+    {
+        return $this->status === self::STATUS_PRE_APPROVED;
+    }
+
+    /**
+     * Check if vendor is waiting for full application approval
+     */
+    public function isAwaitingFullApproval(): bool
+    {
+        return $this->status === self::STATUS_PENDING_FULL_APPROVAL;
+    }
+
+    /**
+     * Check if vendor can login
+     */
+    public function canLogin(): bool
+    {
+        return !in_array($this->status, [self::STATUS_BANNED]);
+    }
+
+    public static function merchantTypes(): array
+    {
+        return [
+            self::MERCHANT_TYPE_PERSONAL,
+            self::MERCHANT_TYPE_PRIVATE_COMPANY,
+            self::MERCHANT_TYPE_LIMITED_COMPANY,
+        ];
+    }
+
+    public static function iyzicoStatuses(): array
+    {
+        return [
+            self::IYZICO_STATUS_NOT_REGISTERED,
+            self::IYZICO_STATUS_PENDING,
+            self::IYZICO_STATUS_ACTIVE,
+            self::IYZICO_STATUS_REJECTED,
+        ];
+    }
+
+    /**
+     * Human readable iyzico status labels (Turkish)
+     */
+    public static function iyzicoStatusLabels(): array
+    {
+        return [
+            self::IYZICO_STATUS_NOT_REGISTERED => 'Kayıtlı Değil',
+            self::IYZICO_STATUS_PENDING => 'Kayıt Bekleniyor',
+            self::IYZICO_STATUS_ACTIVE => 'Ödeme Alabilir',
+            self::IYZICO_STATUS_REJECTED => 'Kayıt Reddedildi',
+        ];
+    }
+
+    /**
+     * Get human readable iyzico status label
+     */
+    public function getIyzicoStatusLabelAttribute(): string
+    {
+        return self::iyzicoStatusLabels()[$this->iyzico_status] ?? $this->iyzico_status ?? 'Bilinmiyor';
+    }
+
+    /**
+     * Get rejection reason from latest application
+     */
+    public function getLatestRejectionReasonAttribute(): ?string
+    {
+        $latestApp = $this->applications()
+            ->where('status', 'rejected')
+            ->latest()
+            ->first();
+        
+        return $latestApp?->rejection_reason;
+    }
+
+    /**
+     * Get iyzico subMerchantType string from merchant_type
+     */
+    public function getIyzicoSubMerchantType(): ?string
+    {
+        return match($this->merchant_type) {
+            self::MERCHANT_TYPE_PERSONAL => 'PERSONAL',
+            self::MERCHANT_TYPE_PRIVATE_COMPANY => 'PRIVATE_COMPANY',
+            self::MERCHANT_TYPE_LIMITED_COMPANY => 'LIMITED_OR_JOINT_STOCK_COMPANY',
+            default => null,
+        };
+    }
+
+    /**
+     * Check if vendor is registered with iyzico
+     */
+    public function isIyzicoRegistered(): bool
+    {
+        return $this->iyzico_status === self::IYZICO_STATUS_ACTIVE 
+            && !empty($this->iyzico_submerchant_key);
+    }
+
+    /**
+     * Check if vendor can receive payments via iyzico
+     */
+    public function canReceivePayments(): bool
+    {
+        return $this->canOperate() && $this->isIyzicoRegistered();
     }
 
     public function scopeActive($query)

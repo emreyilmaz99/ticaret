@@ -94,8 +94,9 @@ Route::prefix('v1/admin')->group(function () {
         Route::get('vendor-applications/pending-pre', [AdminVendorApplicationController::class, 'pendingPreApplications']);
         Route::get('vendor-applications/{id}', [AdminVendorApplicationController::class, 'show']);
         Route::post('vendor-applications/{id}/approve-pre', [AdminVendorApplicationController::class, 'approvePreApplication']);
+        Route::post('vendor-applications/{id}/reject-pre', [AdminVendorApplicationController::class, 'rejectPreApplication']);
         Route::post('vendor-applications/{id}/approve-full', [AdminVendorApplicationController::class, 'approveFullApplication']);
-        Route::post('vendor-applications/{id}/reject', [AdminVendorApplicationController::class, 'reject']);
+        Route::post('vendor-applications/{id}/reject-full', [AdminVendorApplicationController::class, 'rejectFullApplication']);
 
         // products management
         Route::get('products', [AdminProductController::class, 'index']);
@@ -128,6 +129,11 @@ Route::prefix('v1/vendor')->group(function () {
     Route::middleware(['auth:sanctum', 'ability:vendor:*', EnsureVendor::class])->group(function () {
         Route::post('logout', [VendorAuthController::class, 'logout']);
         Route::get('me', [VendorAuthController::class, 'me']);
+        
+        // Application status and submission (for vendors in pre_approved status)
+        Route::get('application/status', [\App\Http\Controllers\Api\V1\Vendor\ApplicationController::class, 'status']);
+        Route::post('application/submit-full', [\App\Http\Controllers\Api\V1\Vendor\ApplicationController::class, 'submitFullApplication']);
+        
         // vendor products (self-service)
         Route::get('products', [\App\Http\Controllers\Api\V1\Vendor\ProductController::class, 'index']);
         Route::post('products', [\App\Http\Controllers\Api\V1\Vendor\ProductController::class, 'store']);
@@ -166,10 +172,9 @@ Route::prefix('v1/vendor')->group(function () {
 // Public vendor profile by slug (public)
 Route::get('v1/vendors/{slug}', [PublicVendorController::class, 'show']);
 
-// Public vendor application submission
+// Public vendor application submission (only pre-application)
 Route::post('v1/vendor-applications', [PublicVendorApplicationController::class, 'store']);
 Route::get('v1/vendor-applications/{id}', [PublicVendorApplicationController::class, 'show']);
-Route::post('v1/vendor-applications/{preApplicationId}/submit-full', [PublicVendorApplicationController::class, 'submitFull']);
 
 // units (public)
 Route::get('v1/units', [\App\Http\Controllers\Api\V1\Public\UnitsController::class, 'index']);

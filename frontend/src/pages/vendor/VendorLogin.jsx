@@ -1,9 +1,20 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
-import { vendorLogin, getVendorProfile } from '../../features/vendor/api/vendorAuthApi';
+import { vendorLogin } from '../../features/vendor/api/vendorAuthApi';
 import { useToast } from '../../components/Toast';
 import { FaStore, FaEnvelope, FaLock, FaArrowRight } from 'react-icons/fa';
+
+// Status constants matching backend
+const VENDOR_STATUS = {
+  PENDING_PRE_APPROVAL: 'pending_pre_approval',
+  PENDING_FULL_APPLICATION: 'pending_full_application',
+  PENDING_ACTIVATION: 'pending_activation',
+  ACTIVE: 'active',
+  INACTIVE: 'inactive',
+  SUSPENDED: 'suspended',
+  BANNED: 'banned'
+};
 
 const VendorLogin = () => {
   const [email, setEmail] = useState('');
@@ -15,48 +26,67 @@ const VendorLogin = () => {
     mutationFn: vendorLogin,
     onSuccess: (data) => {
       console.log('[VendorLogin] SUCCESS - Full response:', data);
-      console.log('[VendorLogin] Token path check - data.data:', data.data);
-      console.log('[VendorLogin] Token value:', data.data?.token);
       
-      // Vendor login successful - has token and vendor account
       const token = data.data?.token;
+      const vendor = data.data?.vendor;
+      
       if (!token) {
         console.error('[VendorLogin] Token not found!');
         toast.error('Hata', 'Token alınamadı', 4000);
         return;
       }
       
-      console.log('[VendorLogin] Saving token to localStorage...');
+      // Save token
       localStorage.setItem('vendor_token', token);
-      console.log('[VendorLogin] Token saved! Verify:', localStorage.getItem('vendor_token') ? 'EXISTS' : 'NOT FOUND');
+      console.log('[VendorLogin] Token saved!');
       
-      // Vendor account exists, go to dashboard
-      toast.success('Giriş Başarılı', 'Mağaza panelinize yönlendiriliyorsunuz...', 2000);
+      // Route based on vendor status
+      const status = vendor?.status;
+      console.log('[VendorLogin] Vendor status:', status);
       
-      console.log('[VendorLogin] Navigating to /vendor/dashboard...');
-      // Navigate immediately after token is saved
-      navigate('/vendor/dashboard');
+      switch (status) {
+        case VENDOR_STATUS.ACTIVE:
+          toast.success('Giriş Başarılı', 'Mağaza panelinize yönlendiriliyorsunuz...', 2000);
+          navigate('/vendor/dashboard');
+          break;
+          
+        case VENDOR_STATUS.PENDING_FULL_APPLICATION:
+          toast.info('Tam Başvuru Gerekli', 'Hesabınızı aktifleştirmek için tam başvurunuzu tamamlayın.', 4000);
+          navigate('/vendor/application');
+          break;
+          
+        case VENDOR_STATUS.PENDING_ACTIVATION:
+          toast.info('Aktivasyon Bekleniyor', 'Tam başvurunuz admin onayı bekliyor.', 4000);
+          navigate('/vendor/status');
+          break;
+          
+        case VENDOR_STATUS.SUSPENDED:
+          toast.warning('Hesap Askıya Alındı', 'Hesabınız geçici olarak askıya alınmış.', 4000);
+          navigate('/vendor/status');
+          break;
+          
+        case VENDOR_STATUS.BANNED:
+          toast.error('Hesap Yasaklandı', 'Hesabınız kalıcı olarak yasaklanmış.', 4000);
+          navigate('/vendor/status');
+          break;
+          
+        default:
+          // For any other status, go to status page
+          toast.info('Hoş Geldiniz', 'Hesap durumunuzu kontrol edin.', 3000);
+          navigate('/vendor/status');
+      }
     },
     onError: (error) => {
-      console.log('[VendorLogin] ERROR - Full error:', error);
-      console.log('[VendorLogin] Error response:', error.response);
-      console.log('[VendorLogin] Error response data:', error.response?.data);
+      console.log('[VendorLogin] ERROR:', error.response?.data);
       
       const response = error.response?.data;
       
       // Check if this is an application (not a vendor yet)
       if (response?.data?.is_application) {
-        console.log('[VendorLogin] This is an application, not a vendor');
         const status = response.data.application_status;
-        const applicationId = response.data.application_id;
-        console.log('[VendorLogin] Application status:', status, 'ID:', applicationId);
         
         if (status === 'pending') {
-          toast.info('Başvurunuz İnceleniyor', 'Ön başvurunuz admin onayı bekliyor.', 4000);
-          navigate('/');
-        } else if (status === 'approved') {
-          toast.success('Başvurunuz Onaylandı!', 'Tam başvurunuzu tamamlayın.', 3000);
-          navigate(`/vendor/full-application/${applicationId}`);
+          toast.info('Başvurunuz İnceleniyor', 'Ön başvurunuz admin onayı bekliyor. Onaylandığında e-posta alacaksınız.', 5000);
         } else if (status === 'rejected') {
           const reason = response.data.rejection_reason || 'Belirtilmedi';
           toast.error('Başvurunuz Reddedildi', `Red Nedeni: ${reason}`, 5000);

@@ -4,6 +4,17 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 
+// Configure SSL CA certificates for cURL (especially for iyzico)
+$cacertPath = dirname(__DIR__) . '/storage/cacert.pem';
+if (file_exists($cacertPath)) {
+    if (ini_get('curl.cainfo') === '') {
+        ini_set('curl.cainfo', $cacertPath);
+    }
+    if (ini_get('openssl.cafile') === '') {
+        ini_set('openssl.cafile', $cacertPath);
+    }
+}
+
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
