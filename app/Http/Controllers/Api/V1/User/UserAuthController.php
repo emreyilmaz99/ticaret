@@ -3,15 +3,17 @@
 namespace App\Http\Controllers\Api\V1\User;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
+use App\Services\AuthService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
 
 class UserAuthController extends Controller
 {
+    public function __construct(
+        protected AuthService $authService
+    ) {}
+
     /**
      * Register a new user.
      */
@@ -24,30 +26,13 @@ class UserAuthController extends Controller
             'phone' => ['nullable', 'string', 'max:20'],
         ]);
 
-        $user = User::create([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'password' => Hash::make($validated['password']),
-            'phone' => $validated['phone'] ?? null,
-            'is_active' => true,
-        ]);
-
-        $token = $user->createToken('user-token', ['user:*'])->plainTextToken;
+        $result = $this->authService->userRegister($validated);
 
         return response()->json([
-            'success' => true,
-            'message' => 'Kayıt başarılı.',
-            'data' => [
-                'user' => [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    'phone' => $user->phone,
-                    'avatar' => $user->avatar_url,
-                ],
-                'token' => $token,
-            ],
-        ], 201);
+            'success' => $result->isSuccess(),
+            'message' => $result->getMessage(),
+            'data' => $result->getData(),
+        ], $result->getStatusCode());
     }
 
     /**
@@ -60,46 +45,13 @@ class UserAuthController extends Controller
             'password' => ['required', 'string'],
         ]);
 
-        $user = User::where('email', $validated['email'])->first();
-
-        if (!$user || !Hash::check($validated['password'], $user->password)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'E-posta veya şifre hatalı.',
-            ], 401);
-        }
-
-        if (!$user->is_active) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Hesabınız devre dışı bırakılmış.',
-            ], 403);
-        }
-
-        // Update last login
-        $user->update(['last_login_at' => now()]);
-
-        // Revoke old tokens (optional - single session)
-        // $user->tokens()->delete();
-
-        $token = $user->createToken('user-token', ['user:*'])->plainTextToken;
+        $result = $this->authService->userLogin($validated);
 
         return response()->json([
-            'success' => true,
-            'message' => 'Giriş başarılı.',
-            'data' => [
-                'user' => [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    'phone' => $user->phone,
-                    'avatar' => $user->avatar_url,
-                    'birth_date' => $user->birth_date?->format('Y-m-d'),
-                    'gender' => $user->gender,
-                ],
-                'token' => $token,
-            ],
-        ]);
+            'success' => $result->isSuccess(),
+            'message' => $result->getMessage(),
+            'data' => $result->getData(),
+        ], $result->getStatusCode());
     }
 
     /**
@@ -107,12 +59,12 @@ class UserAuthController extends Controller
      */
     public function logout(Request $request): JsonResponse
     {
-        $request->user()->currentAccessToken()->delete();
+        $result = $this->authService->logout($request->user());
 
         return response()->json([
-            'success' => true,
-            'message' => 'Çıkış yapıldı.',
-        ]);
+            'success' => $result->isSuccess(),
+            'message' => $result->getMessage(),
+        ], $result->getStatusCode());
     }
 
     /**
@@ -120,26 +72,11 @@ class UserAuthController extends Controller
      */
     public function me(Request $request): JsonResponse
     {
-        $user = $request->user();
-        $user->load('addresses', 'defaultAddress');
+        $result = $this->authService->getCurrentUser($request->user());
 
         return response()->json([
-            'success' => true,
-            'data' => [
-                'user' => [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    'phone' => $user->phone,
-                    'avatar' => $user->avatar_url,
-                    'birth_date' => $user->birth_date?->format('Y-m-d'),
-                    'gender' => $user->gender,
-                    'email_verified_at' => $user->email_verified_at,
-                    'created_at' => $user->created_at,
-                    'addresses' => $user->addresses,
-                    'default_address' => $user->defaultAddress,
-                ],
-            ],
-        ]);
+            'success' => $result->isSuccess(),
+            'data' => $result->getData(),
+        ], $result->getStatusCode());
     }
 }

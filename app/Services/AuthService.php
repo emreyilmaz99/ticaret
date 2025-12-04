@@ -4,11 +4,115 @@ namespace App\Services;
 
 use App\Core\ServiceResponse;
 use App\Models\Admin;
+use App\Models\User;
 use App\Models\Vendor;
 use Illuminate\Support\Facades\Hash;
 
 class AuthService extends BaseService
 {
+    /**
+     * User registration
+     */
+    public function userRegister(array $data): ServiceResponse
+    {
+        try {
+            $user = User::create([
+                'name' => $data['name'],
+                'email' => $data['email'],
+                'password' => Hash::make($data['password']),
+                'phone' => $data['phone'] ?? null,
+                'is_active' => true,
+            ]);
+
+            $token = $user->createToken('user-token', ['user:*'])->plainTextToken;
+
+            $payload = [
+                'user' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'phone' => $user->phone,
+                    'avatar' => $user->avatar_url,
+                ],
+                'token' => $token,
+            ];
+
+            return $this->successResponse($payload, 'Kayıt başarılı.', 201);
+        } catch (\Exception $e) {
+            return $this->handleException($e, 'Kayıt işlemi başarısız oldu');
+        }
+    }
+
+    /**
+     * User login
+     */
+    public function userLogin(array $data): ServiceResponse
+    {
+        try {
+            $user = User::where('email', $data['email'])->first();
+
+            if (!$user || !Hash::check($data['password'], $user->password)) {
+                return $this->errorResponse('E-posta veya şifre hatalı.', 401);
+            }
+
+            if (!$user->is_active) {
+                return $this->errorResponse('Hesabınız devre dışı bırakılmış.', 403);
+            }
+
+            // Update last login
+            $user->update(['last_login_at' => now()]);
+
+            $token = $user->createToken('user-token', ['user:*'])->plainTextToken;
+
+            $payload = [
+                'user' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'phone' => $user->phone,
+                    'avatar' => $user->avatar_url,
+                    'birth_date' => $user->birth_date?->format('Y-m-d'),
+                    'gender' => $user->gender,
+                ],
+                'token' => $token,
+            ];
+
+            return $this->successResponse($payload, 'Giriş başarılı.');
+        } catch (\Exception $e) {
+            return $this->handleException($e, 'Giriş işlemi başarısız oldu');
+        }
+    }
+
+    /**
+     * Get current user info
+     */
+    public function getCurrentUser(User $user): ServiceResponse
+    {
+        try {
+            $user->load('addresses', 'defaultAddress');
+
+            $payload = [
+                'user' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'phone' => $user->phone,
+                    'avatar' => $user->avatar_url,
+                    'birth_date' => $user->birth_date?->format('Y-m-d'),
+                    'gender' => $user->gender,
+                    'email_verified_at' => $user->email_verified_at,
+                    'created_at' => $user->created_at,
+                    'addresses' => $user->addresses,
+                    'default_address' => $user->defaultAddress,
+                ],
+            ];
+
+            return $this->successResponse($payload);
+        } catch (\Exception $e) {
+            return $this->handleException($e, 'Kullanıcı bilgileri alınamadı');
+        }
+    }
+
     public function adminLogin(array $data): ServiceResponse
     {
         $admin = Admin::where('email', $data['email'])->first();
