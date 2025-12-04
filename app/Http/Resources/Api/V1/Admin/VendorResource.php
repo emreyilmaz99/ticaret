@@ -13,14 +13,22 @@ class VendorResource extends JsonResource
 
         return [
             'id' => $this->id,
-            'storeName' => $this->name, // Using name as storeName
-            'owner' => $this->name, // Using name as owner for now
+            'storeName' => $this->company_name ?? $this->name,
+            'company_name' => $this->company_name ?? $this->name,
+            'owner' => $this->name,
+            'full_name' => $this->contact_name && $this->contact_surname 
+                ? $this->contact_name . ' ' . $this->contact_surname 
+                : $this->name,
+            'slug' => $this->slug,
             'email' => $this->email,
-            'phone' => $this->phone ?? null, // If phone column exists later
-            'status' => $this->status ?? 'active', // Default to active if no status column
+            'phone' => $this->phone ?? null,
+            'status' => $this->status ?? 'active',
+            'merchant_type' => $this->merchant_type,
+            'identity_number' => $this->identity_number,
+            'tax_id' => $this->tax_id,
             'revenue' => $this->payouts_sum_amount ? '₺' . number_format($this->payouts_sum_amount, 2) : '₺0.00',
             'rating' => $this->rating_avg ?? 0,
-            'products' => 0, // Mock for now
+            'products' => 0,
             'joinDate' => $this->created_at?->format('d M Y'),
             'address' => $primaryAddress ? $primaryAddress->address_line . ', ' . $primaryAddress->city : '',
             'bankName' => $primaryBank ? $primaryBank->bank_name : '',

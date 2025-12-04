@@ -128,6 +128,16 @@ class SubmitFullApplicationRequest extends FormRequest
      */
     protected function prepareForValidation(): void
     {
+        // Slug'ı temizle (küçük harf, sadece alfanumerik ve tire)
+        if ($this->has('slug')) {
+            $slug = $this->slug;
+            $slug = mb_strtolower($slug, 'UTF-8'); // Küçük harfe çevir
+            $slug = preg_replace('/[^a-z0-9-]/', '-', $slug); // Geçersiz karakterleri tire yap
+            $slug = preg_replace('/-+/', '-', $slug); // Ardışık tireleri tek tireye indir
+            $slug = trim($slug, '-'); // Baş ve sondaki tireleri kaldır
+            $this->merge(['slug' => $slug]);
+        }
+
         // IBAN'ı temizle (boşlukları kaldır, büyük harfe çevir)
         if ($this->has('iban')) {
             $this->merge([

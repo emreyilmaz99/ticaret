@@ -288,6 +288,12 @@ class VendorApplicationService extends BaseService
 
     /**
      * Approve full application and activate vendor (admin)
+     * 
+     * Flow:
+     * 1. Validate application
+     * 2. Try iyzico SubMerchant registration FIRST
+     * 3. Only if iyzico succeeds, update status to active
+     * 4. If iyzico fails, keep vendor in pending_full_approval (stays in list)
      */
     public function approveFullApplication(int $id, int $adminId, ?int $commissionPlanId = null)
     {
@@ -310,6 +316,30 @@ class VendorApplicationService extends BaseService
                 return $this->errorResponse('Başvuru zaten incelenmiş', 400);
             }
 
+            $vendor = $application->vendor;
+
+            // Step 1: Try iyzico SubMerchant registration FIRST (before changing any status)
+            Log::info('Starting iyzico SubMerchant registration', ['vendor_id' => $vendor->id]);
+            
+            $iyzicoResult = $this->iyzicoService->ensureSubMerchantRegistered($vendor);
+            
+            if (!$iyzicoResult->isSuccess()) {
+                Log::warning('iyzico SubMerchant registration failed - vendor stays in pending list', [
+                    'vendor_id' => $vendor->id,
+                    'error' => $iyzicoResult->getMessage(),
+                ]);
+                
+                // Don't change any status - vendor stays in pending_full_approval list
+                return $this->errorResponse(
+                    'iyzico kaydı başarısız: ' . $iyzicoResult->getMessage() . '. Satıcı onay listesinde kalmaya devam ediyor.',
+                    400,
+                    ['iyzico_error' => true]
+                );
+            }
+
+            // Step 2: iyzico succeeded, now update database
+            Log::info('iyzico SubMerchant registration successful, activating vendor', ['vendor_id' => $vendor->id]);
+
             DB::beginTransaction();
 
             // Approve application
@@ -326,7 +356,7 @@ class VendorApplicationService extends BaseService
                 $finalCommissionPlanId = $defaultPlan?->id;
             }
 
-            // Activate vendor
+            // Activate vendor (iyzico already succeeded)
             $vendorUpdateData = [
                 'status' => Vendor::STATUS_ACTIVE,
                 'activated_at' => now(),
@@ -337,27 +367,9 @@ class VendorApplicationService extends BaseService
                 $vendorUpdateData['commission_plan_id'] = $finalCommissionPlanId;
             }
 
-            $this->vendorRepository->update($application->vendor->id, $vendorUpdateData);
+            $this->vendorRepository->update($vendor->id, $vendorUpdateData);
 
             DB::commit();
-
-            // iyzico SubMerchant kaydı (transaction dışında)
-            $vendor = $application->vendor->fresh();
-            $iyzicoResult = $this->iyzicoService->ensureSubMerchantRegistered($vendor);
-            
-            if (!$iyzicoResult->isSuccess()) {
-                Log::warning('iyzico SubMerchant registration failed', [
-                    'vendor_id' => $vendor->id,
-                    'error' => $iyzicoResult->getMessage(),
-                ]);
-                
-                return $this->successResponse([
-                    'application' => $application->fresh(),
-                    'vendor' => $vendor,
-                    'iyzico_warning' => true,
-                    'iyzico_error' => $iyzicoResult->getMessage(),
-                ], 'Satıcı onaylandı ancak iyzico kaydı başarısız: ' . $iyzicoResult->getMessage());
-            }
 
             return $this->successResponse([
                 'application' => $application->fresh(),
@@ -365,6 +377,7 @@ class VendorApplicationService extends BaseService
             ], 'Satıcı onaylandı ve iyzico kaydı tamamlandı');
         } catch (\Exception $e) {
             DB::rollBack();
+            Log::error('Full application approval error: ' . $e->getMessage());
             return $this->errorResponse($e->getMessage());
         }
     }
@@ -441,6 +454,16 @@ class VendorApplicationService extends BaseService
                 'can_receive_payments' => $vendor->canReceivePayments(),
                 'latest_rejection_reason' => null,
                 'latest_application' => null,
+                // Include vendor details for form pre-fill
+                'vendor' => [
+                    'id' => $vendor->id,
+                    'name' => $vendor->name,
+                    'email' => $vendor->email,
+                    'company_name' => $vendor->company_name,
+                    'slug' => $vendor->slug,
+                    'phone' => $vendor->phone,
+                    'tax_id' => $vendor->tax_id,
+                ],
             ];
 
             // Get rejection reason if applicable
@@ -507,6 +530,72 @@ class VendorApplicationService extends BaseService
 
             return $this->successResponse($application, 'Başvuru detayları');
         } catch (\Exception $e) {
+            return $this->errorResponse($e->getMessage());
+        }
+    }
+
+    /**
+     * Approve vendor's full application (vendor-based)
+     */
+    public function approveVendorFullApplication(int $vendorId, int $adminId, ?int $commissionPlanId = null)
+    {
+        try {
+            $vendor = $this->vendorRepository->find($vendorId);
+
+            if (!$vendor) {
+                return $this->errorResponse('Satıcı bulunamadı', 404);
+            }
+
+            // Vendor must be in pending_full_approval status
+            if ($vendor->status !== Vendor::STATUS_PENDING_FULL_APPROVAL) {
+                return $this->errorResponse('Bu satıcı onay bekleyen durumda değil');
+            }
+
+            // Get the latest full application
+            $application = $vendor->applications()
+                ->where('type', VendorApplication::TYPE_FULL_APPLICATION)
+                ->where('status', VendorApplication::STATUS_PENDING)
+                ->latest()
+                ->first();
+
+            if (!$application) {
+                return $this->errorResponse('Satıcının bekleyen tam başvurusu bulunamadı');
+            }
+
+            // Use existing approveFullApplication logic
+            return $this->approveFullApplication($application->id, $adminId, $commissionPlanId);
+        } catch (\Exception $e) {
+            Log::error('Vendor full application approval error (vendor-based): ' . $e->getMessage());
+            return $this->errorResponse($e->getMessage());
+        }
+    }
+
+    /**
+     * Reject vendor's full application (vendor-based)
+     */
+    public function rejectVendorFullApplication(int $vendorId, int $adminId, string $reason)
+    {
+        try {
+            $vendor = $this->vendorRepository->find($vendorId);
+
+            if (!$vendor) {
+                return $this->errorResponse('Satıcı bulunamadı', 404);
+            }
+
+            // Get the latest full application
+            $application = $vendor->applications()
+                ->where('type', VendorApplication::TYPE_FULL_APPLICATION)
+                ->latest()
+                ->first();
+
+            if (!$application) {
+                return $this->errorResponse('Satıcının tam başvurusu bulunamadı');
+            }
+
+            // Use existing rejectFullApplication logic
+            return $this->rejectFullApplication($application->id, $adminId, $reason);
+        } catch (\Exception $e) {
+            Log::error('Vendor full application rejection error (vendor-based): ' . $e->getMessage());
             return $this->errorResponse($e->getMessage());
         }
     }

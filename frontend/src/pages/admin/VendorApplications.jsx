@@ -44,7 +44,7 @@ const VendorApplications = () => {
     queryKey: ['pendingActivationVendors'],
     queryFn: async () => {
       const response = await axios.get('/v1/admin/vendors', { 
-        params: { status: 'pending_activation' } 
+        params: { status: 'pending_full_approval' } 
       });
       return response.data;
     },
@@ -61,6 +61,15 @@ const VendorApplications = () => {
   const commissionPlans = commissionPlansData?.data?.data || [];
   const applications = preAppData?.data?.data?.data || [];
   const pendingVendors = pendingVendorsData?.data?.data || [];
+  
+  // DEBUG: Full response structure
+  console.log('RAW pendingVendorsData:', pendingVendorsData);
+  console.log('pendingVendorsData?.data:', pendingVendorsData?.data);
+  console.log('pendingVendorsData?.data?.data:', pendingVendorsData?.data?.data);
+  console.log('Final pendingVendors array:', pendingVendors);
+  if (pendingVendors.length > 0) {
+    console.log('First vendor ID:', pendingVendors[0]?.id);
+  }
   
   // Current loading state
   const isLoading = activeTab === 'pre' ? preAppLoading : pendingVendorsLoading;
@@ -200,6 +209,10 @@ const VendorApplications = () => {
       toast.warning('Uyarı', 'Lütfen bir komisyon planı seçin.', 3000);
       return;
     }
+    console.log('APPROVE VENDOR DEBUG:');
+    console.log('selectedVendor:', selectedVendor);
+    console.log('selectedVendor.id:', selectedVendor?.id);
+    console.log('commissionPlanId:', selectedCommissionPlan);
     approveFullMutation.mutate({ vendorId: selectedVendor.id, commissionPlanId: selectedCommissionPlan });
   };
 

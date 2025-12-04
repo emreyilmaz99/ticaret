@@ -19,9 +19,10 @@ class VendorController extends BaseAdminController
     public function index(Request $request)
     {
         $perPage = (int) $request->query('per_page', 15);
+        $status = $request->query('status');
 
         // Use service that returns a ServiceResponse-compatible object
-        $serviceResponse = $this->service->listForAdminResponse($perPage);
+        $serviceResponse = $this->service->listForAdminResponse($perPage, $status);
 
         return $this->fromServiceResponse($serviceResponse);
     }

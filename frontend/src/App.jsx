@@ -128,6 +128,7 @@ function App() {
               <Route path="/vendor/login" element={<VendorLogin />} />
               <Route path="/vendor/register" element={<VendorRegister />} />
               <Route path="/vendor/application" element={<VendorFullApplication />} />
+              <Route path="/vendor/full-application" element={<VendorFullApplication />} />
               <Route path="/vendor/status" element={<VendorStatusPage />} />
               <Route path="/vendor/onboarding" element={<VendorOnboarding />} />
 

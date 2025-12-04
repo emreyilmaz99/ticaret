@@ -97,6 +97,10 @@ Route::prefix('v1/admin')->group(function () {
         Route::post('vendor-applications/{id}/reject-pre', [AdminVendorApplicationController::class, 'rejectPreApplication']);
         Route::post('vendor-applications/{id}/approve-full', [AdminVendorApplicationController::class, 'approveFullApplication']);
         Route::post('vendor-applications/{id}/reject-full', [AdminVendorApplicationController::class, 'rejectFullApplication']);
+        
+        // Vendor-based approval routes (alternative to application-based)
+        Route::post('vendors/{vendorId}/approve-full', [AdminVendorApplicationController::class, 'approveVendorFull']);
+        Route::post('vendors/{vendorId}/reject-full', [AdminVendorApplicationController::class, 'rejectVendorFull']);
 
         // products management
         Route::get('products', [AdminProductController::class, 'index']);

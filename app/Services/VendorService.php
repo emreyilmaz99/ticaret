@@ -68,21 +68,27 @@ class VendorService extends BaseService
     /**
      * Wrapper that returns a ServiceResponse compatible payload for admin listing.
      */
-    public function listForAdminResponse(int $perPage = 15)
+    public function listForAdminResponse(int $perPage = 15, ?string $status = null)
     {
         // Use Eloquent to load relations and aggregates
-        // Only show vendors with completed applications (application_id is not null)
-        // Only show active vendors (status = 'active')
-        $paginator = Vendor::with(['addresses' => function($q) {
+        $query = Vendor::with(['addresses' => function($q) {
                 $q->where('is_primary', true);
             }, 'bankAccounts' => function($q) {
                 $q->where('is_primary', true);
             }])
-            ->whereNotNull('application_id') // Only vendors who completed full application
-            ->where('status', 'active') // Only active vendors
             ->withSum('payouts', 'amount') // Calculate total revenue
-            ->latest()
-            ->paginate($perPage);
+            ->latest();
+
+        // Apply status filter if provided
+        if ($status) {
+            $query->where('status', $status);
+        } else {
+            // Default: only active vendors with completed applications
+            $query->whereNotNull('application_id')
+                  ->where('status', 'active');
+        }
+
+        $paginator = $query->paginate($perPage);
 
         $data = [
             'data' => \App\Http\Resources\Api\V1\Admin\VendorResource::collection($paginator),

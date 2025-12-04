@@ -99,4 +99,29 @@ class VendorApplicationController extends Controller
         );
         return $this->fromServiceResponse($result);
     }
+
+    /**
+     * Approve vendor's full application (vendor-based endpoint)
+     */
+    public function approveVendorFull(int $vendorId, Request $request)
+    {
+        $adminId = $request->user()->id;
+        $commissionPlanId = $request->input('commission_plan_id');
+        $result = $this->applicationService->approveVendorFullApplication($vendorId, $adminId, $commissionPlanId);
+        return $this->fromServiceResponse($result);
+    }
+
+    /**
+     * Reject vendor's full application (vendor-based endpoint)
+     */
+    public function rejectVendorFull(int $vendorId, RejectApplicationRequest $request)
+    {
+        $adminId = $request->user()->id;
+        $result = $this->applicationService->rejectVendorFullApplication(
+            $vendorId,
+            $adminId,
+            $request->input('rejection_reason')
+        );
+        return $this->fromServiceResponse($result);
+    }
 }

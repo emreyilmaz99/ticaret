@@ -45,7 +45,7 @@ const VendorFullApplication = () => {
   const { data: statusData, isLoading, error: statusError } = useQuery({
     queryKey: ['vendorStatus'],
     queryFn: async () => {
-      const response = await axios.get('/v1/vendor/status');
+      const response = await axios.get('/v1/vendor/application/status');
       return response.data.data;
     }
   });
@@ -54,15 +54,21 @@ const VendorFullApplication = () => {
   useEffect(() => {
     if (statusData?.vendor) {
       const vendor = statusData.vendor;
+      const fullName = vendor.name || '';
+      const nameParts = fullName.split(' ');
+      const firstName = nameParts[0] || '';
+      const lastName = nameParts.slice(1).join(' ') || '';
+      
       setForm(prev => ({
         ...prev,
-        full_name: vendor.full_name || '',
+        full_name: fullName,
         company_name: vendor.company_name || '',
-        slug: vendor.slug || (vendor.company_name ? vendor.company_name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') : ''),
+        slug: vendor.slug || '',
         phone: vendor.phone || '',
-        contact_name: vendor.full_name ? vendor.full_name.split(' ')[0] : '',
-        contact_surname: vendor.full_name ? vendor.full_name.split(' ').slice(1).join(' ') : '',
-        account_holder: vendor.full_name || ''
+        tax_id: vendor.tax_id || '',
+        contact_name: firstName,
+        contact_surname: lastName,
+        account_holder: fullName
       }));
     }
   }, [statusData]);
@@ -77,7 +83,7 @@ const VendorFullApplication = () => {
 
   const submitMutation = useMutation({
     mutationFn: async (data) => {
-      const response = await axios.post('/v1/vendor/application', data);
+      const response = await axios.post('/v1/vendor/application/submit-full', data);
       return response.data;
     },
     onSuccess: (data) => {

@@ -1,14 +1,14 @@
-import { useState, useContext, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import AuthContext from '../context/AuthContext';
+import { useAuth } from '../context/AuthContext';
 import { useFavorites } from '../context/FavoritesContext';
 import { useCart } from '../context/CartContext';
 import api from '../services/api';
 
 const Navbar = () => {
-  const { user, logout } = useContext(AuthContext);
+  const { user, logout } = useAuth();
   const { favorites, hasNewItems: hasNewFavorites } = useFavorites();
-  const { items: cartItems, hasNewItems: hasNewCartItems } = useCart();
+  const { cartItems, hasNewItems: hasNewCartItems } = useCart();
   const navigate = useNavigate();
   const location = useLocation();
   

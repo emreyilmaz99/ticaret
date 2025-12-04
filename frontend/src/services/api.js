@@ -12,10 +12,21 @@ const api = axios.create({
 
 // ÖNEMLİ: Her istekten önce çalışacak kod (Request Interceptor)
 api.interceptors.request.use((config) => {
-  // 1. Tarayıcı hafızasından token'ı al
-  const token = localStorage.getItem('admin_token');
+  // URL'e göre doğru token'ı seç
+  let token = null;
   
-  // 2. Eğer token varsa, isteğin başlığına (Header) ekle
+  if (config.url?.includes('/vendor')) {
+    // Vendor endpoint'leri için vendor_token kullan
+    token = localStorage.getItem('vendor_token');
+  } else if (config.url?.includes('/admin')) {
+    // Admin endpoint'leri için admin_token kullan
+    token = localStorage.getItem('admin_token');
+  } else {
+    // Diğer endpoint'ler için önce user_token, yoksa admin_token dene
+    token = localStorage.getItem('user_token') || localStorage.getItem('admin_token');
+  }
+  
+  // Eğer token varsa, isteğin başlığına (Header) ekle
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }

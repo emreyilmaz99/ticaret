@@ -1,12 +1,12 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
-  getApplications, 
   approveFullApplication, 
-  rejectApplication 
+  rejectFullApplication 
 } from '../../features/vendor-application/api/vendorApplicationApi';
 import { getActiveCommissionPlans } from '../../features/commission/api/commissionApi';
 import { useToast } from '../../components/Toast';
+import axios from '../../lib/axios';
 import { 
   FaCheck, FaTimes, FaEye, FaSearch, FaStore, FaCalendarAlt, FaEnvelope, FaPhone, FaBuilding, FaClock, FaUser, FaIdCard, FaPercent, FaStar
 } from 'react-icons/fa';
@@ -14,20 +14,23 @@ import {
 const FullApplicationsPage = () => {
   const queryClient = useQueryClient();
   const toast = useToast();
-  const [filters, setFilters] = useState({ type: 'full_application' });
-  const [selectedApp, setSelectedApp] = useState(null); 
+  const [selectedVendor, setSelectedVendor] = useState(null); 
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
   const [approveModalOpen, setApproveModalOpen] = useState(false);
   const [rejectionReason, setRejectionReason] = useState('');
   const [selectedCommissionPlan, setSelectedCommissionPlan] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
   const [hoveredRow, setHoveredRow] = useState(null);
 
-  // Queries
-  const { data, isLoading, error } = useQuery({
-    queryKey: ['fullApplications', filters],
-    queryFn: () => getApplications(filters),
+  // Pending full approval vendors query
+  const { data: vendorsData, isLoading, error } = useQuery({
+    queryKey: ['pendingFullApprovalVendors'],
+    queryFn: async () => {
+      const response = await axios.get('/v1/admin/vendors', { 
+        params: { status: 'pending_full_approval' } 
+      });
+      return response.data;
+    },
     keepPreviousData: true
   });
 
@@ -38,47 +41,29 @@ const FullApplicationsPage = () => {
   });
 
   const commissionPlans = commissionPlansData?.data?.data || [];
-  const applications = data?.data?.data?.data || [];
+  const vendors = vendorsData?.data || [];
 
-  // Filtrelenmiş başvurular
-  const filteredApplications = useMemo(() => {
-    let result = applications;
+  // Filtrelenmiş vendorlar
+  const filteredVendors = useMemo(() => {
+    if (!searchTerm.trim()) return vendors;
     
-    // Durum filtresi
-    if (statusFilter !== 'all') {
-      result = result.filter(app => app.status === statusFilter);
-    }
-    
-    // Arama filtresi
-    if (searchTerm.trim()) {
-      const term = searchTerm.toLowerCase();
-      result = result.filter(app => 
-        app.full_name?.toLowerCase().includes(term) ||
-        app.email?.toLowerCase().includes(term) ||
-        app.company_name?.toLowerCase().includes(term) ||
-        app.phone?.includes(term) ||
-        app.tax_id?.includes(term)
-      );
-    }
-    
-    return result;
-  }, [applications, searchTerm, statusFilter]);
-
-  // İstatistikler
-  const stats = useMemo(() => ({
-    total: applications.length,
-    pending: applications.filter(a => a.status === 'pending').length,
-    approved: applications.filter(a => a.status === 'approved').length,
-    rejected: applications.filter(a => a.status === 'rejected').length,
-  }), [applications]);
+    const term = searchTerm.toLowerCase();
+    return vendors.filter(vendor => 
+      vendor.full_name?.toLowerCase().includes(term) ||
+      vendor.email?.toLowerCase().includes(term) ||
+      vendor.company_name?.toLowerCase().includes(term) ||
+      vendor.phone?.includes(term) ||
+      vendor.tax_id?.includes(term)
+    );
+  }, [vendors, searchTerm]);
 
   // Mutations
   const approveFullMutation = useMutation({
-    mutationFn: ({ id, commissionPlanId }) => approveFullApplication(id, commissionPlanId),
+    mutationFn: ({ vendorId, commissionPlanId }) => approveFullApplication(vendorId, commissionPlanId),
     onSuccess: () => {
-      queryClient.invalidateQueries(['fullApplications']);
+      queryClient.invalidateQueries(['pendingFullApprovalVendors']);
       queryClient.invalidateQueries(['active-vendors']);
-      setSelectedApp(null);
+      setSelectedVendor(null);
       setApproveModalOpen(false);
       setSelectedCommissionPlan(null);
       toast.success('Başarılı', 'Satıcı başvurusu onaylandı ve aktif edildi.');
@@ -87,27 +72,27 @@ const FullApplicationsPage = () => {
   });
 
   const rejectMutation = useMutation({
-    mutationFn: ({ id, reason }) => rejectApplication(id, reason),
+    mutationFn: ({ vendorId, reason }) => rejectFullApplication(vendorId, reason),
     onSuccess: () => {
-      queryClient.invalidateQueries(['fullApplications']);
+      queryClient.invalidateQueries(['pendingFullApprovalVendors']);
       setRejectModalOpen(false);
-      setSelectedApp(null);
+      setSelectedVendor(null);
       setRejectionReason('');
       toast.info('Bilgi', 'Başvuru reddedildi.');
     },
     onError: (err) => toast.error('Hata', err.response?.data?.message || 'Hata oluştu')
   });
 
-  const handleApproveClick = (app) => {
-    setSelectedApp(app);
+  const handleApproveClick = (vendor) => {
+    setSelectedVendor(vendor);
     // Varsayılan planı seç
     const defaultPlan = commissionPlans.find(p => p.is_default);
     setSelectedCommissionPlan(defaultPlan?.id || null);
     setApproveModalOpen(true);
   };
 
-  const handleRejectClick = (app) => {
-    setSelectedApp(app);
+  const handleRejectClick = (vendor) => {
+    setSelectedVendor(vendor);
     setRejectionReason('');
     setRejectModalOpen(true);
   };
@@ -117,7 +102,8 @@ const FullApplicationsPage = () => {
       toast.warning('Uyarı', 'Lütfen bir komisyon planı seçin.');
       return;
     }
-    approveFullMutation.mutate({ id: selectedApp.id, commissionPlanId: selectedCommissionPlan });
+    console.log('Approving vendor ID:', selectedVendor.id);
+    approveFullMutation.mutate({ vendorId: selectedVendor.id, commissionPlanId: selectedCommissionPlan });
   };
 
   const submitReject = () => {
@@ -125,7 +111,7 @@ const FullApplicationsPage = () => {
       toast.warning('Uyarı', 'Red nedeni en az 10 karakter olmalıdır.');
       return;
     }
-    rejectMutation.mutate({ id: selectedApp.id, reason: rejectionReason });
+    rejectMutation.mutate({ vendorId: selectedVendor.id, reason: rejectionReason });
   };
 
   // Yeşil tema stilleri
@@ -355,57 +341,33 @@ const FullApplicationsPage = () => {
     }
   };
 
-  const getStatusBadge = (status) => {
-    switch(status) {
-      case 'pending': return <span style={{...styles.badge, ...styles.badgePending}}><FaClock size={10} />Bekliyor</span>;
-      case 'approved': return <span style={{...styles.badge, ...styles.badgeApproved}}><FaCheck size={10} />Onaylandı</span>;
-      case 'rejected': return <span style={{...styles.badge, ...styles.badgeRejected}}><FaTimes size={10} />Reddedildi</span>;
-      default: return <span style={styles.badge}>{status}</span>;
-    }
-  };
-
   return (
     <div style={styles.container}>
       {/* Header */}
       <div style={styles.header}>
         <div>
-          <h1 style={styles.title}>🏪 Satıcı Başvuruları</h1>
+          <h1 style={styles.title}>🏪 Aktivasyon Bekleyen Satıcılar</h1>
           <p style={styles.subtitle}>
             Tam başvurularını tamamlayan satıcıları inceleyin ve onaylayın.<br />
-            Onaylanan başvurular aktif satıcı olarak sisteme eklenir.
+            Onaylanan satıcılar iyzico'ya kaydedilecek ve aktifleştirilecek.
           </p>
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div style={styles.statsContainer}>
-        <div 
-          style={styles.statCard('#059669', statusFilter === 'all')}
-          onClick={() => setStatusFilter('all')}
-        >
-          <div style={styles.statValue(statusFilter === 'all')}>{stats.total}</div>
-          <div style={styles.statLabel(statusFilter === 'all')}>Toplam Başvuru</div>
-        </div>
-        <div 
-          style={styles.statCard('#f59e0b', statusFilter === 'pending')}
-          onClick={() => setStatusFilter('pending')}
-        >
-          <div style={styles.statValue(statusFilter === 'pending')}>{stats.pending}</div>
-          <div style={styles.statLabel(statusFilter === 'pending')}>Bekleyen</div>
-        </div>
-        <div 
-          style={styles.statCard('#10b981', statusFilter === 'approved')}
-          onClick={() => setStatusFilter('approved')}
-        >
-          <div style={styles.statValue(statusFilter === 'approved')}>{stats.approved}</div>
-          <div style={styles.statLabel(statusFilter === 'approved')}>Onaylanan</div>
-        </div>
-        <div 
-          style={styles.statCard('#ef4444', statusFilter === 'rejected')}
-          onClick={() => setStatusFilter('rejected')}
-        >
-          <div style={styles.statValue(statusFilter === 'rejected')}>{stats.rejected}</div>
-          <div style={styles.statLabel(statusFilter === 'rejected')}>Reddedilen</div>
+      {/* Info Box */}
+      <div style={{ 
+        background: '#fef3c7', 
+        padding: '16px 20px', 
+        borderRadius: '12px', 
+        marginBottom: '24px',
+        border: '1px solid #fde68a',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '12px'
+      }}>
+        <FaClock size={20} color="#d97706" />
+        <div style={{ fontSize: '14px', color: '#92400e' }}>
+          <strong>Toplam {vendors.length} satıcı</strong> aktivasyon bekliyor.
         </div>
       </div>
 
@@ -431,7 +393,7 @@ const FullApplicationsPage = () => {
               <th style={styles.th}><FaStore style={{ marginRight: '6px' }} />Şirket / Mağaza</th>
               <th style={styles.th}><FaUser style={{ marginRight: '6px' }} />Yetkili</th>
               <th style={styles.th}><FaEnvelope style={{ marginRight: '6px' }} />İletişim</th>
-              <th style={styles.th}>Durum</th>
+              <th style={styles.th}><FaIdCard style={{ marginRight: '6px' }} />Bilgiler</th>
               <th style={{...styles.th, textAlign: 'right'}}>İşlemler</th>
             </tr>
           </thead>
@@ -443,24 +405,24 @@ const FullApplicationsPage = () => {
                   <div>Yükleniyor...</div>
                 </td>
               </tr>
-            ) : filteredApplications.length === 0 ? (
+            ) : filteredVendors.length === 0 ? (
               <tr>
                 <td colSpan="5" style={styles.emptyState}>
-                  <div style={styles.emptyIcon}>🏪</div>
+                  <div style={styles.emptyIcon}>✅</div>
                   <div style={{ fontSize: '16px', fontWeight: '600', color: '#6b7280', marginBottom: '8px' }}>
-                    {searchTerm || statusFilter !== 'all' ? 'Arama kriterlerine uygun başvuru bulunamadı' : 'Henüz satıcı başvurusu yok'}
+                    {searchTerm ? 'Arama kriterlerine uygun satıcı bulunamadı' : 'Aktivasyon bekleyen satıcı yok'}
                   </div>
                   <div style={{ fontSize: '14px', color: '#9ca3af' }}>
-                    {searchTerm || statusFilter !== 'all' ? 'Farklı bir arama terimi veya filtre deneyin' : 'Yeni başvurular burada görünecek'}
+                    {searchTerm ? 'Farklı bir arama terimi deneyin' : 'Tüm satıcılar işlenmiş durumda'}
                   </div>
                 </td>
               </tr>
             ) : (
-              filteredApplications.map((app) => (
+              filteredVendors.map((vendor) => (
                 <tr 
-                  key={app.id} 
-                  style={styles.tableRow(hoveredRow === app.id)}
-                  onMouseEnter={() => setHoveredRow(app.id)}
+                  key={vendor.id} 
+                  style={styles.tableRow(hoveredRow === vendor.id)}
+                  onMouseEnter={() => setHoveredRow(vendor.id)}
                   onMouseLeave={() => setHoveredRow(null)}
                 >
                   <td style={styles.td}>
@@ -469,52 +431,53 @@ const FullApplicationsPage = () => {
                         <FaStore size={18} />
                       </div>
                       <div>
-                        <div style={{ fontWeight: '600', color: '#064e3b' }}>{app.company_name}</div>
-                        <div style={{ fontSize: '12px', color: '#6b7280', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          <FaIdCard size={10} /> Vergi No: {app.tax_id || '-'}
-                        </div>
+                        <div style={{ fontWeight: '600', color: '#064e3b' }}>{vendor.company_name || vendor.storeName}</div>
+                        <div style={{ fontSize: '12px', color: '#6b7280' }}>ID: {vendor.id}</div>
                       </div>
                     </div>
                   </td>
                   <td style={styles.td}>
-                    <div style={{ fontWeight: '600', color: '#064e3b' }}>{app.full_name}</div>
+                    <div style={{ fontWeight: '600', color: '#064e3b' }}>{vendor.full_name || vendor.owner}</div>
                     <div style={{ fontSize: '12px', color: '#6b7280' }}>
-                      {new Date(app.created_at).toLocaleDateString('tr-TR')}
+                      {new Date(vendor.created_at).toLocaleDateString('tr-TR')}
                     </div>
                   </td>
                   <td style={styles.td}>
-                    <div style={{ color: '#059669', fontWeight: '500' }}>{app.email}</div>
+                    <div style={{ color: '#059669', fontWeight: '500' }}>{vendor.email}</div>
                     <div style={{ fontSize: '12px', color: '#6b7280', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <FaPhone size={10} /> {app.phone || '-'}
+                      <FaPhone size={10} /> {vendor.phone || '-'}
                     </div>
                   </td>
-                  <td style={styles.td}>{getStatusBadge(app.status)}</td>
+                  <td style={styles.td}>
+                    <div style={{ fontSize: '13px' }}>
+                      <span style={{ color: '#6b7280' }}>Tür:</span> {vendor.merchant_type || '-'}
+                    </div>
+                    <div style={{ fontSize: '12px', color: '#6b7280' }}>
+                      IBAN: {vendor.iban ? '✓ Var' : '✗ Yok'}
+                    </div>
+                  </td>
                   <td style={{...styles.td, textAlign: 'right'}}>
                     <button 
-                      onClick={() => setSelectedApp(app)}
+                      onClick={() => setSelectedVendor(vendor)}
                       style={{...styles.actionBtn, ...styles.btnView}}
                       title="Detay"
                     >
                       <FaEye />
                     </button>
-                    {app.status === 'pending' && (
-                      <>
-                        <button 
-                          onClick={() => handleApproveClick(app)}
-                          style={{...styles.actionBtn, ...styles.btnApprove}}
-                          title="Onayla"
-                        >
-                          <FaCheck />
-                        </button>
-                        <button 
-                          onClick={() => handleRejectClick(app)}
-                          style={{...styles.actionBtn, ...styles.btnReject}}
-                          title="Reddet"
-                        >
-                          <FaTimes />
-                        </button>
-                      </>
-                    )}
+                    <button 
+                      onClick={() => handleApproveClick(vendor)}
+                      style={{...styles.actionBtn, ...styles.btnApprove}}
+                      title="Onayla"
+                    >
+                      <FaCheck />
+                    </button>
+                    <button 
+                      onClick={() => handleRejectClick(vendor)}
+                      style={{...styles.actionBtn, ...styles.btnReject}}
+                      title="Reddet"
+                    >
+                      <FaTimes />
+                    </button>
                   </td>
                 </tr>
               ))
@@ -524,12 +487,12 @@ const FullApplicationsPage = () => {
       </div>
 
       {/* Approve Modal - Komisyon Planı Seçimi */}
-      {approveModalOpen && selectedApp && (
+      {approveModalOpen && selectedVendor && (
         <div style={styles.modalOverlay} onClick={() => setApproveModalOpen(false)}>
           <div style={{...styles.modalContent, maxWidth: '700px'}} onClick={e => e.stopPropagation()}>
             <div style={styles.modalHeader}>
               <h2 style={{margin: 0, fontSize: '20px', fontWeight: '700', color: '#064e3b'}}>
-                ✅ Başvuruyu Onayla
+                ✅ Satıcıyı Aktifleştir
               </h2>
               <button 
                 onClick={() => setApproveModalOpen(false)} 
@@ -546,7 +509,7 @@ const FullApplicationsPage = () => {
               </button>
             </div>
             <div style={styles.modalBody}>
-              {/* Başvuru Özeti */}
+              {/* Satıcı Özeti */}
               <div style={{ 
                 background: '#f0fdf4', 
                 padding: '16px', 
@@ -559,8 +522,8 @@ const FullApplicationsPage = () => {
                     <FaStore size={20} />
                   </div>
                   <div>
-                    <div style={{ fontWeight: '700', fontSize: '16px', color: '#064e3b' }}>{selectedApp.company_name}</div>
-                    <div style={{ fontSize: '13px', color: '#6b7280' }}>{selectedApp.full_name} • {selectedApp.email}</div>
+                    <div style={{ fontWeight: '700', fontSize: '16px', color: '#064e3b' }}>{selectedVendor.company_name || selectedVendor.storeName}</div>
+                    <div style={{ fontSize: '13px', color: '#6b7280' }}>{selectedVendor.full_name || selectedVendor.owner} • {selectedVendor.email}</div>
                   </div>
                 </div>
               </div>
@@ -714,15 +677,15 @@ const FullApplicationsPage = () => {
       )}
 
       {/* Detail Modal */}
-      {selectedApp && !rejectModalOpen && !approveModalOpen && (
-        <div style={styles.modalOverlay} onClick={() => setSelectedApp(null)}>
+      {selectedVendor && !rejectModalOpen && !approveModalOpen && (
+        <div style={styles.modalOverlay} onClick={() => setSelectedVendor(null)}>
           <div style={styles.modalContent} onClick={e => e.stopPropagation()}>
             <div style={styles.modalHeader}>
               <h2 style={{margin: 0, fontSize: '20px', fontWeight: '700', color: '#064e3b'}}>
-                🏪 Başvuru Detayı #{selectedApp.id}
+                🏪 Satıcı Detayı - {selectedVendor.company_name || selectedVendor.storeName}
               </h2>
               <button 
-                onClick={() => setSelectedApp(null)} 
+                onClick={() => setSelectedVendor(null)} 
                 style={{
                   background: 'white', 
                   border: 'none', 
@@ -739,53 +702,48 @@ const FullApplicationsPage = () => {
               <div style={styles.detailGrid}>
                 <div style={styles.detailItem}>
                   <span style={styles.detailLabel}><FaBuilding size={10} /> Şirket Adı</span>
-                  <span style={styles.detailValue}>{selectedApp.company_name || '-'}</span>
+                  <span style={styles.detailValue}>{selectedVendor.company_name || selectedVendor.storeName || '-'}</span>
                 </div>
                 <div style={styles.detailItem}>
                   <span style={styles.detailLabel}><FaIdCard size={10} /> Vergi No</span>
-                  <span style={styles.detailValue}>{selectedApp.tax_id || '-'}</span>
+                  <span style={styles.detailValue}>{selectedVendor.tax_id || '-'}</span>
                 </div>
                 <div style={styles.detailItem}>
                   <span style={styles.detailLabel}><FaUser size={10} /> Yetkili Kişi</span>
-                  <span style={styles.detailValue}>{selectedApp.full_name}</span>
+                  <span style={styles.detailValue}>{selectedVendor.full_name || selectedVendor.owner}</span>
                 </div>
                 <div style={styles.detailItem}>
                   <span style={styles.detailLabel}><FaEnvelope size={10} /> Email</span>
-                  <span style={styles.detailValue}>{selectedApp.email}</span>
+                  <span style={styles.detailValue}>{selectedVendor.email}</span>
                 </div>
                 <div style={styles.detailItem}>
                   <span style={styles.detailLabel}><FaPhone size={10} /> Telefon</span>
-                  <span style={styles.detailValue}>{selectedApp.phone || '-'}</span>
+                  <span style={styles.detailValue}>{selectedVendor.phone || '-'}</span>
                 </div>
                 <div style={styles.detailItem}>
-                  <span style={styles.detailLabel}>Durum</span>
-                  <div>{getStatusBadge(selectedApp.status)}</div>
+                  <span style={styles.detailLabel}>Satıcı Türü</span>
+                  <span style={styles.detailValue}>{selectedVendor.merchant_type || '-'}</span>
                 </div>
                 <div style={styles.detailItem}>
-                  <span style={styles.detailLabel}><FaCalendarAlt size={10} /> Başvuru Tarihi</span>
-                  <span style={styles.detailValue}>{new Date(selectedApp.created_at).toLocaleString('tr-TR')}</span>
+                  <span style={styles.detailLabel}><FaCalendarAlt size={10} /> Kayıt Tarihi</span>
+                  <span style={styles.detailValue}>{new Date(selectedVendor.created_at).toLocaleString('tr-TR')}</span>
                 </div>
               </div>
 
-              {selectedApp.status === 'rejected' && (
-                <div style={{marginTop: '20px', padding: '16px', background: '#fef2f2', borderRadius: '12px', border: '1px solid #fee2e2'}}>
-                  <span style={{...styles.detailLabel, color: '#991b1b'}}>Red Nedeni:</span>
-                  <p style={{margin: '8px 0 0', fontSize: '14px', color: '#7f1d1d', lineHeight: '1.5'}}>{selectedApp.rejection_reason}</p>
-                </div>
-              )}
-
-              {selectedApp.status === 'approved' && selectedApp.reviewer && (
+              {/* Banka Bilgileri */}
+              {selectedVendor.iban && (
                 <div style={{marginTop: '20px', padding: '16px', background: '#f0fdf4', borderRadius: '12px', border: '1px solid #dcfce7'}}>
-                  <span style={{...styles.detailLabel, color: '#166534'}}>✅ Onaylayan:</span>
-                  <p style={{margin: '8px 0 0', fontSize: '14px', color: '#14532d'}}>
-                    {selectedApp.reviewer.name} ({new Date(selectedApp.reviewed_at).toLocaleString('tr-TR')})
-                  </p>
+                  <span style={{...styles.detailLabel, color: '#166534', marginBottom: '12px'}}>🏦 Banka Bilgileri</span>
+                  <div style={{fontSize: '14px', color: '#14532d'}}>
+                    <div><strong>Banka:</strong> {selectedVendor.bankName || '-'}</div>
+                    <div><strong>IBAN:</strong> {selectedVendor.iban}</div>
+                  </div>
                 </div>
               )}
             </div>
             <div style={styles.modalFooter}>
               <button 
-                onClick={() => setSelectedApp(null)} 
+                onClick={() => setSelectedVendor(null)} 
                 style={{
                   padding: '12px 24px', 
                   borderRadius: '10px', 
@@ -799,52 +757,29 @@ const FullApplicationsPage = () => {
               >
                 Kapat
               </button>
-              {selectedApp.status === 'pending' && (
-                <>
-                  <button 
-                    onClick={() => handleRejectClick(selectedApp)}
-                    style={{
-                      padding: '12px 24px', 
-                      borderRadius: '10px', 
-                      border: 'none', 
-                      background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)', 
-                      color: 'white', 
-                      cursor: 'pointer',
-                      fontWeight: '600',
-                      fontSize: '14px',
-                      boxShadow: '0 4px 12px rgba(239, 68, 68, 0.3)'
-                    }}
-                  >
-                    Reddet
-                  </button>
-                  <button 
-                    onClick={() => {
-                      setSelectedApp(selectedApp);
-                      handleApproveClick(selectedApp);
-                    }}
-                    style={{
-                      padding: '12px 24px', 
-                      borderRadius: '10px', 
-                      border: 'none', 
-                      background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', 
-                      color: 'white', 
-                      cursor: 'pointer',
-                      fontWeight: '600',
-                      fontSize: '14px',
-                      boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)'
-                    }}
-                  >
-                    Onayla
-                  </button>
-                </>
-              )}
+              <button 
+                onClick={() => handleRejectClick(selectedVendor)}
+                style={{
+                  padding: '12px 24px', 
+                  borderRadius: '10px', 
+                  border: 'none', 
+                  background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)', 
+                  color: 'white', 
+                  cursor: 'pointer',
+                  fontWeight: '600',
+                  fontSize: '14px',
+                  boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)'
+                }}
+              >
+                Onayla
+              </button>
             </div>
           </div>
         </div>
       )}
 
       {/* Reject Modal */}
-      {rejectModalOpen && (
+      {rejectModalOpen && selectedVendor && (
         <div style={styles.modalOverlay} onClick={() => setRejectModalOpen(false)}>
           <div style={styles.modalContent} onClick={e => e.stopPropagation()}>
             <div style={{...styles.modalHeader, background: 'linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)'}}>
@@ -867,7 +802,7 @@ const FullApplicationsPage = () => {
             </div>
             <div style={styles.modalBody}>
               <p style={{marginBottom: '16px', fontSize: '14px', color: '#6b7280', lineHeight: '1.5'}}>
-                Lütfen başvuru sahibine iletilecek red nedenini giriniz.
+                <strong>{selectedVendor.full_name || selectedVendor.owner}</strong> için red nedenini giriniz.
               </p>
               <textarea 
                 style={{
@@ -906,7 +841,7 @@ const FullApplicationsPage = () => {
               </button>
               <button 
                 onClick={submitReject}
-                disabled={rejectionReason.length < 10}
+                disabled={rejectionReason.length < 10 || rejectMutation.isPending}
                 style={{
                   padding: '12px 24px', 
                   borderRadius: '10px', 
@@ -921,7 +856,7 @@ const FullApplicationsPage = () => {
                   boxShadow: rejectionReason.length >= 10 ? '0 4px 12px rgba(239, 68, 68, 0.3)' : 'none'
                 }}
               >
-                Reddet
+                {rejectMutation.isPending ? 'Reddediliyor...' : 'Reddet'}
               </button>
             </div>
           </div>

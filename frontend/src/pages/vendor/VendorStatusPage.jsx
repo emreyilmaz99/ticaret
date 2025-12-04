@@ -19,7 +19,7 @@ const VendorStatusPage = () => {
   const { data, isLoading, error } = useQuery({
     queryKey: ['vendor-application-status'],
     queryFn: async () => {
-      const response = await api.get('/vendor/application/status');
+      const response = await api.get('/v1/vendor/application/status');
       return response.data.data;
     },
   });
