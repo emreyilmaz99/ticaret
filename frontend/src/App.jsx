@@ -10,6 +10,7 @@ import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import AdminLayout from './components/AdminLayout'; // Sidebar yapısı burada
 import UserLayout from './components/UserLayout'; // User panel layout
+import PublicLayout from './components/PublicLayout'; // Public layout wrapper
 
 // --- GÜVENLİK ---
 import AdminPrivateRoute from './components/AdminPrivateRoute'; 
@@ -18,6 +19,7 @@ import AdminPrivateRoute from './components/AdminPrivateRoute';
 // 1. Müşteri Sayfaları
 import Home from './pages/public/Home';
 import CategoryProducts from './pages/public/CategoryProducts';
+import ProductDetail from './pages/public/ProductDetail';
 import Login from './pages/public/Login'; // Müşteri Girişi
 import Register from './pages/public/Register'; // Müşteri Kayıt
 import Favorites from './pages/user/Favorites'; // Favorilerim Sayfası
@@ -77,49 +79,15 @@ function App() {
               {/* ======================================= */}
               {/* 1. MÜŞTERİ BÖLÜMÜ (Navbar GÖRÜNSÜN)     */}
               {/* ======================================= */}
-              <Route path="/" element={
-                <>
-                  <Navbar />
-                  <Home />
-                  <Footer />
-                </>
-              } />
-              
-              <Route path="/login" element={
-                <>
-                  <Navbar />
-                  <Login />
-                  <Footer />
-                </>
-              } />
-
-              <Route path="/register" element={
-                <>
-                  <Navbar />
-                  <Register />
-                  <Footer />
-                </>
-              } />
-
-              <Route path="/products" element={
-                <CategoryProducts />
-              } />
-
-              <Route path="/favorites" element={
-                <>
-                  <Navbar />
-                  <Favorites />
-                  <Footer />
-                </>
-              } />
-
-              <Route path="/cart" element={
-                <>
-                  <Navbar />
-                  <Cart />
-                  <Footer />
-                </>
-              } />
+              <Route element={<PublicLayout />}>
+                <Route path="/" element={<Home />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/products" element={<CategoryProducts />} />
+                <Route path="/product/:slug" element={<ProductDetail />} />
+                <Route path="/favorites" element={<Favorites />} />
+                <Route path="/cart" element={<Cart />} />
+              </Route>
 
 
               {/* ======================================= */}

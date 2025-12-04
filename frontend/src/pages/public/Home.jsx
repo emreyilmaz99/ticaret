@@ -70,7 +70,22 @@ const Home = () => {
   ];
 
   // Get products from API response
-  const products = productsData?.data?.products || [];
+  const apiProducts = productsData?.data?.products || [];
+
+  // Static product for testing
+  const staticProduct = {
+    id: 'static-1',
+    name: 'Premium Kablosuz Kulaklık (Örnek Ürün)',
+    price: 3499.90,
+    image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80',
+    rating: 4.8,
+    reviews: 124,
+    discount: 15,
+    category: { name: 'Elektronik' },
+    description: 'Yüksek kaliteli ses deneyimi ve uzun pil ömrü.'
+  };
+
+  const products = [staticProduct, ...apiProducts];
 
   // Filter by rating (client-side since API doesn't support it yet)
   const filteredProducts = products.filter(product => {

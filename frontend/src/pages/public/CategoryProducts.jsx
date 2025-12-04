@@ -5,8 +5,6 @@ import {
   FaFilter, FaChevronDown, FaThLarge, FaList, FaSortAmountDown, 
   FaStar, FaHeart, FaShoppingCart, FaRegHeart, FaCheck, FaExchangeAlt, FaTimes 
 } from 'react-icons/fa';
-import Navbar from '../../components/Navbar';
-import Footer from '../../components/Footer';
 import ProductCard from '../../components/ProductCard';
 import QuickViewModal from '../../components/QuickViewModal';
 import ComparisonModal from '../../components/ComparisonModal';
@@ -85,7 +83,29 @@ const CategoryProducts = () => {
     }
   });
 
-  const products = data?.pages.flatMap(page => page.data?.products || []) || [];
+  // Static product for testing
+  const staticProduct = {
+    id: 'static-1',
+    name: 'Premium Kablosuz Kulaklık (Örnek Ürün)',
+    price: 3499.90,
+    image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80',
+    rating: 4.8,
+    reviews: 124,
+    discount: 15,
+    category: { name: 'Elektronik' },
+    description: 'Yüksek kaliteli ses deneyimi ve uzun pil ömrü.'
+  };
+
+  const fetchedProducts = data?.pages.flatMap(page => page.data?.products || []) || [];
+  
+  // Statik ürünü sadece uygun kategorilerde göster
+  // Eğer alt kategori seçili değilse VEYA alt kategori "kulaklık" içeriyorsa göster
+  // "Dizüstü" gibi alakasız kategorilerde gizle
+  const shouldShowStaticProduct = !subcategoryName || 
+                                  subcategoryName.toLowerCase().includes('kulaklık') || 
+                                  subcategoryName.toLowerCase().includes('aksesuar');
+
+  const products = shouldShowStaticProduct ? [staticProduct, ...fetchedProducts] : fetchedProducts;
 
   // Intersection Observer
   useEffect(() => {
@@ -139,7 +159,6 @@ const CategoryProducts = () => {
   const styles = {
     container: {
       backgroundColor: '#f8fafc',
-      minHeight: '100vh',
       paddingBottom: '80px',
       fontFamily: '"Inter", sans-serif',
     },
@@ -306,7 +325,6 @@ const CategoryProducts = () => {
 
   return (
     <div style={styles.container}>
-      <Navbar />
       
       {/* Category Banner */}
       <div style={styles.banner}>
@@ -531,7 +549,6 @@ const CategoryProducts = () => {
         />
       )}
 
-      <Footer />
     </div>
   );
 };

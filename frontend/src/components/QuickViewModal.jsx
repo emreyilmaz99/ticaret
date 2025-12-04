@@ -1,68 +1,164 @@
-import React from 'react';
-import { FaTimes, FaStar, FaShoppingCart, FaHeart, FaRegHeart } from 'react-icons/fa';
+import React, { useState } from 'react';
+import { FaTimes, FaStar, FaShoppingCart, FaHeart, FaRegHeart, FaCheck, FaArrowRight } from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom';
 
 const QuickViewModal = ({ product, onClose, addToCart, toggleFavorite, favorites }) => {
+  const navigate = useNavigate();
+  const [quantity, setQuantity] = useState(1);
+  const [selectedColor, setSelectedColor] = useState('black');
+
   if (!product) return null;
+
+  const handleViewDetails = () => {
+    onClose();
+    navigate(`/product/${product.slug || product.id}`);
+  };
+
+  // Mock specs if not present
+  const specs = product.specs || {
+    'Bağlantı': 'Bluetooth 5.2',
+    'Pil Ömrü': '30 Saat',
+    'Garanti': '2 Yıl',
+    'Renk': 'Siyah'
+  };
+
   return (
     <div style={{
       position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
-      backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 3000, display: 'flex',
+      backgroundColor: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(4px)', zIndex: 3000, display: 'flex',
       alignItems: 'center', justifyContent: 'center', padding: '20px'
     }} onClick={onClose}>
       <div style={{
-        backgroundColor: 'white', borderRadius: '20px', maxWidth: '900px', width: '100%',
-        display: 'flex', overflow: 'hidden', position: 'relative',
-        animation: 'fadeIn 0.3s ease'
+        backgroundColor: 'white', borderRadius: '24px', maxWidth: '1000px', width: '100%',
+        maxHeight: '90vh', overflowY: 'auto', display: 'flex', position: 'relative',
+        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+        animation: 'slideUp 0.3s ease-out'
       }} onClick={e => e.stopPropagation()}>
+        
         <button onClick={onClose} style={{
-          position: 'absolute', top: '20px', right: '20px', background: 'none', border: 'none',
-          fontSize: '24px', cursor: 'pointer', color: '#64748b', zIndex: 10
+          position: 'absolute', top: '24px', right: '24px', background: 'white', border: '1px solid #e2e8f0',
+          width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: '16px', cursor: 'pointer', color: '#64748b', zIndex: 10, transition: 'all 0.2s',
+          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
         }}><FaTimes /></button>
         
-        <div style={{ width: '50%', backgroundColor: '#f8fafc' }}>
-          <img src={product.image} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-        </div>
-        
-        <div style={{ width: '50%', padding: '40px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          <div style={{ fontSize: '14px', color: '#059669', fontWeight: '600', textTransform: 'uppercase' }}>
-            {product.category}
+        <div style={{ display: 'flex', width: '100%', flexDirection: 'row', flexWrap: 'wrap' }}>
+          {/* Left Side: Image */}
+          <div style={{ 
+            flex: '1 1 400px', 
+            backgroundColor: '#f8fafc', 
+            padding: '40px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            minHeight: '400px'
+          }}>
+            <img src={product.image} alt={product.name} style={{ 
+              width: '100%', maxHeight: '400px', objectFit: 'contain', mixBlendMode: 'multiply' 
+            }} />
           </div>
-          <h2 style={{ fontFamily: '"DM Sans", sans-serif', fontSize: '32px', fontWeight: '700', color: '#1e293b', lineHeight: 1.2 }}>
-            {product.name}
-          </h2>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div style={{ display: 'flex', color: '#f59e0b' }}>
-              {[...Array(5)].map((_, i) => (
-                <FaStar key={i} color={i < Math.floor(product.rating) ? '#f59e0b' : '#cbd5e1'} />
-              ))}
+          
+          {/* Right Side: Details */}
+          <div style={{ flex: '1 1 400px', padding: '40px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            <div>
+              <div style={{ fontSize: '13px', color: '#059669', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px' }}>
+                {typeof product.category === 'object' ? product.category.name : product.category}
+              </div>
+              <h2 style={{ fontFamily: '"Inter", sans-serif', fontSize: '28px', fontWeight: '800', color: '#1e293b', lineHeight: 1.2, marginBottom: '12px' }}>
+                {product.name}
+              </h2>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', backgroundColor: '#fffbeb', padding: '4px 8px', borderRadius: '6px' }}>
+                  <FaStar color="#f59e0b" size={14} />
+                  <span style={{ fontSize: '14px', fontWeight: '700', color: '#b45309' }}>{product.rating || 4.8}</span>
+                </div>
+                <span style={{ color: '#64748b', fontSize: '14px' }}>{product.reviews || 124} Değerlendirme</span>
+                <span style={{ color: '#cbd5e1' }}>|</span>
+                <span style={{ color: '#059669', fontSize: '14px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <FaCheck size={12} /> Stokta Var
+                </span>
+              </div>
             </div>
-            <span style={{ color: '#64748b', fontSize: '14px' }}>({product.reviews} Değerlendirme)</span>
-          </div>
-          <div style={{ fontSize: '32px', fontWeight: '700', color: '#059669' }}>
-            {new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(product.price)}
-          </div>
-          <p style={{ color: '#64748b', lineHeight: '1.6' }}>
-            Bu ürün yüksek kaliteli malzemelerden üretilmiştir. Günlük kullanım için idealdir ve uzun ömürlüdür.
-            Stoklarla sınırlıdır, kaçırmayın!
-          </p>
-          <div style={{ marginTop: 'auto', display: 'flex', gap: '16px' }}>
-            <button onClick={() => addToCart(product)} style={{
-              flex: 1, backgroundColor: '#059669', color: 'white', border: 'none',
-              padding: '16px', borderRadius: '12px', fontWeight: '600', fontSize: '16px',
-              cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
-            }}>
-              <FaShoppingCart /> Sepete Ekle
-            </button>
-            <button onClick={(e) => toggleFavorite(e, product.id)} style={{
-              width: '56px', backgroundColor: '#f1f5f9', border: 'none', borderRadius: '12px',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
-              fontSize: '20px', color: favorites.includes(product.id) ? '#ef4444' : '#64748b'
-            }}>
-              {favorites.includes(product.id) ? <FaHeart /> : <FaRegHeart />}
-            </button>
+
+            <div style={{ fontSize: '32px', fontWeight: '800', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '16px' }}>
+              {new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(product.price)}
+              {product.discount && (
+                <span style={{ fontSize: '18px', color: '#94a3b8', textDecoration: 'line-through', fontWeight: '500' }}>
+                  {new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(product.price * 1.2)}
+                </span>
+              )}
+            </div>
+
+            {/* Specs Table */}
+            <div style={{ backgroundColor: '#f8fafc', borderRadius: '16px', padding: '20px', border: '1px solid #e2e8f0' }}>
+              <h3 style={{ fontSize: '14px', fontWeight: '700', color: '#334155', marginBottom: '12px' }}>Teknik Özellikler</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                {Object.entries(specs).map(([key, value]) => (
+                  <div key={key} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', borderBottom: '1px dashed #cbd5e1', paddingBottom: '4px' }}>
+                    <span style={{ color: '#64748b' }}>{key}</span>
+                    <span style={{ fontWeight: '600', color: '#334155' }}>{value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <div style={{ 
+                  display: 'flex', alignItems: 'center', border: '1px solid #e2e8f0', 
+                  borderRadius: '12px', padding: '0 12px', height: '56px' 
+                }}>
+                  <button 
+                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    style={{ background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer', color: '#64748b', padding: '0 8px' }}
+                  >-</button>
+                  <span style={{ width: '32px', textAlign: 'center', fontWeight: '600' }}>{quantity}</span>
+                  <button 
+                    onClick={() => setQuantity(quantity + 1)}
+                    style={{ background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer', color: '#64748b', padding: '0 8px' }}
+                  >+</button>
+                </div>
+
+                <button onClick={() => addToCart({ ...product, quantity })} style={{
+                  flex: 1, backgroundColor: '#0f172a', color: 'white', border: 'none',
+                  height: '56px', borderRadius: '12px', fontWeight: '600', fontSize: '15px',
+                  cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
+                  transition: 'background-color 0.2s'
+                }}>
+                  <FaShoppingCart /> Sepete Ekle
+                </button>
+                
+                <button onClick={(e) => toggleFavorite && toggleFavorite(e, product.id)} style={{
+                  width: '56px', height: '56px', backgroundColor: 'white', border: '1px solid #e2e8f0', borderRadius: '12px',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+                  fontSize: '20px', color: favorites && favorites.includes(product.id) ? '#ef4444' : '#64748b',
+                  transition: 'all 0.2s'
+                }}>
+                  {favorites && favorites.includes(product.id) ? <FaHeart /> : <FaRegHeart />}
+                </button>
+              </div>
+
+              <button 
+                onClick={handleViewDetails}
+                style={{
+                  width: '100%', padding: '12px', backgroundColor: 'transparent', border: 'none',
+                  color: '#059669', fontWeight: '600', fontSize: '14px', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px'
+                }}
+              >
+                Ürün Detaylarına Git <FaArrowRight size={12} />
+              </button>
+            </div>
           </div>
         </div>
       </div>
+      <style>{`
+        @keyframes slideUp {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
     </div>
   );
 };

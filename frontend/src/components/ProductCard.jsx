@@ -164,7 +164,7 @@ const ProductCard = ({ product, setQuickViewProduct, isCompared, onToggleCompare
   };
 
   return (
-    <div style={styles.card} onClick={() => setQuickViewProduct(product)}>
+    <div style={styles.card} onClick={() => navigate(`/product/${product.slug || product.id}`)}>
       {product.discount && (
         <div style={styles.discountBadge}>%{product.discount} İndirim</div>
       )}

@@ -61,6 +61,17 @@ export const categories = [
           'Tripodlar',
           'Lensler'
         ]
+      },
+      {
+        title: 'Kulaklık & Ses',
+        items: [
+          'Bluetooth Kulaklıklar',
+          'Kablolu Kulaklıklar',
+          'Oyuncu Kulaklıkları',
+          'Hoparlörler',
+          'Soundbar',
+          'Mikrofonlar'
+        ]
       }
     ]
   },
