@@ -1,12 +1,12 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaStar, FaShoppingCart, FaHeart, FaRegHeart, FaEye, FaBolt } from 'react-icons/fa';
+import { FaStar, FaShoppingCart, FaHeart, FaRegHeart, FaEye, FaBolt, FaExchangeAlt } from 'react-icons/fa';
 import { useFavorites } from '../context/FavoritesContext';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/Toast';
 
-const ProductCard = ({ product, setQuickViewProduct }) => {
+const ProductCard = ({ product, setQuickViewProduct, isCompared, onToggleCompare }) => {
   const { isFavorite, addToFavorites, removeFromFavorites } = useFavorites();
   const { addToCart } = useCart();
   const { user } = useAuth();
@@ -184,6 +184,21 @@ const ProductCard = ({ product, setQuickViewProduct }) => {
       >
         <FaEye />
       </button>
+
+      {onToggleCompare && (
+        <button 
+          style={{ 
+            ...styles.cardActionBtn, 
+            top: '92px',
+            backgroundColor: isCompared ? '#059669' : 'white',
+            color: isCompared ? 'white' : '#64748b'
+          }} 
+          onClick={(e) => { e.stopPropagation(); onToggleCompare(product); }}
+          title={isCompared ? "Karşılaştırmadan Çıkar" : "Karşılaştır"}
+        >
+          <FaExchangeAlt />
+        </button>
+      )}
 
       <img src={product.image} alt={product.name} style={styles.cardImage} />
       <div style={styles.cardBody}>

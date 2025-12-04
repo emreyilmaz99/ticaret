@@ -108,7 +108,7 @@ const CategoryMenu = () => {
             onMouseEnter={() => setActiveCategory(category.id)}
           >
             <Link 
-              to={`/?category=${category.id}`} 
+              to={`/products?category=${category.id}`} 
               style={{
                 ...styles.menuLink,
                 ...(activeCategory === category.id ? styles.activeLink : {})
@@ -134,7 +134,7 @@ const CategoryMenu = () => {
                     {sub.items.map((item, idx) => (
                       <li key={idx}>
                         <Link 
-                          to={`/?category=${category.id}&sub=${encodeURIComponent(item)}`}
+                          to={`/products?category=${category.id}&subcategory=${encodeURIComponent(item)}`}
                           style={styles.subItem}
                           onMouseEnter={(e) => {
                             e.target.style.color = styles.subItemHover.color;
