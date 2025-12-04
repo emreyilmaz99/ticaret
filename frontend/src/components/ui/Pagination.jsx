@@ -26,9 +26,6 @@ const Pagination = ({
   showFirstLast = true,
   size = 'md'
 }) => {
-  // Don't render if there's only one page or less
-  if (totalPages <= 1) return null;
-
   // Generate page numbers to display
   const generatePageNumbers = () => {
     const pages = [];

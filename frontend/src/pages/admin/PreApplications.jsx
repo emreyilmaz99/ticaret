@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { getVendors, updateVendorStatus } from '../../features/vendor/api/vendorApi';
 import { useToast } from '../../components/Toast';
+import Pagination from '../../components/ui/Pagination';
 import { 
   FaCheck, FaTimes, FaEye, FaSearch, FaFilePdf, 
   FaExternalLinkAlt, FaUser, FaMapMarkerAlt, FaUniversity,
@@ -21,6 +22,8 @@ const PreApplications = () => {
   const [rejectionReason, setRejectionReason] = useState('');
   const [commissionRate, setCommissionRate] = useState(10);
   const [statusFilter, setStatusFilter] = useState('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [perPage] = useState(10); // Normal: 15, test için düşürülebilir
 
   const statusTabs = [
     { id: 'all', label: 'Tümü' },
@@ -320,13 +323,17 @@ const PreApplications = () => {
 
   // Fetch vendors
   const { data, isLoading, error } = useQuery({
-    queryKey: ['preApplications'],
+    queryKey: ['preApplications', currentPage, perPage],
     queryFn: async () => {
-      const res = await getVendors({ status: 'pre_pending', per_page: 100 });
+      const res = await getVendors({ status: 'pre_pending', per_page: perPage, page: currentPage });
       return res.data; 
     },
+    keepPreviousData: true,
     staleTime: 1000 * 60
   });
+
+  const vendors = data?.data || [];
+  const meta = data?.meta || null;
 
   // Mutation
   const mutation = useMutation({
@@ -377,7 +384,6 @@ const PreApplications = () => {
     setSelectedVendor(null);
   };
 
-  const vendors = data?.data || [];
   const filteredVendors = vendors.filter(v => {
     const matchesSearch = v.storeName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       v.owner?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -505,22 +511,17 @@ const PreApplications = () => {
         </table>
         
         {/* Pagination Footer */}
-        <div style={styles.paginationContainer}>
-          <div style={styles.paginationInfo}>
-            Toplam <strong>{filteredVendors.length}</strong> satıcıdan <strong>{filteredVendors.length > 0 ? 1 : 0}-{filteredVendors.length}</strong> arası gösteriliyor
+        {meta && (
+          <div style={{ padding: '16px 24px', borderTop: '1px solid #e2e8f0' }}>
+            <Pagination
+              currentPage={meta.current_page}
+              totalPages={meta.last_page}
+              totalItems={meta.total}
+              perPage={meta.per_page}
+              onPageChange={setCurrentPage}
+            />
           </div>
-          <div style={styles.paginationControls}>
-            <button style={styles.pageBtn} disabled>
-              &lt;
-            </button>
-            <span style={{ fontSize: '14px', color: '#334155', fontWeight: '500' }}>
-              Sayfa 1 / 1
-            </span>
-            <button style={styles.pageBtn} disabled>
-              &gt;
-            </button>
-          </div>
-        </div>
+        )}
       </div>
 
       {/* Action Modals */}

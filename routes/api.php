@@ -49,6 +49,7 @@ Route::prefix('v1/admin')->group(function () {
         Route::get('users', [UserController::class, 'index']);
         Route::get('users/{user}', [UserController::class, 'show']);
         Route::put('users/{user}', [UserController::class, 'update']);
+        Route::put('users/{user}/toggle-status', [UserController::class, 'toggleStatus']);
         Route::delete('users/{user}', [UserController::class, 'destroy']);
         // vendors CRUD (admin)
         Route::get('vendors', [AdminVendorController::class, 'index']);

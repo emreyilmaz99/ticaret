@@ -4,6 +4,7 @@ import {
   FaBox, FaSearch, FaFilter, FaCheck, FaTimes, FaEye, FaTrash,
   FaClock, FaCheckCircle, FaTimesCircle, FaStore, FaImage
 } from 'react-icons/fa';
+import Pagination from '../../components/ui/Pagination';
 import { getProducts, getProductStatistics, updateProductStatus, bulkUpdateProductStatus, deleteProduct } from '../../features/admin/api/productApi';
 import { useToast } from '../../components/Toast';
 import axios from '../../lib/axios';
@@ -391,27 +392,13 @@ const ProductsPage = () => {
       </table>
 
       {/* Pagination */}
-      {pagination.last_page > 1 && (
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginTop: '24px' }}>
-          {Array.from({ length: pagination.last_page }, (_, i) => i + 1).map(page => (
-            <button
-              key={page}
-              onClick={() => setFilters(f => ({...f, page}))}
-              style={{
-                padding: '8px 14px',
-                borderRadius: '8px',
-                border: 'none',
-                backgroundColor: filters.page === page ? '#4f46e5' : '#f1f5f9',
-                color: filters.page === page ? 'white' : '#475569',
-                cursor: 'pointer',
-                fontWeight: '500'
-              }}
-            >
-              {page}
-            </button>
-          ))}
-        </div>
-      )}
+      <Pagination
+        currentPage={filters.page}
+        totalPages={pagination.last_page || 1}
+        totalItems={pagination.total || 0}
+        perPage={20}
+        onPageChange={(page) => setFilters(f => ({...f, page}))}
+      />
 
       {/* Product Detail Modal */}
       {viewProduct && (
