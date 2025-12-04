@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { FaSearch, FaFilter, FaStore, FaStar, FaEdit, FaBan, FaEye, FaFolder } from 'react-icons/fa';
+import Pagination from '../../../components/ui/Pagination';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import VendorEditModal from './VendorEditModal';
 import VendorCategoryModal from '../../admin/components/VendorCategoryModal';
@@ -95,7 +96,6 @@ const ActiveVendorList = () => {
 
   const totalPages = meta.last_page || 1;
   const currentItems = filteredVendors;
-  const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
   if (isLoading) return <div style={{ padding: '24px', color: 'var(--text-muted)' }}>Yükleniyor...</div>;
 
@@ -160,13 +160,14 @@ const ActiveVendorList = () => {
             )}
           </tbody>
         </table>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 24px', backgroundColor: '#f8fafc', borderTop: '1px solid #e2e8f0' }}>
-          <p style={{ fontSize: '14px', color: 'var(--text-muted)' }}>Toplam <span style={{ fontWeight: '600', color: 'var(--text-main)' }}>{meta.total || 0}</span> satıcıdan <span style={{ fontWeight: '600', color: 'var(--text-main)' }}>{meta.from || 0}-{meta.to || 0}</span> arası gösteriliyor</p>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <button onClick={() => paginate(currentPage - 1)} disabled={currentPage === 1} style={{ padding: '8px 12px', border: '1px solid #e2e8f0', borderRadius: '6px', backgroundColor: 'white', color: currentPage === 1 ? '#cbd5e1' : 'var(--text-main)', cursor: currentPage === 1 ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center' }}>&lt;</button>
-            <span style={{ display: 'flex', alignItems: 'center', padding: '0 12px', fontSize: '14px', fontWeight: '600' }}>Sayfa {currentPage} / {totalPages}</span>
-            <button onClick={() => paginate(currentPage + 1)} disabled={currentPage === totalPages} style={{ padding: '8px 12px', border: '1px solid #e2e8f0', borderRadius: '6px', backgroundColor: 'white', color: currentPage === totalPages ? '#cbd5e1' : 'var(--text-main)', cursor: currentPage === totalPages ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center' }}>&gt;</button>
-          </div>
+        <div style={{ padding: '16px 24px', backgroundColor: '#f8fafc', borderTop: '1px solid #e2e8f0' }}>
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={meta.total || 0}
+            perPage={itemsPerPage}
+            onPageChange={setCurrentPage}
+          />
         </div>
       </div>
 

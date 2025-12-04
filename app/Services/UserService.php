@@ -13,14 +13,14 @@ class UserService extends BaseService
         $this->repo = $repo;
     }
 
-    public function list(int $perPage = 15)
+    public function list(int $perPage = 15, array $filters = [])
     {
-        return $this->repo->paginate($perPage);
+        return $this->repo->paginateWithFilters($perPage, $filters);
     }
 
     public function find(int $id)
     {
-        return $this->repo->find($id);
+        return $this->repo->findWithRelations($id);
     }
 
     public function update(int $id, array $data)
@@ -31,5 +31,16 @@ class UserService extends BaseService
     public function delete(int $id): bool
     {
         return $this->repo->delete($id);
+    }
+
+    public function toggleStatus(int $id): bool
+    {
+        $user = $this->repo->find($id);
+        if (!$user) {
+            return false;
+        }
+        $user->is_active = !$user->is_active;
+        $user->save();
+        return true;
     }
 }

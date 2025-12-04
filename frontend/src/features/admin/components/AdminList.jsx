@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { FaSearch, FaUserShield, FaEdit, FaTrash, FaPlus, FaCheckCircle, FaTimesCircle } from 'react-icons/fa';
+import Pagination from '../../../components/ui/Pagination';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getAdmins, deleteAdmin } from '../api/adminApi';
 import { useToast } from '../../../components/Toast';
@@ -120,13 +121,15 @@ const AdminList = () => {
           </tbody>
         </table>
 
-        {totalPages > 1 && (
-          <div style={{ padding: '16px 24px', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'center', gap: '8px' }}>
-            {Array.from({ length: totalPages }, (_, i) => (
-              <button key={i + 1} onClick={() => paginate(i + 1)} style={{ padding: '6px 12px', borderRadius: '6px', border: currentPage === i + 1 ? 'none' : '1px solid #e2e8f0', backgroundColor: currentPage === i + 1 ? 'var(--primary)' : 'white', color: currentPage === i + 1 ? 'white' : 'var(--text-main)', cursor: 'pointer' }}>{i + 1}</button>
-            ))}
-          </div>
-        )}
+        <div style={{ padding: '16px 24px', borderTop: '1px solid #e2e8f0' }}>
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={filteredAdmins.length}
+            perPage={itemsPerPage}
+            onPageChange={paginate}
+          />
+        </div>
       </div>
     </div>
   );
