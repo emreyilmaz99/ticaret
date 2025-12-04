@@ -17,6 +17,7 @@ import AdminPrivateRoute from './components/AdminPrivateRoute';
 // --- SAYFALAR ---
 // 1. Müşteri Sayfaları
 import Home from './pages/public/Home';
+import CategoryProducts from './pages/public/CategoryProducts';
 import Login from './pages/public/Login'; // Müşteri Girişi
 import Register from './pages/public/Register'; // Müşteri Kayıt
 import Favorites from './pages/user/Favorites'; // Favorilerim Sayfası
@@ -98,6 +99,10 @@ function App() {
                   <Register />
                   <Footer />
                 </>
+              } />
+
+              <Route path="/products" element={
+                <CategoryProducts />
               } />
 
               <Route path="/favorites" element={
