@@ -18,6 +18,13 @@ const Home = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [showCookieBanner, setShowCookieBanner] = useState(true);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
   
   // New Features State
   const [favorites, setFavorites] = useState([]);
@@ -72,20 +79,7 @@ const Home = () => {
   // Get products from API response
   const apiProducts = productsData?.data?.products || [];
 
-  // Static product for testing
-  const staticProduct = {
-    id: 'static-1',
-    name: 'Premium Kablosuz Kulaklık (Örnek Ürün)',
-    price: 3499.90,
-    image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80',
-    rating: 4.8,
-    reviews: 124,
-    discount: 15,
-    category: { name: 'Elektronik' },
-    description: 'Yüksek kaliteli ses deneyimi ve uzun pil ömrü.'
-  };
-
-  const products = [staticProduct, ...apiProducts];
+  const products = apiProducts;
 
   // Filter by rating (client-side since API doesn't support it yet)
   const filteredProducts = products.filter(product => {
@@ -191,50 +185,55 @@ const Home = () => {
     hero: {
       background: 'linear-gradient(135deg, #064e3b 0%, #059669 100%)',
       color: 'white',
-      padding: '80px 0', // Daha fazla boşluk
-      marginBottom: '60px',
+      padding: isMobile ? '40px 0' : '80px 0',
+      marginBottom: isMobile ? '30px' : '60px',
       position: 'relative',
       zIndex: 1,
-      borderRadius: '0 0 60px 60px', // Alt köşeleri yuvarla
+      borderRadius: isMobile ? '0 0 30px 30px' : '0 0 60px 60px',
       boxShadow: '0 20px 60px -20px rgba(6, 78, 59, 0.5)',
     },
     heroContent: {
       maxWidth: '1200px',
       margin: '0 auto',
-      padding: '0 20px',
+      padding: isMobile ? '0 16px' : '0 20px',
       display: 'flex',
+      flexDirection: isMobile ? 'column' : 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
+      gap: isMobile ? '24px' : '0',
     },
     heroText: {
-      maxWidth: '600px',
+      maxWidth: isMobile ? '100%' : '600px',
+      textAlign: isMobile ? 'center' : 'left',
     },
     heroTitle: {
       fontFamily: '"DM Sans", sans-serif',
-      fontSize: '64px', // Daha büyük başlık
+      fontSize: isMobile ? '32px' : '64px',
       fontWeight: '800',
-      marginBottom: '24px',
+      marginBottom: isMobile ? '16px' : '24px',
       lineHeight: '1.05',
-      letterSpacing: '-2px',
+      letterSpacing: isMobile ? '-1px' : '-2px',
     },
     heroSubtitle: {
-      fontSize: '20px',
+      fontSize: isMobile ? '16px' : '20px',
       opacity: 0.9,
-      marginBottom: '40px',
+      marginBottom: isMobile ? '24px' : '40px',
       lineHeight: '1.6',
-      fontWeight: '300', // Daha ince font
+      fontWeight: '300',
     },
     heroButtons: {
       display: 'flex',
-      gap: '20px',
+      flexDirection: isMobile ? 'column' : 'row',
+      gap: isMobile ? '12px' : '20px',
+      alignItems: isMobile ? 'stretch' : 'center',
     },
     heroBtn: {
       backgroundColor: '#ffffff',
       color: '#059669',
-      padding: '18px 40px', // Daha büyük butonlar
+      padding: isMobile ? '14px 24px' : '18px 40px',
       borderRadius: '50px',
       fontWeight: '700',
-      fontSize: '16px',
+      fontSize: isMobile ? '14px' : '16px',
       border: 'none',
       cursor: 'pointer',
       transition: 'transform 0.2s, box-shadow 0.2s',
@@ -242,46 +241,50 @@ const Home = () => {
       textDecoration: 'none',
       display: 'inline-flex',
       alignItems: 'center',
+      justifyContent: 'center',
       gap: '10px',
     },
     secondaryButton: {
-      backgroundColor: 'rgba(255,255,255,0.1)', // Yarı saydam
+      backgroundColor: 'rgba(255,255,255,0.1)',
       backdropFilter: 'blur(10px)',
       color: 'white',
-      padding: '18px 40px',
+      padding: isMobile ? '14px 24px' : '18px 40px',
       borderRadius: '50px',
       fontWeight: '600',
-      fontSize: '16px',
+      fontSize: isMobile ? '14px' : '16px',
       border: '1px solid rgba(255,255,255,0.3)',
       cursor: 'pointer',
       transition: 'all 0.2s',
       textDecoration: 'none',
       display: 'inline-flex',
       alignItems: 'center',
+      justifyContent: 'center',
       gap: '10px',
     },
     mainLayout: {
       maxWidth: '1200px',
       margin: '0 auto',
-      padding: '0 20px',
+      padding: isMobile ? '0 12px' : '0 20px',
       position: 'relative',
       zIndex: 1,
     },
     filterBar: {
       display: 'flex',
+      flexDirection: isMobile ? 'column' : 'row',
       flexWrap: 'wrap',
-      gap: '20px',
-      alignItems: 'center',
+      gap: isMobile ? '12px' : '20px',
+      alignItems: isMobile ? 'stretch' : 'center',
       backgroundColor: 'white',
-      padding: '20px',
-      borderRadius: '24px',
-      marginBottom: '40px',
+      padding: isMobile ? '16px' : '20px',
+      borderRadius: isMobile ? '16px' : '24px',
+      marginBottom: isMobile ? '24px' : '40px',
       boxShadow: '0 10px 30px -10px rgba(0,0,0,0.05)',
     },
     filterGroup: {
       display: 'flex',
       alignItems: 'center',
       gap: '12px',
+      flexWrap: isMobile ? 'wrap' : 'nowrap',
     },
     filterSelect: {
       padding: '10px 16px',
@@ -293,9 +296,11 @@ const Home = () => {
       color: '#334155',
       cursor: 'pointer',
       backgroundColor: '#f8fafc',
+      flex: isMobile ? 1 : 'none',
+      minWidth: isMobile ? '120px' : 'auto',
     },
     filterInput: {
-      width: '80px',
+      width: isMobile ? '70px' : '80px',
       padding: '10px',
       borderRadius: '12px',
       border: '1px solid #e2e8f0',
@@ -319,15 +324,15 @@ const Home = () => {
     },
     grid: {
       display: 'grid',
-      gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', // Biraz daha geniş kartlar
-      gap: '32px',
+      gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(auto-fill, minmax(260px, 1fr))',
+      gap: isMobile ? '12px' : '32px',
     },
     card: {
       backgroundColor: 'white',
-      borderRadius: '32px', // Çok modern, yuvarlak köşeler
+      borderRadius: isMobile ? '16px' : '32px',
       overflow: 'hidden',
-      border: 'none', // Kenarlık yok
-      boxShadow: '0 20px 40px -10px rgba(0, 0, 0, 0.07)', // Derin, yumuşak gölge
+      border: 'none',
+      boxShadow: '0 20px 40px -10px rgba(0, 0, 0, 0.07)',
       transition: 'transform 0.3s ease, box-shadow 0.3s ease',
       position: 'relative',
       cursor: 'pointer',
@@ -337,12 +342,12 @@ const Home = () => {
       aspectRatio: '1/1',
       objectFit: 'cover',
       backgroundColor: '#f8fafc',
-      margin: '12px', // Resim kenarlardan içeride
-      width: 'calc(100% - 24px)',
-      borderRadius: '24px', // Resim de yuvarlak
+      margin: isMobile ? '8px' : '12px',
+      width: isMobile ? 'calc(100% - 16px)' : 'calc(100% - 24px)',
+      borderRadius: isMobile ? '12px' : '24px',
     },
     cardBody: {
-      padding: '0 24px 24px 24px',
+      padding: isMobile ? '0 12px 12px 12px' : '0 24px 24px 24px',
     },
     cardCategory: {
       fontSize: '12px',
@@ -352,12 +357,12 @@ const Home = () => {
       marginBottom: '4px',
     },
     cardTitle: {
-      fontSize: '15px',
+      fontSize: isMobile ? '13px' : '15px',
       fontWeight: '600',
       color: '#1e293b',
       marginBottom: '8px',
       lineHeight: '1.4',
-      height: '42px',
+      height: isMobile ? '36px' : '42px',
       overflow: 'hidden',
     },
     rating: {
@@ -374,7 +379,7 @@ const Home = () => {
       alignItems: 'center',
     },
     price: {
-      fontSize: '18px',
+      fontSize: isMobile ? '14px' : '18px',
       fontWeight: '700',
       color: '#059669',
     },
@@ -409,15 +414,16 @@ const Home = () => {
       transform: 'translateX(-50%)',
       backgroundColor: '#1e293b',
       color: 'white',
-      padding: '16px 24px',
+      padding: isMobile ? '12px 16px' : '16px 24px',
       borderRadius: '12px',
       display: 'flex',
-      alignItems: 'center',
-      gap: '24px',
+      flexDirection: isMobile ? 'column' : 'row',
+      alignItems: isMobile ? 'stretch' : 'center',
+      gap: isMobile ? '12px' : '24px',
       boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.2)',
       zIndex: 2000,
       maxWidth: '90%',
-      width: '600px',
+      width: isMobile ? '95%' : '600px',
     },
     cookieBtn: {
       padding: '8px 20px',
@@ -429,66 +435,71 @@ const Home = () => {
     },
     statsSection: {
       display: 'grid',
-      gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-      gap: '24px',
+      gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(auto-fit, minmax(200px, 1fr))',
+      gap: isMobile ? '12px' : '24px',
       maxWidth: '1000px',
-      margin: '0 auto 80px',
-      padding: '0 20px',
+      margin: isMobile ? '0 auto 40px' : '0 auto 80px',
+      padding: isMobile ? '0 12px' : '0 20px',
       position: 'relative',
       zIndex: 1,
     },
     statCard: {
       background: 'white',
-      borderRadius: '20px',
-      padding: '32px',
+      borderRadius: isMobile ? '16px' : '20px',
+      padding: isMobile ? '20px' : '32px',
       textAlign: 'center',
       boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)',
       transition: 'transform 0.3s ease, box-shadow 0.3s ease',
     },
     statIcon: {
-      width: '60px',
-      height: '60px',
-      borderRadius: '16px',
+      width: isMobile ? '48px' : '60px',
+      height: isMobile ? '48px' : '60px',
+      borderRadius: isMobile ? '12px' : '16px',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       margin: '0 auto 16px',
-      fontSize: '24px',
+      fontSize: isMobile ? '20px' : '24px',
     },
     statNumber: {
-      fontSize: '32px',
+      fontSize: isMobile ? '24px' : '32px',
       fontWeight: '700',
       color: '#064e3b',
       marginBottom: '8px',
     },
     statLabel: {
-      fontSize: '14px',
+      fontSize: isMobile ? '12px' : '14px',
       color: '#64748b',
       fontWeight: '500',
     },
     popularCategories: {
       display: 'flex',
-      justifyContent: 'center',
-      gap: '32px',
-      marginBottom: '60px',
-      flexWrap: 'wrap',
+      justifyContent: isMobile ? 'flex-start' : 'center',
+      gap: isMobile ? '16px' : '32px',
+      marginBottom: isMobile ? '30px' : '60px',
+      flexWrap: isMobile ? 'nowrap' : 'wrap',
+      overflowX: isMobile ? 'auto' : 'visible',
+      padding: isMobile ? '0 12px 12px' : '0',
       position: 'relative',
       zIndex: 1,
+      WebkitOverflowScrolling: 'touch',
     },
     categoryCircle: {
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
-      gap: '12px',
+      gap: isMobile ? '8px' : '12px',
       cursor: 'pointer',
       transition: 'transform 0.2s',
       textDecoration: 'none',
       color: '#334155',
       fontWeight: '600',
+      fontSize: isMobile ? '12px' : '14px',
+      flexShrink: 0,
     },
     catImg: {
-      width: '80px',
-      height: '80px',
+      width: isMobile ? '60px' : '80px',
+      height: isMobile ? '60px' : '80px',
       borderRadius: '50%',
       objectFit: 'cover',
       border: '3px solid white',
@@ -497,17 +508,19 @@ const Home = () => {
     dealSection: {
       background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
       color: 'white',
-      padding: '80px', // Daha geniş iç boşluk
-      borderRadius: '40px', // Çok yuvarlak köşeler
-      margin: '0 auto 100px',
+      padding: isMobile ? '30px 20px' : '80px',
+      borderRadius: isMobile ? '24px' : '40px',
+      margin: isMobile ? '0 12px 40px' : '0 auto 100px',
       maxWidth: '1200px',
       display: 'flex',
+      flexDirection: isMobile ? 'column' : 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
       position: 'relative',
       overflow: 'hidden',
       zIndex: 1,
-      boxShadow: '0 30px 60px -15px rgba(15, 23, 42, 0.4)', // Güçlü gölge
+      boxShadow: '0 30px 60px -15px rgba(15, 23, 42, 0.4)',
+      gap: isMobile ? '24px' : '0',
     },
     brandStrip: {
       padding: '40px 0',
@@ -547,7 +560,7 @@ const Home = () => {
     },
     featuresSection: {
       background: 'white',
-      padding: '80px 20px',
+      padding: isMobile ? '40px 16px' : '80px 20px',
       position: 'relative',
       zIndex: 1,
     },
@@ -568,14 +581,14 @@ const Home = () => {
     },
     featuresGrid: {
       display: 'grid',
-      gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-      gap: '32px',
+      gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(280px, 1fr))',
+      gap: isMobile ? '16px' : '32px',
       maxWidth: '1200px',
       margin: '0 auto',
     },
     featureCard: {
-      padding: '32px',
-      borderRadius: '20px',
+      padding: isMobile ? '24px' : '32px',
+      borderRadius: isMobile ? '16px' : '20px',
       border: '1px solid #e2e8f0',
       transition: 'all 0.3s ease',
       background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
@@ -604,7 +617,7 @@ const Home = () => {
       lineHeight: '1.7',
     },
     ctaSection: {
-      padding: '80px 20px',
+      padding: isMobile ? '40px 16px' : '80px 20px',
       textAlign: 'center',
       background: 'linear-gradient(135deg, #064e3b 0%, #047857 100%)',
       color: 'white',
@@ -667,10 +680,12 @@ const Home = () => {
               </Link>
             </div>
           </div>
-          {/* Placeholder for Hero Image */}
-          <div style={{ width: '400px', height: '300px', backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <span style={{ fontSize: '80px', opacity: 0.5 }}>🛍️</span>
-          </div>
+          {/* Placeholder for Hero Image - Hidden on mobile */}
+          {!isMobile && (
+            <div style={{ width: '400px', height: '300px', backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <span style={{ fontSize: '80px', opacity: 0.5 }}>🛍️</span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -842,32 +857,34 @@ const Home = () => {
 
       {/* Deal of the Day */}
       <div style={styles.dealSection}>
-        <div style={{ position: 'relative', zIndex: 2, maxWidth: '500px' }}>
-          <div style={{ display: 'inline-block', padding: '8px 16px', backgroundColor: '#ef4444', borderRadius: '50px', fontSize: '14px', fontWeight: '700', marginBottom: '24px' }}>
+        <div style={{ position: 'relative', zIndex: 2, maxWidth: isMobile ? '100%' : '500px', textAlign: isMobile ? 'center' : 'left' }}>
+          <div style={{ display: 'inline-block', padding: '8px 16px', backgroundColor: '#ef4444', borderRadius: '50px', fontSize: isMobile ? '12px' : '14px', fontWeight: '700', marginBottom: isMobile ? '16px' : '24px' }}>
             Günün Fırsatı
           </div>
-          <h2 style={{ fontFamily: '"DM Sans", sans-serif', fontSize: '48px', fontWeight: '800', marginBottom: '24px', lineHeight: 1.1 }}>
+          <h2 style={{ fontFamily: '"DM Sans", sans-serif', fontSize: isMobile ? '28px' : '48px', fontWeight: '800', marginBottom: isMobile ? '16px' : '24px', lineHeight: 1.1 }}>
             Premium Kablosuz Kulaklık
           </h2>
-          <p style={{ fontSize: '18px', opacity: 0.8, marginBottom: '32px', lineHeight: 1.6 }}>
+          <p style={{ fontSize: isMobile ? '14px' : '18px', opacity: 0.8, marginBottom: isMobile ? '20px' : '32px', lineHeight: 1.6 }}>
             Üstün ses kalitesi ve gürültü engelleme özelliği ile müziğin keyfini çıkarın. Sınırlı süre için özel indirim.
           </p>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '24px', marginBottom: '40px' }}>
-            <div style={{ fontSize: '36px', fontWeight: '700', color: '#34d399' }}>1.299 TL</div>
-            <div style={{ fontSize: '24px', textDecoration: 'line-through', opacity: 0.5 }}>1.899 TL</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '16px' : '24px', marginBottom: isMobile ? '24px' : '40px', justifyContent: isMobile ? 'center' : 'flex-start' }}>
+            <div style={{ fontSize: isMobile ? '28px' : '36px', fontWeight: '700', color: '#34d399' }}>1.299 TL</div>
+            <div style={{ fontSize: isMobile ? '18px' : '24px', textDecoration: 'line-through', opacity: 0.5 }}>1.899 TL</div>
           </div>
-          <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-            <button onClick={() => addToCart({ id: 99, name: 'Premium Kulaklık', price: 1299 })} style={{ ...styles.heroBtn, backgroundColor: '#34d399', color: '#0f172a' }}>
+          <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: '16px', alignItems: 'center', justifyContent: isMobile ? 'center' : 'flex-start' }}>
+            <button onClick={() => addToCart({ id: 99, name: 'Premium Kulaklık', price: 1299 })} style={{ ...styles.heroBtn, backgroundColor: '#34d399', color: '#0f172a', width: isMobile ? '100%' : 'auto' }}>
               <FaShoppingCart /> Sepete Ekle
             </button>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', backgroundColor: 'rgba(255,255,255,0.1)', padding: '12px 24px', borderRadius: '50px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', backgroundColor: 'rgba(255,255,255,0.1)', padding: isMobile ? '10px 20px' : '12px 24px', borderRadius: '50px' }}>
               <FaClock /> <CountdownTimer />
             </div>
           </div>
         </div>
-        <div style={{ position: 'relative', zIndex: 2 }}>
-          <img src="https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&q=80" alt="Deal Product" style={{ width: '400px', height: '400px', objectFit: 'cover', borderRadius: '24px', transform: 'rotate(-10deg)', boxShadow: '0 20px 50px rgba(0,0,0,0.3)' }} />
-        </div>
+        {!isMobile && (
+          <div style={{ position: 'relative', zIndex: 2 }}>
+            <img src="https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&q=80" alt="Deal Product" style={{ width: '400px', height: '400px', objectFit: 'cover', borderRadius: '24px', transform: 'rotate(-10deg)', boxShadow: '0 20px 50px rgba(0,0,0,0.3)' }} />
+          </div>
+        )}
         {/* Background Pattern */}
         <div style={{ position: 'absolute', top: 0, right: 0, width: '600px', height: '100%', background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.05) 100%)', transform: 'skewX(-20deg)' }}></div>
       </div>

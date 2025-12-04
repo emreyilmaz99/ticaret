@@ -11,11 +11,21 @@ export const FavoritesProvider = ({ children }) => {
   const [count, setCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [initialized, setInitialized] = useState(false);
+  // localStorage'dan badge durumunu oku
+  const [hasNewItems, setHasNewItems] = useState(() => {
+    return localStorage.getItem('favorites_has_new') === 'true';
+  });
   const isFetching = useRef(false);
   const lastUserId = useRef(null);
   
   const { user, loading: authLoading } = useAuth();
   const toast = useToast();
+
+  // Bildirimi temizle (sayfa ziyaret edildiğinde çağrılır)
+  const clearNewItemsBadge = useCallback(() => {
+    setHasNewItems(false);
+    localStorage.removeItem('favorites_has_new');
+  }, []);
 
   // Favorileri yükle
   const fetchFavorites = useCallback(async (showLoading = true) => {
@@ -62,7 +72,7 @@ export const FavoritesProvider = ({ children }) => {
         const ids = new Set();
         items.forEach(item => {
           if (item.product?.id) {
-            ids.add(item.product.id);
+            ids.add(String(item.product.id));
           }
         });
         
@@ -101,24 +111,23 @@ export const FavoritesProvider = ({ children }) => {
   // Ürünün favorilerde olup olmadığını kontrol et
   const isFavorite = useCallback((productId) => {
     if (!productId) return false;
-    const result = favoriteIds.has(productId);
-    return result;
+    return favoriteIds.has(String(productId));
   }, [favoriteIds]);
 
   // Favorilere ekle
   const addToFavorites = async (product) => {
-    const productId = product.id;
+    const productId = String(product.id);
     
     if (!user) {
       // Giriş yapılmamışsa localStorage kullan
-      if (favorites.some(item => item.id === productId)) {
+      if (favorites.some(item => String(item.id) === productId)) {
         toast.info('Bilgi', 'Bu ürün zaten favorilerinizde.');
         return true;
       }
       
-      const newFavorites = [...favorites, { ...product, dateAdded: new Date().toISOString() }];
+      const newFavorites = [...favorites, { ...product, id: productId, dateAdded: new Date().toISOString() }];
       setFavorites(newFavorites);
-      setFavoriteIds(new Set(newFavorites.map(item => item.id)));
+      setFavoriteIds(new Set(newFavorites.map(item => String(item.id))));
       setCount(newFavorites.length);
       localStorage.setItem('user_favorites', JSON.stringify(newFavorites));
       toast.success('Başarılı', 'Ürün favorilere eklendi.');
@@ -134,11 +143,39 @@ export const FavoritesProvider = ({ children }) => {
     // Önce optimistic update yap
     setFavoriteIds(prev => new Set([...prev, productId]));
     setCount(prev => prev + 1);
+    
+    // Favorites listesini de güncelle (Optimistic)
+    setFavorites(prev => {
+      // Zaten listede var mı kontrol et
+      if (prev.some(f => String(f.product?.id || f.id) === productId)) return prev;
+      
+      // API yapısına uygun geçici obje oluştur
+      const newFavoriteItem = {
+        id: 'temp_' + Date.now(),
+        product: {
+          id: productId,
+          name: product.name || product.title,
+          slug: product.slug,
+          image: product.image,
+          price: product.price,
+          compare_price: product.compare_price || product.oldPrice,
+          stock: product.stock,
+          in_stock: product.in_stock
+        }
+      };
+      return [...prev, newFavoriteItem];
+    });
 
     try {
       const response = await favoriteApi.addToFavorites(productId);
       if (response.success) {
         toast.success('Başarılı', 'Ürün favorilere eklendi.');
+        // Yeni ürün eklendi bildirimi
+        setHasNewItems(true);
+        localStorage.setItem('favorites_has_new', 'true');
+        // Gerçek veriyi almak için arka planda yenile - isFetching kontrolünü atla
+        isFetching.current = false;
+        await fetchFavorites(false);
         return true;
       } else {
         // Hata durumunda geri al
@@ -147,6 +184,7 @@ export const FavoritesProvider = ({ children }) => {
           newSet.delete(productId);
           return newSet;
         });
+        setFavorites(prev => prev.filter(f => String(f.product?.id || f.id) !== productId));
         setCount(prev => Math.max(0, prev - 1));
         return false;
       }
@@ -158,6 +196,7 @@ export const FavoritesProvider = ({ children }) => {
         newSet.delete(productId);
         return newSet;
       });
+      setFavorites(prev => prev.filter(f => String(f.product?.id || f.id) !== productId));
       setCount(prev => Math.max(0, prev - 1));
       
       // "Zaten favorilerde" hatası değilse göster
@@ -171,11 +210,12 @@ export const FavoritesProvider = ({ children }) => {
 
   // Favorilerden kaldır
   const removeFromFavorites = async (productId) => {
+    const strProductId = String(productId);
     if (!user) {
       // Giriş yapılmamışsa localStorage kullan
-      const newFavorites = favorites.filter(item => item.id !== productId);
+      const newFavorites = favorites.filter(item => String(item.id) !== strProductId);
       setFavorites(newFavorites);
-      setFavoriteIds(new Set(newFavorites.map(item => item.id)));
+      setFavoriteIds(new Set(newFavorites.map(item => String(item.id))));
       setCount(newFavorites.length);
       localStorage.setItem('user_favorites', JSON.stringify(newFavorites));
       toast.info('Bilgi', 'Ürün favorilerden kaldırıldı.');
@@ -189,16 +229,19 @@ export const FavoritesProvider = ({ children }) => {
     
     setFavoriteIds(prev => {
       const newSet = new Set(prev);
-      newSet.delete(productId);
+      newSet.delete(strProductId);
       return newSet;
     });
-    setFavorites(prev => prev.filter(f => (f.product?.id || f.id) !== productId));
+    setFavorites(prev => prev.filter(f => String(f.product?.id || f.id) !== strProductId));
     setCount(prev => Math.max(0, prev - 1));
 
     try {
-      const response = await favoriteApi.removeFromFavorites(productId);
+      const response = await favoriteApi.removeFromFavorites(strProductId);
       if (response.success) {
         toast.info('Bilgi', 'Ürün favorilerden kaldırıldı.');
+        // Listeyi senkronize et - isFetching kontrolünü atla
+        isFetching.current = false;
+        await fetchFavorites(false);
         return true;
       } else {
         // Hata durumunda geri al
@@ -263,12 +306,14 @@ export const FavoritesProvider = ({ children }) => {
       count,
       loading,
       initialized,
+      hasNewItems,
       addToFavorites, 
       removeFromFavorites, 
       toggleFavorite,
       clearFavorites, 
       isFavorite,
       fetchFavorites,
+      clearNewItemsBadge,
     }}>
       {children}
     </FavoritesContext.Provider>

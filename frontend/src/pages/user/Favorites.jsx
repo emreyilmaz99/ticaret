@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   FaTrash, FaShoppingCart, FaHeartBroken, FaArrowLeft, 
@@ -10,11 +10,24 @@ import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../components/Toast';
 
 const Favorites = () => {
-  const { favorites, removeFromFavorites, clearFavorites, loading, count } = useFavorites();
+  const { favorites, removeFromFavorites, clearFavorites, loading, count, fetchFavorites, clearNewItemsBadge } = useFavorites();
   const { addToCart } = useCart();
   const { user } = useAuth();
   const toast = useToast();
   const [sortBy, setSortBy] = useState('date'); // date, price-asc, price-desc
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+  
+  // Sayfa açıldığında favorileri yenile ve bildirimi temizle
+  useEffect(() => {
+    fetchFavorites(true);
+    clearNewItemsBadge();
+  }, []);
 
   // Helper: API formatı veya localStorage formatı
   const getProduct = (item) => {
@@ -88,25 +101,25 @@ const Favorites = () => {
     container: {
       maxWidth: '1200px',
       margin: '0 auto',
-      padding: '40px 20px',
+      padding: isMobile ? '20px 12px' : '40px 20px',
       fontFamily: '"Inter", sans-serif',
       minHeight: '60vh',
     },
     header: {
       display: 'flex',
+      flexDirection: isMobile ? 'column' : 'row',
       justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: '32px',
-      flexWrap: 'wrap',
-      gap: '20px',
+      alignItems: isMobile ? 'flex-start' : 'center',
+      marginBottom: isMobile ? '20px' : '32px',
+      gap: isMobile ? '16px' : '20px',
     },
     titleGroup: {
       display: 'flex',
       alignItems: 'center',
-      gap: '16px',
+      gap: isMobile ? '12px' : '16px',
     },
     title: {
-      fontSize: '32px',
+      fontSize: isMobile ? '24px' : '32px',
       fontWeight: '800',
       color: '#0f172a',
       letterSpacing: '-1px',
@@ -115,29 +128,32 @@ const Favorites = () => {
     countBadge: {
       backgroundColor: '#f1f5f9',
       color: '#64748b',
-      padding: '6px 12px',
+      padding: isMobile ? '4px 10px' : '6px 12px',
       borderRadius: '20px',
-      fontSize: '14px',
+      fontSize: isMobile ? '12px' : '14px',
       fontWeight: '600',
     },
     actions: {
       display: 'flex',
-      gap: '12px',
+      gap: isMobile ? '8px' : '12px',
       flexWrap: 'wrap',
+      width: isMobile ? '100%' : 'auto',
     },
     actionBtn: {
       display: 'flex',
       alignItems: 'center',
       gap: '8px',
-      padding: '10px 20px',
+      padding: isMobile ? '8px 12px' : '10px 20px',
       borderRadius: '12px',
       border: '1px solid #e2e8f0',
       backgroundColor: 'white',
       color: '#475569',
-      fontSize: '14px',
+      fontSize: isMobile ? '12px' : '14px',
       fontWeight: '600',
       cursor: 'pointer',
       transition: 'all 0.2s',
+      flex: isMobile ? '1' : 'none',
+      justifyContent: 'center',
     },
     primaryBtn: {
       backgroundColor: '#059669',
@@ -147,12 +163,12 @@ const Favorites = () => {
     },
     grid: {
       display: 'grid',
-      gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-      gap: '24px',
+      gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(auto-fill, minmax(280px, 1fr))',
+      gap: isMobile ? '12px' : '24px',
     },
     card: {
       backgroundColor: 'white',
-      borderRadius: '20px',
+      borderRadius: isMobile ? '16px' : '20px',
       border: '1px solid #f1f5f9',
       overflow: 'hidden',
       position: 'relative',
@@ -165,37 +181,37 @@ const Favorites = () => {
     },
     imageContainer: {
       position: 'relative',
-      paddingTop: '100%', // 1:1 Aspect Ratio
+      width: '100%',
+      height: isMobile ? '180px' : '280px',
       backgroundColor: '#f8fafc',
       overflow: 'hidden',
+      display: 'block',
     },
     image: {
-      position: 'absolute',
-      top: 0,
-      left: 0,
       width: '100%',
       height: '100%',
-      objectFit: 'cover',
+      objectFit: 'contain',
       transition: 'transform 0.5s ease',
+      padding: isMobile ? '8px' : '16px',
     },
     discountBadge: {
       position: 'absolute',
-      top: '16px',
-      left: '16px',
+      top: isMobile ? '8px' : '16px',
+      left: isMobile ? '8px' : '16px',
       backgroundColor: '#ef4444',
       color: 'white',
-      fontSize: '12px',
+      fontSize: isMobile ? '10px' : '12px',
       fontWeight: '700',
-      padding: '4px 8px',
+      padding: isMobile ? '2px 6px' : '4px 8px',
       borderRadius: '6px',
       zIndex: 2,
     },
     removeBtn: {
       position: 'absolute',
-      top: '16px',
-      right: '16px',
-      width: '36px',
-      height: '36px',
+      top: isMobile ? '8px' : '16px',
+      right: isMobile ? '8px' : '16px',
+      width: isMobile ? '30px' : '36px',
+      height: isMobile ? '30px' : '36px',
       borderRadius: '50%',
       backgroundColor: 'rgba(255, 255, 255, 0.9)',
       backdropFilter: 'blur(4px)',
@@ -210,25 +226,25 @@ const Favorites = () => {
       boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
     },
     content: {
-      padding: '20px',
+      padding: isMobile ? '12px' : '20px',
     },
     vendorName: {
-      fontSize: '12px',
+      fontSize: isMobile ? '10px' : '12px',
       color: '#94a3b8',
       fontWeight: '600',
-      marginBottom: '8px',
+      marginBottom: isMobile ? '4px' : '8px',
     },
     productTitle: {
-      fontSize: '16px',
+      fontSize: isMobile ? '13px' : '16px',
       fontWeight: '700',
       color: '#1e293b',
-      marginBottom: '12px',
+      marginBottom: isMobile ? '8px' : '12px',
       lineHeight: '1.4',
       display: '-webkit-box',
       WebkitLineClamp: 2,
       WebkitBoxOrient: 'vertical',
       overflow: 'hidden',
-      height: '44px',
+      height: isMobile ? '36px' : '44px',
       textDecoration: 'none',
     },
     priceRow: {

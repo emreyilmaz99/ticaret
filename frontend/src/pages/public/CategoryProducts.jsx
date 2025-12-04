@@ -17,15 +17,23 @@ const CategoryProducts = () => {
   const categoryId = searchParams.get('category');
   const subcategoryName = searchParams.get('subcategory');
   
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const [viewMode, setViewMode] = useState('grid');
   const [sortBy, setSortBy] = useState('featured');
   const [priceRange, setPriceRange] = useState({ min: '', max: '' });
   const [selectedBrands, setSelectedBrands] = useState([]);
   const [quickViewProduct, setQuickViewProduct] = useState(null);
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
   
   // Comparison State
   const [compareList, setCompareList] = useState([]);
   const [isCompareModalOpen, setIsCompareModalOpen] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const { addToCart } = useCart();
   const { showToast } = useToast();
@@ -82,19 +90,6 @@ const CategoryProducts = () => {
       return currentPage < lastPageNum ? currentPage + 1 : undefined;
     }
   });
-
-  // Static product for testing
-  const staticProduct = {
-    id: 'static-1',
-    name: 'Premium Kablosuz Kulaklık (Örnek Ürün)',
-    price: 3499.90,
-    image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80',
-    rating: 4.8,
-    reviews: 124,
-    discount: 15,
-    category: { name: 'Elektronik' },
-    description: 'Yüksek kaliteli ses deneyimi ve uzun pil ömrü.'
-  };
 
   const fetchedProducts = data?.pages.flatMap(page => page.data?.products || []) || [];
   
@@ -159,11 +154,11 @@ const CategoryProducts = () => {
   const styles = {
     container: {
       backgroundColor: '#f8fafc',
-      paddingBottom: '80px',
+      paddingBottom: isMobile ? '60px' : '80px',
       fontFamily: '"Inter", sans-serif',
     },
     banner: {
-      height: '200px',
+      height: isMobile ? '140px' : '200px',
       width: '100%',
       backgroundImage: `linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url(${currentBanner.image})`,
       backgroundSize: 'cover',
@@ -174,25 +169,26 @@ const CategoryProducts = () => {
       alignItems: 'center',
       color: 'white',
       textAlign: 'center',
-      marginBottom: '32px',
+      marginBottom: isMobile ? '20px' : '32px',
+      padding: isMobile ? '0 16px' : '0',
     },
     bannerTitle: {
-      fontSize: '32px',
+      fontSize: isMobile ? '22px' : '32px',
       fontWeight: '800',
       marginBottom: '8px',
     },
     bannerDesc: {
-      fontSize: '16px',
+      fontSize: isMobile ? '13px' : '16px',
       opacity: 0.9,
       maxWidth: '600px',
     },
     wrapper: {
       maxWidth: '1200px',
       margin: '0 auto',
-      padding: '0 20px',
+      padding: isMobile ? '0 12px' : '0 20px',
     },
     breadcrumb: {
-      display: 'flex',
+      display: isMobile ? 'none' : 'flex',
       alignItems: 'center',
       gap: '8px',
       fontSize: '13px',
@@ -201,32 +197,35 @@ const CategoryProducts = () => {
     },
     content: {
       display: 'flex',
-      gap: '32px',
+      gap: isMobile ? '16px' : '32px',
       alignItems: 'flex-start',
+      flexDirection: isMobile ? 'column' : 'row',
     },
     sidebar: {
-      width: '260px',
+      width: isMobile ? '100%' : '260px',
       flexShrink: 0,
       backgroundColor: 'white',
-      borderRadius: '16px',
+      borderRadius: isMobile ? '12px' : '16px',
       border: '1px solid #e2e8f0',
-      padding: '24px',
-      position: 'sticky',
-      top: '20px',
+      padding: isMobile ? '16px' : '24px',
+      position: isMobile ? 'relative' : 'sticky',
+      top: isMobile ? 'auto' : '20px',
+      display: isMobile && !showMobileFilters ? 'none' : 'block',
     },
     main: {
       flex: 1,
+      width: '100%',
     },
     filterSection: {
-      marginBottom: '24px',
+      marginBottom: isMobile ? '16px' : '24px',
       borderBottom: '1px solid #f1f5f9',
-      paddingBottom: '24px',
+      paddingBottom: isMobile ? '16px' : '24px',
     },
     filterTitle: {
-      fontSize: '14px',
+      fontSize: isMobile ? '13px' : '14px',
       fontWeight: '700',
       color: '#1e293b',
-      marginBottom: '16px',
+      marginBottom: isMobile ? '12px' : '16px',
       display: 'flex',
       justifyContent: 'space-between',
       alignItems: 'center',
@@ -234,75 +233,91 @@ const CategoryProducts = () => {
     checkboxLabel: {
       display: 'flex',
       alignItems: 'center',
-      gap: '10px',
-      fontSize: '14px',
+      gap: isMobile ? '8px' : '10px',
+      fontSize: isMobile ? '13px' : '14px',
       color: '#475569',
-      marginBottom: '12px',
+      marginBottom: isMobile ? '10px' : '12px',
       cursor: 'pointer',
     },
     priceInputs: {
       display: 'flex',
-      gap: '10px',
+      gap: isMobile ? '8px' : '10px',
       alignItems: 'center',
     },
     priceInput: {
       width: '100%',
-      padding: '8px 12px',
+      padding: isMobile ? '8px 10px' : '8px 12px',
       borderRadius: '8px',
       border: '1px solid #e2e8f0',
-      fontSize: '13px',
+      fontSize: isMobile ? '12px' : '13px',
       outline: 'none',
     },
     sortBar: {
       display: 'flex',
       justifyContent: 'space-between',
       alignItems: 'center',
-      marginBottom: '24px',
+      marginBottom: isMobile ? '16px' : '24px',
       backgroundColor: 'white',
-      padding: '16px 24px',
-      borderRadius: '12px',
+      padding: isMobile ? '12px 14px' : '16px 24px',
+      borderRadius: isMobile ? '10px' : '12px',
       border: '1px solid #e2e8f0',
+      flexWrap: isMobile ? 'wrap' : 'nowrap',
+      gap: isMobile ? '10px' : '0',
+    },
+    mobileFilterBtn: {
+      display: isMobile ? 'flex' : 'none',
+      alignItems: 'center',
+      gap: '6px',
+      padding: '8px 14px',
+      backgroundColor: '#f1f5f9',
+      border: '1px solid #e2e8f0',
+      borderRadius: '8px',
+      fontSize: '13px',
+      fontWeight: '500',
+      color: '#475569',
+      cursor: 'pointer',
     },
     select: {
-      padding: '8px 12px',
+      padding: isMobile ? '6px 10px' : '8px 12px',
       borderRadius: '8px',
       border: '1px solid #e2e8f0',
-      fontSize: '14px',
+      fontSize: isMobile ? '12px' : '14px',
       color: '#475569',
       outline: 'none',
       cursor: 'pointer',
     },
     grid: {
       display: 'grid',
-      gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
-      gap: '24px',
+      gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(auto-fill, minmax(240px, 1fr))',
+      gap: isMobile ? '12px' : '24px',
     },
     emptyState: {
       textAlign: 'center',
-      padding: '60px',
+      padding: isMobile ? '40px 20px' : '60px',
       backgroundColor: 'white',
-      borderRadius: '16px',
+      borderRadius: isMobile ? '12px' : '16px',
       border: '1px solid #e2e8f0',
       color: '#64748b',
     },
     compareBar: {
       position: 'fixed',
-      bottom: '20px',
+      bottom: isMobile ? '10px' : '20px',
       left: '50%',
       transform: 'translateX(-50%)',
       backgroundColor: 'white',
-      padding: '16px 24px',
-      borderRadius: '16px',
+      padding: isMobile ? '12px 16px' : '16px 24px',
+      borderRadius: isMobile ? '12px' : '16px',
       boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
       display: 'flex',
       alignItems: 'center',
-      gap: '24px',
+      gap: isMobile ? '12px' : '24px',
       zIndex: 1000,
       border: '1px solid #e2e8f0',
       animation: 'slideUp 0.3s ease',
+      maxWidth: isMobile ? '95%' : 'auto',
     },
     compareBtn: {
-      padding: '10px 20px',
+      padding: isMobile ? '8px 14px' : '10px 20px',
       backgroundColor: '#059669',
       color: 'white',
       border: 'none',
@@ -311,12 +326,13 @@ const CategoryProducts = () => {
       cursor: 'pointer',
       display: 'flex',
       alignItems: 'center',
-      gap: '8px',
+      gap: isMobile ? '6px' : '8px',
+      fontSize: isMobile ? '12px' : '14px',
     },
     compareItem: {
       position: 'relative',
-      width: '40px',
-      height: '40px',
+      width: isMobile ? '32px' : '40px',
+      height: isMobile ? '32px' : '40px',
       borderRadius: '8px',
       border: '1px solid #e2e8f0',
       overflow: 'hidden',
@@ -348,6 +364,17 @@ const CategoryProducts = () => {
           
           {/* Sidebar Filters */}
           <aside style={styles.sidebar}>
+            {isMobile && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                <span style={{ fontWeight: '600', fontSize: '16px' }}>Filtreler</span>
+                <button 
+                  onClick={() => setShowMobileFilters(false)} 
+                  style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: '#64748b' }}
+                >
+                  <FaTimes />
+                </button>
+              </div>
+            )}
             <div style={styles.filterSection}>
               <div style={styles.filterTitle}>Fiyat Aralığı</div>
               <div style={styles.priceInputs}>
@@ -410,7 +437,15 @@ const CategoryProducts = () => {
           <main style={styles.main}>
             {/* Sort & View Bar */}
             <div style={styles.sortBar}>
-              <div style={{ display: 'flex', gap: '12px' }}>
+              {isMobile && (
+                <button 
+                  style={styles.mobileFilterBtn}
+                  onClick={() => setShowMobileFilters(true)}
+                >
+                  <FaFilter /> Filtrele
+                </button>
+              )}
+              <div style={{ display: isMobile ? 'none' : 'flex', gap: '12px' }}>
                 <button 
                   onClick={() => setViewMode('grid')}
                   style={{ 

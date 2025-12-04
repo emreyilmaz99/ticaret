@@ -18,7 +18,17 @@ export const CartProvider = ({ children }) => {
   });
   const [loading, setLoading] = useState(false);
   const [initialized, setInitialized] = useState(false);
+  // localStorage'dan badge durumunu oku
+  const [hasNewItems, setHasNewItems] = useState(() => {
+    return localStorage.getItem('cart_has_new') === 'true';
+  });
   const toast = useToast();
+
+  // Bildirimi temizle (sayfa ziyaret edildiğinde çağrılır)
+  const clearNewItemsBadge = useCallback(() => {
+    setHasNewItems(false);
+    localStorage.removeItem('cart_has_new');
+  }, []);
 
   // Sepeti API'den yükle
   const fetchCart = useCallback(async () => {
@@ -68,6 +78,9 @@ export const CartProvider = ({ children }) => {
         setCartItems(response.data.items || []);
         setTotals(response.data.totals);
         setCoupon(response.data.coupon);
+        // Yeni ürün eklendi bildirimi
+        setHasNewItems(true);
+        localStorage.setItem('cart_has_new', 'true');
         toast.success('Başarılı', response.message || 'Ürün sepete eklendi');
       }
     } catch (error) {
@@ -210,6 +223,8 @@ export const CartProvider = ({ children }) => {
       totals,
       loading,
       initialized,
+      hasNewItems,
+      clearNewItemsBadge,
       itemCount: totals.item_count || cartItems.length,
     }}>
       {children}

@@ -24,6 +24,7 @@ const UserAddresses = () => {
   const toast = useToast();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const [form, setForm] = useState({
     label: 'Ev',
     full_name: '',
@@ -138,19 +139,28 @@ const UserAddresses = () => {
     }
   };
 
+  // useEffect for isMobile
+  React.useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   const styles = {
     container: {
       fontFamily: '"Inter", sans-serif',
       color: '#1e293b',
     },
     header: {
-      marginBottom: '32px',
+      marginBottom: isMobile ? '20px' : '32px',
       display: 'flex',
+      flexDirection: isMobile ? 'column' : 'row',
       justifyContent: 'space-between',
-      alignItems: 'center',
+      alignItems: isMobile ? 'flex-start' : 'center',
+      gap: isMobile ? '12px' : '0',
     },
     title: {
-      fontSize: '20px',
+      fontSize: isMobile ? '18px' : '20px',
       fontWeight: '700',
       color: '#1e293b',
     },
@@ -158,31 +168,33 @@ const UserAddresses = () => {
       backgroundColor: '#059669',
       color: 'white',
       border: 'none',
-      padding: '10px 20px',
+      padding: isMobile ? '10px 16px' : '10px 20px',
       borderRadius: '10px',
       fontWeight: '600',
       cursor: 'pointer',
       display: 'flex',
       alignItems: 'center',
       gap: '8px',
-      fontSize: '14px',
+      fontSize: isMobile ? '13px' : '14px',
       transition: 'background 0.2s',
+      width: isMobile ? '100%' : 'auto',
+      justifyContent: 'center',
     },
     formCard: {
       backgroundColor: '#f8fafc',
-      padding: '24px',
-      borderRadius: '16px',
+      padding: isMobile ? '16px' : '24px',
+      borderRadius: isMobile ? '12px' : '16px',
       border: '1px solid #e2e8f0',
-      marginBottom: '24px',
+      marginBottom: isMobile ? '16px' : '24px',
     },
     formHeader: {
       display: 'flex',
       justifyContent: 'space-between',
       alignItems: 'center',
-      marginBottom: '24px',
+      marginBottom: isMobile ? '16px' : '24px',
     },
     formTitle: {
-      fontSize: '16px',
+      fontSize: isMobile ? '14px' : '16px',
       fontWeight: '700',
       margin: 0,
       display: 'flex',
@@ -198,33 +210,33 @@ const UserAddresses = () => {
     },
     label: {
       display: 'block',
-      fontSize: '13px',
+      fontSize: isMobile ? '12px' : '13px',
       fontWeight: '600',
       color: '#475569',
       marginBottom: '6px',
     },
     input: {
       width: '100%',
-      padding: '10px 12px 10px 36px',
-      borderRadius: '10px',
+      padding: isMobile ? '10px 12px 10px 32px' : '10px 12px 10px 36px',
+      borderRadius: isMobile ? '8px' : '10px',
       border: '1px solid #e2e8f0',
       outline: 'none',
-      fontSize: '14px',
+      fontSize: isMobile ? '13px' : '14px',
       transition: 'all 0.2s',
       backgroundColor: 'white',
     },
     grid: {
       display: 'grid',
-      gridTemplateColumns: '1fr 1fr',
-      gap: '16px',
-      marginBottom: '16px',
+      gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
+      gap: isMobile ? '12px' : '16px',
+      marginBottom: isMobile ? '12px' : '16px',
     },
     addressCard: {
       backgroundColor: 'white',
-      padding: '20px',
-      borderRadius: '16px',
+      padding: isMobile ? '16px' : '20px',
+      borderRadius: isMobile ? '12px' : '16px',
       border: '1px solid #e2e8f0',
-      marginBottom: '16px',
+      marginBottom: isMobile ? '12px' : '16px',
       position: 'relative',
       transition: 'all 0.2s',
     },
@@ -238,9 +250,9 @@ const UserAddresses = () => {
       right: '16px',
       backgroundColor: '#059669',
       color: 'white',
-      padding: '4px 12px',
+      padding: isMobile ? '3px 10px' : '4px 12px',
       borderRadius: '12px',
-      fontSize: '11px',
+      fontSize: isMobile ? '10px' : '11px',
       fontWeight: '700',
       display: 'flex',
       alignItems: 'center',
@@ -249,13 +261,13 @@ const UserAddresses = () => {
     labelBadge: {
       backgroundColor: '#ecfdf5',
       color: '#059669',
-      padding: '4px 10px',
+      padding: isMobile ? '3px 8px' : '4px 10px',
       borderRadius: '6px',
-      fontSize: '12px',
+      fontSize: isMobile ? '11px' : '12px',
       fontWeight: '600',
     },
     actionButton: {
-      padding: '8px',
+      padding: isMobile ? '6px' : '8px',
       border: 'none',
       borderRadius: '8px',
       cursor: 'pointer',

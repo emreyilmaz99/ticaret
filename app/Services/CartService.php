@@ -361,6 +361,23 @@ class CartService extends BaseService
 
         $items = $cart->items->map(function ($item) {
             $mainPhoto = $item->product?->photos?->sortBy('sort_order')->first();
+            
+            // Resim URL'sini düzgün şekilde oluştur
+            $imageUrl = null;
+            if ($mainPhoto) {
+                // Önce path'i kontrol et, çünkü url zaten /storage/... formatında olabilir
+                if ($mainPhoto->path) {
+                    $imageUrl = url('storage/' . $mainPhoto->path);
+                } elseif ($mainPhoto->url) {
+                    // URL tam bir URL mi kontrol et
+                    if (filter_var($mainPhoto->url, FILTER_VALIDATE_URL)) {
+                        $imageUrl = $mainPhoto->url;
+                    } else {
+                        // Göreceli URL ise tam URL'e çevir
+                        $imageUrl = url(ltrim($mainPhoto->url, '/'));
+                    }
+                }
+            }
 
             return [
                 'id' => $item->id,
@@ -373,7 +390,7 @@ class CartService extends BaseService
                     'id' => $item->product?->id,
                     'name' => $item->product?->name,
                     'slug' => $item->product?->slug,
-                    'image' => $mainPhoto ? ($mainPhoto->url ?: asset('storage/' . $mainPhoto->path)) : null,
+                    'image' => $imageUrl,
                 ],
                 'variant' => $item->variant ? [
                     'id' => $item->variant->id,

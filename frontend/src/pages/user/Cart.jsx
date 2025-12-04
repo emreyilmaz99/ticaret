@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useCart } from '../../context/CartContext';
 import { Link } from 'react-router-dom';
 import { FiTrash2, FiMinus, FiPlus, FiShoppingBag, FiArrowRight, FiTag, FiX, FiLoader } from 'react-icons/fi';
@@ -14,10 +14,23 @@ const Cart = () => {
     coupon, 
     totals,
     loading,
-    initialized
+    initialized,
+    clearNewItemsBadge
   } = useCart();
 
   const [couponInput, setCouponInput] = useState('');
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+  
+  // Sayfa açıldığında bildirimi temizle
+  useEffect(() => {
+    clearNewItemsBadge();
+  }, []);
 
   const handleApplyCoupon = (e) => {
     e.preventDefault();
@@ -30,7 +43,7 @@ const Cart = () => {
     container: {
       maxWidth: '1200px',
       margin: '0 auto',
-      padding: '40px 20px',
+      padding: isMobile ? '20px 12px' : '40px 20px',
       fontFamily: '"Inter", sans-serif',
       minHeight: '80vh',
     },
@@ -41,15 +54,16 @@ const Cart = () => {
       justifyContent: 'center',
       minHeight: '60vh',
       textAlign: 'center',
+      padding: isMobile ? '20px' : '0',
     },
     emptyIconBg: {
       backgroundColor: '#f8fafc',
-      padding: '32px',
+      padding: isMobile ? '24px' : '32px',
       borderRadius: '50%',
       marginBottom: '24px',
     },
     emptyTitle: {
-      fontSize: '24px',
+      fontSize: isMobile ? '20px' : '24px',
       fontWeight: '700',
       color: '#1e293b',
       marginBottom: '8px',
@@ -59,11 +73,12 @@ const Cart = () => {
       marginBottom: '32px',
       maxWidth: '400px',
       lineHeight: '1.5',
+      fontSize: isMobile ? '14px' : '16px',
     },
     startShoppingBtn: {
       backgroundColor: '#059669',
       color: 'white',
-      padding: '12px 32px',
+      padding: isMobile ? '10px 24px' : '12px 32px',
       borderRadius: '12px',
       fontWeight: '600',
       textDecoration: 'none',
@@ -72,46 +87,47 @@ const Cart = () => {
       gap: '8px',
       boxShadow: '0 4px 12px rgba(5, 150, 105, 0.2)',
       transition: 'transform 0.2s',
+      fontSize: isMobile ? '14px' : '16px',
     },
     header: {
       display: 'flex',
       alignItems: 'center',
       gap: '12px',
-      marginBottom: '32px',
+      marginBottom: isMobile ? '20px' : '32px',
     },
     headerTitle: {
-      fontSize: '32px',
+      fontSize: isMobile ? '24px' : '32px',
       fontWeight: '800',
       color: '#1e293b',
       margin: 0,
     },
     headerCount: {
-      fontSize: '18px',
+      fontSize: isMobile ? '14px' : '18px',
       fontWeight: '500',
       color: '#64748b',
     },
     layout: {
       display: 'flex',
-      gap: '32px',
-      flexWrap: 'wrap',
+      flexDirection: isMobile ? 'column' : 'row',
+      gap: isMobile ? '24px' : '32px',
     },
     productList: {
       flex: '1',
-      minWidth: '300px',
+      minWidth: 0,
     },
     summary: {
-      width: '380px',
+      width: isMobile ? '100%' : '380px',
       flexShrink: 0,
     },
     card: {
       backgroundColor: 'white',
-      borderRadius: '24px',
+      borderRadius: isMobile ? '16px' : '24px',
       border: '1px solid #e2e8f0',
       overflow: 'hidden',
       boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
     },
     tableHeader: {
-      display: 'grid',
+      display: isMobile ? 'none' : 'grid',
       gridTemplateColumns: '2fr 1fr 1fr 1fr',
       padding: '16px 24px',
       backgroundColor: '#f8fafc',
@@ -121,20 +137,21 @@ const Cart = () => {
       color: '#64748b',
     },
     cartItem: {
-      padding: '24px',
+      padding: isMobile ? '16px' : '24px',
       borderBottom: '1px solid #f1f5f9',
-      display: 'grid',
+      display: isMobile ? 'flex' : 'grid',
+      flexDirection: isMobile ? 'column' : 'row',
       gridTemplateColumns: '2fr 1fr 1fr 1fr',
-      alignItems: 'center',
+      alignItems: isMobile ? 'flex-start' : 'center',
       gap: '16px',
     },
     productInfo: {
       display: 'flex',
-      gap: '16px',
+      gap: isMobile ? '12px' : '16px',
     },
     productImage: {
-      width: '80px',
-      height: '80px',
+      width: isMobile ? '70px' : '80px',
+      height: isMobile ? '70px' : '80px',
       borderRadius: '12px',
       objectFit: 'cover',
       border: '1px solid #e2e8f0',

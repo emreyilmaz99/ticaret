@@ -18,12 +18,12 @@ class FavoriteService extends BaseService
     /**
      * Get user's favorites
      */
-    public function getFavorites(string $userId, int $perPage = 20): ServiceResponse
+    public function getFavorites(int $userId, int $perPage = 20): ServiceResponse
     {
         try {
             $favorites = $this->favoriteRepo->getForUser($userId, $perPage);
 
-            $items = $favorites->getCollection()->map(function ($favorite) {
+            $items = collect($favorites->items())->map(function ($favorite) {
                 return $this->formatFavoriteItem($favorite);
             })->filter()->values();
 
@@ -44,7 +44,7 @@ class FavoriteService extends BaseService
     /**
      * Add product to favorites
      */
-    public function addFavorite(string $userId, string $productId): ServiceResponse
+    public function addFavorite(int $userId, string $productId): ServiceResponse
     {
         try {
             // Check if already in favorites
@@ -75,7 +75,7 @@ class FavoriteService extends BaseService
     /**
      * Remove product from favorites
      */
-    public function removeFavorite(string $userId, string $productId): ServiceResponse
+    public function removeFavorite(int $userId, string $productId): ServiceResponse
     {
         try {
             $deleted = $this->favoriteRepo->removeFavorite($userId, $productId);
@@ -96,7 +96,7 @@ class FavoriteService extends BaseService
     /**
      * Toggle favorite status
      */
-    public function toggleFavorite(string $userId, string $productId): ServiceResponse
+    public function toggleFavorite(int $userId, string $productId): ServiceResponse
     {
         try {
             $favorite = $this->favoriteRepo->findByUserAndProduct($userId, $productId);
@@ -132,7 +132,7 @@ class FavoriteService extends BaseService
     /**
      * Check favorite status for multiple products
      */
-    public function checkFavorites(string $userId, array $productIds): ServiceResponse
+    public function checkFavorites(int $userId, array $productIds): ServiceResponse
     {
         try {
             $favoriteIds = $this->favoriteRepo->getFavoriteProductIds($userId, $productIds);
@@ -151,7 +151,7 @@ class FavoriteService extends BaseService
     /**
      * Clear all favorites
      */
-    public function clearFavorites(string $userId): ServiceResponse
+    public function clearFavorites(int $userId): ServiceResponse
     {
         try {
             $this->favoriteRepo->clearForUser($userId);
@@ -165,7 +165,7 @@ class FavoriteService extends BaseService
     /**
      * Get favorites count
      */
-    public function getCount(string $userId): ServiceResponse
+    public function getCount(int $userId): ServiceResponse
     {
         try {
             $count = $this->favoriteRepo->countForUser($userId);
@@ -188,6 +188,23 @@ class FavoriteService extends BaseService
 
         $mainPhoto = $product->photos->first();
         $firstVariant = $product->variants->first();
+        
+        // Resim URL'sini düzgün şekilde oluştur
+        $imageUrl = null;
+        if ($mainPhoto) {
+            // Önce path'i kontrol et, çünkü url zaten /storage/... formatında olabilir
+            if ($mainPhoto->path) {
+                $imageUrl = url('storage/' . $mainPhoto->path);
+            } elseif ($mainPhoto->url) {
+                // URL tam bir URL mi kontrol et
+                if (filter_var($mainPhoto->url, FILTER_VALIDATE_URL)) {
+                    $imageUrl = $mainPhoto->url;
+                } else {
+                    // Göreceli URL ise tam URL'e çevir
+                    $imageUrl = url(ltrim($mainPhoto->url, '/'));
+                }
+            }
+        }
 
         return [
             'id' => $favorite->id,
@@ -196,7 +213,7 @@ class FavoriteService extends BaseService
                 'id' => $product->id,
                 'name' => $product->name,
                 'slug' => $product->slug,
-                'image' => $mainPhoto ? ($mainPhoto->url ?: asset('storage/' . $mainPhoto->path)) : null,
+                'image' => $imageUrl,
                 'price' => $firstVariant?->price ?? 0,
                 'compare_price' => $firstVariant?->compare_price,
                 'stock' => $firstVariant?->stock ?? 0,

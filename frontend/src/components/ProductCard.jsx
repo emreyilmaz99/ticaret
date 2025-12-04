@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaStar, FaShoppingCart, FaHeart, FaRegHeart, FaEye, FaBolt, FaExchangeAlt } from 'react-icons/fa';
 import { useFavorites } from '../context/FavoritesContext';
@@ -13,6 +13,13 @@ const ProductCard = ({ product, setQuickViewProduct, isCompared, onToggleCompare
   const toast = useToast();
   const navigate = useNavigate();
   const isFav = isFavorite(product.id);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const handleToggleFavorite = (e) => {
     e.stopPropagation();
@@ -47,10 +54,10 @@ const ProductCard = ({ product, setQuickViewProduct, isCompared, onToggleCompare
   const styles = {
     card: {
       backgroundColor: 'white',
-      borderRadius: '32px', // Çok modern, yuvarlak köşeler
+      borderRadius: isMobile ? '16px' : '32px',
       overflow: 'hidden',
-      border: 'none', // Kenarlık yok
-      boxShadow: '0 20px 40px -10px rgba(0, 0, 0, 0.07)', // Derin, yumuşak gölge
+      border: 'none',
+      boxShadow: '0 20px 40px -10px rgba(0, 0, 0, 0.07)',
       transition: 'transform 0.3s ease, box-shadow 0.3s ease',
       position: 'relative',
       cursor: 'pointer',
@@ -60,54 +67,56 @@ const ProductCard = ({ product, setQuickViewProduct, isCompared, onToggleCompare
       aspectRatio: '1/1',
       objectFit: 'cover',
       backgroundColor: '#f8fafc',
-      margin: '12px', // Resim kenarlardan içeride
-      width: 'calc(100% - 24px)',
-      borderRadius: '24px', // Resim de yuvarlak
+      margin: isMobile ? '8px' : '12px',
+      width: isMobile ? 'calc(100% - 16px)' : 'calc(100% - 24px)',
+      borderRadius: isMobile ? '12px' : '24px',
     },
     cardBody: {
-      padding: '0 24px 24px 24px',
+      padding: isMobile ? '0 12px 12px 12px' : '0 24px 24px 24px',
     },
     cardCategory: {
-      fontSize: '12px',
+      fontSize: isMobile ? '10px' : '12px',
       color: '#64748b',
       textTransform: 'uppercase',
       fontWeight: '600',
       marginBottom: '4px',
     },
     cardTitle: {
-      fontSize: '15px',
+      fontSize: isMobile ? '13px' : '15px',
       fontWeight: '600',
       color: '#1e293b',
       marginBottom: '8px',
       lineHeight: '1.4',
-      height: '42px',
+      height: isMobile ? '36px' : '42px',
       overflow: 'hidden',
     },
     rating: {
       display: 'flex',
       alignItems: 'center',
       gap: '4px',
-      fontSize: '12px',
+      fontSize: isMobile ? '10px' : '12px',
       color: '#f59e0b',
-      marginBottom: '12px',
+      marginBottom: isMobile ? '8px' : '12px',
     },
     priceRow: {
       display: 'flex',
       justifyContent: 'space-between',
       alignItems: 'center',
+      flexWrap: isMobile ? 'wrap' : 'nowrap',
+      gap: isMobile ? '8px' : '0',
     },
     price: {
-      fontSize: '18px',
+      fontSize: isMobile ? '14px' : '18px',
       fontWeight: '700',
       color: '#059669',
     },
     actions: {
       display: 'flex',
-      gap: '8px',
+      gap: isMobile ? '4px' : '8px',
     },
     addToCartBtn: {
-      width: '36px',
-      height: '36px',
+      width: isMobile ? '30px' : '36px',
+      height: isMobile ? '30px' : '36px',
       borderRadius: '50%',
       backgroundColor: '#ecfdf5',
       color: '#059669',
@@ -119,34 +128,34 @@ const ProductCard = ({ product, setQuickViewProduct, isCompared, onToggleCompare
       transition: 'background-color 0.2s',
     },
     buyNowBtn: {
-      height: '36px',
-      padding: '0 12px',
-      borderRadius: '18px',
+      height: isMobile ? '30px' : '36px',
+      padding: isMobile ? '0 8px' : '0 12px',
+      borderRadius: isMobile ? '15px' : '18px',
       backgroundColor: '#059669',
       color: 'white',
       border: 'none',
       display: 'flex',
       alignItems: 'center',
-      gap: '6px',
-      fontSize: '12px',
+      gap: isMobile ? '4px' : '6px',
+      fontSize: isMobile ? '10px' : '12px',
       fontWeight: '700',
       cursor: 'pointer',
       transition: 'background-color 0.2s',
     },
     discountBadge: {
       position: 'absolute',
-      top: '12px',
-      left: '12px',
+      top: isMobile ? '8px' : '12px',
+      left: isMobile ? '8px' : '12px',
       backgroundColor: '#ef4444',
       color: 'white',
-      fontSize: '12px',
+      fontSize: isMobile ? '10px' : '12px',
       fontWeight: '700',
-      padding: '4px 8px',
+      padding: isMobile ? '2px 6px' : '4px 8px',
       borderRadius: '6px',
     },
     cardActionBtn: {
-      width: '32px',
-      height: '32px',
+      width: isMobile ? '28px' : '32px',
+      height: isMobile ? '28px' : '32px',
       borderRadius: '50%',
       backgroundColor: 'white',
       border: 'none',
@@ -157,7 +166,7 @@ const ProductCard = ({ product, setQuickViewProduct, isCompared, onToggleCompare
       color: '#64748b',
       transition: 'all 0.2s',
       position: 'absolute',
-      right: '12px',
+      right: isMobile ? '8px' : '12px',
       zIndex: 2,
       boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
     },
@@ -171,32 +180,32 @@ const ProductCard = ({ product, setQuickViewProduct, isCompared, onToggleCompare
       
       {/* Action Buttons */}
       <button 
-        style={{ ...styles.cardActionBtn, top: '12px' }} 
+        style={{ ...styles.cardActionBtn, top: isMobile ? '8px' : '12px' }} 
         onClick={handleToggleFavorite}
         title={isFav ? "Favorilerden Çıkar" : "Favorilere Ekle"}
       >
-        {isFav ? <FaHeart color="#ef4444" /> : <FaRegHeart />}
+        {isFav ? <FaHeart color="#ef4444" size={isMobile ? 12 : 14} /> : <FaRegHeart size={isMobile ? 12 : 14} />}
       </button>
       <button 
-        style={{ ...styles.cardActionBtn, top: '52px' }} 
+        style={{ ...styles.cardActionBtn, top: isMobile ? '40px' : '52px' }} 
         onClick={(e) => { e.stopPropagation(); setQuickViewProduct(product); }}
         title="Hızlı Bakış"
       >
-        <FaEye />
+        <FaEye size={isMobile ? 12 : 14} />
       </button>
 
       {onToggleCompare && (
         <button 
           style={{ 
             ...styles.cardActionBtn, 
-            top: '92px',
+            top: isMobile ? '72px' : '92px',
             backgroundColor: isCompared ? '#059669' : 'white',
             color: isCompared ? 'white' : '#64748b'
           }} 
           onClick={(e) => { e.stopPropagation(); onToggleCompare(product); }}
           title={isCompared ? "Karşılaştırmadan Çıkar" : "Karşılaştır"}
         >
-          <FaExchangeAlt />
+          <FaExchangeAlt size={isMobile ? 12 : 14} />
         </button>
       )}
 
@@ -207,7 +216,7 @@ const ProductCard = ({ product, setQuickViewProduct, isCompared, onToggleCompare
         </div>
         <h3 style={styles.cardTitle}>{product.name}</h3>
         <div style={styles.rating}>
-          <FaStar />
+          <FaStar size={isMobile ? 10 : 12} />
           <span>{product.rating || 0}</span>
           <span style={{ color: '#94a3b8' }}>({product.reviews || product.reviews_count || 0})</span>
         </div>
@@ -221,14 +230,14 @@ const ProductCard = ({ product, setQuickViewProduct, isCompared, onToggleCompare
               title="Sepete Ekle"
               onClick={handleAddToCart}
             >
-              <FaShoppingCart size={14} />
+              <FaShoppingCart size={isMobile ? 12 : 14} />
             </button>
             <button 
               style={styles.buyNowBtn} 
               title="Hemen Al"
               onClick={handleBuyNow}
             >
-              <FaBolt size={12} />
+              <FaBolt size={isMobile ? 10 : 12} />
               <span>AL</span>
             </button>
           </div>

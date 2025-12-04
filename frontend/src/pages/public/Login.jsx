@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FaEnvelope, FaLock, FaEye, FaEyeSlash, FaGoogle, FaFacebookF, FaArrowRight } from 'react-icons/fa';
 import { useAuth } from '../../context/AuthContext';
@@ -10,11 +10,18 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   
   const { login } = useAuth();
   const { mergeGuestCart, fetchCart } = useCart();
   const navigate = useNavigate();
   const toast = useToast();
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -58,7 +65,7 @@ const Login = () => {
       justifyContent: 'center',
       background: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)',
       fontFamily: '"Inter", sans-serif',
-      padding: '20px',
+      padding: isMobile ? '16px' : '20px',
       position: 'relative',
       overflow: 'hidden',
     },
@@ -66,8 +73,8 @@ const Login = () => {
       position: 'absolute',
       top: '-10%',
       right: '-5%',
-      width: '500px',
-      height: '500px',
+      width: isMobile ? '300px' : '500px',
+      height: isMobile ? '300px' : '500px',
       borderRadius: '50%',
       background: 'linear-gradient(135deg, rgba(5, 150, 105, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%)',
       zIndex: 0,
@@ -76,8 +83,8 @@ const Login = () => {
       position: 'absolute',
       bottom: '-10%',
       left: '-5%',
-      width: '400px',
-      height: '400px',
+      width: isMobile ? '250px' : '400px',
+      height: isMobile ? '250px' : '400px',
       borderRadius: '50%',
       background: 'linear-gradient(135deg, rgba(5, 150, 105, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%)',
       zIndex: 0,
@@ -85,22 +92,22 @@ const Login = () => {
     card: {
       backgroundColor: 'rgba(255, 255, 255, 0.9)',
       backdropFilter: 'blur(20px)',
-      borderRadius: '32px',
+      borderRadius: isMobile ? '24px' : '32px',
       boxShadow: '0 20px 50px -10px rgba(0, 0, 0, 0.1)',
       width: '100%',
       maxWidth: '480px',
-      padding: '48px',
+      padding: isMobile ? '24px' : '48px',
       position: 'relative',
       zIndex: 1,
       border: '1px solid rgba(255, 255, 255, 0.5)',
     },
     header: {
       textAlign: 'center',
-      marginBottom: '40px',
+      marginBottom: isMobile ? '24px' : '40px',
     },
     title: {
       fontFamily: '"DM Sans", sans-serif',
-      fontSize: '32px',
+      fontSize: isMobile ? '24px' : '32px',
       fontWeight: '800',
       color: '#064e3b',
       marginBottom: '12px',
@@ -108,54 +115,57 @@ const Login = () => {
     },
     subtitle: {
       color: '#64748b',
-      fontSize: '15px',
+      fontSize: isMobile ? '14px' : '15px',
       lineHeight: '1.5',
     },
     form: {
       display: 'flex',
       flexDirection: 'column',
-      gap: '24px',
+      gap: isMobile ? '16px' : '24px',
     },
     inputGroup: {
       position: 'relative',
     },
     inputIcon: {
       position: 'absolute',
-      left: '20px',
+      left: isMobile ? '16px' : '20px',
       top: '50%',
       transform: 'translateY(-50%)',
       color: '#94a3b8',
-      fontSize: '18px',
+      fontSize: isMobile ? '16px' : '18px',
       transition: 'color 0.3s',
     },
     input: {
       width: '100%',
-      padding: '16px 20px 16px 52px',
-      borderRadius: '16px',
+      padding: isMobile ? '14px 16px 14px 44px' : '16px 20px 16px 52px',
+      borderRadius: isMobile ? '12px' : '16px',
       border: '1px solid #e2e8f0',
       backgroundColor: '#f8fafc',
-      fontSize: '15px',
+      fontSize: isMobile ? '14px' : '15px',
       color: '#1e293b',
       outline: 'none',
       transition: 'all 0.3s ease',
       fontFamily: 'inherit',
+      boxSizing: 'border-box',
     },
     passwordToggle: {
       position: 'absolute',
-      right: '20px',
+      right: isMobile ? '16px' : '20px',
       top: '50%',
       transform: 'translateY(-50%)',
       color: '#94a3b8',
       cursor: 'pointer',
       background: 'none',
       border: 'none',
-      fontSize: '18px',
+      fontSize: isMobile ? '16px' : '18px',
     },
     optionsRow: {
       display: 'flex',
+      flexDirection: isMobile ? 'column' : 'row',
       justifyContent: 'space-between',
-      alignItems: 'center',
-      fontSize: '14px',
+      alignItems: isMobile ? 'flex-start' : 'center',
+      fontSize: isMobile ? '13px' : '14px',
+      gap: isMobile ? '12px' : '0',
     },
     checkboxLabel: {
       display: 'flex',
@@ -182,9 +192,9 @@ const Login = () => {
       backgroundColor: '#059669',
       color: 'white',
       border: 'none',
-      padding: '18px',
-      borderRadius: '16px',
-      fontSize: '16px',
+      padding: isMobile ? '14px' : '18px',
+      borderRadius: isMobile ? '12px' : '16px',
+      fontSize: isMobile ? '15px' : '16px',
       fontWeight: '700',
       cursor: 'pointer',
       transition: 'all 0.3s ease',
@@ -197,9 +207,9 @@ const Login = () => {
     divider: {
       display: 'flex',
       alignItems: 'center',
-      margin: '32px 0',
+      margin: isMobile ? '20px 0' : '32px 0',
       color: '#94a3b8',
-      fontSize: '14px',
+      fontSize: isMobile ? '13px' : '14px',
     },
     dividerLine: {
       flex: 1,
@@ -211,28 +221,28 @@ const Login = () => {
     },
     socialButtons: {
       display: 'grid',
-      gridTemplateColumns: '1fr 1fr',
-      gap: '16px',
+      gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
+      gap: isMobile ? '12px' : '16px',
     },
     socialBtn: {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       gap: '10px',
-      padding: '14px',
-      borderRadius: '16px',
+      padding: isMobile ? '12px' : '14px',
+      borderRadius: isMobile ? '12px' : '16px',
       border: '1px solid #e2e8f0',
       backgroundColor: 'white',
       color: '#475569',
-      fontSize: '14px',
+      fontSize: isMobile ? '13px' : '14px',
       fontWeight: '600',
       cursor: 'pointer',
       transition: 'all 0.2s',
     },
     footer: {
       textAlign: 'center',
-      marginTop: '32px',
-      fontSize: '15px',
+      marginTop: isMobile ? '20px' : '32px',
+      fontSize: isMobile ? '14px' : '15px',
       color: '#64748b',
     },
     registerLink: {

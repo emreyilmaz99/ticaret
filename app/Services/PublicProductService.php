@@ -173,7 +173,7 @@ class PublicProductService extends BaseService
                     'slug' => $p->slug,
                     'category' => $p->category?->name,
                     'price' => $minPrice,
-                    'image' => $mainPhoto ? ($mainPhoto->url ?: asset('storage/' . $mainPhoto->path)) : null,
+                    'image' => $mainPhoto ? (filter_var($mainPhoto->url, FILTER_VALIDATE_URL) ? $mainPhoto->url : url($mainPhoto->url ?? 'storage/' . $mainPhoto->path)) : null,
                     'rating' => 4.5,
                 ];
             });
@@ -212,7 +212,7 @@ class PublicProductService extends BaseService
                     'slug' => $product->slug,
                     'category' => $product->category?->name,
                     'price' => $minPrice,
-                    'image' => $mainPhoto ? ($mainPhoto->url ?: asset('storage/' . $mainPhoto->path)) : null,
+                    'image' => $mainPhoto ? (filter_var($mainPhoto->url, FILTER_VALIDATE_URL) ? $mainPhoto->url : url($mainPhoto->url ?? 'storage/' . $mainPhoto->path)) : null,
                     'is_featured' => true,
                     'rating' => 4.5,
                     'reviews_count' => 0,
@@ -259,8 +259,8 @@ class PublicProductService extends BaseService
             ] : null,
             'stock' => $totalStock,
             'in_stock' => $totalStock > 0,
-            'image' => $mainPhoto ? ($mainPhoto->url ?: asset('storage/' . $mainPhoto->path)) : null,
-            'images' => $product->photos->sortBy('sort_order')->map(fn($p) => $p->url ?: asset('storage/' . $p->path))->values(),
+            'image' => $mainPhoto ? (filter_var($mainPhoto->url, FILTER_VALIDATE_URL) ? $mainPhoto->url : url($mainPhoto->url ?? 'storage/' . $mainPhoto->path)) : null,
+            'images' => $product->photos->sortBy('sort_order')->map(fn($p) => filter_var($p->url, FILTER_VALIDATE_URL) ? $p->url : url($p->url ?? 'storage/' . $p->path))->values(),
             'is_featured' => $product->is_featured,
             'variants_count' => $product->variants->count(),
             'rating' => 4.5, // TODO: Implement ratings
@@ -341,7 +341,7 @@ class PublicProductService extends BaseService
             'variants' => $product->variants->map(fn($v) => $this->transformVariant($v, $lowStockThreshold)),
             'images' => $product->photos->sortBy('sort_order')->map(fn($p) => [
                 'id' => $p->id,
-                'url' => $p->url ?: asset('storage/' . $p->path),
+                'url' => filter_var($p->url, FILTER_VALIDATE_URL) ? $p->url : url($p->url ?? 'storage/' . $p->path),
                 'alt' => $p->alt,
             ])->values(),
             'tags' => $product->tags->map(fn($t) => [
@@ -375,10 +375,10 @@ class PublicProductService extends BaseService
         // Get vendor media
         if ($vendor->media) {
             $logoMedia = $vendor->media->where('type', 'logo')->first();
-            $vendorLogo = $logoMedia ? ($logoMedia->url ?: asset('storage/' . $logoMedia->path)) : null;
+            $vendorLogo = $logoMedia ? (filter_var($logoMedia->url, FILTER_VALIDATE_URL) ? $logoMedia->url : url($logoMedia->url ?? 'storage/' . $logoMedia->path)) : null;
             
             $bannerMedia = $vendor->media->where('type', 'banner')->first();
-            $vendorBanner = $bannerMedia ? ($bannerMedia->url ?: asset('storage/' . $bannerMedia->path)) : null;
+            $vendorBanner = $bannerMedia ? (filter_var($bannerMedia->url, FILTER_VALIDATE_URL) ? $bannerMedia->url : url($bannerMedia->url ?? 'storage/' . $bannerMedia->path)) : null;
         }
         
         // Get vendor product count

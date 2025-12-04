@@ -16,6 +16,13 @@ const UserProfile = () => {
   const { refreshUser, logout } = useAuth();
   const [activeTab, setActiveTab] = useState('profile'); // profile, addresses, security, orders
   const [isSaving, setIsSaving] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
   
   // Form state
   const [form, setForm] = useState({
@@ -154,48 +161,48 @@ const UserProfile = () => {
     container: {
       maxWidth: '1200px',
       margin: '0 auto',
-      padding: '40px 20px',
+      padding: isMobile ? '20px 12px' : '40px 20px',
     },
     header: {
-      marginBottom: '32px',
+      marginBottom: isMobile ? '20px' : '32px',
     },
     title: {
-      fontSize: '28px',
+      fontSize: isMobile ? '22px' : '28px',
       fontWeight: '800',
       color: '#1e293b',
       marginBottom: '8px',
     },
     subtitle: {
       color: '#64748b',
-      fontSize: '15px',
+      fontSize: isMobile ? '13px' : '15px',
     },
     layout: {
       display: 'flex',
-      gap: '32px',
-      flexDirection: 'row', // Desktop default
+      gap: isMobile ? '16px' : '32px',
+      flexDirection: isMobile ? 'column' : 'row',
     },
     sidebar: {
-      width: '280px',
+      width: isMobile ? '100%' : '280px',
       flexShrink: 0,
     },
     content: {
       flex: 1,
       backgroundColor: 'white',
-      borderRadius: '24px',
-      padding: '32px',
+      borderRadius: isMobile ? '16px' : '24px',
+      padding: isMobile ? '20px' : '32px',
       boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
-      minHeight: '600px',
+      minHeight: isMobile ? 'auto' : '600px',
     },
     menuItem: {
       display: 'flex',
       alignItems: 'center',
-      gap: '12px',
-      padding: '16px 20px',
-      borderRadius: '16px',
+      gap: isMobile ? '10px' : '12px',
+      padding: isMobile ? '12px 16px' : '16px 20px',
+      borderRadius: isMobile ? '12px' : '16px',
       cursor: 'pointer',
-      marginBottom: '8px',
+      marginBottom: isMobile ? '4px' : '8px',
       transition: 'all 0.2s',
-      fontSize: '15px',
+      fontSize: isMobile ? '13px' : '15px',
       fontWeight: '600',
       color: '#64748b',
     },
@@ -204,11 +211,11 @@ const UserProfile = () => {
       color: '#059669',
     },
     sectionTitle: {
-      fontSize: '20px',
+      fontSize: isMobile ? '18px' : '20px',
       fontWeight: '700',
       color: '#1e293b',
-      marginBottom: '24px',
-      paddingBottom: '16px',
+      marginBottom: isMobile ? '16px' : '24px',
+      paddingBottom: isMobile ? '12px' : '16px',
       borderBottom: '1px solid #e2e8f0',
       display: 'flex',
       alignItems: 'center',
@@ -216,50 +223,53 @@ const UserProfile = () => {
     },
     formGrid: {
       display: 'grid',
-      gridTemplateColumns: '1fr 1fr',
-      gap: '24px',
+      gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
+      gap: isMobile ? '16px' : '24px',
     },
     inputGroup: {
       display: 'flex',
       flexDirection: 'column',
-      gap: '8px',
+      gap: isMobile ? '6px' : '8px',
     },
     label: {
-      fontSize: '13px',
+      fontSize: isMobile ? '12px' : '13px',
       fontWeight: '600',
       color: '#475569',
     },
     input: {
-      padding: '12px 16px',
-      borderRadius: '12px',
+      padding: isMobile ? '10px 14px' : '12px 16px',
+      borderRadius: isMobile ? '10px' : '12px',
       border: '1px solid #e2e8f0',
-      fontSize: '14px',
+      fontSize: isMobile ? '13px' : '14px',
       color: '#1e293b',
       outline: 'none',
       transition: 'border-color 0.2s',
       backgroundColor: '#f8fafc',
     },
     button: {
-      padding: '14px 32px',
+      padding: isMobile ? '12px 24px' : '14px 32px',
       backgroundColor: '#059669',
       color: 'white',
       border: 'none',
-      borderRadius: '12px',
+      borderRadius: isMobile ? '10px' : '12px',
       fontWeight: '600',
       cursor: 'pointer',
       display: 'flex',
       alignItems: 'center',
       gap: '8px',
       transition: 'background 0.2s',
-      marginTop: '24px',
-      width: 'fit-content',
+      marginTop: isMobile ? '16px' : '24px',
+      width: isMobile ? '100%' : 'fit-content',
+      justifyContent: 'center',
+      fontSize: isMobile ? '14px' : '15px',
     },
     avatarSection: {
       display: 'flex',
+      flexDirection: isMobile ? 'column' : 'row',
       alignItems: 'center',
-      gap: '24px',
-      marginBottom: '32px',
-      padding: '24px',
+      gap: isMobile ? '16px' : '24px',
+      marginBottom: isMobile ? '24px' : '32px',
+      padding: isMobile ? '16px' : '24px',
       backgroundColor: '#f8fafc',
       borderRadius: '20px',
     },

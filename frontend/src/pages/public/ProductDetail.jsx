@@ -18,6 +18,13 @@ const ProductDetail = () => {
   const { addToCart } = useCart();
   const { isFavorite, toggleFavorite } = useFavorites();
   const toast = useToast();
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
   
   const [quantity, setQuantity] = useState(1);
   const [selectedVariant, setSelectedVariant] = useState(null);
@@ -161,12 +168,12 @@ const ProductDetail = () => {
     container: {
       maxWidth: '1400px',
       margin: '0 auto',
-      padding: '24px 20px 60px',
+      padding: isMobile ? '16px 12px 40px' : '24px 20px 60px',
       fontFamily: '"Inter", sans-serif',
     },
     // Breadcrumb
     breadcrumb: {
-      display: 'flex',
+      display: isMobile ? 'none' : 'flex',
       alignItems: 'center',
       gap: '8px',
       fontSize: '14px',
@@ -181,29 +188,35 @@ const ProductDetail = () => {
     },
     // Main Grid
     mainGrid: {
-      display: 'grid',
+      display: isMobile ? 'flex' : 'grid',
+      flexDirection: 'column',
       gridTemplateColumns: '1fr 1fr',
-      gap: '60px',
-      marginBottom: '60px',
+      gap: isMobile ? '24px' : '60px',
+      marginBottom: isMobile ? '32px' : '60px',
     },
     // Image Gallery
     imageSection: {
       display: 'flex',
+      flexDirection: isMobile ? 'column' : 'row',
       gap: '16px',
     },
     thumbnails: {
       display: 'flex',
-      flexDirection: 'column',
+      flexDirection: isMobile ? 'row' : 'column',
       gap: '12px',
+      order: isMobile ? 2 : 1,
+      overflowX: isMobile ? 'auto' : 'visible',
+      padding: isMobile ? '8px 0' : '0',
     },
     thumbnail: (isActive) => ({
-      width: '80px',
-      height: '80px',
+      width: isMobile ? '60px' : '80px',
+      height: isMobile ? '60px' : '80px',
       borderRadius: '12px',
       border: isActive ? '2px solid #059669' : '2px solid #e2e8f0',
       overflow: 'hidden',
       cursor: 'pointer',
       transition: 'all 0.2s',
+      flexShrink: 0,
     }),
     thumbnailImg: {
       width: '100%',
@@ -214,17 +227,18 @@ const ProductDetail = () => {
       flex: 1,
       backgroundColor: '#f8fafc',
       borderRadius: '16px',
-      padding: '20px',
+      padding: isMobile ? '12px' : '20px',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       position: 'relative',
-      minHeight: '350px',
+      minHeight: isMobile ? '280px' : '350px',
       cursor: 'zoom-in',
+      order: isMobile ? 1 : 2,
     },
     mainImageImg: {
       maxWidth: '100%',
-      maxHeight: '500px',
+      maxHeight: isMobile ? '280px' : '500px',
       objectFit: 'contain',
     },
     featuredBadge: {
@@ -250,7 +264,7 @@ const ProductDetail = () => {
     infoSection: {
       display: 'flex',
       flexDirection: 'column',
-      gap: '20px',
+      gap: isMobile ? '16px' : '20px',
     },
     vendorLink: {
       display: 'inline-flex',
@@ -258,11 +272,11 @@ const ProductDetail = () => {
       gap: '8px',
       color: '#059669',
       textDecoration: 'none',
-      fontSize: '14px',
+      fontSize: isMobile ? '13px' : '14px',
       fontWeight: '500',
     },
     title: {
-      fontSize: '32px',
+      fontSize: isMobile ? '22px' : '32px',
       fontWeight: '700',
       color: '#0f172a',
       lineHeight: 1.2,
@@ -271,7 +285,7 @@ const ProductDetail = () => {
     rating: {
       display: 'flex',
       alignItems: 'center',
-      gap: '12px',
+      gap: isMobile ? '8px' : '12px',
     },
     stars: {
       display: 'flex',
@@ -279,57 +293,57 @@ const ProductDetail = () => {
     },
     reviewsText: {
       color: '#64748b',
-      fontSize: '14px',
+      fontSize: isMobile ? '12px' : '14px',
     },
     priceSection: {
       display: 'flex',
       alignItems: 'baseline',
-      gap: '12px',
+      gap: isMobile ? '8px' : '12px',
     },
     price: {
-      fontSize: '36px',
+      fontSize: isMobile ? '28px' : '36px',
       fontWeight: '700',
       color: '#059669',
     },
     priceRange: {
-      fontSize: '16px',
+      fontSize: isMobile ? '13px' : '16px',
       color: '#64748b',
     },
     shortDescription: {
       color: '#475569',
       lineHeight: 1.7,
-      fontSize: '15px',
+      fontSize: isMobile ? '14px' : '15px',
     },
     // Variants
     variantsSection: {
       borderTop: '1px solid #e2e8f0',
       borderBottom: '1px solid #e2e8f0',
-      padding: '20px 0',
+      padding: isMobile ? '16px 0' : '20px 0',
     },
     variantLabel: {
-      fontSize: '14px',
+      fontSize: isMobile ? '13px' : '14px',
       fontWeight: '600',
       color: '#334155',
-      marginBottom: '12px',
+      marginBottom: isMobile ? '10px' : '12px',
     },
     variantOptions: {
       display: 'flex',
       flexWrap: 'wrap',
-      gap: '10px',
+      gap: isMobile ? '8px' : '10px',
     },
     variantBtn: (isActive, disabled) => ({
-      padding: '10px 20px',
-      borderRadius: '10px',
+      padding: isMobile ? '8px 14px' : '10px 20px',
+      borderRadius: isMobile ? '8px' : '10px',
       border: isActive ? '2px solid #059669' : '1px solid #e2e8f0',
       backgroundColor: disabled ? '#f1f5f9' : isActive ? '#ecfdf5' : 'white',
       color: disabled ? '#94a3b8' : isActive ? '#059669' : '#475569',
-      fontSize: '14px',
+      fontSize: isMobile ? '12px' : '14px',
       fontWeight: '500',
       cursor: disabled ? 'not-allowed' : 'pointer',
       transition: 'all 0.2s',
       display: 'flex',
       alignItems: 'center',
-      gap: '8px',
+      gap: isMobile ? '6px' : '8px',
       opacity: disabled ? 0.6 : 1,
     }),
     // Stock
@@ -348,10 +362,11 @@ const ProductDetail = () => {
     quantitySection: {
       display: 'flex',
       alignItems: 'center',
-      gap: '20px',
+      gap: isMobile ? '12px' : '20px',
+      flexWrap: isMobile ? 'wrap' : 'nowrap',
     },
     quantityLabel: {
-      fontSize: '14px',
+      fontSize: isMobile ? '13px' : '14px',
       fontWeight: '600',
       color: '#334155',
     },
@@ -359,16 +374,16 @@ const ProductDetail = () => {
       display: 'flex',
       alignItems: 'center',
       border: '1px solid #e2e8f0',
-      borderRadius: '12px',
+      borderRadius: isMobile ? '10px' : '12px',
       overflow: 'hidden',
     },
     quantityBtn: {
-      width: '44px',
-      height: '44px',
+      width: isMobile ? '40px' : '44px',
+      height: isMobile ? '40px' : '44px',
       border: 'none',
       backgroundColor: '#f8fafc',
       color: '#475569',
-      fontSize: '16px',
+      fontSize: isMobile ? '14px' : '16px',
       cursor: 'pointer',
       display: 'flex',
       alignItems: 'center',
@@ -376,47 +391,55 @@ const ProductDetail = () => {
       transition: 'background 0.2s',
     },
     quantityValue: {
-      width: '60px',
+      width: isMobile ? '48px' : '60px',
       textAlign: 'center',
-      fontSize: '16px',
+      fontSize: isMobile ? '14px' : '16px',
       fontWeight: '600',
       color: '#0f172a',
+      border: 'none',
+      outline: 'none',
+      backgroundColor: 'transparent',
+      padding: 0,
+      appearance: 'textfield',
+      margin: 0,
     },
     // Actions
     actionsSection: {
       display: 'flex',
-      gap: '12px',
+      gap: isMobile ? '8px' : '12px',
+      flexWrap: isMobile ? 'wrap' : 'nowrap',
     },
     addToCartBtn: {
       flex: 1,
       backgroundColor: '#0f172a',
       color: 'white',
       border: 'none',
-      padding: '16px 32px',
-      borderRadius: '14px',
-      fontSize: '16px',
+      padding: isMobile ? '14px 20px' : '16px 32px',
+      borderRadius: isMobile ? '12px' : '14px',
+      fontSize: isMobile ? '14px' : '16px',
       fontWeight: '600',
       cursor: 'pointer',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      gap: '10px',
+      gap: isMobile ? '8px' : '10px',
       transition: 'all 0.2s',
+      minWidth: isMobile ? '100%' : 'auto',
     },
     addToCartBtnDisabled: {
       backgroundColor: '#94a3b8',
       cursor: 'not-allowed',
     },
     iconBtn: {
-      width: '54px',
-      height: '54px',
-      borderRadius: '14px',
+      width: isMobile ? '48px' : '54px',
+      height: isMobile ? '48px' : '54px',
+      borderRadius: isMobile ? '12px' : '14px',
       border: '1px solid #e2e8f0',
       backgroundColor: 'white',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      fontSize: '20px',
+      fontSize: isMobile ? '18px' : '20px',
       color: '#64748b',
       cursor: 'pointer',
       transition: 'all 0.2s',
@@ -424,87 +447,90 @@ const ProductDetail = () => {
     // Features
     features: {
       display: 'grid',
-      gridTemplateColumns: 'repeat(3, 1fr)',
-      gap: '16px',
-      marginTop: '24px',
-      padding: '24px',
+      gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
+      gap: isMobile ? '12px' : '16px',
+      marginTop: isMobile ? '16px' : '24px',
+      padding: isMobile ? '16px' : '24px',
       backgroundColor: '#f8fafc',
-      borderRadius: '16px',
+      borderRadius: isMobile ? '12px' : '16px',
     },
     featureItem: {
       display: 'flex',
-      flexDirection: 'column',
+      flexDirection: isMobile ? 'row' : 'column',
       alignItems: 'center',
-      textAlign: 'center',
-      gap: '8px',
+      textAlign: isMobile ? 'left' : 'center',
+      gap: isMobile ? '12px' : '8px',
     },
     featureIcon: {
-      width: '40px',
-      height: '40px',
-      borderRadius: '10px',
+      width: isMobile ? '36px' : '40px',
+      height: isMobile ? '36px' : '40px',
+      borderRadius: isMobile ? '8px' : '10px',
       backgroundColor: '#ecfdf5',
       color: '#059669',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
+      flexShrink: 0,
     },
     featureTitle: {
-      fontSize: '13px',
+      fontSize: isMobile ? '12px' : '13px',
       fontWeight: '600',
       color: '#334155',
     },
     featureText: {
-      fontSize: '12px',
+      fontSize: isMobile ? '11px' : '12px',
       color: '#64748b',
     },
     // Tabs
     tabsSection: {
-      marginBottom: '60px',
+      marginBottom: isMobile ? '32px' : '60px',
     },
     tabs: {
       display: 'flex',
       borderBottom: '2px solid #e2e8f0',
-      marginBottom: '32px',
+      marginBottom: isMobile ? '20px' : '32px',
+      overflowX: isMobile ? 'auto' : 'visible',
     },
     tab: (isActive) => ({
-      padding: '16px 32px',
+      padding: isMobile ? '12px 16px' : '16px 32px',
       border: 'none',
       backgroundColor: 'transparent',
       color: isActive ? '#059669' : '#64748b',
-      fontSize: '15px',
+      fontSize: isMobile ? '13px' : '15px',
       fontWeight: '600',
       cursor: 'pointer',
       borderBottom: isActive ? '2px solid #059669' : '2px solid transparent',
       marginBottom: '-2px',
       transition: 'all 0.2s',
+      whiteSpace: 'nowrap',
     }),
     tabContent: {
       color: '#475569',
       lineHeight: 1.8,
-      fontSize: '15px',
+      fontSize: isMobile ? '14px' : '15px',
     },
     // Specifications
     specsGrid: {
       display: 'grid',
-      gridTemplateColumns: 'repeat(2, 1fr)',
-      gap: '16px',
+      gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
+      gap: isMobile ? '12px' : '16px',
     },
     specItem: {
       display: 'flex',
-      padding: '16px',
+      padding: isMobile ? '12px' : '16px',
       backgroundColor: '#f8fafc',
-      borderRadius: '12px',
+      borderRadius: isMobile ? '10px' : '12px',
     },
     specLabel: {
-      width: '140px',
+      width: isMobile ? '100px' : '140px',
       color: '#64748b',
-      fontSize: '14px',
+      fontSize: isMobile ? '12px' : '14px',
     },
     specValue: {
       flex: 1,
       fontWeight: '500',
       color: '#0f172a',
-      fontSize: '14px',
+      fontSize: isMobile ? '12px' : '14px',
     },
     // Tags
     tagsSection: {
@@ -527,22 +553,22 @@ const ProductDetail = () => {
     },
     // Related Products
     relatedSection: {
-      marginTop: '60px',
+      marginTop: isMobile ? '32px' : '60px',
     },
     sectionTitle: {
-      fontSize: '24px',
+      fontSize: isMobile ? '18px' : '24px',
       fontWeight: '700',
       color: '#0f172a',
-      marginBottom: '32px',
+      marginBottom: isMobile ? '20px' : '32px',
     },
     relatedGrid: {
       display: 'grid',
-      gridTemplateColumns: 'repeat(4, 1fr)',
-      gap: '24px',
+      gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
+      gap: isMobile ? '12px' : '24px',
     },
     productCard: {
       backgroundColor: 'white',
-      borderRadius: '16px',
+      borderRadius: isMobile ? '12px' : '16px',
       overflow: 'hidden',
       border: '1px solid #e2e8f0',
       transition: 'all 0.2s',
@@ -550,15 +576,15 @@ const ProductDetail = () => {
     },
     productCardImage: {
       width: '100%',
-      height: '200px',
+      height: isMobile ? '140px' : '200px',
       objectFit: 'cover',
       backgroundColor: '#f8fafc',
     },
     productCardInfo: {
-      padding: '16px',
+      padding: isMobile ? '12px' : '16px',
     },
     productCardName: {
-      fontSize: '14px',
+      fontSize: isMobile ? '12px' : '14px',
       fontWeight: '600',
       color: '#0f172a',
       marginBottom: '4px',
@@ -568,7 +594,7 @@ const ProductDetail = () => {
       overflow: 'hidden',
     },
     productCardPrice: {
-      fontSize: '16px',
+      fontSize: isMobile ? '14px' : '16px',
       fontWeight: '700',
       color: '#059669',
     },
@@ -948,8 +974,13 @@ const ProductDetail = () => {
 
           {/* Price */}
           <div style={styles.priceSection}>
-            <span style={styles.price}>{formatPrice(currentPrice)}</span>
-            {product.price_range && (
+            <span style={styles.price}>{formatPrice(currentPrice * (typeof quantity === 'number' ? quantity : 1))}</span>
+            {quantity > 1 && (
+              <span style={{ fontSize: '16px', color: '#64748b', fontWeight: '500' }}>
+                ({formatPrice(currentPrice)} / adet)
+              </span>
+            )}
+            {product.price_range && quantity === 1 && (
               <span style={styles.priceRange}>
                 {formatPrice(product.price_range.min)} - {formatPrice(product.price_range.max)}
               </span>
@@ -1009,14 +1040,37 @@ const ProductDetail = () => {
             <div style={styles.quantityControls}>
               <button 
                 style={styles.quantityBtn}
-                onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                onClick={() => setQuantity(Math.max(1, (typeof quantity === 'number' ? quantity : 1) - 1))}
               >
                 <FaMinus size={12} />
               </button>
-              <span style={styles.quantityValue}>{quantity}</span>
+              <input 
+                type="number"
+                min="1"
+                max={currentStock || 99}
+                value={quantity}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === '') {
+                    setQuantity('');
+                  } else {
+                    const numVal = parseInt(val);
+                    if (!isNaN(numVal)) {
+                      setQuantity(numVal);
+                    }
+                  }
+                }}
+                onBlur={() => {
+                  let val = typeof quantity === 'number' ? quantity : parseInt(quantity);
+                  if (isNaN(val) || val < 1) val = 1;
+                  if (currentStock && val > currentStock) val = currentStock;
+                  setQuantity(val);
+                }}
+                style={styles.quantityValue}
+              />
               <button 
                 style={styles.quantityBtn}
-                onClick={() => setQuantity(Math.min(currentStock || 99, quantity + 1))}
+                onClick={() => setQuantity(Math.min(currentStock || 99, (typeof quantity === 'number' ? quantity : 1) + 1))}
               >
                 <FaPlus size={12} />
               </button>
@@ -1045,8 +1099,11 @@ const ProductDetail = () => {
                 id: product?.id,
                 name: product?.name,
                 slug: product?.slug,
-                image: product?.images?.[0]?.url,
-                price: selectedVariant?.price || product?.price,
+                image: product?.images?.[0]?.url || product?.image,
+                price: currentPrice,
+                compare_price: product?.compare_price,
+                stock: currentStock,
+                in_stock: isInStock
               })}
             >
               {isFavorite(product?.id) ? <FaHeart color="#ef4444" /> : <FaRegHeart />}

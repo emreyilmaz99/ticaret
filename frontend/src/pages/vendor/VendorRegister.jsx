@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { vendorRegister } from '../../features/vendor/api/vendorAuthApi';
@@ -9,6 +9,7 @@ const VendorRegister = () => {
   const navigate = useNavigate();
   const toast = useToast();
   const [step, setStep] = useState(1);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const [form, setForm] = useState({
     full_name: '',
     company_name: '',
@@ -19,6 +20,12 @@ const VendorRegister = () => {
     password_confirmation: ''
   });
   const [acceptTerms, setAcceptTerms] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const registerMutation = useMutation({
     mutationFn: (data) => vendorRegister(data),
@@ -80,98 +87,98 @@ const VendorRegister = () => {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: '#f0fdf4', // Emerald 50
+      backgroundColor: '#f0fdf4',
       fontFamily: '"Plus Jakarta Sans", sans-serif',
-      padding: '20px'
+      padding: isMobile ? '16px 12px' : '20px'
     },
     card: {
-      width: '100%',
-      maxWidth: '600px',
+      width: isMobile ? '100%' : '100%',
+      maxWidth: isMobile ? '440px' : '600px',
       backgroundColor: 'white',
-      borderRadius: '24px',
+      borderRadius: isMobile ? '20px' : '24px',
       boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-      padding: '48px',
+      padding: isMobile ? '24px' : '48px',
       position: 'relative',
       overflow: 'hidden'
     },
     header: {
       textAlign: 'center',
-      marginBottom: '40px'
+      marginBottom: isMobile ? '24px' : '40px'
     },
     iconWrapper: {
-      width: '64px',
-      height: '64px',
-      backgroundColor: '#d1fae5', // Emerald 100
-      color: '#047857', // Emerald 700
+      width: isMobile ? '56px' : '64px',
+      height: isMobile ? '56px' : '64px',
+      backgroundColor: '#d1fae5',
+      color: '#047857',
       borderRadius: '50%',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      fontSize: '24px',
-      margin: '0 auto 24px auto'
+      fontSize: isMobile ? '20px' : '24px',
+      margin: isMobile ? '0 auto 16px auto' : '0 auto 24px auto'
     },
     title: {
       fontFamily: '"Playfair Display", serif',
-      fontSize: '32px',
+      fontSize: isMobile ? '24px' : '32px',
       fontWeight: '700',
-      color: '#064e3b', // Emerald 900
+      color: '#064e3b',
       marginBottom: '8px'
     },
     subtitle: {
       color: '#64748b',
-      fontSize: '16px',
+      fontSize: isMobile ? '14px' : '16px',
       lineHeight: '1.5'
     },
     formGroup: {
-      marginBottom: '20px'
+      marginBottom: isMobile ? '16px' : '20px'
     },
     label: {
       display: 'block',
-      fontSize: '14px',
+      fontSize: isMobile ? '13px' : '14px',
       fontWeight: '600',
       color: '#334155',
-      marginBottom: '8px'
+      marginBottom: isMobile ? '6px' : '8px'
     },
     inputWrapper: {
       position: 'relative'
     },
     inputIcon: {
       position: 'absolute',
-      left: '16px',
+      left: isMobile ? '14px' : '16px',
       top: '50%',
       transform: 'translateY(-50%)',
       color: '#94a3b8',
-      fontSize: '16px'
+      fontSize: isMobile ? '14px' : '16px'
     },
     input: {
       width: '100%',
-      padding: '14px 16px 14px 48px',
-      borderRadius: '12px',
+      padding: isMobile ? '12px 14px 12px 42px' : '14px 16px 14px 48px',
+      borderRadius: isMobile ? '10px' : '12px',
       border: '1px solid #e2e8f0',
-      fontSize: '15px',
+      fontSize: isMobile ? '14px' : '15px',
       color: '#1e293b',
       transition: 'all 0.2s',
       outline: 'none',
       backgroundColor: '#f8fafc'
     },
     inputFocus: {
-      borderColor: '#059669', // Emerald 600
+      borderColor: '#059669',
       boxShadow: '0 0 0 4px rgba(5, 150, 105, 0.1)',
       backgroundColor: 'white'
     },
     row: {
       display: 'grid',
-      gridTemplateColumns: '1fr 1fr',
-      gap: '20px'
+      gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
+      gap: isMobile ? '16px' : '20px'
     },
     buttonPrimary: {
       width: '100%',
-      padding: '16px',
-      backgroundColor: '#047857', // Emerald 700
+      padding: isMobile ? '14px' : '16px',
+      backgroundColor: '#047857',
       color: 'white',
       border: 'none',
-      borderRadius: '12px',
-      fontSize: '16px',
+      borderRadius: isMobile ? '10px' : '12px',
+      fontSize: isMobile ? '14px' : '16px',
       fontWeight: '600',
       cursor: 'pointer',
       transition: 'background-color 0.2s',
@@ -181,12 +188,12 @@ const VendorRegister = () => {
       gap: '8px'
     },
     buttonSecondary: {
-      padding: '16px 24px',
+      padding: isMobile ? '14px 20px' : '16px 24px',
       backgroundColor: 'white',
       color: '#475569',
       border: '1px solid #e2e8f0',
-      borderRadius: '12px',
-      fontSize: '16px',
+      borderRadius: isMobile ? '10px' : '12px',
+      fontSize: isMobile ? '14px' : '16px',
       fontWeight: '600',
       cursor: 'pointer',
       transition: 'all 0.2s'
@@ -195,7 +202,7 @@ const VendorRegister = () => {
       display: 'flex',
       justifyContent: 'center',
       gap: '8px',
-      marginBottom: '32px'
+      marginBottom: isMobile ? '24px' : '32px'
     },
     stepDot: (isActive) => ({
       width: isActive ? '32px' : '10px',

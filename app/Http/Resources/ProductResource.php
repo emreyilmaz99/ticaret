@@ -37,7 +37,10 @@ class ProductResource extends JsonResource
             'is_featured' => $this->is_featured,
             'media' => $this->whenLoaded('media'),
             'photos' => $this->whenLoaded('photos'),
-            'thumbnail' => $this->whenLoaded('photos', function () { return optional($this->photos->first())->url; }),
+            'thumbnail' => $this->whenLoaded('photos', function () { 
+                $photo = $this->photos->first();
+                return $photo ? (filter_var($photo->url, FILTER_VALIDATE_URL) ? $photo->url : url($photo->url ?? 'storage/' . $photo->path)) : null;
+            }),
             'variants' => $this->whenLoaded('variants'),
             'tags' => $this->whenLoaded('tags'),
             'rejection_reason' => $this->rejection_reason,
