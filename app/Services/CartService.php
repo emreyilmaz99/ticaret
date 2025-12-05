@@ -8,6 +8,7 @@ use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\User;
 use App\Models\VendorCoupon;
+use App\Models\VendorShippingSetting;
 use App\Repositories\Interfaces\CartRepositoryInterface;
 use App\Repositories\Interfaces\CartItemRepositoryInterface;
 use App\Repositories\Interfaces\ProductRepositoryInterface;
@@ -317,18 +318,19 @@ class CartService extends BaseService
     }
 
     /**
-     * Format cart response
+     * Format cart response with vendor grouping
      */
     protected function formatCartResponse(?Cart $cart): array
     {
         if (!$cart) {
             return [
                 'items' => [],
+                'vendor_groups' => [],
                 'totals' => [
                     'subtotal' => 0,
                     'discount' => 0,
-                    'shipping' => 29.90,
-                    'total' => 29.90,
+                    'shipping' => 0,
+                    'total' => 0,
                     'item_count' => 0,
                 ],
                 'coupon' => null,
@@ -336,58 +338,168 @@ class CartService extends BaseService
             ];
         }
 
-        $cart->load(['items.product.photos', 'items.variant']);
+        $cart->load(['items.product.photos', 'items.product.vendor', 'items.variant']);
 
-        $items = $cart->items->map(function ($item) {
-            $mainPhoto = $item->product?->photos?->sortBy('sort_order')->first();
+        // Ürünleri vendor'a göre grupla
+        $vendorGroups = [];
+        $allItems = [];
+
+        foreach ($cart->items as $item) {
+            $vendorId = $item->product?->vendor_id;
+            $vendor = $item->product?->vendor;
             
-            // Resim URL'sini düzgün şekilde oluştur
-            $imageUrl = null;
-            if ($mainPhoto) {
-                // Önce path'i kontrol et, çünkü url zaten /storage/... formatında olabilir
-                if ($mainPhoto->path) {
-                    $imageUrl = url('storage/' . $mainPhoto->path);
-                } elseif ($mainPhoto->url) {
-                    // URL tam bir URL mi kontrol et
-                    if (filter_var($mainPhoto->url, FILTER_VALIDATE_URL)) {
-                        $imageUrl = $mainPhoto->url;
-                    } else {
-                        // Göreceli URL ise tam URL'e çevir
-                        $imageUrl = url(ltrim($mainPhoto->url, '/'));
-                    }
-                }
+            if (!$vendorId || !$vendor) continue;
+
+            // Vendor grup oluştur
+            if (!isset($vendorGroups[$vendorId])) {
+                $vendorGroups[$vendorId] = [
+                    'vendor_id' => $vendorId,
+                    'vendor_name' => $vendor->company_name ?? $vendor->name,
+                    'vendor_slug' => $vendor->slug,
+                    'items' => [],
+                    'subtotal' => 0,
+                    'shipping' => [
+                        'cost' => 0,
+                        'is_free' => false,
+                        'free_threshold' => 0,
+                        'remaining_for_free' => null,
+                    ],
+                    'estimated_delivery' => $this->calculateEstimatedDelivery(),
+                ];
             }
 
-            return [
-                'id' => $item->id,
-                'product_id' => $item->product_id,
-                'variant_id' => $item->variant_id,
-                'quantity' => $item->quantity,
-                'unit_price' => (float) $item->unit_price,
-                'line_total' => (float) $item->line_total,
-                'product' => [
-                    'id' => $item->product?->id,
-                    'name' => $item->product?->name,
-                    'slug' => $item->product?->slug,
-                    'image' => $imageUrl,
-                ],
-                'variant' => $item->variant ? [
-                    'id' => $item->variant->id,
-                    'title' => $item->variant->title,
-                    'sku' => $item->variant->sku,
-                    'stock' => $item->variant->stock,
-                ] : null,
+            // Item formatla
+            $formattedItem = $this->formatCartItem($item);
+            $vendorGroups[$vendorId]['items'][] = $formattedItem;
+            $vendorGroups[$vendorId]['subtotal'] += (float) $item->line_total;
+            
+            $allItems[] = $formattedItem;
+        }
+
+        // Her vendor için kargo hesapla
+        $totalShipping = 0;
+        $shippingBreakdown = [];
+        
+        foreach ($vendorGroups as $vendorId => &$group) {
+            $shippingSettings = VendorShippingSetting::getSettingsForVendor($vendorId);
+            
+            $shippingCost = $shippingSettings->calculateShippingCost($group['subtotal']);
+            $remainingForFree = $shippingSettings->getRemainingForFreeShipping($group['subtotal']);
+            
+            $group['shipping'] = [
+                'cost' => $shippingCost,
+                'is_free' => $shippingCost == 0,
+                'free_threshold' => (float) $shippingSettings->free_shipping_threshold,
+                'remaining_for_free' => $remainingForFree,
             ];
-        });
+            
+            // Shipping breakdown için ekle
+            $shippingBreakdown[] = [
+                'vendor_id' => $vendorId,
+                'vendor_name' => $group['vendor_name'],
+                'shipping_cost' => $shippingCost,
+                'is_free' => $shippingCost == 0,
+                'remaining_for_free' => $remainingForFree,
+            ];
+            
+            $totalShipping += $shippingCost;
+        }
+        unset($group);
+
+        // Toplam hesapla
+        $subtotal = array_sum(array_column($vendorGroups, 'subtotal'));
+        $discount = (float) ($cart->discount_amount ?? 0);
+        $total = $subtotal - $discount + $totalShipping;
 
         return [
-            'items' => $items,
-            'totals' => $cart->totals,
+            'items' => $allItems,
+            'vendor_groups' => array_values($vendorGroups),
+            'totals' => [
+                'subtotal' => round($subtotal, 2),
+                'discount' => round($discount, 2),
+                'shipping' => round($totalShipping, 2),
+                'shipping_breakdown' => $shippingBreakdown,
+                'total' => round(max(0, $total), 2),
+                'item_count' => count($allItems),
+            ],
             'coupon' => $cart->coupon_code ? [
                 'code' => $cart->coupon_code,
-                'discount' => (float) $cart->discount_amount,
+                'discount' => $discount,
             ] : null,
             'session_id' => $cart->session_id,
         ];
+    }
+
+    /**
+     * Format individual cart item
+     */
+    protected function formatCartItem($item): array
+    {
+        $mainPhoto = $item->product?->photos?->sortBy('sort_order')->first();
+        
+        // Resim URL'sini düzgün şekilde oluştur
+        $imageUrl = null;
+        if ($mainPhoto) {
+            if ($mainPhoto->path) {
+                $imageUrl = url('storage/' . $mainPhoto->path);
+            } elseif ($mainPhoto->url) {
+                if (filter_var($mainPhoto->url, FILTER_VALIDATE_URL)) {
+                    $imageUrl = $mainPhoto->url;
+                } else {
+                    $imageUrl = url(ltrim($mainPhoto->url, '/'));
+                }
+            }
+        }
+
+        return [
+            'id' => $item->id,
+            'product_id' => $item->product_id,
+            'variant_id' => $item->variant_id,
+            'quantity' => $item->quantity,
+            'unit_price' => (float) $item->unit_price,
+            'line_total' => (float) $item->line_total,
+            'vendor_id' => $item->product?->vendor_id,
+            'product' => [
+                'id' => $item->product?->id,
+                'name' => $item->product?->name,
+                'slug' => $item->product?->slug,
+                'image' => $imageUrl,
+            ],
+            'variant' => $item->variant ? [
+                'id' => $item->variant->id,
+                'title' => $item->variant->title,
+                'sku' => $item->variant->sku,
+                'stock' => $item->variant->stock,
+            ] : null,
+        ];
+    }
+
+    /**
+     * Tahmini teslimat tarihini hesapla
+     */
+    protected function calculateEstimatedDelivery(): string
+    {
+        // Basit hesaplama: 3-5 iş günü
+        $now = now();
+        $deliveryDate = $now->copy();
+        
+        // Hafta sonu kontrolü ve 3-5 iş günü ekle
+        $businessDays = rand(3, 5);
+        while ($businessDays > 0) {
+            $deliveryDate->addDay();
+            // Hafta içi mi kontrol et (1=Pazartesi, 7=Pazar)
+            if ($deliveryDate->dayOfWeekIso <= 5) {
+                $businessDays--;
+            }
+        }
+        
+        // Türkçe tarih formatı
+        $days = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar'];
+        $months = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
+        
+        $dayName = $days[$deliveryDate->dayOfWeekIso - 1];
+        $monthName = $months[$deliveryDate->month - 1];
+        
+        return "Tahmini {$deliveryDate->day} {$monthName} {$dayName} kapında";
     }
 }

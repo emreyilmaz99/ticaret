@@ -36,8 +36,8 @@ const CartProductList = ({
           <CartItem
             key={item.id}
             item={item}
-            onRemove={onRemoveItem}
-            onUpdateQuantity={onUpdateQuantity}
+            onRemove={() => onRemoveItem(item.id)}
+            onUpdateQuantity={(qty) => onUpdateQuantity(item.id, qty)}
             loading={loading}
             isMobile={isMobile}
             styles={styles}

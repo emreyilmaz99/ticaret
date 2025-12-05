@@ -14,6 +14,7 @@ const useCartPage = () => {
   // Cart context'ten verileri al
   const {
     cartItems,
+    vendorGroups,
     removeFromCart,
     updateQuantity,
     clearCart,
@@ -233,6 +234,17 @@ const useCartPage = () => {
   return {
     // State
     cartItems,
+    coupon,
+    totals,
+    loading,
+    initialized,
+    couponInput,
+    isMobile,
+
+    // Address State
+    // Cart Data
+    cartItems,
+    vendorGroups,
     coupon,
     totals,
     loading,

@@ -5,6 +5,99 @@ import { Link } from 'react-router-dom';
 import { FiTrash2, FiMinus, FiPlus, FiShoppingBag } from 'react-icons/fi';
 
 /**
+ * Default styles for CartItem - used when styles prop is not provided
+ */
+const defaultStyles = {
+  cartItem: {
+    display: 'grid',
+    alignItems: 'center',
+    padding: '16px 20px',
+    gap: '16px',
+  },
+  productInfo: {
+    display: 'flex',
+    gap: '12px',
+    alignItems: 'center',
+  },
+  productImage: {
+    width: '80px',
+    height: '80px',
+    borderRadius: '12px',
+    objectFit: 'cover',
+    flexShrink: 0,
+  },
+  productDetails: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '4px',
+    minWidth: 0,
+  },
+  productName: {
+    fontSize: '14px',
+    fontWeight: '500',
+    color: '#1e293b',
+    textDecoration: 'none',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    display: '-webkit-box',
+    WebkitLineClamp: 2,
+    WebkitBoxOrient: 'vertical',
+  },
+  variantText: {
+    fontSize: '12px',
+    color: '#64748b',
+    margin: 0,
+  },
+  removeBtn: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px',
+    fontSize: '12px',
+    color: '#ef4444',
+    background: 'none',
+    border: 'none',
+    padding: '4px 0',
+    cursor: 'pointer',
+    marginTop: '4px',
+  },
+  priceText: {
+    fontWeight: '500',
+    color: '#475569',
+  },
+  totalText: {
+    textAlign: 'right',
+    fontWeight: '700',
+    color: '#059669',
+  },
+  quantityControl: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    backgroundColor: '#f8fafc',
+    borderRadius: '8px',
+    padding: '4px',
+  },
+  qtyBtn: {
+    width: '28px',
+    height: '28px',
+    borderRadius: '6px',
+    border: '1px solid #e2e8f0',
+    backgroundColor: 'white',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+  },
+  qtyText: {
+    minWidth: '24px',
+    textAlign: 'center',
+    fontWeight: '600',
+    fontSize: '14px',
+  },
+};
+
+/**
  * Tek bir sepet ürünü satırı
  */
 const CartItem = ({ 
@@ -13,16 +106,19 @@ const CartItem = ({
   onUpdateQuantity, 
   loading, 
   isMobile, 
-  styles 
+  styles: customStyles,
+  showVendor = true,
 }) => {
+  // Merge default styles with custom styles
+  const styles = customStyles || defaultStyles;
   const handleDecrease = () => {
     if (item.quantity > 1) {
-      onUpdateQuantity(item.id, item.quantity - 1);
+      onUpdateQuantity(item.quantity - 1);
     }
   };
 
   const handleIncrease = () => {
-    onUpdateQuantity(item.id, item.quantity + 1);
+    onUpdateQuantity(item.quantity + 1);
   };
 
   return (
@@ -62,7 +158,7 @@ const CartItem = ({
             </p>
           )}
           <button 
-            onClick={() => onRemove(item.id)}
+            onClick={onRemove}
             style={styles.removeBtn}
             disabled={loading}
           >
@@ -170,7 +266,15 @@ CartItem.propTypes = {
   onUpdateQuantity: PropTypes.func.isRequired,
   loading: PropTypes.bool,
   isMobile: PropTypes.bool,
-  styles: PropTypes.object.isRequired,
+  styles: PropTypes.object,
+  showVendor: PropTypes.bool,
+};
+
+CartItem.defaultProps = {
+  loading: false,
+  isMobile: false,
+  styles: null,
+  showVendor: true,
 };
 
 QuantityControl.propTypes = {

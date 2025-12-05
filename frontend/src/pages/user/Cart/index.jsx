@@ -7,6 +7,7 @@ import CartProductList from './CartProductList';
 import OrderSummary from './OrderSummary';
 import EmptyCart from './EmptyCart';
 import DeliveryAddressSection from './DeliveryAddressSection';
+import VendorGroup from './VendorGroup';
 import AddressModal from '../../../components/AddressModal';
 import ConfirmModal from '../../../components/ConfirmModal';
 
@@ -20,6 +21,7 @@ const Cart = () => {
   // Custom hook'tan tüm state ve fonksiyonları al
   const {
     cartItems,
+    vendorGroups,
     coupon,
     totals,
     loading,
@@ -65,6 +67,9 @@ const Cart = () => {
     );
   }
 
+  // Vendor grupları mevcut mu kontrol et
+  const hasVendorGroups = vendorGroups && vendorGroups.length > 0;
+
   // Normal sepet görünümü
   return (
     <div style={styles.container}>
@@ -90,16 +95,33 @@ const Cart = () => {
             isMobile={isMobile}
           />
 
-          {/* Ürün Listesi */}
-          <CartProductList
-            cartItems={cartItems}
-            onRemoveItem={handleRemoveItem}
-            onUpdateQuantity={handleUpdateQuantity}
-            onClearCart={handleClearCart}
-            loading={loading}
-            isMobile={isMobile}
-            styles={styles}
-          />
+          {/* Vendor Grupları veya Normal Ürün Listesi */}
+          {hasVendorGroups ? (
+            // Vendor'a göre gruplanmış görünüm
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
+              {vendorGroups.map((group) => (
+                <VendorGroup
+                  key={group.vendor_id}
+                  vendorGroup={group}
+                  onRemoveItem={handleRemoveItem}
+                  onUpdateQuantity={handleUpdateQuantity}
+                  loading={loading}
+                  isMobile={isMobile}
+                />
+              ))}
+            </div>
+          ) : (
+            // Fallback: Normal ürün listesi
+            <CartProductList
+              cartItems={cartItems}
+              onRemoveItem={handleRemoveItem}
+              onUpdateQuantity={handleUpdateQuantity}
+              onClearCart={handleClearCart}
+              loading={loading}
+              isMobile={isMobile}
+              styles={styles}
+            />
+          )}
         </div>
 
         {/* Sağ Taraf: Sipariş Özeti */}
@@ -149,5 +171,6 @@ export { default as CouponSection } from './CouponSection';
 export { default as ShippingBreakdown } from './ShippingBreakdown';
 export { default as EmptyCart } from './EmptyCart';
 export { default as DeliveryAddressSection } from './DeliveryAddressSection';
+export { default as VendorGroup } from './VendorGroup';
 export { default as useCartPage } from './useCartPage';
 export { getStyles } from './styles';

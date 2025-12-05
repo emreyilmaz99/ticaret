@@ -8,12 +8,13 @@ export const useCart = () => useContext(CartContext);
 
 export const CartProvider = ({ children }) => {
   const [cartItems, setCartItems] = useState([]);
+  const [vendorGroups, setVendorGroups] = useState([]);
   const [coupon, setCoupon] = useState(null);
   const [totals, setTotals] = useState({
     subtotal: 0,
     discount: 0,
-    shipping: 29.90,
-    total: 29.90,
+    shipping: 0,
+    total: 0,
     item_count: 0,
   });
   const [loading, setLoading] = useState(false);
@@ -37,11 +38,12 @@ export const CartProvider = ({ children }) => {
       const response = await cartApi.getCart();
       if (response.success) {
         setCartItems(response.data.items || []);
+        setVendorGroups(response.data.vendor_groups || []);
         setTotals(response.data.totals || {
           subtotal: 0,
           discount: 0,
-          shipping: 29.90,
-          total: 29.90,
+          shipping: 0,
+          total: 0,
           item_count: 0,
         });
         setCoupon(response.data.coupon || null);
@@ -76,6 +78,7 @@ export const CartProvider = ({ children }) => {
       
       if (response.success) {
         setCartItems(response.data.items || []);
+        setVendorGroups(response.data.vendor_groups || []);
         setTotals(response.data.totals);
         setCoupon(response.data.coupon);
         // Yeni ürün eklendi bildirimi
@@ -99,6 +102,7 @@ export const CartProvider = ({ children }) => {
       
       if (response.success) {
         setCartItems(response.data.items || []);
+        setVendorGroups(response.data.vendor_groups || []);
         setTotals(response.data.totals);
         toast.info('Bilgi', 'Ürün sepetten çıkarıldı');
       }
@@ -120,6 +124,7 @@ export const CartProvider = ({ children }) => {
       
       if (response.success) {
         setCartItems(response.data.items || []);
+        setVendorGroups(response.data.vendor_groups || []);
         setTotals(response.data.totals);
       }
     } catch (error) {
@@ -138,11 +143,12 @@ export const CartProvider = ({ children }) => {
       
       if (response.success) {
         setCartItems([]);
+        setVendorGroups([]);
         setTotals({
           subtotal: 0,
           discount: 0,
-          shipping: 29.90,
-          total: 29.90,
+          shipping: 0,
+          total: 0,
           item_count: 0,
         });
         setCoupon(null);
@@ -163,6 +169,8 @@ export const CartProvider = ({ children }) => {
       const response = await cartApi.applyCoupon(code);
       
       if (response.success) {
+        setCartItems(response.data.items || []);
+        setVendorGroups(response.data.vendor_groups || []);
         setTotals(response.data.totals);
         setCoupon(response.data.coupon);
         toast.success('Başarılı', response.message);
@@ -183,6 +191,8 @@ export const CartProvider = ({ children }) => {
       const response = await cartApi.removeCoupon();
       
       if (response.success) {
+        setCartItems(response.data.items || []);
+        setVendorGroups(response.data.vendor_groups || []);
         setTotals(response.data.totals);
         setCoupon(null);
         toast.info('Bilgi', 'Kupon kaldırıldı');
@@ -200,6 +210,7 @@ export const CartProvider = ({ children }) => {
       const response = await cartApi.mergeCart();
       if (response.success) {
         setCartItems(response.data.items || []);
+        setVendorGroups(response.data.vendor_groups || []);
         setTotals(response.data.totals);
         setCoupon(response.data.coupon);
       }
@@ -211,6 +222,7 @@ export const CartProvider = ({ children }) => {
   return (
     <CartContext.Provider value={{
       cartItems,
+      vendorGroups,
       addToCart,
       removeFromCart,
       updateQuantity,
