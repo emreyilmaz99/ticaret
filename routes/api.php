@@ -35,6 +35,9 @@ use App\Http\Controllers\Api\V1\Public\VendorApplicationController as PublicVend
 use App\Http\Controllers\Api\V1\Admin\VendorApplicationController as AdminVendorApplicationController;
 use App\Http\Controllers\Api\V1\Public\ProductController as PublicProductController;
 
+// Checkout controller
+use App\Http\Controllers\CheckoutController;
+
 // Admin API
 // Note: the application's routing already prefixes API routes with '/api',
 // so use 'v1/admin' here to avoid double 'api/api' URIs.
@@ -261,5 +264,18 @@ Route::prefix('v1/user')->group(function () {
         Route::delete('favorites/clear', [\App\Http\Controllers\Api\V1\FavoriteController::class, 'clear']);
         Route::get('favorites/count', [\App\Http\Controllers\Api\V1\FavoriteController::class, 'count']);
         Route::delete('favorites/{productId}', [\App\Http\Controllers\Api\V1\FavoriteController::class, 'destroy']);
+
+        // Checkout - iyzico payment
+        Route::post('checkout/initialize', [CheckoutController::class, 'initialize']);
+        Route::get('checkout/status/{orderNumber}', [CheckoutController::class, 'status']);
+
+        // Orders
+        Route::get('orders', [CheckoutController::class, 'index']);
+        Route::get('orders/{orderNumber}', [CheckoutController::class, 'show']);
+        Route::post('orders/{orderNumber}/cancel', [CheckoutController::class, 'cancel']);
     });
 });
+
+// iyzico callback (public - no auth required)
+// Bu route iyzico tarafından çağrılır, kullanıcı auth'u yoktur
+Route::post('v1/checkout/callback', [CheckoutController::class, 'callback']);

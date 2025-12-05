@@ -38,4 +38,58 @@ class ProductVariant extends Model
     {
         return $this->hasMany(ProductVariantMetadata::class, 'variant_id');
     }
+
+    // ==================== STOK YÖNETİMİ ====================
+
+    /**
+     * Stok düşür (sipariş sonrası)
+     */
+    public function decrementStock(int $quantity): bool
+    {
+        if ($quantity <= 0) {
+            return false;
+        }
+
+        if ($this->stock < $quantity) {
+            return false;
+        }
+
+        $this->decrement('stock', $quantity);
+        return true;
+    }
+
+    /**
+     * Stok artır (iade veya iptal sonrası)
+     */
+    public function incrementStock(int $quantity): bool
+    {
+        if ($quantity <= 0) {
+            return false;
+        }
+
+        $this->increment('stock', $quantity);
+        return true;
+    }
+
+    /**
+     * Stok yeterli mi?
+     */
+    public function hasStock(int $quantity = 1): bool
+    {
+        return $this->stock >= $quantity;
+    }
+
+    /**
+     * Stok durumu
+     */
+    public function getStockStatusAttribute(): string
+    {
+        if ($this->stock <= 0) {
+            return 'out_of_stock';
+        }
+        if ($this->stock <= 5) {
+            return 'low_stock';
+        }
+        return 'in_stock';
+    }
 }

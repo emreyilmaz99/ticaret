@@ -26,6 +26,9 @@ import Favorites from './pages/user/Favorites'; // Favorilerim Sayfası
 import Cart from './pages/user/Cart'; // Sepet Sayfası
 import UserProfile from './pages/user/UserProfile'; // Kullanıcı Profil
 import UserAddresses from './pages/user/UserAddresses'; // Kullanıcı Adresleri
+import PaymentSuccess from './pages/user/PaymentSuccess'; // Ödeme Başarılı
+import PaymentFailed from './pages/user/PaymentFailed'; // Ödeme Başarısız
+import UserOrders from './pages/user/UserOrders'; // Kullanıcı Siparişleri
 
 // 2. Admin Sayfaları (Senin klasör yapına göre: src/pages/admin/...)
 import AdminLogin from './pages/admin/AdminLogin'; // Admin Girişi
@@ -91,6 +94,8 @@ function App() {
                 <Route path="/product/:slug" element={<ProductDetail />} />
                 <Route path="/favorites" element={<Favorites />} />
                 <Route path="/cart" element={<Cart />} />
+                <Route path="/odeme/basarili" element={<PaymentSuccess />} />
+                <Route path="/odeme/basarisiz" element={<PaymentFailed />} />
               </Route>
 
 
@@ -152,8 +157,8 @@ function App() {
               <Route path="/account" element={<UserLayout />}>
                 <Route path="profile" element={<UserProfile />} />
                 <Route path="addresses" element={<UserAddresses />} />
+                <Route path="orders" element={<UserOrders />} />
                 {/* İleride eklenecekler */}
-                {/* <Route path="orders" element={<UserOrders />} /> */}
                 {/* <Route path="favorites" element={<UserFavorites />} /> */}
                 {/* <Route path="reviews" element={<UserReviews />} /> */}
               </Route>

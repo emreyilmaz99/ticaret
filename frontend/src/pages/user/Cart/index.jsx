@@ -10,6 +10,7 @@ import DeliveryAddressSection from './DeliveryAddressSection';
 import VendorGroup from './VendorGroup';
 import AddressModal from '../../../components/AddressModal';
 import ConfirmModal from '../../../components/ConfirmModal';
+import CheckoutModal from './CheckoutModal';
 
 // --- Custom Hook ---
 import useCartPage from './useCartPage';
@@ -37,6 +38,11 @@ const Cart = () => {
     deleteConfirm,
     confirmDeleteAddress,
     cancelDeleteAddress,
+    // Checkout
+    showCheckoutModal,
+    checkoutStep,
+    paymentHtml,
+    isCheckoutLoading,
     // Setters
     setCouponInput,
     // Handlers
@@ -52,6 +58,10 @@ const Cart = () => {
     handleSaveNewAddress,
     handleDeleteAddress,
     isDeleting,
+    // Checkout Handlers
+    handleCheckoutClick,
+    handleStartPayment,
+    handleCloseCheckoutModal,
   } = useCartPage();
 
   // Responsive stiller
@@ -132,6 +142,8 @@ const Cart = () => {
           onCouponInputChange={setCouponInput}
           onApplyCoupon={handleApplyCoupon}
           onRemoveCoupon={handleRemoveCoupon}
+          onCheckout={handleCheckoutClick}
+          isCheckoutLoading={isCheckoutLoading}
           styles={styles}
         />
       </div>
@@ -154,6 +166,19 @@ const Cart = () => {
         cancelText="Vazgeç"
         type="danger"
         isLoading={isDeleting}
+      />
+
+      {/* Checkout Modal - iyzico ödeme */}
+      <CheckoutModal
+        isOpen={showCheckoutModal}
+        onClose={handleCloseCheckoutModal}
+        step={checkoutStep}
+        paymentHtml={paymentHtml}
+        selectedAddress={selectedAddress}
+        totals={totals}
+        onStartPayment={handleStartPayment}
+        isLoading={isCheckoutLoading}
+        isMobile={isMobile}
       />
     </div>
   );

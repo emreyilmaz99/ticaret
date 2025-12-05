@@ -1,7 +1,7 @@
 // src/pages/user/Cart/OrderSummary.jsx
 import React from 'react';
 import PropTypes from 'prop-types';
-import { FiArrowRight } from 'react-icons/fi';
+import { FiArrowRight, FiLoader } from 'react-icons/fi';
 import CouponSection from './CouponSection';
 import ShippingBreakdown from './ShippingBreakdown';
 
@@ -16,6 +16,8 @@ const OrderSummary = ({
   onCouponInputChange, 
   onApplyCoupon, 
   onRemoveCoupon,
+  onCheckout,
+  isCheckoutLoading,
   styles 
 }) => {
   return (
@@ -66,8 +68,24 @@ const OrderSummary = ({
         </div>
 
         {/* Checkout Butonu */}
-        <button style={styles.checkoutBtn}>
-          Sepeti Onayla <FiArrowRight />
+        <button 
+          style={{
+            ...styles.checkoutBtn,
+            opacity: isCheckoutLoading ? 0.7 : 1,
+            cursor: isCheckoutLoading ? 'not-allowed' : 'pointer',
+          }}
+          onClick={onCheckout}
+          disabled={isCheckoutLoading}
+        >
+          {isCheckoutLoading ? (
+            <>
+              <FiLoader className="spin" /> İşleniyor...
+            </>
+          ) : (
+            <>
+              Sepeti Onayla <FiArrowRight />
+            </>
+          )}
         </button>
 
         {/* Ödeme Yöntemleri İkonları */}
@@ -125,7 +143,13 @@ OrderSummary.propTypes = {
   onCouponInputChange: PropTypes.func.isRequired,
   onApplyCoupon: PropTypes.func.isRequired,
   onRemoveCoupon: PropTypes.func.isRequired,
+  onCheckout: PropTypes.func.isRequired,
+  isCheckoutLoading: PropTypes.bool,
   styles: PropTypes.object.isRequired,
+};
+
+OrderSummary.defaultProps = {
+  isCheckoutLoading: false,
 };
 
 export default OrderSummary;

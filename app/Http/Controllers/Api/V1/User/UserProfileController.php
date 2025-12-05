@@ -28,6 +28,7 @@ class UserProfileController extends Controller
                     'name' => $user->name,
                     'email' => $user->email,
                     'phone' => $user->phone,
+                    'identity_number' => $user->identity_number,
                     'avatar' => $user->avatar_url,
                     'birth_date' => $user->birth_date?->format('Y-m-d'),
                     'gender' => $user->gender,
@@ -49,6 +50,7 @@ class UserProfileController extends Controller
         $validated = $request->validate([
             'name' => ['sometimes', 'required', 'string', 'max:255'],
             'phone' => ['nullable', 'string', 'max:20'],
+            'identity_number' => ['nullable', 'string', 'size:11', 'regex:/^[0-9]+$/'],
             'birth_date' => ['nullable', 'date', 'before:today'],
             'gender' => ['nullable', Rule::in(['male', 'female', 'other'])],
         ]);
@@ -64,6 +66,7 @@ class UserProfileController extends Controller
                     'name' => $user->name,
                     'email' => $user->email,
                     'phone' => $user->phone,
+                    'identity_number' => $user->identity_number,
                     'avatar' => $user->avatar_url,
                     'birth_date' => $user->birth_date?->format('Y-m-d'),
                     'gender' => $user->gender,

@@ -25,6 +25,7 @@ class User extends Authenticatable
         'email',
         'password',
         'phone',
+        'identity_number',
         'avatar',
         'birth_date',
         'gender',
@@ -112,5 +113,21 @@ class User extends Authenticatable
     public function hasFavorited(string $productId): bool
     {
         return $this->favorites()->where('product_id', $productId)->exists();
+    }
+
+    /**
+     * Kullanıcının sepeti
+     */
+    public function cart()
+    {
+        return $this->hasOne(Cart::class);
+    }
+
+    /**
+     * Kullanıcının siparişleri
+     */
+    public function orders()
+    {
+        return $this->hasMany(Order::class);
     }
 }

@@ -3,14 +3,26 @@
 namespace App\Services;
 
 use App\Models\Vendor;
+use App\Models\Order;
+use App\Models\User;
+use App\Models\UserAddress;
 use Iyzipay\Model\Locale;
 use Iyzipay\Model\Currency;
 use Iyzipay\Model\SubMerchant;
 use Iyzipay\Model\SubMerchantType;
+use Iyzipay\Model\CheckoutFormInitialize;
+use Iyzipay\Model\CheckoutForm;
+use Iyzipay\Model\BasketItemType;
+use Iyzipay\Model\PaymentGroup;
+use Iyzipay\Model\Address;
+use Iyzipay\Model\BasketItem;
+use Iyzipay\Model\Buyer;
 use Iyzipay\Options;
 use Iyzipay\Request\CreateSubMerchantRequest;
 use Iyzipay\Request\UpdateSubMerchantRequest;
 use Iyzipay\Request\RetrieveSubMerchantRequest;
+use Iyzipay\Request\CreateCheckoutFormInitializeRequest;
+use Iyzipay\Request\RetrieveCheckoutFormRequest;
 use Illuminate\Support\Facades\Log;
 
 class IyzicoService extends BaseService
@@ -418,5 +430,241 @@ class IyzicoService extends BaseService
 
         // Create new SubMerchant
         return $this->createSubMerchant($vendor);
+    }
+
+    // ==================== CHECKOUT FORM METHODS ====================
+
+    /**
+     * Initialize Checkout Form (CF Başlatma)
+     * 
+     * @param Order $order Sipariş
+     * @param User $user Kullanıcı
+     * @param UserAddress $shippingAddress Teslimat adresi
+     * @param array $basketItems Sepet kalemleri
+     * @return \App\Core\ServiceResponse
+     */
+    public function initializeCheckoutForm(Order $order, User $user, UserAddress $shippingAddress, array $basketItems)
+    {
+        try {
+            $request = new CreateCheckoutFormInitializeRequest();
+            $request->setLocale(Locale::TR);
+            $request->setConversationId($order->iyzico_conversation_id ?? $this->generateConversationId());
+            $request->setPrice(number_format($order->subtotal, 2, '.', ''));
+            $request->setPaidPrice(number_format($order->total, 2, '.', ''));
+            $request->setCurrency(Currency::TL);
+            $request->setBasketId($order->order_number);
+            $request->setPaymentGroup(PaymentGroup::PRODUCT);
+            $request->setCallbackUrl(config('iyzico.callback_url'));
+            $request->setEnabledInstallments([1, 2, 3, 6, 9, 12]);
+
+            // Buyer
+            $buyer = $this->buildBuyer($user, $shippingAddress);
+            $request->setBuyer($buyer);
+
+            // Shipping Address
+            $shippingAddr = $this->buildAddress($shippingAddress, 'shipping');
+            $request->setShippingAddress($shippingAddr);
+
+            // Billing Address (same as shipping if not provided)
+            $billingAddr = $this->buildAddress($shippingAddress, 'billing');
+            $request->setBillingAddress($billingAddr);
+
+            // Basket Items
+            $request->setBasketItems($basketItems);
+
+            Log::info('iyzico CheckoutForm Initialize Request', [
+                'order_id' => $order->id,
+                'order_number' => $order->order_number,
+                'price' => $order->subtotal,
+                'paid_price' => $order->total,
+                'basket_count' => count($basketItems),
+            ]);
+
+            // API Call
+            $checkoutFormInit = CheckoutFormInitialize::create($request, $this->options);
+
+            if ($checkoutFormInit->getStatus() === 'success') {
+                Log::info('iyzico CheckoutForm Initialize Success', [
+                    'order_id' => $order->id,
+                    'token' => $checkoutFormInit->getToken(),
+                ]);
+
+                return $this->successResponse([
+                    'token' => $checkoutFormInit->getToken(),
+                    'checkoutFormContent' => $checkoutFormInit->getCheckoutFormContent(),
+                    'paymentPageUrl' => $checkoutFormInit->getPaymentPageUrl(),
+                    'tokenExpireTime' => $checkoutFormInit->getTokenExpireTime(),
+                ], 'Checkout Form başlatıldı');
+            }
+
+            Log::error('iyzico CheckoutForm Initialize Failed', [
+                'order_id' => $order->id,
+                'error_code' => $checkoutFormInit->getErrorCode(),
+                'error_message' => $checkoutFormInit->getErrorMessage(),
+            ]);
+
+            return $this->errorResponse(
+                'Ödeme başlatılamadı: ' . $checkoutFormInit->getErrorMessage(),
+                400
+            );
+
+        } catch (\Exception $e) {
+            Log::error('iyzico CheckoutForm Initialize Exception', [
+                'order_id' => $order->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return $this->errorResponse('iyzico bağlantı hatası: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Retrieve Checkout Form Result (CF Sorgulama)
+     * 
+     * @param string $token CF token
+     * @return \App\Core\ServiceResponse
+     */
+    public function retrieveCheckoutForm(string $token)
+    {
+        try {
+            $request = new RetrieveCheckoutFormRequest();
+            $request->setLocale(Locale::TR);
+            $request->setConversationId($this->generateConversationId());
+            $request->setToken($token);
+
+            $checkoutForm = CheckoutForm::retrieve($request, $this->options);
+
+            Log::info('iyzico CheckoutForm Retrieve', [
+                'token' => $token,
+                'status' => $checkoutForm->getStatus(),
+                'payment_status' => $checkoutForm->getPaymentStatus(),
+            ]);
+
+            if ($checkoutForm->getStatus() === 'success') {
+                $paymentStatus = $checkoutForm->getPaymentStatus();
+                
+                // SUCCESS = Ödeme başarılı
+                if ($paymentStatus === 'SUCCESS') {
+                    return $this->successResponse([
+                        'payment_id' => $checkoutForm->getPaymentId(),
+                        'payment_status' => $paymentStatus,
+                        'price' => $checkoutForm->getPrice(),
+                        'paid_price' => $checkoutForm->getPaidPrice(),
+                        'installment' => $checkoutForm->getInstallment(),
+                        'fraud_status' => $checkoutForm->getFraudStatus(),
+                        'card_type' => $checkoutForm->getCardType(),
+                        'card_association' => $checkoutForm->getCardAssociation(),
+                        'card_family' => $checkoutForm->getCardFamily(),
+                        'bin_number' => $checkoutForm->getBinNumber(),
+                        'last_four_digits' => $checkoutForm->getLastFourDigits(),
+                        'basket_id' => $checkoutForm->getBasketId(),
+                        'payment_items' => $checkoutForm->getPaymentItems(),
+                        'raw_result' => json_decode(json_encode($checkoutForm), true),
+                    ], 'Ödeme başarılı');
+                }
+
+                // FAILURE = Ödeme başarısız
+                return $this->errorResponse('Ödeme başarısız: ' . $paymentStatus, 400);
+            }
+
+            return $this->errorResponse(
+                'Ödeme sorgulanamadı: ' . $checkoutForm->getErrorMessage(),
+                400
+            );
+
+        } catch (\Exception $e) {
+            Log::error('iyzico CheckoutForm Retrieve Exception', [
+                'token' => $token,
+                'error' => $e->getMessage(),
+            ]);
+
+            return $this->errorResponse('iyzico bağlantı hatası: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Build Buyer object for iyzico
+     */
+    protected function buildBuyer(User $user, UserAddress $address): Buyer
+    {
+        $buyer = new Buyer();
+        $buyer->setId((string) $user->id);
+        $buyer->setName($this->getFirstName($address->full_name ?? $user->name));
+        $buyer->setSurname($this->getLastName($address->full_name ?? $user->name));
+        $buyer->setGsmNumber($this->formatPhoneNumber($address->phone ?? $user->phone));
+        $buyer->setEmail($user->email);
+        $buyer->setIdentityNumber($user->identity_number ?? '11111111111'); // TC Kimlik
+        $buyer->setRegistrationAddress($address->address_line);
+        $buyer->setCity($address->city);
+        $buyer->setCountry($address->country ?? 'Turkey');
+        $buyer->setIp(request()->ip() ?? '127.0.0.1');
+
+        return $buyer;
+    }
+
+    /**
+     * Build Address object for iyzico
+     */
+    protected function buildAddress(UserAddress $address, string $type = 'shipping'): Address
+    {
+        $iyziAddress = new Address();
+        $iyziAddress->setContactName($address->full_name);
+        $iyziAddress->setCity($address->city);
+        $iyziAddress->setCountry($address->country ?? 'Turkey');
+        
+        // Adres satırı oluştur
+        $addressLine = $address->address_line;
+        if ($address->district) {
+            $addressLine = $address->district . ', ' . $addressLine;
+        }
+        if ($address->neighborhood) {
+            $addressLine = $address->neighborhood . ', ' . $addressLine;
+        }
+        $iyziAddress->setAddress($addressLine);
+
+        return $iyziAddress;
+    }
+
+    /**
+     * Build BasketItem for a single order item
+     * 
+     * @param array $item Order item data
+     * @return BasketItem
+     */
+    public function buildBasketItem(array $item): BasketItem
+    {
+        $basketItem = new BasketItem();
+        $basketItem->setId($item['id']);
+        $basketItem->setName($item['name']);
+        $basketItem->setCategory1($item['category'] ?? 'Genel');
+        $basketItem->setItemType(BasketItemType::PHYSICAL);
+        $basketItem->setPrice(number_format($item['price'], 2, '.', ''));
+
+        // Marketplace: SubMerchant bilgileri
+        if (!empty($item['submerchant_key'])) {
+            $basketItem->setSubMerchantKey($item['submerchant_key']);
+            $basketItem->setSubMerchantPrice(number_format($item['submerchant_price'], 2, '.', ''));
+        }
+
+        return $basketItem;
+    }
+
+    /**
+     * Get first name from full name
+     */
+    protected function getFirstName(string $fullName): string
+    {
+        $parts = explode(' ', trim($fullName));
+        return $parts[0] ?? 'Ad';
+    }
+
+    /**
+     * Get last name from full name
+     */
+    protected function getLastName(string $fullName): string
+    {
+        $parts = explode(' ', trim($fullName));
+        array_shift($parts);
+        return implode(' ', $parts) ?: 'Soyad';
     }
 }

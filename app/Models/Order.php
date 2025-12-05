@@ -1,0 +1,271 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
+
+class Order extends Model
+{
+    // Sipariş durumları
+    public const STATUS_PENDING = 'pending';
+    public const STATUS_PAID = 'paid';
+    public const STATUS_PROCESSING = 'processing';
+    public const STATUS_SHIPPED = 'shipped';
+    public const STATUS_DELIVERED = 'delivered';
+    public const STATUS_CANCELLED = 'cancelled';
+    public const STATUS_REFUNDED = 'refunded';
+
+    // Ödeme durumları
+    public const PAYMENT_PENDING = 'pending';
+    public const PAYMENT_PROCESSING = 'processing';
+    public const PAYMENT_PAID = 'paid';
+    public const PAYMENT_FAILED = 'failed';
+    public const PAYMENT_REFUNDED = 'refunded';
+
+    protected $fillable = [
+        'user_id',
+        'order_number',
+        'status',
+        'payment_status',
+        'shipping_address',
+        'billing_address',
+        'subtotal',
+        'shipping_total',
+        'discount_total',
+        'campaign_discount',
+        'coupon_discount',
+        'total',
+        'currency',
+        'coupon_code',
+        'coupon_id',
+        'iyzico_token',
+        'iyzico_conversation_id',
+        'iyzico_payment_id',
+        'iyzico_fraud_status',
+        'iyzico_raw_response',
+        'card_type',
+        'card_association',
+        'card_family',
+        'card_bin',
+        'card_last_four',
+        'installment_count',
+        'notes',
+        'paid_at',
+    ];
+
+    protected $casts = [
+        'shipping_address' => 'array',
+        'billing_address' => 'array',
+        'iyzico_raw_response' => 'array',
+        'subtotal' => 'decimal:2',
+        'shipping_total' => 'decimal:2',
+        'discount_total' => 'decimal:2',
+        'campaign_discount' => 'decimal:2',
+        'coupon_discount' => 'decimal:2',
+        'total' => 'decimal:2',
+        'installment_count' => 'integer',
+        'iyzico_fraud_status' => 'integer',
+        'paid_at' => 'datetime',
+    ];
+
+    /**
+     * Boot the model
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($order) {
+            if (empty($order->order_number)) {
+                $order->order_number = self::generateOrderNumber();
+            }
+        });
+    }
+
+    /**
+     * Generate unique order number
+     * Format: ORD-YYMMDD-XXXXX
+     */
+    public static function generateOrderNumber(): string
+    {
+        $date = now()->format('ymd');
+        $random = strtoupper(Str::random(5));
+        $orderNumber = "ORD-{$date}-{$random}";
+        
+        // Ensure uniqueness
+        while (self::where('order_number', $orderNumber)->exists()) {
+            $random = strtoupper(Str::random(5));
+            $orderNumber = "ORD-{$date}-{$random}";
+        }
+        
+        return $orderNumber;
+    }
+
+    // ==================== İLİŞKİLER ====================
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function items(): HasMany
+    {
+        return $this->hasMany(OrderItem::class);
+    }
+
+    public function statusHistory(): HasMany
+    {
+        return $this->hasMany(OrderStatusHistory::class)->orderBy('created_at', 'desc');
+    }
+
+    public function coupon(): BelongsTo
+    {
+        return $this->belongsTo(VendorCoupon::class, 'coupon_id');
+    }
+
+    // ==================== DURUM YÖNETİMİ ====================
+
+    /**
+     * Durumu güncelle ve geçmişe kaydet
+     */
+    public function updateStatus(string $newStatus, ?string $note = null, ?string $changedByType = null, ?int $changedById = null): bool
+    {
+        $oldStatus = $this->status;
+        
+        if ($oldStatus === $newStatus) {
+            return false;
+        }
+
+        $this->status = $newStatus;
+        $this->save();
+
+        // Geçmişe kaydet
+        $this->statusHistory()->create([
+            'old_status' => $oldStatus,
+            'new_status' => $newStatus,
+            'note' => $note,
+            'changed_by_type' => $changedByType,
+            'changed_by_id' => $changedById,
+        ]);
+
+        return true;
+    }
+
+    /**
+     * Ödeme durumunu güncelle
+     */
+    public function updatePaymentStatus(string $newStatus): bool
+    {
+        $this->payment_status = $newStatus;
+        
+        if ($newStatus === self::PAYMENT_PAID) {
+            $this->paid_at = now();
+            $this->status = self::STATUS_PAID;
+        }
+        
+        return $this->save();
+    }
+
+    // ==================== KONTROLLER ====================
+
+    public function isPending(): bool
+    {
+        return $this->status === self::STATUS_PENDING;
+    }
+
+    public function isPaid(): bool
+    {
+        return $this->payment_status === self::PAYMENT_PAID;
+    }
+
+    public function isCancellable(): bool
+    {
+        return in_array($this->status, [self::STATUS_PENDING, self::STATUS_PAID]);
+    }
+
+    public function isRefundable(): bool
+    {
+        return $this->isPaid() && !in_array($this->status, [self::STATUS_REFUNDED, self::STATUS_CANCELLED]);
+    }
+
+    // ==================== HESAPLAMALAR ====================
+
+    /**
+     * Satıcı bazlı sipariş özeti
+     */
+    public function getVendorSummaryAttribute(): array
+    {
+        return $this->items
+            ->groupBy('vendor_id')
+            ->map(function ($items, $vendorId) {
+                $vendor = Vendor::find($vendorId);
+                return [
+                    'vendor_id' => $vendorId,
+                    'vendor_name' => $vendor?->company_name ?? $vendor?->name ?? 'Satıcı',
+                    'item_count' => $items->sum('quantity'),
+                    'subtotal' => $items->sum('line_total'),
+                    'submerchant_total' => $items->sum('submerchant_price'),
+                    'commission_total' => $items->sum('commission_amount'),
+                    'items' => $items,
+                ];
+            })
+            ->values()
+            ->toArray();
+    }
+
+    // ==================== LABEL'LAR ====================
+
+    public static function statusLabels(): array
+    {
+        return [
+            self::STATUS_PENDING => 'Ödeme Bekleniyor',
+            self::STATUS_PAID => 'Ödeme Alındı',
+            self::STATUS_PROCESSING => 'Hazırlanıyor',
+            self::STATUS_SHIPPED => 'Kargoya Verildi',
+            self::STATUS_DELIVERED => 'Teslim Edildi',
+            self::STATUS_CANCELLED => 'İptal Edildi',
+            self::STATUS_REFUNDED => 'İade Edildi',
+        ];
+    }
+
+    public static function paymentStatusLabels(): array
+    {
+        return [
+            self::PAYMENT_PENDING => 'Bekleniyor',
+            self::PAYMENT_PROCESSING => 'İşleniyor',
+            self::PAYMENT_PAID => 'Ödendi',
+            self::PAYMENT_FAILED => 'Başarısız',
+            self::PAYMENT_REFUNDED => 'İade Edildi',
+        ];
+    }
+
+    public function getStatusLabelAttribute(): string
+    {
+        return self::statusLabels()[$this->status] ?? $this->status;
+    }
+
+    public function getPaymentStatusLabelAttribute(): string
+    {
+        return self::paymentStatusLabels()[$this->payment_status] ?? $this->payment_status;
+    }
+
+    // ==================== SCOPES ====================
+
+    public function scopePending($query)
+    {
+        return $query->where('status', self::STATUS_PENDING);
+    }
+
+    public function scopePaid($query)
+    {
+        return $query->where('payment_status', self::PAYMENT_PAID);
+    }
+
+    public function scopeForUser($query, int $userId)
+    {
+        return $query->where('user_id', $userId);
+    }
+}

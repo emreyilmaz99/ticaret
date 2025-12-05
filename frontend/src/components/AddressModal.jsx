@@ -1,16 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getUserAddresses, deleteUserAddress } from '../features/user/api/userAddressApi';
-import { FaTimes, FaMapMarkerAlt, FaCheck, FaChevronDown, FaUser, FaPhone, FaTrash } from 'react-icons/fa';
+import { updateUserProfile } from '../features/user/api/userAuthApi';
+import { FaTimes, FaMapMarkerAlt, FaCheck, FaChevronDown, FaUser, FaPhone, FaTrash, FaIdCard } from 'react-icons/fa';
 import { cities, districts, getNeighborhoods, cityPlateCodes } from '../data/turkeyData';
 import { useToast } from './Toast';
 import { useAuth } from '../context/AuthContext';
 import LocationMap from './LocationMap';
 
 const AddressModal = ({ isOpen, onClose, onSave, initialAddress, onDeleteAddress }) => {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const [fullName, setFullName] = useState(initialAddress?.full_name || user?.name || '');
   const [phone, setPhone] = useState(initialAddress?.phone || user?.phone || '');
+  const [identityNumber, setIdentityNumber] = useState(user?.identity_number || '');
   const [selectedCity, setSelectedCity] = useState(initialAddress?.city || '');
   const [selectedDistrict, setSelectedDistrict] = useState(initialAddress?.district || '');
   const [selectedNeighborhood, setSelectedNeighborhood] = useState(initialAddress?.neighborhood || '');
@@ -18,6 +20,7 @@ const AddressModal = ({ isOpen, onClose, onSave, initialAddress, onDeleteAddress
   const [addressLine, setAddressLine] = useState(initialAddress?.address_line || '');
   const [addressLabel, setAddressLabel] = useState(initialAddress?.label || 'Ev');
   const [selectedId, setSelectedId] = useState(null);
+  const [savingIdentity, setSavingIdentity] = useState(false);
   
   const toast = useToast();
   const queryClient = useQueryClient();
@@ -80,6 +83,7 @@ const AddressModal = ({ isOpen, onClose, onSave, initialAddress, onDeleteAddress
       if (!initialAddress && user) {
         setFullName(user.name || '');
         setPhone(user.phone || '');
+        setIdentityNumber(user.identity_number || '');
       }
       if (initialAddress?.postal_code) {
         setPostalCode(initialAddress.postal_code);
@@ -94,10 +98,34 @@ const AddressModal = ({ isOpen, onClose, onSave, initialAddress, onDeleteAddress
 
   if (!isOpen) return null;
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!fullName || !phone || !selectedCity || !selectedDistrict || !selectedNeighborhood || !addressLine) {
       toast.warning('Eksik Bilgi', 'Lütfen tüm alanları doldurunuz.');
       return;
+    }
+
+    // TC Kimlik numarası kontrolü (ödeme için gerekli)
+    if (!identityNumber || identityNumber.length !== 11) {
+      toast.warning('TC Kimlik Numarası', 'Ödeme yapabilmek için geçerli bir TC Kimlik numarası girmeniz gerekmektedir.');
+      return;
+    }
+
+    // TC Kimlik numarasını kullanıcı profiline kaydet
+    if (identityNumber !== user?.identity_number) {
+      try {
+        setSavingIdentity(true);
+        await updateUserProfile({ identity_number: identityNumber });
+        if (refreshUser) {
+          await refreshUser();
+        }
+        toast.success('TC Kimlik Kaydedildi', 'TC Kimlik numaranız başarıyla güncellendi.');
+      } catch (error) {
+        console.error('TC Kimlik kaydetme hatası:', error);
+        toast.error('Hata', 'TC Kimlik numarası kaydedilirken bir sorun oluştu.');
+        setSavingIdentity(false);
+        return;
+      }
+      setSavingIdentity(false);
     }
     
     const fullAddress = {
@@ -458,6 +486,41 @@ const AddressModal = ({ isOpen, onClose, onSave, initialAddress, onDeleteAddress
               </div>
             </div>
 
+            {/* TC Kimlik Numarası */}
+            <div style={styles.inputGroup}>
+              <label style={styles.label}>
+                TC Kimlik Numarası 
+                <span style={{ color: '#dc2626', marginLeft: '4px' }}>*</span>
+                <span style={{ fontWeight: '400', color: '#94a3b8', marginLeft: '8px', fontSize: '11px' }}>
+                  (Ödeme için zorunlu)
+                </span>
+              </label>
+              <div style={{ position: 'relative' }}>
+                <FaIdCard style={{ position: 'absolute', left: '12px', top: '14px', color: '#94a3b8', fontSize: '14px' }} />
+                <input 
+                  type="text" 
+                  style={{ 
+                    ...styles.input, 
+                    paddingLeft: '36px',
+                    borderColor: identityNumber && identityNumber.length === 11 ? '#059669' : undefined,
+                    backgroundColor: identityNumber && identityNumber.length === 11 ? '#f0fdf4' : undefined
+                  }}
+                  value={identityNumber}
+                  onChange={(e) => setIdentityNumber(e.target.value.replace(/\D/g, '').slice(0, 11))}
+                  maxLength={11}
+                  placeholder="XXXXXXXXXXX"
+                />
+                {identityNumber && identityNumber.length === 11 && (
+                  <FaCheck style={{ position: 'absolute', right: '12px', top: '14px', color: '#059669', fontSize: '14px' }} />
+                )}
+              </div>
+              {identityNumber && identityNumber.length > 0 && identityNumber.length < 11 && (
+                <span style={{ fontSize: '11px', color: '#f59e0b', marginTop: '4px', display: 'block' }}>
+                  {11 - identityNumber.length} karakter daha giriniz
+                </span>
+              )}
+            </div>
+
             {/* City */}
             <div style={styles.inputGroup}>
               <label style={styles.label}>İl Seçiniz</label>
@@ -578,8 +641,18 @@ const AddressModal = ({ isOpen, onClose, onSave, initialAddress, onDeleteAddress
 
         {/* Footer */}
         <div style={styles.footer}>
-          <button style={styles.cancelButton} onClick={onClose}>Vazgeç</button>
-          <button style={styles.saveButton} onClick={handleSave}>Adresi Kaydet</button>
+          <button style={styles.cancelButton} onClick={onClose} disabled={savingIdentity}>Vazgeç</button>
+          <button 
+            style={{ 
+              ...styles.saveButton, 
+              opacity: savingIdentity ? 0.7 : 1,
+              cursor: savingIdentity ? 'not-allowed' : 'pointer'
+            }} 
+            onClick={handleSave}
+            disabled={savingIdentity}
+          >
+            {savingIdentity ? 'Kaydediliyor...' : 'Adresi Kaydet'}
+          </button>
         </div>
       </div>
     </div>

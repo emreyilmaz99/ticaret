@@ -6,9 +6,10 @@ import { useAuth } from '../../context/AuthContext';
 import { 
   FaUser, FaSave, FaPhone, FaEnvelope, FaSpinner, FaCamera, FaTimes, 
   FaLock, FaBirthdayCake, FaVenusMars, FaUserCircle, FaCheckCircle,
-  FaMapMarkerAlt, FaBoxOpen, FaSignOutAlt, FaShieldAlt
+  FaMapMarkerAlt, FaBoxOpen, FaSignOutAlt, FaShieldAlt, FaIdCard
 } from 'react-icons/fa';
 import UserAddresses from './UserAddresses';
+import UserOrders from './UserOrders';
 
 const UserProfile = () => {
   const qc = useQueryClient();
@@ -28,6 +29,7 @@ const UserProfile = () => {
   const [form, setForm] = useState({
     name: '',
     phone: '',
+    identity_number: '',
     birth_date: '',
     gender: ''
   });
@@ -55,6 +57,7 @@ const UserProfile = () => {
       setForm({
         name: user.name || '',
         phone: user.phone || '',
+        identity_number: user.identity_number || '',
         birth_date: user.birth_date || '',
         gender: user.gender || ''
       });
@@ -443,6 +446,39 @@ const UserProfile = () => {
                       </div>
 
                       <div style={styles.inputGroup}>
+                        <label style={styles.label}>
+                          TC Kimlik Numarası
+                          <span style={{ fontSize: '11px', color: '#94a3b8', fontWeight: '400', marginLeft: '8px' }}>
+                            (Ödeme için zorunlu)
+                          </span>
+                        </label>
+                        <div style={{ position: 'relative' }}>
+                          <FaIdCard style={{ position: 'absolute', left: '16px', top: '14px', color: '#94a3b8' }} />
+                          <input 
+                            type="text" 
+                            style={{ 
+                              ...styles.input, 
+                              paddingLeft: '44px',
+                              borderColor: form.identity_number?.length === 11 ? '#059669' : undefined,
+                              backgroundColor: form.identity_number?.length === 11 ? '#f0fdf4' : undefined
+                            }}
+                            value={form.identity_number}
+                            onChange={(e) => setForm({...form, identity_number: e.target.value.replace(/\D/g, '').slice(0, 11)})}
+                            maxLength={11}
+                            placeholder="XXXXXXXXXXX"
+                          />
+                          {form.identity_number?.length === 11 && (
+                            <FaCheckCircle style={{ position: 'absolute', right: '16px', top: '14px', color: '#059669' }} />
+                          )}
+                        </div>
+                        {form.identity_number && form.identity_number.length > 0 && form.identity_number.length < 11 && (
+                          <span style={{ fontSize: '11px', color: '#f59e0b', marginTop: '4px', display: 'block' }}>
+                            {11 - form.identity_number.length} karakter daha giriniz
+                          </span>
+                        )}
+                      </div>
+
+                      <div style={styles.inputGroup}>
                         <label style={styles.label}>Doğum Tarihi</label>
                         <div style={{ position: 'relative' }}>
                           <FaBirthdayCake style={{ position: 'absolute', left: '16px', top: '14px', color: '#94a3b8' }} />
@@ -551,19 +587,7 @@ const UserProfile = () => {
               {/* ORDERS TAB */}
               {activeTab === 'orders' && (
                 <div>
-                  <div style={styles.sectionTitle}>
-                    <FaBoxOpen color="#059669" /> Siparişlerim
-                  </div>
-                  <div style={{ textAlign: 'center', padding: '60px 0', color: '#64748b' }}>
-                    <FaBoxOpen size={48} style={{ marginBottom: '16px', opacity: 0.5 }} />
-                    <p>Henüz bir siparişiniz bulunmuyor.</p>
-                    <button 
-                      style={{ ...styles.button, margin: '20px auto' }}
-                      onClick={() => window.location.href = '/'}
-                    >
-                      Alışverişe Başla
-                    </button>
-                  </div>
+                  <UserOrders />
                 </div>
               )}
 

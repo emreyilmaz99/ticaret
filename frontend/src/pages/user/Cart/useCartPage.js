@@ -1,9 +1,11 @@
 // src/pages/user/Cart/useCartPage.js
 import { useState, useEffect, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { useCart } from '../../../context/CartContext';
 import { useAuth } from '../../../context/AuthContext';
 import { getUserAddresses, createUserAddress, deleteUserAddress } from '../../../features/user/api/userAddressApi';
+import { initializeCheckout } from '../../../features/checkout/api/checkoutApi';
 import { useToast } from '../../../components/Toast';
 
 /**
@@ -26,9 +28,10 @@ const useCartPage = () => {
     initialized
   } = useCart();
 
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const toast = useToast();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   // Local state
   const [couponInput, setCouponInput] = useState('');
@@ -36,6 +39,11 @@ const useCartPage = () => {
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
   const [selectedAddress, setSelectedAddress] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, addressId: null });
+  
+  // Checkout state
+  const [showCheckoutModal, setShowCheckoutModal] = useState(false);
+  const [checkoutStep, setCheckoutStep] = useState('address'); // address, processing, payment
+  const [paymentHtml, setPaymentHtml] = useState(null);
 
   // Kullanıcının kayıtlı adreslerini çek
   const { data: addressData, isLoading: addressLoading } = useQuery({
@@ -126,6 +134,27 @@ const useCartPage = () => {
       console.error('Adres silme hatası:', error);
       setDeleteConfirm({ isOpen: false, addressId: null });
       toast.error('Hata', 'Adres silinirken bir sorun oluştu.');
+    }
+  });
+
+  // Checkout mutation - iyzico ödeme başlatma
+  const checkoutMutation = useMutation({
+    mutationFn: initializeCheckout,
+    onSuccess: (response) => {
+      if (response.success) {
+        // iyzico ödeme formunu göster
+        setPaymentHtml(response.data.checkout_form_content);
+        setCheckoutStep('payment');
+        toast.success('Ödeme Formu Hazır', 'Lütfen kart bilgilerinizi girin.');
+      } else {
+        toast.error('Hata', response.message || 'Ödeme başlatılamadı.');
+        setCheckoutStep('address');
+      }
+    },
+    onError: (error) => {
+      const message = error.response?.data?.message || 'Ödeme başlatılırken bir hata oluştu.';
+      toast.error('Hata', message);
+      setCheckoutStep('address');
     }
   });
 
@@ -231,6 +260,60 @@ const useCartPage = () => {
     setDeleteConfirm({ isOpen: false, addressId: null });
   }, []);
 
+  /**
+   * Sepeti Onayla butonuna tıklama - Checkout başlat
+   */
+  const handleCheckoutClick = useCallback(() => {
+    // Giriş kontrolü
+    if (!isAuthenticated) {
+      toast.warning('Giriş Yapın', 'Ödeme yapabilmek için giriş yapmanız gerekmektedir.');
+      navigate('/login?redirect=/cart');
+      return;
+    }
+
+    // TC Kimlik kontrolü
+    if (!user?.identity_number) {
+      toast.warning('TC Kimlik Gerekli', 'Ödeme yapabilmek için profil sayfanızdan TC Kimlik numaranızı girmeniz gerekmektedir.');
+      navigate('/account/profile');
+      return;
+    }
+
+    // Adres kontrolü
+    if (!selectedAddress) {
+      toast.warning('Adres Seçin', 'Lütfen bir teslimat adresi seçiniz.');
+      return;
+    }
+
+    // Checkout modalını aç
+    setShowCheckoutModal(true);
+    setCheckoutStep('address');
+    setPaymentHtml(null);
+  }, [isAuthenticated, user, selectedAddress, toast, navigate]);
+
+  /**
+   * Ödemeye geç - iyzico form başlat
+   */
+  const handleStartPayment = useCallback(() => {
+    if (!selectedAddress) {
+      toast.warning('Adres Seçin', 'Lütfen bir teslimat adresi seçiniz.');
+      return;
+    }
+
+    setCheckoutStep('processing');
+    checkoutMutation.mutate({
+      shipping_address_id: selectedAddress.id,
+    });
+  }, [selectedAddress, checkoutMutation, toast]);
+
+  /**
+   * Checkout modal'ını kapat
+   */
+  const handleCloseCheckoutModal = useCallback(() => {
+    setShowCheckoutModal(false);
+    setCheckoutStep('address');
+    setPaymentHtml(null);
+  }, []);
+
   return {
     // State
     cartItems,
@@ -263,6 +346,12 @@ const useCartPage = () => {
     confirmDeleteAddress,
     cancelDeleteAddress,
 
+    // Checkout State
+    showCheckoutModal,
+    checkoutStep,
+    paymentHtml,
+    isCheckoutLoading: checkoutMutation.isPending,
+
     // Setters
     setCouponInput,
 
@@ -279,6 +368,11 @@ const useCartPage = () => {
     handleCloseAddressModal,
     handleSaveNewAddress,
     handleDeleteAddress,
+
+    // Checkout Handlers
+    handleCheckoutClick,
+    handleStartPayment,
+    handleCloseCheckoutModal,
     
     // Loading states
     isDeleting: deleteAddressMutation.isPending,

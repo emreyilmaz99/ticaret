@@ -94,8 +94,10 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const isAuthenticated = !!user;
+
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, loading, refreshUser }}>
+    <AuthContext.Provider value={{ user, isAuthenticated, login, register, logout, loading, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );
