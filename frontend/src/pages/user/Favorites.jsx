@@ -10,7 +10,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../components/Toast';
 
 const Favorites = () => {
-  const { favorites, removeFromFavorites, clearFavorites, loading, count, fetchFavorites, clearNewItemsBadge } = useFavorites();
+  const { favorites, removeFromFavorites, clearFavorites, loading, count, fetchFavorites } = useFavorites();
   const { addToCart } = useCart();
   const { user } = useAuth();
   const toast = useToast();
@@ -23,10 +23,9 @@ const Favorites = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
   
-  // Sayfa açıldığında favorileri yenile ve bildirimi temizle
+  // Sayfa açıldığında favorileri yenile
   useEffect(() => {
     fetchFavorites(true);
-    clearNewItemsBadge();
   }, []);
 
   // Helper: API formatı veya localStorage formatı

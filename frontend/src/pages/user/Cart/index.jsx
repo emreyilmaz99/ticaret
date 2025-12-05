@@ -6,6 +6,8 @@ import CartHeader from './CartHeader';
 import CartProductList from './CartProductList';
 import OrderSummary from './OrderSummary';
 import EmptyCart from './EmptyCart';
+import DeliveryAddressSection from './DeliveryAddressSection';
+import AddressModal from '../../../components/AddressModal';
 
 // --- Custom Hook ---
 import useCartPage from './useCartPage';
@@ -13,16 +15,6 @@ import useCartPage from './useCartPage';
 // --- Stiller ---
 import { getStyles } from './styles';
 
-/**
- * Ana Sepet Sayfası Bileşeni
- * 
- * Modüler yapı:
- * - useCartPage: Tüm state ve iş mantığı
- * - CartHeader: Sayfa başlığı
- * - CartProductList: Ürün listesi
- * - OrderSummary: Sipariş özeti ve checkout
- * - EmptyCart: Boş sepet durumu
- */
 const Cart = () => {
   // Custom hook'tan tüm state ve fonksiyonları al
   const {
@@ -33,12 +25,24 @@ const Cart = () => {
     initialized,
     couponInput,
     isMobile,
+    // Address
+    selectedAddress,
+    savedAddresses,
+    addressLoading,
+    isAddressModalOpen,
+    // Setters
     setCouponInput,
+    // Handlers
     handleApplyCoupon,
     handleRemoveItem,
     handleUpdateQuantity,
     handleClearCart,
     handleRemoveCoupon,
+    // Address Handlers
+    handleSelectAddress,
+    handleOpenAddressModal,
+    handleCloseAddressModal,
+    handleSaveNewAddress,
   } = useCartPage();
 
   // Responsive stiller
@@ -65,16 +69,29 @@ const Cart = () => {
 
       {/* Ana Layout */}
       <div style={styles.layout}>
-        {/* Sol Taraf: Ürün Listesi */}
-        <CartProductList
-          cartItems={cartItems}
-          onRemoveItem={handleRemoveItem}
-          onUpdateQuantity={handleUpdateQuantity}
-          onClearCart={handleClearCart}
-          loading={loading}
-          isMobile={isMobile}
-          styles={styles}
-        />
+        {/* Sol Taraf: Adres + Ürün Listesi */}
+        <div style={styles.productList}>
+          {/* Teslimat Adresi */}
+          <DeliveryAddressSection
+            selectedAddress={selectedAddress}
+            savedAddresses={savedAddresses}
+            onSelectAddress={handleSelectAddress}
+            onAddNewAddress={handleOpenAddressModal}
+            isLoading={addressLoading}
+            isMobile={isMobile}
+          />
+
+          {/* Ürün Listesi */}
+          <CartProductList
+            cartItems={cartItems}
+            onRemoveItem={handleRemoveItem}
+            onUpdateQuantity={handleUpdateQuantity}
+            onClearCart={handleClearCart}
+            loading={loading}
+            isMobile={isMobile}
+            styles={styles}
+          />
+        </div>
 
         {/* Sağ Taraf: Sipariş Özeti */}
         <OrderSummary
@@ -87,6 +104,13 @@ const Cart = () => {
           styles={styles}
         />
       </div>
+
+      {/* Adres Modal */}
+      <AddressModal
+        isOpen={isAddressModalOpen}
+        onClose={handleCloseAddressModal}
+        onSave={handleSaveNewAddress}
+      />
     </div>
   );
 };
@@ -102,5 +126,6 @@ export { default as OrderSummary } from './OrderSummary';
 export { default as CouponSection } from './CouponSection';
 export { default as ShippingBreakdown } from './ShippingBreakdown';
 export { default as EmptyCart } from './EmptyCart';
+export { default as DeliveryAddressSection } from './DeliveryAddressSection';
 export { default as useCartPage } from './useCartPage';
 export { getStyles } from './styles';

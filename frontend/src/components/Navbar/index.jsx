@@ -28,11 +28,9 @@ const Navbar = () => {
     user,
     favorites,
     favoriteCount,
-    hasNewFavorites,
     cartItems,
     totals,
     itemCount,
-    hasNewCartItems,
     getLinkStyle,
     handleLogout,
     handleSearch,
@@ -84,8 +82,8 @@ const Navbar = () => {
                 <Link to="/favorites" style={getLinkStyle('/favorites')}>
                   <div style={styles.iconBox}>
                     <FaHeart />
-                    {hasNewFavorites && (
-                      <span style={styles.badge}>{favoriteCount || favorites?.length || '!'}</span>
+                    {(favoriteCount > 0 || favorites?.length > 0) && (
+                      <span style={styles.badge}>{favoriteCount || favorites?.length}</span>
                     )}
                   </div>
                   <span>Favorilerim</span>
@@ -100,8 +98,8 @@ const Navbar = () => {
                   <Link to="/cart" style={getLinkStyle('/cart')}>
                     <div style={styles.iconBox}>
                       <FaShoppingBag />
-                      {hasNewCartItems && (
-                        <span style={styles.badge}>{itemCount || cartItems?.length || '!'}</span>
+                      {(itemCount > 0 || cartItems?.length > 0) && (
+                        <span style={styles.badge}>{itemCount || cartItems?.length}</span>
                       )}
                     </div>
                     <span>Sepetim</span>

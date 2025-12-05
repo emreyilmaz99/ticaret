@@ -1,6 +1,10 @@
 // src/pages/user/Cart/useCartPage.js
 import { useState, useEffect, useCallback } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCart } from '../../../context/CartContext';
+import { useAuth } from '../../../context/AuthContext';
+import { getUserAddresses, createUserAddress } from '../../../features/user/api/userAddressApi';
+import { useToast } from '../../../components/Toast';
 
 /**
  * Cart sayfası için custom hook
@@ -18,13 +22,71 @@ const useCartPage = () => {
     coupon,
     totals,
     loading,
-    initialized,
-    clearNewItemsBadge
+    initialized
   } = useCart();
+
+  const { user } = useAuth();
+  const toast = useToast();
+  const queryClient = useQueryClient();
 
   // Local state
   const [couponInput, setCouponInput] = useState('');
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
+  const [selectedAddress, setSelectedAddress] = useState(null);
+
+  // Kullanıcının kayıtlı adreslerini çek
+  const { data: addressData, isLoading: addressLoading } = useQuery({
+    queryKey: ['user', 'addresses'],
+    queryFn: getUserAddresses,
+    enabled: !!user,
+  });
+
+  const savedAddresses = addressData?.data?.addresses || [];
+
+  // Varsayılan adresi seç - sadece savedAddresses değiştiğinde
+  useEffect(() => {
+    if (savedAddresses.length > 0) {
+      // Eğer zaten seçili adres varsa ve hala listede varsa, dokunma
+      if (selectedAddress) {
+        const stillExists = savedAddresses.find(a => a.id === selectedAddress.id);
+        if (stillExists) return;
+      }
+      
+      // Önce localStorage'dan kontrol et
+      const savedSelection = localStorage.getItem('cart_selected_address');
+      if (savedSelection) {
+        try {
+          const parsed = JSON.parse(savedSelection);
+          const found = savedAddresses.find(a => a.id === parsed.id);
+          if (found) {
+            setSelectedAddress(found);
+            return;
+          }
+        } catch {}
+      }
+      // Varsayılan adresi veya ilk adresi seç
+      const defaultAddr = savedAddresses.find(a => a.is_default) || savedAddresses[0];
+      setSelectedAddress(defaultAddr);
+    }
+  }, [savedAddresses]);
+
+  // Yeni adres ekleme mutation
+  const createAddressMutation = useMutation({
+    mutationFn: createUserAddress,
+    onSuccess: (response) => {
+      const newAddress = response.data || response.address || response;
+      queryClient.invalidateQueries(['user', 'addresses']);
+      setSelectedAddress(newAddress);
+      localStorage.setItem('cart_selected_address', JSON.stringify(newAddress));
+      toast.success('Adres Eklendi', 'Yeni teslimat adresi başarıyla kaydedildi.');
+      setIsAddressModalOpen(false);
+    },
+    onError: (error) => {
+      console.error('Adres ekleme hatası:', error);
+      toast.error('Hata', 'Adres eklenirken bir sorun oluştu.');
+    }
+  });
 
   // Resize listener
   useEffect(() => {
@@ -32,11 +94,6 @@ const useCartPage = () => {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
-
-  // Sayfa açıldığında badge'i temizle
-  useEffect(() => {
-    clearNewItemsBadge();
-  }, [clearNewItemsBadge]);
 
   /**
    * Kupon uygulama işlemi
@@ -78,6 +135,38 @@ const useCartPage = () => {
     removeCoupon();
   }, [removeCoupon]);
 
+  /**
+   * Adres seçme işlemi
+   */
+  const handleSelectAddress = useCallback((address) => {
+    setSelectedAddress(address);
+    localStorage.setItem('cart_selected_address', JSON.stringify(address));
+    toast.success('Adres Seçildi', `${address.label || 'Adres'} teslimat adresi olarak seçildi.`);
+  }, [toast]);
+
+  /**
+   * Yeni adres ekleme modal'ı açma
+   */
+  const handleOpenAddressModal = useCallback(() => {
+    setIsAddressModalOpen(true);
+  }, []);
+
+  /**
+   * Adres modal'ı kapatma
+   */
+  const handleCloseAddressModal = useCallback(() => {
+    setIsAddressModalOpen(false);
+  }, []);
+
+  /**
+   * Yeni adres kaydetme
+   */
+  const handleSaveNewAddress = useCallback((address) => {
+    if (user) {
+      createAddressMutation.mutate(address);
+    }
+  }, [user, createAddressMutation]);
+
   return {
     // State
     cartItems,
@@ -88,6 +177,12 @@ const useCartPage = () => {
     couponInput,
     isMobile,
 
+    // Address State
+    selectedAddress,
+    savedAddresses,
+    addressLoading,
+    isAddressModalOpen,
+
     // Setters
     setCouponInput,
 
@@ -97,6 +192,12 @@ const useCartPage = () => {
     handleUpdateQuantity,
     handleClearCart,
     handleRemoveCoupon,
+
+    // Address Handlers
+    handleSelectAddress,
+    handleOpenAddressModal,
+    handleCloseAddressModal,
+    handleSaveNewAddress,
   };
 };
 

@@ -18,40 +18,38 @@ const CartProductList = ({
   styles 
 }) => {
   return (
-    <div style={styles.productList}>
-      <div style={styles.card}>
-        {/* Tablo Başlığı (Sadece Desktop) */}
-        <div style={{
-          ...styles.tableHeader, 
-          display: isMobile ? 'none' : 'grid'
-        }}>
-          <div>Ürün</div>
-          <div style={{ textAlign: 'center' }}>Birim Fiyat</div>
-          <div style={{ textAlign: 'center' }}>Adet</div>
-          <div style={{ textAlign: 'right' }}>Toplam</div>
-        </div>
+    <div style={styles.card}>
+      {/* Tablo Başlığı (Sadece Desktop) */}
+      <div style={{
+        ...styles.tableHeader, 
+        display: isMobile ? 'none' : 'grid'
+      }}>
+        <div>Ürün</div>
+        <div style={{ textAlign: 'center' }}>Birim Fiyat</div>
+        <div style={{ textAlign: 'center' }}>Adet</div>
+        <div style={{ textAlign: 'right' }}>Toplam</div>
+      </div>
 
-        {/* Ürün Listesi */}
-        <div>
-          {cartItems.map((item) => (
-            <CartItem
-              key={item.id}
-              item={item}
-              onRemove={onRemoveItem}
-              onUpdateQuantity={onUpdateQuantity}
-              loading={loading}
-              isMobile={isMobile}
-              styles={styles}
-            />
-          ))}
-        </div>
+      {/* Ürün Listesi */}
+      <div>
+        {cartItems.map((item) => (
+          <CartItem
+            key={item.id}
+            item={item}
+            onRemove={onRemoveItem}
+            onUpdateQuantity={onUpdateQuantity}
+            loading={loading}
+            isMobile={isMobile}
+            styles={styles}
+          />
+        ))}
+      </div>
 
-        {/* Alt Aksiyonlar */}
-        <CartFooter 
+      {/* Alt Aksiyonlar */}
+      <CartFooter 
           onClearCart={onClearCart}
           styles={styles}
         />
-      </div>
     </div>
   );
 };

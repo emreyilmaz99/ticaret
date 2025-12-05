@@ -29,8 +29,8 @@ const useNavbar = () => {
   // --- Hook Tanımları ---
   const toast = useToast();
   const { user, logout } = useContext(AuthContext);
-  const { favorites, count: favoriteCount, hasNewItems: hasNewFavorites } = useFavorites();
-  const { cartItems, totals, itemCount, hasNewItems: hasNewCartItems } = useCart();
+  const { favorites, count: favoriteCount } = useFavorites();
+  const { cartItems, totals, itemCount } = useCart();
   const navigate = useNavigate();
   const location = useLocation();
   const queryClient = useQueryClient();
@@ -130,11 +130,9 @@ const useNavbar = () => {
     user,
     favorites,
     favoriteCount,
-    hasNewFavorites,
     cartItems,
     totals,
     itemCount,
-    hasNewCartItems,
     
     // Fonksiyonlar
     getLinkStyle,
