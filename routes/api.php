@@ -170,6 +170,10 @@ Route::prefix('v1/vendor')->group(function () {
         Route::post('payouts', [SelfVendorPayoutController::class, 'store']);
         // onboarding completion (vendor marks their onboarding as finished)
         Route::post('onboarding/complete', [VendorProfileController::class, 'completeOnboarding']);
+        
+        // vendor shipping settings
+        Route::get('shipping-settings', [\App\Http\Controllers\Api\V1\Vendor\ShippingSettingController::class, 'show']);
+        Route::put('shipping-settings', [\App\Http\Controllers\Api\V1\Vendor\ShippingSettingController::class, 'update']);
     });
 });
 

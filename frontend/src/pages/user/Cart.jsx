@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useCart } from '../../context/CartContext';
 import { Link } from 'react-router-dom';
-import { FiTrash2, FiMinus, FiPlus, FiShoppingBag, FiArrowRight, FiTag, FiX, FiLoader } from 'react-icons/fi';
+import { FiTrash2, FiMinus, FiPlus, FiShoppingBag, FiArrowRight, FiTag, FiX, FiLoader, FiTruck, FiGift } from 'react-icons/fi';
 
 const Cart = () => {
   const { 
@@ -554,14 +554,74 @@ const Cart = () => {
                 </div>
               )}
 
-              <div style={styles.row}>
-                <span>Kargo</span>
-                {(totals?.shipping || 0) === 0 ? (
-                  <span style={{color: '#16a34a', fontWeight: '600'}}>Bedava</span>
-                ) : (
-                  <span>{(totals?.shipping || 0).toLocaleString('tr-TR')} TL</span>
-                )}
-              </div>
+              {/* Satıcı Bazlı Kargo Bilgisi */}
+              {totals?.shipping_breakdown && totals.shipping_breakdown.length > 0 ? (
+                <div style={{marginBottom: '16px'}}>
+                  <div style={{...styles.row, marginBottom: '8px', fontWeight: '600', color: '#475569'}}>
+                    <span style={{display: 'flex', alignItems: 'center', gap: '6px'}}>
+                      <FiTruck size={14} /> Kargo Ücretleri
+                    </span>
+                  </div>
+                  {totals.shipping_breakdown.map((vendor, idx) => (
+                    <div key={idx} style={{
+                      padding: '10px 12px',
+                      backgroundColor: vendor.is_free ? '#f0fdf4' : '#f8fafc',
+                      borderRadius: '8px',
+                      marginBottom: '8px',
+                      border: vendor.is_free ? '1px solid #bbf7d0' : '1px solid #e2e8f0'
+                    }}>
+                      <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+                        <span style={{fontSize: '13px', color: '#475569', fontWeight: '500'}}>
+                          {vendor.vendor_name}
+                        </span>
+                        {vendor.is_free ? (
+                          <span style={{
+                            color: '#16a34a', 
+                            fontWeight: '600', 
+                            fontSize: '13px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                          }}>
+                            <FiGift size={12} /> Ücretsiz
+                          </span>
+                        ) : (
+                          <span style={{fontWeight: '600', fontSize: '13px', color: '#1e293b'}}>
+                            {vendor.shipping_cost.toLocaleString('tr-TR')} TL
+                          </span>
+                        )}
+                      </div>
+                      {!vendor.is_free && vendor.remaining_for_free && (
+                        <p style={{
+                          fontSize: '11px', 
+                          color: '#64748b', 
+                          marginTop: '4px',
+                          margin: '4px 0 0 0'
+                        }}>
+                          💡 {vendor.remaining_for_free.toLocaleString('tr-TR')} TL daha alışveriş yapın, kargo bedava!
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                  <div style={{...styles.row, marginTop: '12px', paddingTop: '8px', borderTop: '1px dashed #e2e8f0'}}>
+                    <span style={{fontWeight: '500'}}>Toplam Kargo</span>
+                    {(totals?.shipping || 0) === 0 ? (
+                      <span style={{color: '#16a34a', fontWeight: '600'}}>Bedava</span>
+                    ) : (
+                      <span style={{fontWeight: '600'}}>{(totals?.shipping || 0).toLocaleString('tr-TR')} TL</span>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div style={styles.row}>
+                  <span>Kargo</span>
+                  {(totals?.shipping || 0) === 0 ? (
+                    <span style={{color: '#16a34a', fontWeight: '600'}}>Bedava</span>
+                  ) : (
+                    <span>{(totals?.shipping || 0).toLocaleString('tr-TR')} TL</span>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Toplam */}

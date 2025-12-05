@@ -126,6 +126,27 @@ class Vendor extends Authenticatable
         return $this->hasMany(VendorSetting::class);
     }
 
+    /**
+     * Kargo ayarları ilişkisi
+     */
+    public function shippingSetting()
+    {
+        return $this->hasOne(VendorShippingSetting::class);
+    }
+
+    /**
+     * Verilen sepet alt toplamı için kargo ücretini hesapla
+     * Kargo ayarı yoksa varsayılan değerler kullanılır
+     * 
+     * @param float $subtotal Sepet alt toplamı
+     * @return float Kargo ücreti
+     */
+    public function calculateShippingCost(float $subtotal): float
+    {
+        $settings = VendorShippingSetting::getSettingsForVendor($this->id);
+        return $settings->calculateShippingCost($subtotal);
+    }
+
     public function metadata()
     {
         return $this->hasMany(VendorMetadata::class);
