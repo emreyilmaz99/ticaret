@@ -31,14 +31,15 @@ import UserAddresses from './pages/user/UserAddresses'; // Kullanıcı Adresleri
 import AdminLogin from './pages/admin/AdminLogin'; // Admin Girişi
 import Dashboard from './pages/admin/Dashboard';   // Admin Paneli
 import VendorsPage from './pages/admin/VendorsPage'; // Satıcı Yönetimi (UNUSED NOW, replaced by FullApplicationsPage)
-import FullApplicationsPage from './pages/admin/FullApplicationsPage'; // Tam Başvurular
 import ActiveVendorsPage from './pages/admin/ActiveVendorsPage'; // Aktif Satıcılar
 import AdminsPage from './pages/admin/AdminsPage'; // Yönetici Yönetimi
 import UsersPage from './pages/admin/UsersPage'; // Kullanıcı Yönetimi
-import VendorApplications from './pages/admin/VendorApplications'; // Satıcı Başvuruları
-import CommissionPlans from './pages/admin/CommissionPlans'; // Komisyon Planları
-import ProductsPage from './pages/admin/ProductsPage'; // Ürün Yönetimi
-import CategoriesPage from './pages/admin/CategoriesPage'; // Kategori Yönetimi
+
+// Modüler Admin Sayfaları
+import { FullApplicationsPage, VendorApplicationsPage } from './pages/admin/Applications';
+import CommissionPlans from './pages/admin/CommissionPlans';
+import ProductsPage from './pages/admin/Products';
+import CategoriesPage from './pages/admin/Categories';
 
 // 3. Satıcı Sayfaları
 import VendorLogin from './pages/vendor/VendorLogin';
@@ -113,7 +114,7 @@ function App() {
                   <Route path="/admin/dashboard" element={<Dashboard />} />
                   <Route path="/admin/active-vendors" element={<ActiveVendorsPage />} />
                   <Route path="/admin/vendors" element={<FullApplicationsPage />} />
-                  <Route path="/admin/vendor-applications" element={<VendorApplications />} />
+                  <Route path="/admin/vendor-applications" element={<VendorApplicationsPage />} />
                   <Route path="/admin/commission-plans" element={<CommissionPlans />} />
                   <Route path="/admin/products" element={<ProductsPage />} />
                   <Route path="/admin/categories" element={<CategoriesPage />} />
