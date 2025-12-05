@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'react-hot-toast';
+import { useToast } from '../../../components/Toast';
 import axios from 'axios';
 
 const BACKEND_URL = 'http://127.0.0.1:8000';
@@ -11,6 +11,7 @@ const BACKEND_URL = 'http://127.0.0.1:8000';
  */
 export const useVendorCategories = () => {
   const queryClient = useQueryClient();
+  const { showSuccess, showError } = useToast();
   
   // Search and filter state
   const [searchQuery, setSearchQuery] = useState('');
@@ -74,12 +75,12 @@ export const useVendorCategories = () => {
       return response.data;
     },
     onSuccess: () => {
-      toast.success('Kategoriler başarıyla kaydedildi!');
+      showSuccess('Kategoriler başarıyla kaydedildi!');
       queryClient.invalidateQueries(['mySelectedCategories']);
       setHasChanges(false);
     },
     onError: (error) => {
-      toast.error(error.response?.data?.message || 'Kategoriler kaydedilemedi');
+      showError(error.response?.data?.message || 'Kategoriler kaydedilemedi');
     }
   });
 
