@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Api\V1\Admin;
 
+use App\Http\Requests\Api\V1\Admin\StoreCategoryRequest;
+use App\Http\Requests\Api\V1\Admin\UpdateCategoryRequest;
 use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -83,18 +85,9 @@ class CategoryController extends BaseAdminController
     /**
      * Yeni kategori oluştur
      */
-    public function store(Request $request)
+    public function store(StoreCategoryRequest $request)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'parent_id' => 'nullable|exists:categories,id',
-            'description' => 'nullable|string|max:1000',
-            'icon' => 'nullable|string|max:100',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
-            'sort_order' => 'nullable|integer|min:0',
-            'is_active' => 'nullable|boolean',
-            'settings' => 'nullable|array',
-        ]);
+        $validated = $request->validated();
 
         // Slug oluştur
         $slug = Str::slug($validated['name']);

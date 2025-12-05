@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Api\V1\Admin;
 use App\Http\Controllers\Controller;
 use App\Traits\ResponseHttp;
 use App\Services\AdminService;
-use App\Http\Requests\Admin\UpdatePayoutStatusRequest;
+use App\Http\Requests\Api\V1\Admin\UpdatePayoutStatusRequest;
 use Illuminate\Http\Request;
 
 class VendorPayoutController extends Controller

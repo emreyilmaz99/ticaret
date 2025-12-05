@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api\V1\User;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\User\StoreUserAddressRequest;
+use App\Http\Requests\Api\V1\User\UpdateUserAddressRequest;
 use App\Models\UserAddress;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -27,21 +29,9 @@ class UserAddressController extends Controller
     /**
      * Store a new address.
      */
-    public function store(Request $request): JsonResponse
+    public function store(StoreUserAddressRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'label' => ['required', 'string', 'max:50'],
-            'full_name' => ['required', 'string', 'max:255'],
-            'phone' => ['required', 'string', 'max:20'],
-            'country' => ['sometimes', 'string', 'max:100'],
-            'city' => ['required', 'string', 'max:100'],
-            'district' => ['required', 'string', 'max:100'],
-            'neighborhood' => ['required', 'string', 'max:255'],
-            'address_line' => ['required', 'string'],
-            'postal_code' => ['nullable', 'string', 'max:10'],
-            'is_default' => ['sometimes', 'boolean'],
-        ]);
-
+        $validated = $request->validated();
         $user = $request->user();
 
         // If this is the first address or marked as default, reset other defaults
@@ -86,28 +76,9 @@ class UserAddressController extends Controller
     /**
      * Update an address.
      */
-    public function update(Request $request, UserAddress $address): JsonResponse
+    public function update(UpdateUserAddressRequest $request, UserAddress $address): JsonResponse
     {
-        // Ensure the address belongs to the authenticated user
-        if ($address->user_id !== $request->user()->id) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Bu adrese erişim yetkiniz yok.',
-            ], 403);
-        }
-
-        $validated = $request->validate([
-            'label' => ['sometimes', 'required', 'string', 'max:50'],
-            'full_name' => ['sometimes', 'required', 'string', 'max:255'],
-            'phone' => ['sometimes', 'required', 'string', 'max:20'],
-            'country' => ['sometimes', 'string', 'max:100'],
-            'city' => ['sometimes', 'required', 'string', 'max:100'],
-            'district' => ['sometimes', 'required', 'string', 'max:100'],
-            'neighborhood' => ['sometimes', 'required', 'string', 'max:255'],
-            'address_line' => ['sometimes', 'required', 'string'],
-            'postal_code' => ['nullable', 'string', 'max:10'],
-            'is_default' => ['sometimes', 'boolean'],
-        ]);
+        $validated = $request->validated();
 
         // Handle default address logic
         if (isset($validated['is_default']) && $validated['is_default']) {

@@ -76,7 +76,7 @@ class VendorController extends BaseAdminController
         return $this->success(null, 'Satıcı silindi', 200);
     }
 
-    public function updateStatus(\App\Http\Requests\Admin\UpdateVendorStatusRequest $request, int $id)
+    public function updateStatus(\App\Http\Requests\Api\V1\Admin\UpdateVendorStatusRequest $request, int $id)
     {
         $vendor = $this->service->find($id);
         if (! $vendor) {

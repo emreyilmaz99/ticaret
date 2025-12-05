@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Api\V1\InitializeCheckoutRequest;
 use App\Models\Order;
 use App\Models\UserAddress;
 use App\Services\CheckoutService;
@@ -22,13 +23,8 @@ class CheckoutController extends Controller
      * Checkout başlat - iyzico Checkout Form oluştur
      * POST /api/checkout/initialize
      */
-    public function initialize(Request $request): JsonResponse
+    public function initialize(InitializeCheckoutRequest $request): JsonResponse
     {
-        $request->validate([
-            'shipping_address_id' => 'required|exists:user_addresses,id',
-            'billing_address_id' => 'nullable|exists:user_addresses,id',
-        ]);
-
         $user = $request->user();
 
         // Kimlik numarası kontrolü

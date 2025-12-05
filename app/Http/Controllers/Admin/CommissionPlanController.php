@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\StoreCommissionPlanRequest;
-use App\Http\Requests\UpdateCommissionPlanRequest;
+use App\Http\Requests\Api\V1\Admin\StoreCommissionPlanRequest;
+use App\Http\Requests\Api\V1\Admin\UpdateCommissionPlanRequest;
 use App\Services\CommissionPlanService;
 use App\Traits\ResponseHttp;
 

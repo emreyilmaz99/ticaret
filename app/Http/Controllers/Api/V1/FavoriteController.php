@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\ToggleFavoriteRequest;
+use App\Http\Requests\Api\V1\CheckFavoritesRequest;
 use App\Services\FavoriteService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -33,12 +35,8 @@ class FavoriteController extends Controller
     /**
      * Ürünü favorilere ekle
      */
-    public function store(Request $request): JsonResponse
+    public function store(ToggleFavoriteRequest $request): JsonResponse
     {
-        $request->validate([
-            'product_id' => 'required|string|exists:products,id',
-        ]);
-
         $user = $request->user();
         $result = $this->favoriteService->addFavorite($user->id, $request->product_id);
         
@@ -67,12 +65,8 @@ class FavoriteController extends Controller
     /**
      * Favori durumunu toggle et (ekle/kaldır)
      */
-    public function toggle(Request $request): JsonResponse
+    public function toggle(ToggleFavoriteRequest $request): JsonResponse
     {
-        $request->validate([
-            'product_id' => 'required|string|exists:products,id',
-        ]);
-
         $user = $request->user();
         $result = $this->favoriteService->toggleFavorite($user->id, $request->product_id);
         
@@ -86,13 +80,8 @@ class FavoriteController extends Controller
     /**
      * Belirli ürünlerin favori durumlarını kontrol et
      */
-    public function check(Request $request): JsonResponse
+    public function check(CheckFavoritesRequest $request): JsonResponse
     {
-        $request->validate([
-            'product_ids' => 'required|array',
-            'product_ids.*' => 'string',
-        ]);
-
         $user = $request->user();
         $result = $this->favoriteService->checkFavorites($user->id, $request->product_ids);
         

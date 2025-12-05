@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Http\Requests;
+namespace App\Http\Requests\Api\V1\Admin;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class UpdateCommissionPlanRequest extends FormRequest
+class StoreCommissionPlanRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -21,11 +21,9 @@ class UpdateCommissionPlanRequest extends FormRequest
      */
     public function rules(): array
     {
-        $planId = $this->route('commission_plan');
-        
         return [
-            'name' => 'sometimes|string|max:255|unique:commission_plans,name,' . $planId,
-            'rate' => 'sometimes|numeric|min:0|max:100',
+            'name' => 'required|string|max:255|unique:commission_plans,name',
+            'rate' => 'required|numeric|min:0|max:100',
             'description' => 'nullable|string|max:1000',
             'is_active' => 'boolean',
             'is_default' => 'boolean',
@@ -52,7 +50,9 @@ class UpdateCommissionPlanRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'name.required' => 'The plan name is required.',
             'name.unique' => 'A commission plan with this name already exists.',
+            'rate.required' => 'The commission rate is required.',
             'rate.min' => 'The commission rate must be at least 0%.',
             'rate.max' => 'The commission rate cannot exceed 100%.',
         ];

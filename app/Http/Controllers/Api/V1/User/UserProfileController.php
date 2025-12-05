@@ -3,12 +3,13 @@
 namespace App\Http\Controllers\Api\V1\User;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\User\UpdateAvatarRequest;
+use App\Http\Requests\Api\V1\User\UpdatePasswordRequest;
+use App\Http\Requests\Api\V1\User\UpdateUserProfileRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Validation\Rule;
-use Illuminate\Validation\Rules\Password;
 
 class UserProfileController extends Controller
 {
@@ -43,19 +44,10 @@ class UserProfileController extends Controller
     /**
      * Update the authenticated user's profile.
      */
-    public function update(Request $request): JsonResponse
+    public function update(UpdateUserProfileRequest $request): JsonResponse
     {
         $user = $request->user();
-
-        $validated = $request->validate([
-            'name' => ['sometimes', 'required', 'string', 'max:255'],
-            'phone' => ['nullable', 'string', 'max:20'],
-            'identity_number' => ['nullable', 'string', 'size:11', 'regex:/^[0-9]+$/'],
-            'birth_date' => ['nullable', 'date', 'before:today'],
-            'gender' => ['nullable', Rule::in(['male', 'female', 'other'])],
-        ]);
-
-        $user->update($validated);
+        $user->update($request->validated());
 
         return response()->json([
             'success' => true,
@@ -78,13 +70,9 @@ class UserProfileController extends Controller
     /**
      * Update the user's password.
      */
-    public function updatePassword(Request $request): JsonResponse
+    public function updatePassword(UpdatePasswordRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'current_password' => ['required', 'string'],
-            'password' => ['required', 'confirmed', Password::min(8)],
-        ]);
-
+        $validated = $request->validated();
         $user = $request->user();
 
         if (!Hash::check($validated['current_password'], $user->password)) {
@@ -107,12 +95,8 @@ class UserProfileController extends Controller
     /**
      * Upload avatar for the user.
      */
-    public function updateAvatar(Request $request): JsonResponse
+    public function updateAvatar(UpdateAvatarRequest $request): JsonResponse
     {
-        $request->validate([
-            'avatar' => ['required', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048'],
-        ]);
-
         $user = $request->user();
 
         // Delete old avatar if exists

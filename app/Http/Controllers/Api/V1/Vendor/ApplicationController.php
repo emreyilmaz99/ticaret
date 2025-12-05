@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api\V1\Vendor;
 
 use App\Http\Controllers\Api\V1\Vendor\BaseVendorController;
-use App\Http\Requests\SubmitFullApplicationRequest;
+use App\Http\Requests\Api\V1\Vendor\SubmitFullApplicationRequest;
 use App\Services\VendorApplicationService;
 
 class ApplicationController extends BaseVendorController

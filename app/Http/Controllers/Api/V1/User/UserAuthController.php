@@ -3,10 +3,11 @@
 namespace App\Http\Controllers\Api\V1\User;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\User\UserLoginRequest;
+use App\Http\Requests\Api\V1\User\UserRegisterRequest;
 use App\Services\AuthService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rules\Password;
 
 class UserAuthController extends Controller
 {
@@ -17,16 +18,9 @@ class UserAuthController extends Controller
     /**
      * Register a new user.
      */
-    public function register(Request $request): JsonResponse
+    public function register(UserRegisterRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
-            'password' => ['required', 'confirmed', Password::min(8)],
-            'phone' => ['nullable', 'string', 'max:20'],
-        ]);
-
-        $result = $this->authService->userRegister($validated);
+        $result = $this->authService->userRegister($request->validated());
 
         return response()->json([
             'success' => $result->isSuccess(),
@@ -38,14 +32,9 @@ class UserAuthController extends Controller
     /**
      * Login user and create token.
      */
-    public function login(Request $request): JsonResponse
+    public function login(UserLoginRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'email' => ['required', 'string', 'email'],
-            'password' => ['required', 'string'],
-        ]);
-
-        $result = $this->authService->userLogin($validated);
+        $result = $this->authService->userLogin($request->validated());
 
         return response()->json([
             'success' => $result->isSuccess(),

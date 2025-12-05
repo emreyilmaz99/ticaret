@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Http\Requests;
+namespace App\Http\Requests\Api\V1;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class RejectApplicationRequest extends FormRequest
+class ToggleFavoriteRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -22,15 +22,20 @@ class RejectApplicationRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'rejection_reason' => 'required|string|min:10|max:1000',
+            'product_id' => 'required|string|exists:products,id',
         ];
     }
 
+    /**
+     * Get custom messages for validator errors.
+     *
+     * @return array<string, string>
+     */
     public function messages(): array
     {
         return [
-            'rejection_reason.required' => 'Please provide a reason for rejection',
-            'rejection_reason.min' => 'Rejection reason must be at least 10 characters',
+            'product_id.required' => 'Ürün ID zorunludur.',
+            'product_id.exists' => 'Ürün bulunamadı.',
         ];
     }
 }

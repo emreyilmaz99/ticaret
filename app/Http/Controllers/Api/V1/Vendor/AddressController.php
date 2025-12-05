@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Api\V1\Vendor;
 use App\Http\Controllers\Controller;
 use App\Traits\ResponseHttp;
 use App\Services\VendorService;
-use App\Http\Requests\Vendor\StoreVendorAddressRequest;
+use App\Http\Requests\Api\V1\Vendor\StoreVendorAddressRequest;
 use App\Http\Resources\VendorAddressResource;
 use Illuminate\Http\Request;
 

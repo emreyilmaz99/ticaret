@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\RejectApplicationRequest;
+use App\Http\Requests\Api\V1\Admin\RejectApplicationRequest;
 use App\Services\VendorApplicationService;
 use App\Traits\ResponseHttp;
 use Illuminate\Http\Request;

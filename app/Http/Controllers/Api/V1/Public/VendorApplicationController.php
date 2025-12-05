@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api\V1\Public;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\StorePreApplicationRequest;
+use App\Http\Requests\Api\V1\PublicRequests\StorePreApplicationRequest;
 use App\Services\VendorApplicationService;
 use App\Traits\ResponseHttp;
 

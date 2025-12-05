@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Api\V1\Vendor;
 use App\Http\Controllers\Controller;
 use App\Traits\ResponseHttp;
 use App\Services\VendorService;
-use App\Http\Requests\Vendor\StoreVendorBankAccountRequest;
+use App\Http\Requests\Api\V1\Vendor\StoreVendorBankAccountRequest;
 use App\Http\Resources\VendorBankAccountResource;
 use Illuminate\Http\Request;
 
