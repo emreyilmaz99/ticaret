@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Api\V1\ToggleFavoriteRequest;
-use App\Http\Requests\Api\V1\CheckFavoritesRequest;
+use App\Http\Requests\Api\V1\User\ToggleFavoriteRequest;
+use App\Http\Requests\Api\V1\User\CheckFavoritesRequest;
 use App\Services\FavoriteService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;

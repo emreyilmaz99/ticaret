@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Http\Requests\Api\V1;
+namespace App\Http\Requests\Api\V1\User;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class ToggleFavoriteRequest extends FormRequest
+class InitializeCheckoutRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -22,7 +22,8 @@ class ToggleFavoriteRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'product_id' => 'required|string|exists:products,id',
+            'shipping_address_id' => 'required|exists:user_addresses,id',
+            'billing_address_id' => 'nullable|exists:user_addresses,id',
         ];
     }
 
@@ -34,8 +35,9 @@ class ToggleFavoriteRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'product_id.required' => 'Ürün ID zorunludur.',
-            'product_id.exists' => 'Ürün bulunamadı.',
+            'shipping_address_id.required' => 'Teslimat adresi zorunludur.',
+            'shipping_address_id.exists' => 'Seçilen teslimat adresi bulunamadı.',
+            'billing_address_id.exists' => 'Seçilen fatura adresi bulunamadı.',
         ];
     }
 }

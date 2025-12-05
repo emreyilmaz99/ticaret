@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Http\Requests\Api\V1;
+namespace App\Http\Requests\Api\V1\User;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class InitializeCheckoutRequest extends FormRequest
+class CheckFavoritesRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -22,8 +22,8 @@ class InitializeCheckoutRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'shipping_address_id' => 'required|exists:user_addresses,id',
-            'billing_address_id' => 'nullable|exists:user_addresses,id',
+            'product_ids' => 'required|array',
+            'product_ids.*' => 'string',
         ];
     }
 
@@ -35,9 +35,8 @@ class InitializeCheckoutRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'shipping_address_id.required' => 'Teslimat adresi zorunludur.',
-            'shipping_address_id.exists' => 'Seçilen teslimat adresi bulunamadı.',
-            'billing_address_id.exists' => 'Seçilen fatura adresi bulunamadı.',
+            'product_ids.required' => 'Ürün ID listesi zorunludur.',
+            'product_ids.array' => 'Ürün ID listesi dizi olmalıdır.',
         ];
     }
 }

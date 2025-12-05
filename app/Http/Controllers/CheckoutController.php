@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\Api\V1\InitializeCheckoutRequest;
+use App\Http\Requests\Api\V1\User\InitializeCheckoutRequest;
 use App\Models\Order;
 use App\Models\UserAddress;
 use App\Services\CheckoutService;

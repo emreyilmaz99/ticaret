@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Http\Requests\Api\V1;
+namespace App\Http\Requests\Api\V1\User;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class CheckFavoritesRequest extends FormRequest
+class ToggleFavoriteRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -22,8 +22,7 @@ class CheckFavoritesRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'product_ids' => 'required|array',
-            'product_ids.*' => 'string',
+            'product_id' => 'required|string|exists:products,id',
         ];
     }
 
@@ -35,8 +34,8 @@ class CheckFavoritesRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'product_ids.required' => 'Ürün ID listesi zorunludur.',
-            'product_ids.array' => 'Ürün ID listesi dizi olmalıdır.',
+            'product_id.required' => 'Ürün ID zorunludur.',
+            'product_id.exists' => 'Ürün bulunamadı.',
         ];
     }
 }
