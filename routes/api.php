@@ -174,6 +174,22 @@ Route::prefix('v1/vendor')->group(function () {
         // vendor shipping settings
         Route::get('shipping-settings', [\App\Http\Controllers\Api\V1\Vendor\ShippingSettingController::class, 'show']);
         Route::put('shipping-settings', [\App\Http\Controllers\Api\V1\Vendor\ShippingSettingController::class, 'update']);
+        
+        // vendor coupons
+        Route::get('coupons', [\App\Http\Controllers\Api\V1\Vendor\CouponController::class, 'index']);
+        Route::post('coupons', [\App\Http\Controllers\Api\V1\Vendor\CouponController::class, 'store']);
+        Route::get('coupons/{coupon}', [\App\Http\Controllers\Api\V1\Vendor\CouponController::class, 'show']);
+        Route::put('coupons/{coupon}', [\App\Http\Controllers\Api\V1\Vendor\CouponController::class, 'update']);
+        Route::delete('coupons/{coupon}', [\App\Http\Controllers\Api\V1\Vendor\CouponController::class, 'destroy']);
+        Route::put('coupons/{coupon}/toggle', [\App\Http\Controllers\Api\V1\Vendor\CouponController::class, 'toggle']);
+        
+        // vendor campaigns
+        Route::get('campaigns', [\App\Http\Controllers\Api\V1\Vendor\CampaignController::class, 'index']);
+        Route::post('campaigns', [\App\Http\Controllers\Api\V1\Vendor\CampaignController::class, 'store']);
+        Route::get('campaigns/{campaign}', [\App\Http\Controllers\Api\V1\Vendor\CampaignController::class, 'show']);
+        Route::put('campaigns/{campaign}', [\App\Http\Controllers\Api\V1\Vendor\CampaignController::class, 'update']);
+        Route::delete('campaigns/{campaign}', [\App\Http\Controllers\Api\V1\Vendor\CampaignController::class, 'destroy']);
+        Route::put('campaigns/{campaign}/toggle', [\App\Http\Controllers\Api\V1\Vendor\CampaignController::class, 'toggle']);
     });
 });
 

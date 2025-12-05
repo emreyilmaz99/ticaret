@@ -7,6 +7,7 @@ use App\Models\Cart;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\User;
+use App\Models\VendorCoupon;
 use App\Repositories\Interfaces\CartRepositoryInterface;
 use App\Repositories\Interfaces\CartItemRepositoryInterface;
 use App\Repositories\Interfaces\ProductRepositoryInterface;
@@ -209,27 +210,45 @@ class CartService extends BaseService
     {
         try {
             $cart = $this->resolveCart($user, $sessionId);
-            $cart->load('items');
+            $cart->load('items.product');
 
             $code = strtoupper($code);
-            $subtotal = $cart->items->sum(fn($item) => $item->unit_price * $item->quantity);
-
-            // Validate coupon (mock coupons - should be from database in production)
-            $coupon = $this->validateCoupon($code, $subtotal);
             
-            if (!$coupon['valid']) {
-                return $this->errorResponse($coupon['message'], 400);
+            // Kupon ara
+            $coupon = VendorCoupon::where('code', $code)
+                ->where('is_active', true)
+                ->first();
+
+            if (!$coupon) {
+                return $this->errorResponse('Geçersiz kupon kodu', 400);
             }
 
-            // Calculate discount
-            $discount = $this->calculateDiscount($coupon['data'], $subtotal);
+            // Kuponun satıcısının ürünlerini sepette bul ve satıcı alt toplamı hesapla
+            $vendorItems = $cart->items->filter(fn($item) => $item->product->vendor_id === $coupon->vendor_id);
             
-            $this->cartRepo->updateCoupon($cart, $code, min($discount, $subtotal));
+            if ($vendorItems->isEmpty()) {
+                return $this->errorResponse('Bu kupon sepetinizdeki ürünler için geçerli değil', 400);
+            }
+
+            $vendorSubtotal = $vendorItems->sum(fn($item) => $item->unit_price * $item->quantity);
+
+            // Kupon geçerlilik kontrolü (vendor subtotal ile)
+            $userId = $user ? $user->id : null;
+            $validation = $coupon->isValidForUser($userId, $vendorSubtotal);
+            
+            if (!$validation['valid']) {
+                return $this->errorResponse($validation['message'], 400);
+            }
+
+            // Calculate discount (sadece satıcının alt toplamını geçemez)
+            $discount = $coupon->calculateDiscount($vendorSubtotal);
+            
+            $this->cartRepo->updateCoupon($cart, $code, $discount);
             $cart = $this->cartRepo->getWithItems($cart);
 
             return $this->successResponse(
                 $this->formatCartResponse($cart),
-                "{$code} kuponu uygulandı!"
+                "{$code} kuponu uygulandı! {$discount} TL indirim kazandınız."
             );
         } catch (\Exception $e) {
             return $this->handleException($e, 'Kupon uygulanamadı');
@@ -295,46 +314,6 @@ class CartService extends BaseService
         }
 
         return $this->cartRepo->getOrCreateForSession($sessionId);
-    }
-
-    /**
-     * Validate coupon code
-     */
-    protected function validateCoupon(string $code, float $subtotal): array
-    {
-        // Mock coupons - In production, this should query the database
-        $coupons = [
-            'YAZ20' => ['type' => 'percent', 'value' => 20, 'min_spend' => 500],
-            'HOSGELDIN' => ['type' => 'fixed', 'value' => 100, 'min_spend' => 250],
-            'KARGO' => ['type' => 'shipping', 'value' => 0, 'min_spend' => 0],
-        ];
-
-        if (!isset($coupons[$code])) {
-            return ['valid' => false, 'message' => 'Geçersiz kupon kodu'];
-        }
-
-        $coupon = $coupons[$code];
-
-        if ($subtotal < $coupon['min_spend']) {
-            return [
-                'valid' => false,
-                'message' => "Bu kupon için minimum sepet tutarı {$coupon['min_spend']} TL olmalıdır."
-            ];
-        }
-
-        return ['valid' => true, 'data' => $coupon];
-    }
-
-    /**
-     * Calculate discount amount
-     */
-    protected function calculateDiscount(array $coupon, float $subtotal): float
-    {
-        return match($coupon['type']) {
-            'percent' => ($subtotal * $coupon['value']) / 100,
-            'fixed' => $coupon['value'],
-            default => 0,
-        };
     }
 
     /**

@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Models\VendorCampaign;
+use App\Models\VendorShippingSetting;
 
 class Cart extends Model
 {
@@ -30,7 +32,7 @@ class Cart extends Model
     }
 
     /**
-     * Sepet toplamlarını hesapla (satıcı bazlı kargo ile)
+     * Sepet toplamlarını hesapla (satıcı bazlı kargo ve kampanya indirimleri ile)
      */
     public function getTotalsAttribute(): array
     {
@@ -39,10 +41,13 @@ class Cart extends Model
             return [
                 'subtotal' => 0,
                 'discount' => 0,
+                'campaign_discount' => 0,
+                'coupon_discount' => 0,
                 'shipping' => 0,
                 'total' => 0,
                 'item_count' => 0,
                 'shipping_breakdown' => [],
+                'campaign_breakdown' => [],
             ];
         }
 
@@ -51,21 +56,92 @@ class Cart extends Model
             return $item->unit_price * $item->quantity;
         });
 
+        // Kampanya indirimlerini hesapla
+        $campaignResult = $this->calculateCampaignDiscounts();
+        $campaignDiscount = $campaignResult['total_discount'];
+        $campaignBreakdown = $campaignResult['breakdown'];
+
         // Satıcıya göre grupla ve kargo hesapla
         $shippingBreakdown = $this->calculateShippingByVendor();
         
         // Toplam kargo ücreti
         $totalShipping = collect($shippingBreakdown)->sum('shipping_cost');
         
-        $discount = $this->discount_amount ?? 0;
+        // Kupon indirimi
+        $couponDiscount = $this->discount_amount ?? 0;
+        
+        // Toplam indirim
+        $totalDiscount = $campaignDiscount + $couponDiscount;
 
         return [
             'subtotal' => round($subtotal, 2),
-            'discount' => round($discount, 2),
+            'discount' => round($totalDiscount, 2),
+            'campaign_discount' => round($campaignDiscount, 2),
+            'coupon_discount' => round($couponDiscount, 2),
             'shipping' => round($totalShipping, 2),
-            'total' => round($subtotal - $discount + $totalShipping, 2),
+            'total' => round($subtotal - $totalDiscount + $totalShipping, 2),
             'item_count' => $this->items->sum('quantity'),
             'shipping_breakdown' => $shippingBreakdown,
+            'campaign_breakdown' => $campaignBreakdown,
+        ];
+    }
+
+    /**
+     * Kampanya indirimlerini hesapla (X al Y öde)
+     */
+    protected function calculateCampaignDiscounts(): array
+    {
+        $this->load('items.product');
+        
+        $breakdown = [];
+        $totalDiscount = 0;
+        
+        // Ürün bazında kampanyaları grupla
+        $productQuantities = [];
+        foreach ($this->items as $item) {
+            $productId = $item->product_id;
+            if (!isset($productQuantities[$productId])) {
+                $productQuantities[$productId] = [
+                    'quantity' => 0,
+                    'unit_price' => $item->unit_price,
+                    'product_name' => $item->product->name ?? 'Ürün',
+                ];
+            }
+            $productQuantities[$productId]['quantity'] += $item->quantity;
+        }
+        
+        // Her ürün için aktif kampanya kontrol et
+        foreach ($productQuantities as $productId => $data) {
+            $campaign = VendorCampaign::getActiveForProduct($productId);
+            
+            if (!$campaign) {
+                continue;
+            }
+            
+            $quantity = $data['quantity'];
+            $unitPrice = $data['unit_price'];
+            
+            // X al Y öde hesaplaması
+            if ($quantity >= $campaign->buy_quantity) {
+                $discount = $campaign->calculateDiscount($quantity, $unitPrice);
+                
+                if ($discount > 0) {
+                    $totalDiscount += $discount;
+                    $breakdown[] = [
+                        'product_id' => $productId,
+                        'product_name' => $data['product_name'],
+                        'campaign_name' => $campaign->name,
+                        'campaign_type' => "{$campaign->buy_quantity} Al {$campaign->pay_quantity} Öde",
+                        'quantity' => $quantity,
+                        'discount' => round($discount, 2),
+                    ];
+                }
+            }
+        }
+        
+        return [
+            'total_discount' => $totalDiscount,
+            'breakdown' => $breakdown,
         ];
     }
 
