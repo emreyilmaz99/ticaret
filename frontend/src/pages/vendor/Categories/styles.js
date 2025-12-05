@@ -26,6 +26,13 @@ export const iconMap = {
 
 export const getIconEmoji = (iconName) => iconMap[iconName] || '📁';
 
+// Convert relative URL to full URL
+export const toFullUrl = (url) => {
+  if (!url) return null;
+  if (url.startsWith('http')) return url;
+  return `http://127.0.0.1:8000${url.startsWith('/') ? '' : '/'}${url}`;
+};
+
 export const getStyles = () => ({
   container: { 
     padding: '24px', 
