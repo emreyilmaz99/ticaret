@@ -16,12 +16,11 @@ import PublicLayout from './components/PublicLayout'; // Public layout wrapper
 import AdminPrivateRoute from './components/AdminPrivateRoute'; 
 
 // --- SAYFALAR ---
-// 1. Müşteri Sayfaları
+// 1. Müşteri Sayfaları (Modüler Yapı)
 import Home from './pages/public/Home';
 import CategoryProducts from './pages/public/CategoryProducts';
 import ProductDetail from './pages/public/ProductDetail';
-import Login from './pages/public/Login'; // Müşteri Girişi
-import Register from './pages/public/Register'; // Müşteri Kayıt
+import { Login, Register } from './pages/public/Auth'; // Modüler Auth
 import Favorites from './pages/user/Favorites'; // Favorilerim Sayfası
 import Cart from './pages/user/Cart'; // Sepet Sayfası
 import UserProfile from './pages/user/UserProfile'; // Kullanıcı Profil
