@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCart } from '../../../context/CartContext';
 import { useAuth } from '../../../context/AuthContext';
-import { getUserAddresses, createUserAddress } from '../../../features/user/api/userAddressApi';
+import { getUserAddresses, createUserAddress, deleteUserAddress } from '../../../features/user/api/userAddressApi';
 import { useToast } from '../../../components/Toast';
 
 /**
@@ -34,6 +34,7 @@ const useCartPage = () => {
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
   const [selectedAddress, setSelectedAddress] = useState(null);
+  const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, addressId: null });
 
   // Kullanıcının kayıtlı adreslerini çek
   const { data: addressData, isLoading: addressLoading } = useQuery({
@@ -75,16 +76,55 @@ const useCartPage = () => {
   const createAddressMutation = useMutation({
     mutationFn: createUserAddress,
     onSuccess: (response) => {
-      const newAddress = response.data || response.address || response;
+      // Backend response: { success: true, data: { address: {...} } }
+      const newAddress = response?.data?.address || response?.address || response;
+      console.log('Yeni adres eklendi:', newAddress);
+      
+      // Önce cache'i güncelle
       queryClient.invalidateQueries(['user', 'addresses']);
-      setSelectedAddress(newAddress);
-      localStorage.setItem('cart_selected_address', JSON.stringify(newAddress));
-      toast.success('Adres Eklendi', 'Yeni teslimat adresi başarıyla kaydedildi.');
+      
+      // Yeni eklenen adresi otomatik olarak teslimat adresi olarak seç
+      if (newAddress && newAddress.id) {
+        setSelectedAddress(newAddress);
+        localStorage.setItem('cart_selected_address', JSON.stringify(newAddress));
+        toast.success('Adres Eklendi', 'Yeni adres teslimat adresi olarak seçildi.');
+      } else {
+        toast.success('Adres Eklendi', 'Yeni teslimat adresi başarıyla kaydedildi.');
+      }
+      
       setIsAddressModalOpen(false);
     },
     onError: (error) => {
       console.error('Adres ekleme hatası:', error);
       toast.error('Hata', 'Adres eklenirken bir sorun oluştu.');
+    }
+  });
+
+  // Adres silme mutation
+  const deleteAddressMutation = useMutation({
+    mutationFn: deleteUserAddress,
+    onSuccess: (_, deletedId) => {
+      queryClient.invalidateQueries(['user', 'addresses']);
+      // Silinen adres seçili adresse, ilk adresi veya null seç
+      if (selectedAddress?.id === deletedId) {
+        const remaining = savedAddresses.filter(a => a.id !== deletedId);
+        const newSelected = remaining.length > 0 
+          ? (remaining.find(a => a.is_default) || remaining[0])
+          : null;
+        setSelectedAddress(newSelected);
+        if (newSelected) {
+          localStorage.setItem('cart_selected_address', JSON.stringify(newSelected));
+        } else {
+          localStorage.removeItem('cart_selected_address');
+        }
+      }
+      setDeleteConfirm({ isOpen: false, addressId: null });
+      toast.success('Adres Silindi', 'Adres başarıyla silindi.');
+    },
+    onError: (error) => {
+      console.error('Adres silme hatası:', error);
+      setDeleteConfirm({ isOpen: false, addressId: null });
+      toast.error('Hata', 'Adres silinirken bir sorun oluştu.');
     }
   });
 
@@ -167,6 +207,29 @@ const useCartPage = () => {
     }
   }, [user, createAddressMutation]);
 
+  /**
+   * Adres silme onay modal'ını aç
+   */
+  const handleDeleteAddress = useCallback((addressId) => {
+    setDeleteConfirm({ isOpen: true, addressId });
+  }, []);
+
+  /**
+   * Adres silme onayı
+   */
+  const confirmDeleteAddress = useCallback(() => {
+    if (deleteConfirm.addressId) {
+      deleteAddressMutation.mutate(deleteConfirm.addressId);
+    }
+  }, [deleteConfirm.addressId, deleteAddressMutation]);
+
+  /**
+   * Silme modal'ını kapat
+   */
+  const cancelDeleteAddress = useCallback(() => {
+    setDeleteConfirm({ isOpen: false, addressId: null });
+  }, []);
+
   return {
     // State
     cartItems,
@@ -183,6 +246,11 @@ const useCartPage = () => {
     addressLoading,
     isAddressModalOpen,
 
+    // Delete Confirm Modal State
+    deleteConfirm,
+    confirmDeleteAddress,
+    cancelDeleteAddress,
+
     // Setters
     setCouponInput,
 
@@ -198,6 +266,10 @@ const useCartPage = () => {
     handleOpenAddressModal,
     handleCloseAddressModal,
     handleSaveNewAddress,
+    handleDeleteAddress,
+    
+    // Loading states
+    isDeleting: deleteAddressMutation.isPending,
   };
 };
 

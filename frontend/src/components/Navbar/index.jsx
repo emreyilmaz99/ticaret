@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { FaUser, FaShoppingBag, FaHeart, FaSignOutAlt } from 'react-icons/fa';
 import AddressModal from '../AddressModal';
+import ConfirmModal from '../ConfirmModal';
 import { styles } from './styles';
 
 // --- Alt Bileşenler ---
@@ -25,6 +26,12 @@ const Navbar = () => {
     isCartOpen,
     isAddressModalOpen,
     currentAddress,
+    // Delete Confirm
+    deleteConfirm,
+    confirmDeleteAddress,
+    cancelDeleteAddress,
+    isDeleting,
+    // Context Data
     user,
     favorites,
     favoriteCount,
@@ -37,6 +44,7 @@ const Navbar = () => {
     handleAddressClick,
     handleAddressModalClose,
     handleSaveAddress,
+    handleDeleteAddress,
     handleDealsClick,
     openCart,
     closeCart,
@@ -135,7 +143,21 @@ const Navbar = () => {
         isOpen={isAddressModalOpen} 
         onClose={handleAddressModalClose} 
         onSave={handleSaveAddress}
+        onDeleteAddress={handleDeleteAddress}
         initialAddress={currentAddress}
+      />
+
+      {/* Silme Onay Modal */}
+      <ConfirmModal
+        isOpen={deleteConfirm.isOpen}
+        onClose={cancelDeleteAddress}
+        onConfirm={confirmDeleteAddress}
+        title="Adresi Sil"
+        message="Bu adresi silmek istediğinizden emin misiniz? Bu işlem geri alınamaz."
+        confirmText="Evet, Sil"
+        cancelText="Vazgeç"
+        type="danger"
+        isLoading={isDeleting}
       />
     </>
   );

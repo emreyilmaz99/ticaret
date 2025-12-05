@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { getUserAddresses } from '../features/user/api/userAddressApi';
-import { FaTimes, FaMapMarkerAlt, FaCheck, FaChevronDown, FaUser, FaPhone } from 'react-icons/fa';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { getUserAddresses, deleteUserAddress } from '../features/user/api/userAddressApi';
+import { FaTimes, FaMapMarkerAlt, FaCheck, FaChevronDown, FaUser, FaPhone, FaTrash } from 'react-icons/fa';
 import { cities, districts, getNeighborhoods, cityPlateCodes } from '../data/turkeyData';
 import { useToast } from './Toast';
 import { useAuth } from '../context/AuthContext';
 import LocationMap from './LocationMap';
 
-const AddressModal = ({ isOpen, onClose, onSave, initialAddress }) => {
+const AddressModal = ({ isOpen, onClose, onSave, initialAddress, onDeleteAddress }) => {
   const { user } = useAuth();
   const [fullName, setFullName] = useState(initialAddress?.full_name || user?.name || '');
   const [phone, setPhone] = useState(initialAddress?.phone || user?.phone || '');
@@ -20,12 +20,44 @@ const AddressModal = ({ isOpen, onClose, onSave, initialAddress }) => {
   const [selectedId, setSelectedId] = useState(null);
   
   const toast = useToast();
+  const queryClient = useQueryClient();
 
   const { data: addressData } = useQuery({
     queryKey: ['user', 'addresses'],
     queryFn: getUserAddresses,
     enabled: !!user && isOpen,
   });
+
+  // Adres silme mutation
+  const deleteAddressMutation = useMutation({
+    mutationFn: deleteUserAddress,
+    onSuccess: () => {
+      queryClient.invalidateQueries(['user', 'addresses']);
+      toast.success('Adres Silindi', 'Adres başarıyla silindi.');
+      // Formu temizle
+      setSelectedId(null);
+      setFullName(user?.name || '');
+      setPhone(user?.phone || '');
+      setSelectedCity('');
+      setSelectedDistrict('');
+      setSelectedNeighborhood('');
+      setPostalCode('');
+      setAddressLine('');
+      setAddressLabel('Ev');
+    },
+    onError: (error) => {
+      console.error('Adres silme hatası:', error);
+      toast.error('Hata', 'Adres silinirken bir sorun oluştu.');
+    }
+  });
+
+  const handleDeleteAddress = (e, addressId) => {
+    e.stopPropagation();
+    // Dışarıdaki ConfirmModal'ı tetikle
+    if (onDeleteAddress) {
+      onDeleteAddress(addressId);
+    }
+  };
 
   const savedAddresses = addressData?.data?.addresses || [];
 
@@ -348,7 +380,8 @@ const AddressModal = ({ isOpen, onClose, onSave, initialAddress }) => {
                         backgroundColor: '#f8fafc',
                         fontSize: '12px',
                         transition: 'all 0.2s',
-                        flexShrink: 0
+                        flexShrink: 0,
+                        position: 'relative'
                       }}
                       onMouseEnter={(e) => {
                         e.currentTarget.style.borderColor = '#059669';
@@ -359,7 +392,32 @@ const AddressModal = ({ isOpen, onClose, onSave, initialAddress }) => {
                         e.currentTarget.style.backgroundColor = '#f8fafc';
                       }}
                     >
-                      <div style={{ fontWeight: '700', marginBottom: '4px', color: '#334155' }}>{addr.label}</div>
+                      {/* Silme Butonu */}
+                      <button
+                        onClick={(e) => handleDeleteAddress(e, addr.id)}
+                        disabled={deleteAddressMutation.isPending}
+                        style={{
+                          position: 'absolute',
+                          top: '6px',
+                          right: '6px',
+                          width: '22px',
+                          height: '22px',
+                          borderRadius: '50%',
+                          border: 'none',
+                          backgroundColor: '#fee2e2',
+                          color: '#dc2626',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '10px',
+                          opacity: deleteAddressMutation.isPending ? 0.5 : 1,
+                        }}
+                        title="Adresi Sil"
+                      >
+                        <FaTrash />
+                      </button>
+                      <div style={{ fontWeight: '700', marginBottom: '4px', color: '#334155', paddingRight: '20px' }}>{addr.label}</div>
                       <div style={{ color: '#64748b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         {addr.city} / {addr.district}
                       </div>

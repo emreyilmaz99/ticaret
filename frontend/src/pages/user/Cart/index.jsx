@@ -8,6 +8,7 @@ import OrderSummary from './OrderSummary';
 import EmptyCart from './EmptyCart';
 import DeliveryAddressSection from './DeliveryAddressSection';
 import AddressModal from '../../../components/AddressModal';
+import ConfirmModal from '../../../components/ConfirmModal';
 
 // --- Custom Hook ---
 import useCartPage from './useCartPage';
@@ -30,6 +31,10 @@ const Cart = () => {
     savedAddresses,
     addressLoading,
     isAddressModalOpen,
+    // Delete Confirm
+    deleteConfirm,
+    confirmDeleteAddress,
+    cancelDeleteAddress,
     // Setters
     setCouponInput,
     // Handlers
@@ -43,6 +48,8 @@ const Cart = () => {
     handleOpenAddressModal,
     handleCloseAddressModal,
     handleSaveNewAddress,
+    handleDeleteAddress,
+    isDeleting,
   } = useCartPage();
 
   // Responsive stiller
@@ -77,7 +84,9 @@ const Cart = () => {
             savedAddresses={savedAddresses}
             onSelectAddress={handleSelectAddress}
             onAddNewAddress={handleOpenAddressModal}
+            onDeleteAddress={handleDeleteAddress}
             isLoading={addressLoading}
+            isDeleting={isDeleting}
             isMobile={isMobile}
           />
 
@@ -110,6 +119,19 @@ const Cart = () => {
         isOpen={isAddressModalOpen}
         onClose={handleCloseAddressModal}
         onSave={handleSaveNewAddress}
+      />
+
+      {/* Silme Onay Modal */}
+      <ConfirmModal
+        isOpen={deleteConfirm.isOpen}
+        onClose={cancelDeleteAddress}
+        onConfirm={confirmDeleteAddress}
+        title="Adresi Sil"
+        message="Bu adresi silmek istediğinizden emin misiniz? Bu işlem geri alınamaz."
+        confirmText="Evet, Sil"
+        cancelText="Vazgeç"
+        type="danger"
+        isLoading={isDeleting}
       />
     </div>
   );

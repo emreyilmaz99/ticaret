@@ -1,7 +1,7 @@
 // src/pages/user/Cart/DeliveryAddressSection.jsx
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
-import { FiMapPin, FiChevronDown, FiPlus, FiHome, FiCheck, FiX } from 'react-icons/fi';
+import { FiMapPin, FiChevronDown, FiPlus, FiHome, FiCheck, FiX, FiTrash2 } from 'react-icons/fi';
 
 /**
  * Teslimat Adresi Bölümü - Kompakt Tasarım
@@ -11,14 +11,15 @@ const DeliveryAddressSection = ({
   savedAddresses = [],
   onSelectAddress,
   onAddNewAddress,
+  onDeleteAddress,
   isLoading = false,
+  isDeleting = false,
   isMobile = false,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
 
   // Adres seç ve kapat
   const selectAddress = (address) => {
-    console.log('Adres seçiliyor:', address);
     if (onSelectAddress) {
       onSelectAddress(address);
     }
@@ -27,10 +28,17 @@ const DeliveryAddressSection = ({
 
   // Yeni adres ekle
   const addNewAddress = () => {
-    console.log('Yeni adres ekleniyor');
     setIsOpen(false);
     if (onAddNewAddress) {
       onAddNewAddress();
+    }
+  };
+
+  // Adres sil
+  const deleteAddress = (e, addressId) => {
+    e.stopPropagation();
+    if (onDeleteAddress) {
+      onDeleteAddress(addressId);
     }
   };
 
@@ -141,6 +149,16 @@ const DeliveryAddressSection = ({
                           <FiCheck size={12} />
                         </div>
                       )}
+                      {/* Silme Butonu */}
+                      <button
+                        type="button"
+                        style={styles.deleteBtn}
+                        onClick={(e) => deleteAddress(e, address.id)}
+                        disabled={isDeleting}
+                        title="Adresi Sil"
+                      >
+                        <FiTrash2 size={14} />
+                      </button>
                       <div
                         style={{
                           ...styles.cardLabel,
@@ -295,6 +313,7 @@ const styles = {
     marginBottom: '10px',
     position: 'relative',
     transition: 'all 0.2s',
+    paddingRight: '80px', // Silme ve seçim butonları için alan
   },
   checkmark: {
     position: 'absolute',
@@ -308,6 +327,22 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  deleteBtn: {
+    position: 'absolute',
+    top: '10px',
+    right: '40px',
+    width: '28px',
+    height: '28px',
+    borderRadius: '50%',
+    border: 'none',
+    backgroundColor: '#fee2e2',
+    color: '#dc2626',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    transition: 'all 0.2s',
   },
   cardLabel: {
     display: 'inline-flex',
@@ -398,7 +433,9 @@ DeliveryAddressSection.propTypes = {
   ),
   onSelectAddress: PropTypes.func,
   onAddNewAddress: PropTypes.func,
+  onDeleteAddress: PropTypes.func,
   isLoading: PropTypes.bool,
+  isDeleting: PropTypes.bool,
   isMobile: PropTypes.bool,
 };
 

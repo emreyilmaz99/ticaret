@@ -1,7 +1,7 @@
 import { useState, useContext } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { createUserAddress } from '../../features/user/api/userAddressApi';
+import { createUserAddress, deleteUserAddress } from '../../features/user/api/userAddressApi';
 import { useToast } from '../Toast';
 import AuthContext from '../../context/AuthContext';
 import { useFavorites } from '../../context/FavoritesContext';
@@ -17,6 +17,7 @@ const useNavbar = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, addressId: null });
   const [currentAddress, setCurrentAddress] = useState(() => {
     const saved = localStorage.getItem('user_address');
     try {
@@ -51,6 +52,43 @@ const useNavbar = () => {
       toast.error('Hata', 'Adres eklenirken bir sorun oluştu.');
     }
   });
+
+  // --- Adres Silme Mutation ---
+  const deleteAddressMutation = useMutation({
+    mutationFn: deleteUserAddress,
+    onSuccess: (_, deletedId) => {
+      queryClient.invalidateQueries(['user-addresses']);
+      // Silinen adres mevcut seçili adresse, temizle
+      if (currentAddress?.id === deletedId) {
+        setCurrentAddress(null);
+        localStorage.removeItem('user_address');
+      }
+      setDeleteConfirm({ isOpen: false, addressId: null });
+      toast.success('Adres Silindi', 'Adres başarıyla silindi.');
+    },
+    onError: (error) => {
+      console.error('Adres silme hatası:', error);
+      setDeleteConfirm({ isOpen: false, addressId: null });
+      toast.error('Hata', 'Adres silinirken bir sorun oluştu.');
+    }
+  });
+
+  // --- Adres Silme Modal Aç ---
+  const handleDeleteAddress = (addressId) => {
+    setDeleteConfirm({ isOpen: true, addressId });
+  };
+
+  // --- Adres Silme Onayla ---
+  const confirmDeleteAddress = () => {
+    if (deleteConfirm.addressId) {
+      deleteAddressMutation.mutate(deleteConfirm.addressId);
+    }
+  };
+
+  // --- Adres Silme İptal ---
+  const cancelDeleteAddress = () => {
+    setDeleteConfirm({ isOpen: false, addressId: null });
+  };
 
   // --- Link Stili Fonksiyonu ---
   const getLinkStyle = (path) => {
@@ -126,6 +164,11 @@ const useNavbar = () => {
     isAddressModalOpen,
     currentAddress,
     
+    // Delete Confirm Modal
+    deleteConfirm,
+    confirmDeleteAddress,
+    cancelDeleteAddress,
+    
     // Context Data
     user,
     favorites,
@@ -141,9 +184,13 @@ const useNavbar = () => {
     handleAddressClick,
     handleAddressModalClose,
     handleSaveAddress,
+    handleDeleteAddress,
     handleDealsClick,
     openCart,
     closeCart,
+    
+    // Loading states
+    isDeleting: deleteAddressMutation.isPending,
     
     // Toast (diğer bileşenler için)
     toast,
