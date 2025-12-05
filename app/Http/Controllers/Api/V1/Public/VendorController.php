@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Api\V1\Public;
 
 use App\Http\Controllers\Controller;
 use App\Models\Vendor;
-use App\Http\Resources\VendorResource;
+use App\Http\Resources\Api\V1\Shared\VendorResource;
 
 class VendorController extends Controller
 {

@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Traits\ResponseHttp;
 use App\Services\VendorService;
 use App\Http\Requests\Api\V1\Vendor\StoreVendorAddressRequest;
-use App\Http\Resources\VendorAddressResource;
+use App\Http\Resources\Api\V1\Vendor\VendorAddressResource;
 use Illuminate\Http\Request;
 
 class AddressController extends Controller

@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Traits\ResponseHttp;
 use App\Services\VendorService;
 use App\Http\Requests\Api\V1\Vendor\StoreVendorBankAccountRequest;
-use App\Http\Resources\VendorBankAccountResource;
+use App\Http\Resources\Api\V1\Vendor\VendorBankAccountResource;
 use Illuminate\Http\Request;
 
 class BankAccountController extends Controller

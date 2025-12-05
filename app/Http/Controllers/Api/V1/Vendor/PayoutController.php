@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Traits\ResponseHttp;
 use App\Services\VendorService;
 use App\Http\Requests\Api\V1\Vendor\RequestPayoutRequest;
-use App\Http\Resources\VendorPayoutResource;
+use App\Http\Resources\Api\V1\Vendor\VendorPayoutResource;
 use Illuminate\Http\Request;
 
 class PayoutController extends Controller

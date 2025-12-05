@@ -1,12 +1,12 @@
 <?php
 
-namespace App\Http\Resources;
+namespace App\Http\Resources\Api\V1\Vendor;
 
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class VendorAddressResource extends JsonResource
 {
-    public function toArray($request)
+    public function toArray($request): array
     {
         return [
             'id' => $this->id,

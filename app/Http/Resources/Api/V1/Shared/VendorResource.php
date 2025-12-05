@@ -1,12 +1,13 @@
 <?php
 
-namespace App\Http\Resources;
+namespace App\Http\Resources\Api\V1\Shared;
 
+use App\Http\Resources\Api\V1\Vendor\VendorAddressResource;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class VendorResource extends JsonResource
 {
-    public function toArray($request)
+    public function toArray($request): array
     {
         return [
             'id' => $this->id,
@@ -20,7 +21,7 @@ class VendorResource extends JsonResource
             'commission_rate' => (float) $this->commission_rate,
             'balance' => (float) $this->balance,
             'settings' => $this->settings,
-            'addresses' => isset($this->addresses) ? \App\Http\Resources\VendorAddressResource::collection($this->addresses) : [],
+            'addresses' => isset($this->addresses) ? VendorAddressResource::collection($this->addresses) : [],
             'created_at' => $this->created_at,
         ];
     }
