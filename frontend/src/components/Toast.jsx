@@ -264,15 +264,22 @@ export const ToastProvider = ({ children }) => {
     setToasts((prev) => prev.filter((toast) => toast.id !== id));
   }, []);
 
+  // showToast(message, type) - backwards compatible helper
+  const showToast = useCallback((message, type = 'success', duration = 4000) => {
+    return addToast(type, '', message, duration);
+  }, [addToast]);
+
   const toast = {
     success: (title, message, duration) => addToast('success', title, message, duration),
     error: (title, message, duration) => addToast('error', title, message, duration),
     warning: (title, message, duration) => addToast('warning', title, message, duration),
     info: (title, message, duration) => addToast('info', title, message, duration),
+    // Backwards compatible showToast function
+    showToast,
   };
 
   return (
-    <ToastContext.Provider value={toast}>
+    <ToastContext.Provider value={{ ...toast, showToast }}>
       {children}
       <ToastContainer toasts={toasts} removeToast={removeToast} />
     </ToastContext.Provider>

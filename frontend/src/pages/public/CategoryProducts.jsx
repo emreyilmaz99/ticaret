@@ -91,16 +91,7 @@ const CategoryProducts = () => {
     }
   });
 
-  const fetchedProducts = data?.pages.flatMap(page => page.data?.products || []) || [];
-  
-  // Statik ürünü sadece uygun kategorilerde göster
-  // Eğer alt kategori seçili değilse VEYA alt kategori "kulaklık" içeriyorsa göster
-  // "Dizüstü" gibi alakasız kategorilerde gizle
-  const shouldShowStaticProduct = !subcategoryName || 
-                                  subcategoryName.toLowerCase().includes('kulaklık') || 
-                                  subcategoryName.toLowerCase().includes('aksesuar');
-
-  const products = shouldShowStaticProduct ? [staticProduct, ...fetchedProducts] : fetchedProducts;
+  const products = data?.pages.flatMap(page => page.data?.products || []) || [];
 
   // Intersection Observer
   useEffect(() => {
