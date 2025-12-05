@@ -86,7 +86,7 @@ class VendorController extends BaseAdminController
         $data = $request->validated();
         $vendor = $this->service->update($id, ['status' => $data['status']]);
 
-        return $this->success(new \App\Http\Resources\VendorResource($vendor), 'Satıcı durumu güncellendi');
+        return $this->success(new VendorResource($vendor), 'Satıcı durumu güncellendi');
     }
 
     /**

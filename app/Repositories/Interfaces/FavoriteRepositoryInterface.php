@@ -3,7 +3,7 @@
 namespace App\Repositories\Interfaces;
 
 use App\Models\Favorite;
-use App\Repositories\BaseRepositoryInterface;
+use App\Repositories\Interfaces\BaseRepositoryInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 

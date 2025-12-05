@@ -2,7 +2,7 @@
 
 namespace App\Repositories\Interfaces;
 
-use App\Repositories\BaseRepositoryInterface;
+use App\Repositories\Interfaces\BaseRepositoryInterface;
 
 interface VendorApplicationRepositoryInterface extends BaseRepositoryInterface
 {

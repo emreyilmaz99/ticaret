@@ -1,14 +1,13 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers\Api\V1\Admin;
 
-use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Admin\StoreCommissionPlanRequest;
 use App\Http\Requests\Api\V1\Admin\UpdateCommissionPlanRequest;
 use App\Services\CommissionPlanService;
 use App\Traits\ResponseHttp;
 
-class CommissionPlanController extends Controller
+class CommissionPlanController extends BaseAdminController
 {
     use ResponseHttp;
 

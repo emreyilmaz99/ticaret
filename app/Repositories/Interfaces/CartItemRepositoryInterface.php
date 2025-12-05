@@ -4,7 +4,7 @@ namespace App\Repositories\Interfaces;
 
 use App\Models\CartItem;
 use App\Models\Cart;
-use App\Repositories\BaseRepositoryInterface;
+use App\Repositories\Interfaces\BaseRepositoryInterface;
 
 interface CartItemRepositoryInterface extends BaseRepositoryInterface
 {
