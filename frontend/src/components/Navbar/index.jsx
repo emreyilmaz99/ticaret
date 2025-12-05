@@ -1,5 +1,4 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 import { Link } from 'react-router-dom';
 import { FaUser, FaShoppingBag, FaHeart, FaSignOutAlt } from 'react-icons/fa';
 import AddressModal from '../AddressModal';
