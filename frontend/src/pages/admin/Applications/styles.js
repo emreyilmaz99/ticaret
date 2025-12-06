@@ -290,8 +290,30 @@ export const getStyles = (isMobile = false) => ({
     textAlign: 'center',
     color: '#94a3b8'
   },
+  emptyIcon: {
+    fontSize: '48px',
+    marginBottom: '16px',
+  },
   loadingState: {
     padding: '24px'
+  },
+  
+  // Table Row (function for hover state)
+  tableRow: (isHovered) => ({
+    backgroundColor: isHovered ? '#f8fafc' : 'transparent',
+    transition: 'background-color 0.2s',
+  }),
+  
+  // Store Icon
+  storeIcon: {
+    width: '40px',
+    height: '40px',
+    borderRadius: '10px',
+    backgroundColor: '#ecfdf5',
+    color: '#059669',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   
   // Status badges
