@@ -10,24 +10,18 @@ use App\Models\UserAddress;
 use App\Models\VendorCoupon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Services\Order\OrderService;
+use App\Services\Payment\PaymentGatewayService;
 
 class CheckoutService extends BaseService
 {
-    protected IyzicoService $iyzicoService;
-    protected StockService $stockService;
-    protected CouponService $couponService;
-    protected CartService $cartService;
+    protected OrderService $orderService;
+    protected PaymentGatewayService $paymentGateway;
 
-    public function __construct(
-        IyzicoService $iyzicoService,
-        StockService $stockService,
-        CouponService $couponService,
-        CartService $cartService
-    ) {
-        $this->iyzicoService = $iyzicoService;
-        $this->stockService = $stockService;
-        $this->couponService = $couponService;
-        $this->cartService = $cartService;
+    public function __construct(OrderService $orderService, PaymentGatewayService $paymentGateway)
+    {
+        $this->orderService = $orderService;
+        $this->paymentGateway = $paymentGateway;
     }
 
     /**
@@ -79,118 +73,7 @@ class CheckoutService extends BaseService
      */
     public function createOrderFromCart(User $user, Cart $cart, UserAddress $shippingAddress, ?UserAddress $billingAddress = null)
     {
-        // Önce sepeti doğrula
-        $validation = $this->validateCart($cart);
-        if (!$validation->isSuccess()) {
-            return $validation;
-        }
-
-        try {
-            return DB::transaction(function () use ($user, $cart, $shippingAddress, $billingAddress) {
-                $cart->load(['items.product.vendor', 'items.variant']);
-                $totals = $cart->totals;
-
-                // Sipariş oluştur
-                $order = Order::create([
-                    'user_id' => $user->id,
-                    'status' => Order::STATUS_PENDING,
-                    'payment_status' => Order::PAYMENT_PENDING,
-                    'shipping_address' => $this->snapshotAddress($shippingAddress),
-                    'billing_address' => $billingAddress ? $this->snapshotAddress($billingAddress) : null,
-                    'subtotal' => $totals['subtotal'],
-                    'shipping_total' => $totals['shipping'],
-                    'discount_total' => $totals['discount'] ?? 0,
-                    'campaign_discount' => $totals['campaign_discount'] ?? 0,
-                    'coupon_discount' => $totals['coupon_discount'] ?? 0,
-                    'total' => $totals['total'],
-                    'currency' => 'TRY',
-                    'coupon_code' => $cart->coupon_code,
-                    'iyzico_conversation_id' => $this->generateConversationId(),
-                ]);
-
-                // Kupon ID'sini bul ve kaydet
-                if ($cart->coupon_code) {
-                    $coupon = VendorCoupon::where('code', $cart->coupon_code)->first();
-                    if ($coupon) {
-                        $order->coupon_id = $coupon->id;
-                        $order->save();
-                    }
-                }
-
-                // Sipariş kalemlerini oluştur
-                $basketItems = [];
-                
-                foreach ($cart->items as $item) {
-                    $vendor = $item->product->vendor;
-                    $commissionRate = $vendor->commission_rate ?? config('app.default_commission_rate', 10);
-                    
-                    // Platform komisyonu hesapla
-                    $commissionAmount = ($item->line_total * $commissionRate) / 100;
-                    
-                    // SubMerchant alacağı tutar (komisyon düşülmüş)
-                    $submerchantPrice = $item->line_total - $commissionAmount;
-
-                    // Sipariş kalemi oluştur
-                    $orderItem = OrderItem::create([
-                        'order_id' => $order->id,
-                        'vendor_id' => $vendor->id,
-                        'product_id' => $item->product_id,
-                        'variant_id' => $item->variant_id,
-                        'product_name' => $item->product->name,
-                        'variant_title' => $item->variant?->title,
-                        'sku' => $item->variant?->sku ?? $item->product->sku ?? null,
-                        'quantity' => $item->quantity,
-                        'unit_price' => $item->unit_price,
-                        'line_total' => $item->line_total,
-                        'submerchant_key' => $vendor->iyzico_submerchant_key,
-                        'submerchant_price' => $submerchantPrice,
-                        'commission_rate' => $commissionRate,
-                        'commission_amount' => $commissionAmount,
-                        'iyzico_item_id' => 'ITEM_' . $order->id . '_' . $item->id,
-                        'status' => OrderItem::STATUS_PENDING,
-                    ]);
-
-                    // iyzico basket item oluştur
-                    $basketItems[] = $this->iyzicoService->buildBasketItem([
-                        'id' => $orderItem->iyzico_item_id,
-                        'name' => $orderItem->product_name . ($orderItem->variant_title ? ' - ' . $orderItem->variant_title : ''),
-                        'category' => $item->product->category?->name ?? 'Genel',
-                        'price' => $orderItem->line_total,
-                        'submerchant_key' => $orderItem->submerchant_key,
-                        'submerchant_price' => $orderItem->submerchant_price,
-                    ]);
-                }
-
-                // Sipariş geçmişine kaydet
-                $order->statusHistory()->create([
-                    'old_status' => null,
-                    'new_status' => Order::STATUS_PENDING,
-                    'note' => 'Sipariş oluşturuldu',
-                    'changed_by_type' => 'system',
-                    'changed_by_id' => null,
-                ]);
-
-                Log::info('Order created from cart', [
-                    'order_id' => $order->id,
-                    'order_number' => $order->order_number,
-                    'user_id' => $user->id,
-                    'total' => $order->total,
-                    'item_count' => count($basketItems),
-                ]);
-
-                return $this->successResponse([
-                    'order' => $order,
-                    'basket_items' => $basketItems,
-                ], 'Sipariş oluşturuldu');
-            });
-
-        } catch (\Exception $e) {
-            Log::error('Order creation failed', [
-                'user_id' => $user->id,
-                'error' => $e->getMessage(),
-            ]);
-            return $this->errorResponse('Sipariş oluşturulamadı: ' . $e->getMessage());
-        }
+        return $this->orderService->createOrderFromCart($user, $cart, $shippingAddress, $billingAddress);
     }
 
     /**
@@ -198,10 +81,14 @@ class CheckoutService extends BaseService
      */
     public function initializePayment(Order $order, User $user, UserAddress $shippingAddress, array $basketItems)
     {
-        $result = $this->iyzicoService->initializeCheckoutForm($order, $user, $shippingAddress, $basketItems);
+        // convert simple basket items to gateway-specific basket items
+        $gatewayItems = array_map(function($item) {
+            return $this->paymentGateway->buildBasketItem($item);
+        }, $basketItems);
+
+        $result = $this->paymentGateway->initializeCheckoutForm($order, $user, $shippingAddress, $gatewayItems);
 
         if ($result->isSuccess()) {
-            // Token'ı siparişe kaydet
             $order->update([
                 'iyzico_token' => $result->getData()['token'],
                 'payment_status' => Order::PAYMENT_PROCESSING,
@@ -216,7 +103,6 @@ class CheckoutService extends BaseService
      */
     public function handlePaymentCallback(string $token)
     {
-        // Siparişi token ile bul
         $order = Order::where('iyzico_token', $token)->first();
 
         if (!$order) {
@@ -224,8 +110,7 @@ class CheckoutService extends BaseService
             return $this->errorResponse('Sipariş bulunamadı', 404);
         }
 
-        // iyzico'dan sonucu sorgula
-        $result = $this->iyzicoService->retrieveCheckoutForm($token);
+        $result = $this->paymentGateway->retrieveCheckoutForm($token);
 
         if (!$result->isSuccess()) {
             $order->updatePaymentStatus(Order::PAYMENT_FAILED);
@@ -234,108 +119,7 @@ class CheckoutService extends BaseService
 
         $data = $result->getData();
 
-        try {
-            return DB::transaction(function () use ($order, $data) {
-                // Siparişi güncelle
-                $order->update([
-                    'iyzico_payment_id' => $data['payment_id'],
-                    'iyzico_fraud_status' => $data['fraud_status'],
-                    'iyzico_raw_response' => $data['raw_result'] ?? null,
-                    'card_type' => $data['card_type'],
-                    'card_association' => $data['card_association'],
-                    'card_family' => $data['card_family'],
-                    'card_bin' => $data['bin_number'],
-                    'card_last_four' => $data['last_four_digits'],
-                    'installment_count' => $data['installment'] ?? 1,
-                    'payment_status' => Order::PAYMENT_PAID,
-                    'status' => Order::STATUS_PAID,
-                    'paid_at' => now(),
-                ]);
-
-                // Sipariş kalemlerini güncelle (payment_items varsa)
-                if (!empty($data['payment_items'])) {
-                    foreach ($data['payment_items'] as $paymentItem) {
-                        $orderItem = $order->items()
-                            ->where('iyzico_item_id', $paymentItem->getItemId())
-                            ->first();
-
-                        if ($orderItem) {
-                            $orderItem->update([
-                                'iyzico_payment_transaction_id' => $paymentItem->getPaymentTransactionId(),
-                                'iyzico_transaction_status' => $paymentItem->getTransactionStatus(),
-                            ]);
-                        }
-                    }
-                }
-
-                // Stokları düşür - StockService kullanılıyor
-                try {
-                    $this->stockService->decrementStocksForOrder($order);
-                } catch (\App\Exceptions\InsufficientStockException $e) {
-                    // Stok yetersizse ödemeyi geri al
-                    Log::error('Insufficient stock after payment', [
-                        'order_id' => $order->id,
-                        'error' => $e->getMessage(),
-                    ]);
-
-                    // TODO: İleride iyzico refund API eklenebilir
-                    // $this->iyzicoService->refund($order);
-
-                    // Sipariş durumunu güncelle
-                    $order->update([
-                        'status' => Order::STATUS_CANCELLED,
-                        'payment_status' => Order::PAYMENT_FAILED,
-                    ]);
-
-                    $order->statusHistory()->create([
-                        'old_status' => Order::STATUS_PAID,
-                        'new_status' => Order::STATUS_CANCELLED,
-                        'note' => 'Stok yetersiz - Otomatik iptal: ' . $e->getMessage(),
-                        'changed_by_type' => 'system',
-                        'changed_by_id' => null,
-                    ]);
-
-                    throw new \App\Exceptions\BusinessLogicException(
-                        'Ödeme alındı ancak stok yetersiz. Siparişiniz iptal edildi, ücret iadesi yapılacaktır.',
-                        422
-                    );
-                }
-
-                // Kupon kullanımını kaydet
-                $this->couponService->recordUsageForOrder($order);
-
-                // Sepeti temizle
-                $this->cartService->clearCartByUserId($order->user_id);
-
-                // Sipariş geçmişine kaydet
-                $order->statusHistory()->create([
-                    'old_status' => Order::STATUS_PENDING,
-                    'new_status' => Order::STATUS_PAID,
-                    'note' => 'Ödeme başarılı - Payment ID: ' . $data['payment_id'],
-                    'changed_by_type' => 'system',
-                    'changed_by_id' => null,
-                ]);
-
-                Log::info('Payment successful', [
-                    'order_id' => $order->id,
-                    'payment_id' => $data['payment_id'],
-                    'total' => $order->total,
-                ]);
-
-                return $this->successResponse([
-                    'order' => $order->fresh(['items']),
-                    'payment_id' => $data['payment_id'],
-                ], 'Ödeme başarılı');
-            });
-
-        } catch (\Exception $e) {
-            // handleException artık doğru status code döndürecek
-            Log::error('Payment callback processing failed', [
-                'order_id' => $order->id,
-                'error' => $e->getMessage(),
-            ]);
-            return $this->handleException($e, 'Ödeme işlenirken hata oluştu');
-        }
+        return $this->orderService->processPaymentSuccess($order, $data);
     }
 
     /**
