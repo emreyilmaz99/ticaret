@@ -302,6 +302,18 @@ class CartService extends BaseService
     }
 
     /**
+     * Clear cart by user ID (checkout sonrası kullanılır)
+     */
+    public function clearCartByUserId(int $userId): void
+    {
+        $cart = $this->cartRepo->findByUserId($userId);
+        if ($cart) {
+            $this->cartRepo->clearItems($cart);
+            $this->cartRepo->updateCoupon($cart, null, 0);
+        }
+    }
+
+    /**
      * Resolve cart based on user or session
      */
     protected function resolveCart(?User $user, ?string $sessionId): Cart

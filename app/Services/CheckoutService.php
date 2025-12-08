@@ -7,22 +7,27 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\User;
 use App\Models\UserAddress;
-use App\Models\Vendor;
 use App\Models\VendorCoupon;
-use App\Models\CouponUsage;
-use App\Repositories\CartRepository;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class CheckoutService extends BaseService
 {
     protected IyzicoService $iyzicoService;
-    protected CartRepository $cartRepo;
+    protected StockService $stockService;
+    protected CouponService $couponService;
+    protected CartService $cartService;
 
-    public function __construct(IyzicoService $iyzicoService, CartRepository $cartRepo)
-    {
+    public function __construct(
+        IyzicoService $iyzicoService,
+        StockService $stockService,
+        CouponService $couponService,
+        CartService $cartService
+    ) {
         $this->iyzicoService = $iyzicoService;
-        $this->cartRepo = $cartRepo;
+        $this->stockService = $stockService;
+        $this->couponService = $couponService;
+        $this->cartService = $cartService;
     }
 
     /**
@@ -263,9 +268,9 @@ class CheckoutService extends BaseService
                     }
                 }
 
-                // Stokları düşür - artık exception fırlatabilir
+                // Stokları düşür - StockService kullanılıyor
                 try {
-                    $this->decrementStocks($order);
+                    $this->stockService->decrementStocksForOrder($order);
                 } catch (\App\Exceptions\InsufficientStockException $e) {
                     // Stok yetersizse ödemeyi geri al
                     Log::error('Insufficient stock after payment', [
@@ -297,10 +302,10 @@ class CheckoutService extends BaseService
                 }
 
                 // Kupon kullanımını kaydet
-                $this->recordCouponUsage($order);
+                $this->couponService->recordUsageForOrder($order);
 
                 // Sepeti temizle
-                $this->clearUserCart($order->user_id);
+                $this->cartService->clearCartByUserId($order->user_id);
 
                 // Sipariş geçmişine kaydet
                 $order->statusHistory()->create([
@@ -330,75 +335,6 @@ class CheckoutService extends BaseService
                 'error' => $e->getMessage(),
             ]);
             return $this->handleException($e, 'Ödeme işlenirken hata oluştu');
-        }
-    }
-
-    /**
-     * Stokları düşür
-     * @throws \App\Exceptions\InsufficientStockException
-     */
-    protected function decrementStocks(Order $order): void
-    {
-        $order->load('items.variant');
-
-        foreach ($order->items as $item) {
-            if ($item->variant) {
-                // Stok azaltmayı dene
-                $success = $item->variant->decrementStock($item->quantity);
-
-                // Başarısızsa exception fırlat
-                if (!$success) {
-                    // Fresh data ile tekrar kontrol et (race condition için)
-                    $item->variant->refresh();
-
-                    throw new \App\Exceptions\InsufficientStockException(
-                        $item->product_name . ($item->variant_title ? " - {$item->variant_title}" : ''),
-                        $item->variant->stock,
-                        $item->quantity
-                    );
-                }
-            }
-        }
-    }
-
-    /**
-     * Kupon kullanımını kaydet
-     */
-    protected function recordCouponUsage(Order $order): void
-    {
-        if (!$order->coupon_id) {
-            return;
-        }
-
-        $coupon = VendorCoupon::find($order->coupon_id);
-        if (!$coupon) {
-            return;
-        }
-
-        // Kullanım kaydı oluştur
-        CouponUsage::create([
-            'coupon_id' => $coupon->id,
-            'user_id' => $order->user_id,
-            'order_id' => $order->id,
-            'discount_applied' => $order->coupon_discount,
-        ]);
-
-        // Kupon kullanım sayısını artır
-        $coupon->increment('usage_count');
-    }
-
-    /**
-     * Kullanıcının sepetini temizle
-     */
-    protected function clearUserCart(int $userId): void
-    {
-        $cart = $this->cartRepo->findByUserId($userId);
-        if ($cart) {
-            $cart->items()->delete();
-            $cart->update([
-                'coupon_code' => null,
-                'discount_amount' => 0,
-            ]);
         }
     }
 
