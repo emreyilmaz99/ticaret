@@ -81,7 +81,7 @@ class OrderPaymentService extends BaseService
             'card_last_four' => $data['last_four_digits'],
             'installment_count' => $data['installment'] ?? 1,
             'payment_status' => Order::PAYMENT_PAID,
-            'status' => Order::STATUS_PAID,
+            'status' => Order::STATUS_CONFIRMED, // Ödeme alındı, sipariş onaylandı
             'paid_at' => now(),
         ]);
     }

@@ -4,16 +4,15 @@ namespace App\Http\Controllers\Api\V1\Vendor;
 
 use App\Http\Controllers\Api\V1\Vendor\BaseVendorController;
 use App\Http\Requests\Api\V1\Vendor\SubmitFullApplicationRequest;
-use App\Services\VendorApplicationService;
+use App\Services\Vendor\VendorApplicationFullService;
+use App\Services\Vendor\VendorApplicationQueryService;
 
 class ApplicationController extends BaseVendorController
 {
-    protected VendorApplicationService $applicationService;
-
-    public function __construct(VendorApplicationService $applicationService)
-    {
-        $this->applicationService = $applicationService;
-    }
+    public function __construct(
+        protected VendorApplicationFullService $fullService,
+        protected VendorApplicationQueryService $queryService
+    ) {}
 
     /**
      * Get current vendor's application status
@@ -21,7 +20,7 @@ class ApplicationController extends BaseVendorController
     public function status()
     {
         $vendor = request()->user();
-        $result = $this->applicationService->getVendorApplicationStatus($vendor);
+        $result = $this->queryService->getVendorApplicationStatus($vendor);
         return $this->fromServiceResponse($result);
     }
 
@@ -31,7 +30,7 @@ class ApplicationController extends BaseVendorController
     public function submitFullApplication(SubmitFullApplicationRequest $request)
     {
         $vendor = request()->user();
-        $result = $this->applicationService->submitFullApplication($vendor, $request->validated());
+        $result = $this->fullService->submitFullApplication($vendor, $request->validated());
         return $this->fromServiceResponse($result);
     }
 }

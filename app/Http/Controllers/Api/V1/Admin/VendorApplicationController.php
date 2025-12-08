@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Admin\RejectApplicationRequest;
-use App\Services\VendorApplicationService;
+use App\Services\Vendor\VendorApplicationPreService;
+use App\Services\Vendor\VendorApplicationFullService;
+use App\Services\Vendor\VendorApplicationQueryService;
 use App\Traits\ResponseHttp;
 use Illuminate\Http\Request;
 
@@ -12,12 +14,11 @@ class VendorApplicationController extends Controller
 {
     use ResponseHttp;
 
-    protected VendorApplicationService $applicationService;
-
-    public function __construct(VendorApplicationService $applicationService)
-    {
-        $this->applicationService = $applicationService;
-    }
+    public function __construct(
+        protected VendorApplicationPreService $preService,
+        protected VendorApplicationFullService $fullService,
+        protected VendorApplicationQueryService $queryService
+    ) {}
 
     /**
      * List all applications
@@ -29,7 +30,7 @@ class VendorApplicationController extends Controller
             return !is_null($value) && $value !== '';
         });
         
-        $result = $this->applicationService->index($filters);
+        $result = $this->queryService->index($filters);
         return $this->fromServiceResponse($result);
     }
 
@@ -38,7 +39,7 @@ class VendorApplicationController extends Controller
      */
     public function pendingPreApplications()
     {
-        $result = $this->applicationService->getPendingPreApplications();
+        $result = $this->queryService->getPendingPreApplications();
         return $this->fromServiceResponse($result);
     }
 
@@ -47,7 +48,7 @@ class VendorApplicationController extends Controller
      */
     public function show(int $id)
     {
-        $result = $this->applicationService->show($id);
+        $result = $this->queryService->show($id);
         return $this->fromServiceResponse($result);
     }
 
@@ -57,7 +58,7 @@ class VendorApplicationController extends Controller
     public function approvePreApplication(int $id, Request $request)
     {
         $adminId = $request->user()->id;
-        $result = $this->applicationService->approvePreApplication($id, $adminId);
+        $result = $this->preService->approvePreApplication($id, $adminId);
         return $this->fromServiceResponse($result);
     }
 
@@ -68,7 +69,7 @@ class VendorApplicationController extends Controller
     {
         $adminId = $request->user()->id;
         $commissionPlanId = $request->input('commission_plan_id');
-        $result = $this->applicationService->approveFullApplication($id, $adminId, $commissionPlanId);
+        $result = $this->fullService->approveFullApplication($id, $adminId, $commissionPlanId);
         return $this->fromServiceResponse($result);
     }
 
@@ -78,7 +79,7 @@ class VendorApplicationController extends Controller
     public function rejectPreApplication(int $id, RejectApplicationRequest $request)
     {
         $adminId = $request->user()->id;
-        $result = $this->applicationService->rejectPreApplication(
+        $result = $this->preService->rejectPreApplication(
             $id,
             $adminId,
             $request->input('rejection_reason')
@@ -92,7 +93,7 @@ class VendorApplicationController extends Controller
     public function rejectFullApplication(int $id, RejectApplicationRequest $request)
     {
         $adminId = $request->user()->id;
-        $result = $this->applicationService->rejectFullApplication(
+        $result = $this->fullService->rejectFullApplication(
             $id,
             $adminId,
             $request->input('rejection_reason')
@@ -107,7 +108,7 @@ class VendorApplicationController extends Controller
     {
         $adminId = $request->user()->id;
         $commissionPlanId = $request->input('commission_plan_id');
-        $result = $this->applicationService->approveVendorFullApplication($vendorId, $adminId, $commissionPlanId);
+        $result = $this->fullService->approveVendorFullApplication($vendorId, $adminId, $commissionPlanId);
         return $this->fromServiceResponse($result);
     }
 
@@ -117,7 +118,7 @@ class VendorApplicationController extends Controller
     public function rejectVendorFull(int $vendorId, RejectApplicationRequest $request)
     {
         $adminId = $request->user()->id;
-        $result = $this->applicationService->rejectVendorFullApplication(
+        $result = $this->fullService->rejectVendorFullApplication(
             $vendorId,
             $adminId,
             $request->input('rejection_reason')

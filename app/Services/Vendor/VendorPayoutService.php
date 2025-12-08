@@ -4,6 +4,7 @@ namespace App\Services\Vendor;
 
 use App\Services\BaseService;
 use App\Models\Vendor;
+use App\Models\VendorPayout;
 use App\Repositories\Interfaces\VendorPayoutRepositoryInterface;
 use Illuminate\Support\Facades\DB;
 
@@ -96,7 +97,9 @@ class VendorPayoutService extends BaseService
      */
     public function listAll(int $perPage = 15)
     {
-        return $this->payoutRepo->paginate($perPage);
+        return VendorPayout::with(['vendor:id,name,slug'])
+            ->orderBy('created_at', 'desc')
+            ->paginate($perPage);
     }
 
     /**

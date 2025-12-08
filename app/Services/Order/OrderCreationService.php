@@ -38,6 +38,37 @@ class OrderCreationService extends BaseService
 
         try {
             return DB::transaction(function () use ($user, $cart, $shippingAddress, $billingAddress) {
+                // DUPLICATE PREVENTION: Aynı kullanıcının son 5 dakikada pending siparişi varsa onu kullan
+                $existingOrder = Order::where('user_id', $user->id)
+                    ->where('payment_status', Order::PAYMENT_PENDING)
+                    ->where('created_at', '>=', now()->subMinutes(5))
+                    ->latest()
+                    ->first();
+
+                if ($existingOrder) {
+                    Log::warning('Duplicate order attempt prevented', [
+                        'existing_order_id' => $existingOrder->id,
+                        'existing_order_number' => $existingOrder->order_number,
+                        'user_id' => $user->id,
+                    ]);
+
+                    // Mevcut siparişin basket items'ını tekrar hesapla
+                    $basketItems = $existingOrder->items->map(function ($item) {
+                        return [
+                            'id' => (string) $item->id,
+                            'name' => $item->product_name,
+                            'category1' => $item->product->category->name ?? 'Genel',
+                            'itemType' => 'PHYSICAL',
+                            'price' => (string) $item->unit_price,
+                        ];
+                    })->toArray();
+
+                    return $this->successResponse([
+                        'order' => $existingOrder,
+                        'basket_items' => $basketItems,
+                    ], 'Mevcut sipariş kullanılıyor');
+                }
+
                 $cart->load(['items.product.vendor', 'items.variant']);
                 $totals = $cart->totals;
 

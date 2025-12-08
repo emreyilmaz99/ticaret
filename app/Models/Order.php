@@ -9,21 +9,21 @@ use Illuminate\Support\Str;
 
 class Order extends Model
 {
-    // Sipariş durumları
-    public const STATUS_PENDING = 'pending';
-    public const STATUS_PAID = 'paid';
-    public const STATUS_PROCESSING = 'processing';
-    public const STATUS_SHIPPED = 'shipped';
-    public const STATUS_DELIVERED = 'delivered';
-    public const STATUS_CANCELLED = 'cancelled';
-    public const STATUS_REFUNDED = 'refunded';
+    // Sipariş durumları (status) - Kargo/İşlem Durumu
+    public const STATUS_PENDING = 'pending';           // Beklemede (ödeme bekleniyor)
+    public const STATUS_CONFIRMED = 'confirmed';       // Onaylandı (ödeme alındı, hazırlanmayı bekliyor)
+    public const STATUS_PROCESSING = 'processing';     // Hazırlanıyor
+    public const STATUS_SHIPPED = 'shipped';           // Kargoya Verildi
+    public const STATUS_DELIVERED = 'delivered';       // Teslim Edildi
+    public const STATUS_CANCELLED = 'cancelled';       // İptal Edildi
+    public const STATUS_RETURNED = 'returned';         // İade Edildi
 
-    // Ödeme durumları
-    public const PAYMENT_PENDING = 'pending';
-    public const PAYMENT_PROCESSING = 'processing';
-    public const PAYMENT_PAID = 'paid';
-    public const PAYMENT_FAILED = 'failed';
-    public const PAYMENT_REFUNDED = 'refunded';
+    // Ödeme durumları (payment_status) - Sadece Ödeme
+    public const PAYMENT_PENDING = 'pending';          // Ödeme Bekleniyor
+    public const PAYMENT_PROCESSING = 'processing';    // Ödeme İşleniyor
+    public const PAYMENT_PAID = 'paid';                // Ödendi
+    public const PAYMENT_FAILED = 'failed';            // Ödeme Başarısız
+    public const PAYMENT_REFUNDED = 'refunded';        // İade Edildi (para iadesi)
 
     protected $fillable = [
         'user_id',
@@ -163,7 +163,8 @@ class Order extends Model
         
         if ($newStatus === self::PAYMENT_PAID) {
             $this->paid_at = now();
-            $this->status = self::STATUS_PAID;
+            // Ödeme başarılı olunca sipariş durumunu "onaylandı" yap
+            $this->status = self::STATUS_CONFIRMED;
         }
         
         return $this->save();
@@ -183,12 +184,14 @@ class Order extends Model
 
     public function isCancellable(): bool
     {
-        return in_array($this->status, [self::STATUS_PENDING, self::STATUS_PAID]);
+        // Sadece beklemede ve onaylanmış siparişler iptal edilebilir
+        return in_array($this->status, [self::STATUS_PENDING, self::STATUS_CONFIRMED]);
     }
 
     public function isRefundable(): bool
     {
-        return $this->isPaid() && !in_array($this->status, [self::STATUS_REFUNDED, self::STATUS_CANCELLED]);
+        // Ödeme yapılmış ve iptal/iade edilmemiş siparişler iade edilebilir
+        return $this->isPaid() && !in_array($this->status, [self::STATUS_RETURNED, self::STATUS_CANCELLED]);
     }
 
     // ==================== HESAPLAMALAR ====================
@@ -221,13 +224,13 @@ class Order extends Model
     public static function statusLabels(): array
     {
         return [
-            self::STATUS_PENDING => 'Ödeme Bekleniyor',
-            self::STATUS_PAID => 'Ödeme Alındı',
+            self::STATUS_PENDING => 'Beklemede',
+            self::STATUS_CONFIRMED => 'Onaylandı',
             self::STATUS_PROCESSING => 'Hazırlanıyor',
             self::STATUS_SHIPPED => 'Kargoya Verildi',
             self::STATUS_DELIVERED => 'Teslim Edildi',
             self::STATUS_CANCELLED => 'İptal Edildi',
-            self::STATUS_REFUNDED => 'İade Edildi',
+            self::STATUS_RETURNED => 'İade Edildi',
         ];
     }
 
