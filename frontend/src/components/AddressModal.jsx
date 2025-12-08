@@ -22,6 +22,16 @@ const AddressModal = ({ isOpen, onClose, onSave, initialAddress, onDeleteAddress
   const [selectedId, setSelectedId] = useState(null);
   const [savingIdentity, setSavingIdentity] = useState(false);
   
+  // Mobile Check
+  const [width, setWidth] = useState(window.innerWidth);
+  const isMobile = width <= 768;
+
+  useEffect(() => {
+    const handleResize = () => setWidth(window.innerWidth);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+  
   const toast = useToast();
   const queryClient = useQueryClient();
 
@@ -230,25 +240,25 @@ const AddressModal = ({ isOpen, onClose, onSave, initialAddress, onDeleteAddress
       transition: 'background 0.2s',
     },
     content: {
-      padding: '32px',
+      padding: isMobile ? '20px' : '32px',
       overflowY: 'auto',
       display: 'flex',
       gap: '32px',
-      flexDirection: 'row',
+      flexDirection: isMobile ? 'column' : 'row',
     },
     formColumn: {
       flex: '1',
       display: 'flex',
       flexDirection: 'column',
       gap: '20px',
-      minWidth: '350px',
+      minWidth: isMobile ? '100%' : '350px',
     },
     mapColumn: {
       flex: '1',
       backgroundColor: 'rgb(241, 245, 249)',
       borderRadius: '16px',
       padding: '20px',
-      display: 'flex',
+      display: isMobile ? 'none' : 'flex',
       flexDirection: 'column',
       gap: '16px',
       minHeight: '400px',
@@ -394,13 +404,13 @@ const AddressModal = ({ isOpen, onClose, onSave, initialAddress, onDeleteAddress
             {user && savedAddresses && savedAddresses.length > 0 && (
               <div style={{ marginBottom: '8px' }}>
                 <label style={styles.label}>Kayıtlı Adreslerimden Seç</label>
-                <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '8px', scrollbarWidth: 'thin' }}>
+                <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '8px', scrollbarWidth: 'thin', flexWrap: isMobile ? 'wrap' : 'nowrap' }}>
                   {savedAddresses.map((addr) => (
                     <div 
                       key={addr.id}
                       onClick={() => handleSelectAddress(addr)}
                       style={{
-                        minWidth: '180px',
+                        minWidth: isMobile ? 'calc(50% - 6px)' : '180px',
                         padding: '12px',
                         border: '1px solid #e2e8f0',
                         borderRadius: '12px',
@@ -618,25 +628,27 @@ const AddressModal = ({ isOpen, onClose, onSave, initialAddress, onDeleteAddress
           </div>
 
           {/* Map Column */}
-          <div style={styles.mapColumn}>
-            <div style={{ flex: 1, borderRadius: '12px', overflow: 'hidden', minHeight: '300px', position: 'relative', zIndex: 0 }}>
-              <LocationMap 
-                city={selectedCity} 
-                district={selectedDistrict} 
-                neighborhood={selectedNeighborhood}
-                onLocationSelect={(latlng) => {
-                  // Optional: You can store coordinates if backend supports it
-                  console.log('Selected location:', latlng);
-                }}
-              />
+          {!isMobile && (
+            <div style={styles.mapColumn}>
+              <div style={{ flex: 1, borderRadius: '12px', overflow: 'hidden', minHeight: '300px', position: 'relative', zIndex: 0 }}>
+                <LocationMap 
+                  city={selectedCity} 
+                  district={selectedDistrict} 
+                  neighborhood={selectedNeighborhood}
+                  onLocationSelect={(latlng) => {
+                    // Optional: You can store coordinates if backend supports it
+                    console.log('Selected location:', latlng);
+                  }}
+                />
+              </div>
+              <div style={{ fontSize: '13px', color: 'rgb(100, 116, 139)', lineHeight: '1.5' }}>
+                <strong>Seçilen Konum:</strong><br />
+                {selectedNeighborhood ? `${selectedNeighborhood}, ` : ''}
+                {selectedDistrict ? `${selectedDistrict}/` : ''}
+                {selectedCity || '-'}
+              </div>
             </div>
-            <div style={{ fontSize: '13px', color: 'rgb(100, 116, 139)', lineHeight: '1.5' }}>
-              <strong>Seçilen Konum:</strong><br />
-              {selectedNeighborhood ? `${selectedNeighborhood}, ` : ''}
-              {selectedDistrict ? `${selectedDistrict}/` : ''}
-              {selectedCity || '-'}
-            </div>
-          </div>
+          )}
         </div>
 
         {/* Footer */}

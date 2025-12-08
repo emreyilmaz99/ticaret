@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { Link } from 'react-router-dom';
 import { FaShoppingBag } from 'react-icons/fa';
-import { styles } from './styles';
+import { getStyles } from './styles';
 
 /**
  * Mini sepet dropdown bileşeni
@@ -10,6 +10,8 @@ import { styles } from './styles';
  * @param {Object} totals - Sepet toplam bilgileri
  */
 const MiniCart = ({ cartItems, totals }) => {
+  const styles = getStyles(false); // Default to desktop styles for mini cart dropdown
+
   return (
     <div style={styles.miniCart}>
       <div style={{ fontSize: '14px', fontWeight: '600', marginBottom: '16px', color: '#334155' }}>

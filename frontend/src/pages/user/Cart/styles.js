@@ -2,53 +2,80 @@
 
 /**
  * Cart sayfası için merkezi stil tanımlamaları
- * Tüm alt bileşenler bu stilleri kullanır
+ * Responsive (Mobil/Masaüstü) uyumlu Senior Mimarisi
  */
 export const getStyles = (isMobile) => ({
-  // Container stilleri
+  // --- ANA KAPSAYICI ---
   container: {
-    maxWidth: '1200px',
+    width: '100%',
+    maxWidth: '1200px', // Masaüstünde içeriği sınırlar
     margin: '0 auto',
-    padding: isMobile ? '20px 12px' : '40px 20px',
-    fontFamily: '"Inter", sans-serif',
-    minHeight: '80vh',
+    // Mobilde alt bar'ın (veya sticky butonun) altında içerik kalmasın diye extra padding
+    padding: isMobile ? '20px 0 140px 0' : '40px 20px', 
+    fontFamily: '"Plus Jakarta Sans", "Inter", sans-serif',
+    minHeight: '100vh',
+    boxSizing: 'border-box',
+    backgroundColor: 'var(--bg-body)', // Global tema rengi
   },
 
-  // Header stilleri
+  // --- HEADER ---
   header: {
     display: 'flex',
     alignItems: 'center',
+    justifyContent: isMobile ? 'space-between' : 'flex-start',
     gap: '12px',
-    marginBottom: isMobile ? '20px' : '32px',
+    // Mobilde kenarlardan boşluk veriyoruz
+    padding: isMobile ? '0 16px' : '0', 
+    marginBottom: isMobile ? '16px' : '32px',
   },
   headerTitle: {
-    fontSize: isMobile ? '24px' : '32px',
+    fontSize: isMobile ? '22px' : '32px',
     fontWeight: '800',
-    color: '#1e293b',
+    color: 'var(--text-main)',
     margin: 0,
+    letterSpacing: '-0.5px',
   },
   headerCount: {
-    fontSize: isMobile ? '14px' : '18px',
-    fontWeight: '500',
-    color: '#64748b',
+    fontSize: isMobile ? '13px' : '18px',
+    fontWeight: '600',
+    color: 'var(--text-muted)',
+    backgroundColor: isMobile ? '#f1f5f9' : 'transparent',
+    padding: isMobile ? '4px 8px' : '0',
+    borderRadius: '6px',
   },
 
-  // Layout stilleri
+  // --- LAYOUT (IZGARA SİSTEMİ) ---
   layout: {
-    display: 'flex',
-    flexDirection: isMobile ? 'column' : 'row',
-    gap: isMobile ? '24px' : '32px',
+    display: isMobile ? 'flex' : 'grid',
+    // Masaüstünde: Sol (%65) - Sağ (%35) | Mobilde: Tek kolon
+    gridTemplateColumns: isMobile ? '1fr' : '1fr 380px',
+    flexDirection: 'column',
+    gap: '24px',
+    position: 'relative',
+    padding: isMobile ? '0' : '0', 
   },
+  
+  // Sol Taraf (Ürünler)
   productList: {
-    flex: '1',
-    minWidth: 0,
-  },
-  summary: {
-    width: isMobile ? '100%' : '380px',
-    flexShrink: 0,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: isMobile ? '16px' : '24px',
+    width: '100%',
+    minWidth: 0, // Flexbox taşma bug'ını önler
+    padding: isMobile ? '0 16px' : '0', // Mobilde ürünler kenara yapışmasın
   },
 
-  // Boş sepet stilleri
+  // Sağ Taraf Wrapper (Sticky Özelliği Burada)
+  orderSummaryContainer: {
+    // Masaüstünde sağda yapışık kalır
+    position: isMobile ? 'relative' : 'sticky',
+    top: isMobile ? 'auto' : '100px',
+    height: 'fit-content',
+    zIndex: 9,
+    padding: isMobile ? '0 16px' : '0',
+  },
+
+  // --- BOŞ SEPET ---
   emptyState: {
     display: 'flex',
     flexDirection: 'column',
@@ -56,265 +83,277 @@ export const getStyles = (isMobile) => ({
     justifyContent: 'center',
     minHeight: '60vh',
     textAlign: 'center',
-    padding: isMobile ? '20px' : '0',
+    padding: '20px',
   },
   emptyIconBg: {
-    backgroundColor: '#f8fafc',
+    backgroundColor: 'var(--primary-lighter)',
     padding: isMobile ? '24px' : '32px',
     borderRadius: '50%',
     marginBottom: '24px',
+    color: 'var(--primary)',
   },
   emptyTitle: {
     fontSize: isMobile ? '20px' : '24px',
     fontWeight: '700',
-    color: '#1e293b',
+    color: 'var(--text-main)',
     marginBottom: '8px',
   },
   emptyText: {
-    color: '#64748b',
+    color: 'var(--text-muted)',
     marginBottom: '32px',
     maxWidth: '400px',
-    lineHeight: '1.5',
+    lineHeight: '1.6',
     fontSize: isMobile ? '14px' : '16px',
   },
   startShoppingBtn: {
-    backgroundColor: '#059669',
+    backgroundColor: 'var(--primary)',
     color: 'white',
-    padding: isMobile ? '10px 24px' : '12px 32px',
+    padding: isMobile ? '12px 24px' : '14px 32px',
     borderRadius: '12px',
     fontWeight: '600',
     textDecoration: 'none',
     display: 'inline-flex',
     alignItems: 'center',
     gap: '8px',
-    boxShadow: '0 4px 12px rgba(5, 150, 105, 0.2)',
+    boxShadow: 'var(--shadow-green)',
     transition: 'transform 0.2s',
-    fontSize: isMobile ? '14px' : '16px',
+    fontSize: '15px',
   },
 
-  // Kart stilleri
+  // --- KART YAPISI ---
   card: {
     backgroundColor: 'white',
-    borderRadius: isMobile ? '16px' : '24px',
-    border: '1px solid #e2e8f0',
+    borderRadius: isMobile ? '16px' : '20px',
+    // Mobilde kartların sınırlarını biraz daha belirginleştirelim
+    border: '1px solid #e2e8f0', 
     overflow: 'hidden',
-    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
+    boxShadow: isMobile ? 'none' : 'var(--shadow-sm)',
   },
+  
+  // Masaüstü Tablo Başlığı
   tableHeader: {
     display: isMobile ? 'none' : 'grid',
     gridTemplateColumns: '2fr 1fr 1fr 1fr',
     padding: '16px 24px',
     backgroundColor: '#f8fafc',
     borderBottom: '1px solid #e2e8f0',
-    fontSize: '14px',
+    fontSize: '13px',
+    textTransform: 'uppercase',
+    letterSpacing: '0.5px',
     fontWeight: '600',
-    color: '#64748b',
+    color: 'var(--text-muted)',
   },
 
-  // Ürün satırı stilleri
+  // --- ÜRÜN SATIRI ---
   cartItem: {
     padding: isMobile ? '16px' : '24px',
     borderBottom: '1px solid #f1f5f9',
     display: isMobile ? 'flex' : 'grid',
-    flexDirection: isMobile ? 'column' : 'row',
-    gridTemplateColumns: '2fr 1fr 1fr 1fr',
+    // Masaüstü Grid / Mobil Flex
+    gridTemplateColumns: isMobile ? 'none' : '2fr 1fr 1fr 1fr',
+    flexDirection: isMobile ? 'row' : 'row', // Mobilde yan yana (Görsel + Bilgi)
     alignItems: isMobile ? 'flex-start' : 'center',
     gap: '16px',
+    position: 'relative', // Sil butonu için referans
   },
+  
   productInfo: {
     display: 'flex',
-    gap: isMobile ? '12px' : '16px',
+    flex: isMobile ? 1 : 'unset',
+    gap: '16px',
   },
   productImage: {
-    width: isMobile ? '70px' : '80px',
-    height: isMobile ? '70px' : '80px',
+    width: isMobile ? '80px' : '90px',
+    height: isMobile ? '80px' : '90px',
     borderRadius: '12px',
     objectFit: 'cover',
-    border: '1px solid #e2e8f0',
+    border: '1px solid #f1f5f9',
+    backgroundColor: '#f8fafc',
   },
   productDetails: {
     display: 'flex',
     flexDirection: 'column',
     justifyContent: 'center',
+    gap: '4px',
   },
   productName: {
-    fontSize: '16px',
+    fontSize: isMobile ? '15px' : '16px',
     fontWeight: '600',
-    color: '#1e293b',
-    marginBottom: '4px',
+    color: 'var(--text-main)',
     textDecoration: 'none',
+    lineHeight: '1.4',
+    // Mobilde uzun isimleri ... ile kesme
+    display: '-webkit-box',
+    WebkitLineClamp: 2,
+    WebkitBoxOrient: 'vertical',
+    overflow: 'hidden',
   },
   variantText: {
     fontSize: '13px',
-    color: '#64748b',
-  },
-
-  // Buton stilleri
-  removeBtn: {
+    color: 'var(--text-muted)',
     display: 'flex',
     alignItems: 'center',
-    gap: '4px',
-    color: '#ef4444',
-    fontSize: '13px',
-    fontWeight: '500',
-    background: 'none',
-    border: 'none',
-    cursor: 'pointer',
-    marginTop: '8px',
-    padding: 0,
+    gap: '6px',
   },
+
+  // --- MİKTAR KONTROLÜ ---
   quantityControl: {
     display: 'flex',
     alignItems: 'center',
-    gap: '12px',
+    gap: '8px',
     backgroundColor: '#f8fafc',
     padding: '4px',
-    borderRadius: '8px',
+    borderRadius: '10px',
     width: 'fit-content',
+    // Mobilde miktar kontrolünü konumlandırma
+    marginTop: isMobile ? '12px' : '0',
   },
   qtyBtn: {
-    width: '28px',
-    height: '28px',
+    width: '32px',
+    height: '32px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'white',
     border: '1px solid #e2e8f0',
-    borderRadius: '6px',
+    borderRadius: '8px',
     cursor: 'pointer',
-    color: '#475569',
+    color: 'var(--text-main)',
+    transition: 'all 0.2s',
   },
   qtyText: {
-    fontSize: '14px',
+    fontSize: '15px',
     fontWeight: '600',
-    color: '#1e293b',
-    minWidth: '20px',
+    color: 'var(--text-main)',
+    minWidth: '24px',
     textAlign: 'center',
   },
 
-  // Fiyat stilleri
+  // --- FİYAT & SİLME ---
+  priceArea: {
+    // Mobilde fiyatı sağ alta veya isme yakın konumlandırma
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: isMobile ? 'flex-end' : 'flex-start',
+  },
   priceText: {
-    fontSize: '16px',
-    color: '#475569',
+    fontSize: isMobile ? '15px' : '16px',
+    color: 'var(--text-muted)',
     fontWeight: '500',
+    textDecoration: 'line-through', // İndirim varsa diye hazırlık
+    fontSize: '14px',
   },
   totalText: {
-    fontSize: '18px',
+    fontSize: isMobile ? '16px' : '18px',
     fontWeight: '700',
-    color: '#059669',
-    textAlign: 'right',
+    color: 'var(--primary)',
+  },
+  
+  removeBtn: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    color: 'var(--danger)',
+    fontSize: '13px',
+    fontWeight: '500',
+    background: 'none',
+    border: 'none',
+    cursor: 'pointer',
+    padding: '8px 0',
+    // Mobilde sağ üst köşeye alabilirsin veya aşağıda bırakabilirsin
   },
 
-  // Footer stilleri
+  // --- FOOTER (Temizle / Devam Et) ---
   footer: {
-    padding: '20px 24px',
+    padding: '16px 24px',
     backgroundColor: '#f8fafc',
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-  },
-  continueLink: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    color: '#475569',
-    textDecoration: 'none',
-    fontWeight: '500',
-    fontSize: '14px',
+    borderTop: '1px solid #e2e8f0',
   },
   clearBtn: {
-    color: '#ef4444',
+    color: 'var(--danger)',
     background: 'none',
     border: 'none',
-    fontWeight: '500',
+    fontWeight: '600',
     fontSize: '14px',
     cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
   },
 
-  // Özet kartı stilleri
+  // --- ÖZET KARTI ---
   summaryCard: {
     backgroundColor: 'white',
-    borderRadius: '24px',
+    borderRadius: isMobile ? '20px' : '24px',
     border: '1px solid #e2e8f0',
     padding: '24px',
-    position: 'sticky',
-    top: '100px',
-    boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.05)',
+    boxShadow: 'var(--shadow-sm)',
   },
   summaryTitle: {
-    fontSize: '20px',
+    fontSize: '18px',
     fontWeight: '700',
-    color: '#1e293b',
-    marginBottom: '24px',
+    color: 'var(--text-main)',
+    marginBottom: '20px',
+    paddingBottom: '16px',
+    borderBottom: '1px solid #f1f5f9',
   },
 
-  // Kupon stilleri
+  // --- KUPON ---
   couponSection: {
     marginBottom: '24px',
-  },
-  couponLabel: {
-    display: 'block',
-    fontSize: '14px',
-    fontWeight: '500',
-    color: '#475569',
-    marginBottom: '8px',
   },
   couponForm: {
     display: 'flex',
     gap: '8px',
+    marginTop: '8px',
   },
   couponInput: {
     flex: 1,
-    padding: '10px 16px',
+    padding: '12px 16px',
     borderRadius: '12px',
     border: '1px solid #e2e8f0',
     fontSize: '14px',
     outline: 'none',
+    backgroundColor: '#f8fafc',
+    color: 'var(--text-main)',
   },
   couponBtn: {
-    backgroundColor: '#1e293b',
+    backgroundColor: 'var(--text-main)',
     color: 'white',
     border: 'none',
     borderRadius: '12px',
-    padding: '0 16px',
+    padding: '0 20px',
     fontWeight: '600',
     fontSize: '14px',
     cursor: 'pointer',
   },
-  activeCoupon: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: '#f0fdf4',
-    border: '1px solid #bbf7d0',
-    padding: '12px',
-    borderRadius: '12px',
-    color: '#15803d',
-  },
 
-  // Hesaplama satırları
+  // --- HESAPLAMA SATIRLARI ---
   row: {
     display: 'flex',
     justifyContent: 'space-between',
-    marginBottom: '12px',
-    color: '#64748b',
+    marginBottom: '16px',
+    color: 'var(--text-muted)',
     fontSize: '15px',
   },
   totalRow: {
     display: 'flex',
     justifyContent: 'space-between',
     marginTop: '24px',
-    paddingTop: '24px',
-    borderTop: '1px solid #e2e8f0',
+    paddingTop: '20px',
+    borderTop: '2px dashed #e2e8f0',
     fontSize: '20px',
     fontWeight: '800',
-    color: '#1e293b',
+    color: 'var(--text-main)',
   },
 
-  // Checkout butonu
+  // --- CHECKOUT BUTONU (Sticky & Normal) ---
   checkoutBtn: {
     width: '100%',
-    backgroundColor: '#059669',
+    backgroundColor: 'var(--primary)',
     color: 'white',
     border: 'none',
     padding: '16px',
@@ -322,12 +361,12 @@ export const getStyles = (isMobile) => ({
     fontSize: '16px',
     fontWeight: '700',
     cursor: 'pointer',
-    marginTop: '24px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: '8px',
-    boxShadow: '0 4px 12px rgba(5, 150, 105, 0.3)',
-    transition: 'background-color 0.2s',
+    gap: '10px',
+    boxShadow: 'var(--shadow-green)',
+    transition: 'transform 0.1s',
+    marginTop: '24px',
   },
 });

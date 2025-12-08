@@ -2,6 +2,7 @@
 import React from 'react';
 import { FaSpinner } from 'react-icons/fa';
 import ProductCard from '../../../../components/ProductCard';
+import Skeleton from '../../../../components/Skeleton';
 
 /**
  * Product grid with loading, error, and empty states
@@ -19,21 +20,34 @@ const ProductGrid = ({
 }) => {
   if (isLoading) {
     return (
-      <div style={{ 
-        textAlign: 'center', 
-        padding: '60px', 
-        backgroundColor: 'white', 
-        borderRadius: '24px', 
-        boxShadow: '0 10px 30px -10px rgba(0,0,0,0.05)' 
-      }}>
-        <FaSpinner style={{ 
-          fontSize: '48px', 
-          color: '#059669', 
-          animation: 'spin 1s linear infinite' 
-        }} />
-        <p style={{ color: '#64748b', marginTop: '16px' }}>
-          Ürünler yükleniyor...
-        </p>
+      <div style={styles.productGrid}>
+        {Array(8).fill(0).map((_, index) => (
+          <div key={index} style={{ 
+            backgroundColor: 'white', 
+            borderRadius: '16px', 
+            padding: '16px',
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '12px'
+          }}>
+            {/* Image Skeleton */}
+            <Skeleton height="200px" borderRadius="12px" />
+            
+            {/* Content Skeleton */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <Skeleton width="60%" height="14px" />
+              <Skeleton width="90%" height="18px" />
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px' }}>
+                <Skeleton width="40%" height="24px" />
+                <Skeleton width="32px" height="32px" borderRadius="50%" />
+              </div>
+            </div>
+            
+            {/* Button Skeleton */}
+            <Skeleton height="40px" borderRadius="8px" style={{ marginTop: 'auto' }} />
+          </div>
+        ))}
       </div>
     );
   }

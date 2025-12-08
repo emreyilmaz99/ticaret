@@ -6,13 +6,14 @@ import { useToast } from '../Toast';
 import AuthContext from '../../context/AuthContext';
 import { useFavorites } from '../../context/FavoritesContext';
 import { useCart } from '../../context/CartContext';
-import { styles } from './styles';
+import { getStyles } from './styles';
 
 /**
  * Navbar bileşeni için tüm business logic'i içeren custom hook
  * @returns {Object} Navbar için gerekli tüm state ve fonksiyonlar
  */
 const useNavbar = () => {
+  const styles = getStyles(false);
   // --- State Tanımları ---
   const [searchTerm, setSearchTerm] = useState('');
   const [isCartOpen, setIsCartOpen] = useState(false);

@@ -3,47 +3,52 @@
 
 :root {
   /* --- YEŞİL TEMA RENK PALETİ --- */
-  --bg-body: #f0fdf4;       /* Sayfa Arka Planı - Açık yeşil */
-  --bg-sidebar: #052e16;    /* Sidebar Rengi - Koyu yeşil */
-  --bg-card: #ffffff;       /* Kart Rengi */
+  --bg-body: #f0fdf4;
+  --bg-sidebar: #052e16;
+  --bg-card: #ffffff;
   
-  --primary: #059669;       /* Ana Vurgu (Emerald) */
-  --primary-dark: #047857;  /* Koyu Emerald */
-  --primary-darker: #065f46; /* Daha koyu Emerald */
-  --primary-hover: #10b981; /* Hover Rengi */
-  --primary-light: #d1fae5; /* Açık Emerald */
-  --primary-lighter: #ecfdf5; /* Çok açık Emerald */
+  --primary: #059669;
+  --primary-dark: #047857;
+  --primary-darker: #065f46;
+  --primary-hover: #10b981;
+  --primary-light: #d1fae5;
+  --primary-lighter: #ecfdf5;
   
-  --text-main: #064e3b;     /* Ana Metin - Koyu yeşil ton */
-  --text-muted: #6b7280;    /* Silik Metin */
-  --text-light: #f0fdf4;    /* Açık Renk Metin (Sidebar için) */
+  --text-main: #064e3b;
+  --text-muted: #6b7280;
+  --text-light: #f0fdf4;
 
   /* --- DURUM RENKLERİ --- */
   --success: #10b981;
-  --success-light: #d1fae5;
   --warning: #f59e0b;
-  --warning-light: #fef3c7;
   --danger: #ef4444;
-  --danger-light: #fee2e2;
   --info: #3b82f6;
-  --info-light: #dbeafe;
 
-  /* --- DİĞER --- */
+  /* --- UI DEĞİŞKENLERİ --- */
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-  --shadow-green: 0 4px 14px -3px rgba(5, 150, 105, 0.25);
-  --radius: 12px;           /* Köşe Yuvarlaklığı */
+  --shadow-float: 0 10px 15px -3px rgba(0, 0, 0, 0.1); /* Mobilde öne çıkan butonlar için */
+  --radius: 12px;
   --radius-sm: 8px;
   --radius-lg: 16px;
+  
+  /* Mobil Header/Footer Yükseklikleri (Hesaplamalar için) */
+  --header-height: 60px;
+  --bottom-nav-height: 70px;
 }
 
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+  /* Mobilde tıklama gecikmesini kaldırır */
+  touch-action: manipulation; 
 }
 
-body {
+body, html {
+  width: 100%;
+  /* YATAY TAŞMAYI ENGELLEME (Kritik Fix) */
+  overflow-x: hidden; 
   font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
   background-color: var(--bg-body);
   color: var(--text-main);
@@ -51,25 +56,90 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Genel Buton Stili */
-button {
-  font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
-  transition: all 0.2s ease;
+/* --- APP-LIKE LAYOUT YARDIMCILARI --- */
+
+/* Ana İçerik Kapsayıcısı */
+.app-container {
+  width: 100%;
+  max-width: 1200px; /* Geniş ekranlarda içeriği ortalar */
+  margin: 0 auto;
+  padding: 0 16px; /* Mobilde kenar boşluğu */
+  padding-bottom: calc(var(--bottom-nav-height) + 20px); /* Alt menü altında içerik kalmasın */
 }
 
-/* Scrollbar Güzelleştirme - Yeşil Tema */
-::-webkit-scrollbar {
-  width: 8px;
+/* Responsive Grid Sistemi (Ürünler İçin) */
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); /* Mobilde 2'li, Masaüstünde çoklu */
+  gap: 16px;
+  width: 100%;
 }
-::-webkit-scrollbar-track {
-  background: #ecfdf5; 
+
+/* Mobilde tek sütun olması gereken yerler için */
+.mobile-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
-::-webkit-scrollbar-thumb {
-  background: #86efac; 
-  border-radius: 4px;
+
+/* --- MOBİL İÇİN ÖZEL BUTONLAR --- */
+
+/* Yapışkan Alt Buton (Satın Al / Sepete Ekle) */
+.fixed-bottom-btn {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background: white;
+  padding: 12px 16px;
+  padding-bottom: max(12px, env(safe-area-inset-bottom)); /* iPhone X alt çizgi boşluğu */
+  box-shadow: 0 -4px 12px rgba(0,0,0,0.05);
+  z-index: 100;
+  display: flex;
+  justify-content: center;
 }
-::-webkit-scrollbar-thumb:hover {
-  background: #4ade80; 
+
+.btn-primary-block {
+  width: 100%;
+  background-color: var(--primary);
+  color: white;
+  padding: 14px;
+  border: none;
+  border-radius: var(--radius);
+  font-weight: 600;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+/* --- TİPOGRAFİ & İNPUT --- */
+
+button {
+  cursor: pointer;
+  font-family: inherit;
+  transition: transform 0.1s ease, background-color 0.2s;
+}
+
+/* Mobilde basınca hafif küçülme efekti (App Hissi) */
+button:active {
+  transform: scale(0.98);
+}
+
+input, select, textarea {
+  width: 100%; /* Taşmaları engeller */
+  padding: 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: var(--radius-sm);
+  background: white;
+  font-size: 16px; /* 16px altı olursa iPhone zoom yapar, bunu engelliyoruz */
+}
+
+input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-light);
 }
 
 a {
@@ -77,28 +147,34 @@ a {
   color: inherit;
 }
 
-ul {
-  list-style: none;
+/* --- MOBİL / MASAÜSTÜ GÖRÜNÜRLÜK --- */
+
+@media (max-width: 768px) {
+  .desktop-only {
+    display: none !important;
+  }
+  
+  /* Mobilde scrollbarı gizle ama kaydırmaya izin ver (Daha temiz görünüm) */
+  ::-webkit-scrollbar {
+    width: 0px; 
+    background: transparent;
+  }
 }
 
-/* Smooth transitions for interactive elements */
-input, select, textarea, button {
-  transition: all 0.2s ease;
-}
-
-input:focus, select:focus, textarea:focus {
-  outline: none;
-  border-color: var(--primary) !important;
-  box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.1);
-}
-
-/* Table hover effects */
-tr {
-  transition: background-color 0.15s ease;
-}
-
-/* Selection color */
-::selection {
-  background-color: var(--primary-light);
-  color: var(--primary-darker);
+@media (min-width: 769px) {
+  .mobile-only {
+    display: none !important;
+  }
+  
+  /* Masaüstü Scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #ecfdf5; 
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #86efac; 
+    border-radius: 4px;
+  }
 }

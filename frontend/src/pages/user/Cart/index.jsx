@@ -2,15 +2,17 @@
 import React from 'react';
 
 // --- Alt Bileşenler ---
-import CartHeader from './CartHeader';
-import CartProductList from './CartProductList';
-import OrderSummary from './OrderSummary';
-import EmptyCart from './EmptyCart';
-import DeliveryAddressSection from './DeliveryAddressSection';
-import VendorGroup from './VendorGroup';
+import {
+  CartHeader,
+  CartProductList,
+  OrderSummary,
+  EmptyCart,
+  DeliveryAddressSection,
+  VendorGroup,
+  CheckoutModal
+} from './components';
 import AddressModal from '../../../components/AddressModal';
 import ConfirmModal from '../../../components/ConfirmModal';
-import CheckoutModal from './CheckoutModal';
 
 // --- Custom Hook ---
 import useCartPage from './useCartPage';
@@ -185,17 +187,3 @@ const Cart = () => {
 };
 
 export default Cart;
-
-// --- Barrel Exports ---
-// Tüm alt bileşenleri tek noktadan export et
-export { default as CartHeader } from './CartHeader';
-export { default as CartProductList } from './CartProductList';
-export { default as CartItem } from './CartItem';
-export { default as OrderSummary } from './OrderSummary';
-export { default as CouponSection } from './CouponSection';
-export { default as ShippingBreakdown } from './ShippingBreakdown';
-export { default as EmptyCart } from './EmptyCart';
-export { default as DeliveryAddressSection } from './DeliveryAddressSection';
-export { default as VendorGroup } from './VendorGroup';
-export { default as useCartPage } from './useCartPage';
-export { getStyles } from './styles';
