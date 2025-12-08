@@ -1,6 +1,7 @@
-// src/pages/user/UserOrders/useUserOrders.js
+// src/pages/user/UserOrderDetail/useUserOrderDetail.js
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { 
   FiPackage, 
   FiTruck, 
@@ -8,18 +9,36 @@ import {
   FiXCircle, 
   FiClock
 } from 'react-icons/fi';
-import { getUserOrders } from '../../../features/checkout/api/checkoutApi';
+import { getOrder, cancelOrder } from '../../../features/checkout/api/checkoutApi';
+import { useToast } from '../../../components/common/Toast';
 
-export const useUserOrders = () => {
-  const [currentPage, setCurrentPage] = useState(1);
+export const useUserOrderDetail = (orderNumber) => {
+  const navigate = useNavigate();
+  const { showToast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ['userOrders', currentPage],
-    queryFn: () => getUserOrders({ page: currentPage, per_page: 10 }),
+    queryKey: ['order', orderNumber],
+    queryFn: () => getOrder(orderNumber),
+    enabled: !!orderNumber,
   });
 
-  const orders = data?.data?.orders || [];
-  const pagination = data?.data?.pagination;
+  const order = data?.data?.order;
+
+  const cancelMutation = useMutation({
+    mutationFn: (orderNum) => cancelOrder(orderNum),
+    onSuccess: () => {
+      showToast('Sipariş başarıyla iptal edildi', 'success');
+      queryClient.invalidateQueries({ queryKey: ['order', orderNumber] });
+      queryClient.invalidateQueries({ queryKey: ['userOrders'] });
+    },
+    onError: (error) => {
+      showToast(
+        error.response?.data?.message || 'Sipariş iptal edilirken bir hata oluştu',
+        'error'
+      );
+    }
+  });
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat('tr-TR', {
@@ -43,44 +62,44 @@ export const useUserOrders = () => {
       pending: {
         label: 'Beklemede',
         icon: FiClock,
-        color: '#d97706', // yellow-600
-        bg: '#fef3c7'     // yellow-100
+        color: '#d97706',
+        bg: '#fef3c7'
       },
       confirmed: {
         label: 'Onaylandı',
         icon: FiCheckCircle,
-        color: '#059669', // emerald-600
-        bg: '#d1fae5'     // emerald-100
+        color: '#059669',
+        bg: '#d1fae5'
       },
       processing: {
         label: 'Hazırlanıyor',
         icon: FiPackage,
-        color: '#2563eb', // blue-600
-        bg: '#dbeafe'     // blue-100
+        color: '#2563eb',
+        bg: '#dbeafe'
       },
       shipped: {
         label: 'Kargoda',
         icon: FiTruck,
-        color: '#9333ea', // purple-600
-        bg: '#f3e8ff'     // purple-100
+        color: '#9333ea',
+        bg: '#f3e8ff'
       },
       delivered: {
         label: 'Teslim Edildi',
         icon: FiCheckCircle,
-        color: '#16a34a', // green-600
-        bg: '#dcfce7'     // green-100
+        color: '#16a34a',
+        bg: '#dcfce7'
       },
       cancelled: {
         label: 'İptal Edildi',
         icon: FiXCircle,
-        color: '#dc2626', // red-600
-        bg: '#fee2e2'     // red-100
+        color: '#dc2626',
+        bg: '#fee2e2'
       },
       returned: {
         label: 'İade Edildi',
         icon: FiXCircle,
-        color: '#f59e0b', // amber-600
-        bg: '#fef3c7'     // amber-100
+        color: '#f59e0b',
+        bg: '#fef3c7'
       }
     };
     return configs[status] || configs.pending;
@@ -117,22 +136,21 @@ export const useUserOrders = () => {
     return configs[status] || configs.pending;
   };
 
-  const handlePageChange = (newPage) => {
-    if (newPage >= 1 && newPage <= (pagination?.last_page || 1)) {
-      setCurrentPage(newPage);
+  const handleCancelOrder = async (orderNum) => {
+    if (window.confirm('Siparişi iptal etmek istediğinizden emin misiniz?')) {
+      await cancelMutation.mutateAsync(orderNum);
     }
   };
 
   return {
-    orders,
-    pagination,
-    currentPage,
+    order,
     isLoading,
     error,
+    isCancelling: cancelMutation.isPending,
     formatPrice,
     formatDate,
     getStatusConfig,
     getPaymentStatusConfig,
-    handlePageChange
+    handleCancelOrder
   };
 };

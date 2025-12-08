@@ -58,14 +58,15 @@ export const OrderCard = ({
           <div style={styles.productImages}>
             <div style={styles.imageList}>
               {(order.items || []).slice(0, 4).map((item, idx) => (
-                <div
+                <Link
                   key={idx}
+                  to={`/product/${item.product?.slug}`}
                   style={styles.imageWrapper}
                   title={item.product_name}
                 >
-                  {item.product_image ? (
+                  {item.product?.photos?.[0]?.file_path ? (
                     <img 
-                      src={item.product_image} 
+                      src={item.product.photos[0].file_path} 
                       alt={item.product_name}
                       style={styles.productImage}
                     />
@@ -74,7 +75,7 @@ export const OrderCard = ({
                       <FiPackage size={20} color="#9ca3af" />
                     </div>
                   )}
-                </div>
+                </Link>
               ))}
               {(order.items?.length || 0) > 4 && (
                 <div style={styles.imageWrapper}>
@@ -103,7 +104,7 @@ export const OrderCard = ({
           <div style={styles.totalPrice}>
             <p style={styles.priceLabel}>Toplam</p>
             <p style={styles.priceValue}>
-              {formatPrice(order.total_amount)}
+              {formatPrice(order.total)}
             </p>
           </div>
         </div>

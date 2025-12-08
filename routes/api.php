@@ -36,6 +36,7 @@ use App\Http\Controllers\Api\V1\Public\ProductController as PublicProductControl
 
 // Checkout controller
 use App\Http\Controllers\Api\V1\User\CheckoutController;
+use App\Http\Controllers\Api\V1\User\OrderController;
 
 // Admin API
 // Note: the application's routing already prefixes API routes with '/api',
@@ -269,9 +270,9 @@ Route::prefix('v1/user')->group(function () {
         Route::get('checkout/status/{orderNumber}', [CheckoutController::class, 'status']);
 
         // Orders
-        Route::get('orders', [CheckoutController::class, 'index']);
-        Route::get('orders/{orderNumber}', [CheckoutController::class, 'show']);
-        Route::post('orders/{orderNumber}/cancel', [CheckoutController::class, 'cancel']);
+        Route::get('orders', [OrderController::class, 'index']);
+        Route::get('orders/{orderNumber}', [OrderController::class, 'show']);
+        Route::post('orders/{orderNumber}/cancel', [OrderController::class, 'cancel']);
     });
 });
 

@@ -28,6 +28,7 @@ import UserAddresses from './pages/user/UserAddresses'; // Kullanıcı Adresleri
 import PaymentSuccess from './pages/user/PaymentSuccess'; // Ödeme Başarılı
 import PaymentFailed from './pages/user/PaymentFailed'; // Ödeme Başarısız
 import UserOrders from './pages/user/UserOrders'; // Kullanıcı Siparişleri
+import UserOrderDetail from './pages/user/UserOrderDetail'; // Sipariş Detayı
 
 // 2. Admin Sayfaları (Senin klasör yapına göre: src/pages/admin/...)
 import AdminLogin from './pages/admin/AdminLogin'; // Admin Girişi
@@ -157,6 +158,7 @@ function App() {
                 <Route path="profile" element={<UserProfile />} />
                 <Route path="addresses" element={<UserAddresses />} />
                 <Route path="orders" element={<UserOrders />} />
+                <Route path="orders/:orderNumber" element={<UserOrderDetail />} />
                 {/* İleride eklenecekler */}
                 {/* <Route path="favorites" element={<UserFavorites />} /> */}
                 {/* <Route path="reviews" element={<UserReviews />} /> */}

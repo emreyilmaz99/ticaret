@@ -97,6 +97,9 @@ export const styles = {
     flexShrink: 0,
     marginLeft: '-8px', // Overlap
     position: 'relative',
+    textDecoration: 'none',
+    display: 'block',
+    transition: 'transform 0.2s',
   },
   productImage: {
     width: '100%',

@@ -72,6 +72,11 @@ class Order extends Model
     ];
 
     /**
+     * Appended accessors
+     */
+    protected $appends = ['can_cancel'];
+
+    /**
      * Boot the model
      */
     protected static function boot()
@@ -186,6 +191,14 @@ class Order extends Model
     {
         // Sadece beklemede ve onaylanmış siparişler iptal edilebilir
         return in_array($this->status, [self::STATUS_PENDING, self::STATUS_CONFIRMED]);
+    }
+
+    /**
+     * Accessor for can_cancel attribute
+     */
+    public function getCanCancelAttribute(): bool
+    {
+        return $this->isCancellable();
     }
 
     public function isRefundable(): bool
