@@ -33,7 +33,7 @@ export const toFullUrl = (url) => {
   return `http://127.0.0.1:8000${url.startsWith('/') ? '' : '/'}${url}`;
 };
 
-export const getStyles = () => ({
+export const styles = {
   container: { 
     padding: '24px', 
     fontFamily: "'Inter', sans-serif", 
@@ -41,32 +41,50 @@ export const getStyles = () => ({
     maxWidth: '1200px',
     margin: '0 auto'
   },
+  
+  // --- Header ---
   header: { 
     display: 'flex',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     marginBottom: '24px'
+  },
+  headerLeft: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '4px'
   },
   title: { 
     fontSize: '24px', 
     fontWeight: '700', 
     color: '#0f172a',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
     margin: 0
-  },
-  titleIcon: {
-    color: '#059669'
   },
   subtitle: { 
     color: '#64748b', 
     fontSize: '14px', 
-    marginTop: '8px',
-    lineHeight: '1.6'
+    margin: 0
   },
-  
-  // Info box
+  saveButton: {
+    backgroundColor: '#059669',
+    color: 'white',
+    border: 'none',
+    padding: '10px 20px',
+    borderRadius: '8px',
+    fontWeight: '600',
+    cursor: 'pointer',
+    fontSize: '14px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+    transition: 'all 0.2s'
+  },
+  buttonIcon: {
+    fontSize: '16px'
+  },
+
+  // --- Info Box ---
   infoBox: {
     backgroundColor: '#eff6ff',
     border: '1px solid #bfdbfe',
@@ -94,223 +112,249 @@ export const getStyles = () => ({
     margin: 0
   },
 
-  // Stats
+  // --- Stats ---
   statsContainer: {
     display: 'flex',
     gap: '16px',
-    marginBottom: '20px',
+    marginBottom: '24px',
     flexWrap: 'wrap'
   },
-  statsCard: {
+  statCard: {
+    flex: 1,
+    minWidth: '200px',
     display: 'flex',
     alignItems: 'center',
-    gap: '12px',
+    gap: '16px',
     backgroundColor: 'white',
-    padding: '16px 20px',
+    padding: '20px',
     borderRadius: '12px',
-    border: '1px solid #e2e8f0'
+    border: '1px solid #e2e8f0',
+    boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
   },
-  statsCardWarning: {
-    backgroundColor: '#fef3c7',
-    borderColor: '#fcd34d'
-  },
-  statsIcon: {
-    width: '40px',
-    height: '40px',
-    borderRadius: '10px',
+  statIcon: {
+    width: '48px',
+    height: '48px',
+    borderRadius: '12px',
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'center'
+    justifyContent: 'center',
+    fontSize: '20px'
   },
-  statsIconGreen: {
-    backgroundColor: '#dcfce7'
+  statInfo: {
+    display: 'flex',
+    flexDirection: 'column'
   },
-  statsIconBlue: {
-    backgroundColor: '#e0f2fe'
-  },
-  statsValue: {
-    fontSize: '20px',
+  statValue: {
+    fontSize: '24px',
     fontWeight: '700',
-    color: '#0f172a'
+    color: '#0f172a',
+    lineHeight: '1.2'
   },
-  statsLabel: {
-    fontSize: '13px',
-    color: '#64748b'
-  },
-  warningText: {
+  statLabel: {
     fontSize: '14px',
-    color: '#92400e',
+    color: '#64748b',
     fontWeight: '500'
   },
 
-  // Toolbar
+  // --- Main Card ---
+  mainCard: {
+    backgroundColor: 'white',
+    borderRadius: '12px',
+    border: '1px solid #e2e8f0',
+    overflow: 'hidden',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
+  },
+
+  // --- Toolbar ---
   toolbar: { 
-    backgroundColor: 'white', 
-    padding: '14px 16px', 
-    borderRadius: '12px', 
-    marginBottom: '16px', 
-    border: '1px solid #e2e8f0', 
+    padding: '16px', 
+    borderBottom: '1px solid #e2e8f0', 
     display: 'flex', 
     justifyContent: 'space-between', 
     alignItems: 'center',
-    gap: '12px',
-    flexWrap: 'wrap'
+    gap: '16px',
+    flexWrap: 'wrap',
+    backgroundColor: '#f8fafc'
   },
-  searchWrapper: {
-    position: 'relative'
+  searchContainer: {
+    position: 'relative',
+    flex: 1,
+    maxWidth: '400px'
   },
   searchIcon: {
     position: 'absolute',
-    left: '14px',
+    left: '12px',
     top: '50%',
     transform: 'translateY(-50%)',
     color: '#94a3b8'
   },
   searchInput: { 
-    padding: '10px 16px', 
-    paddingLeft: '40px', 
+    width: '100%',
+    padding: '10px 36px', 
     borderRadius: '8px', 
     border: '1px solid #e2e8f0', 
-    width: '300px', 
     outline: 'none', 
-    fontSize: '14px' 
+    fontSize: '14px',
+    backgroundColor: 'white'
   },
-  toolbarButtons: {
-    display: 'flex',
-    gap: '8px'
-  },
-
-  // Buttons
-  btnSecondary: { 
-    backgroundColor: 'white', 
-    color: '#64748b', 
-    border: '1px solid #e2e8f0', 
-    padding: '8px 16px', 
-    borderRadius: '8px', 
-    fontWeight: '500', 
-    cursor: 'pointer',
-    fontSize: '13px',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '6px'
-  },
-  btnPrimary: {
-    backgroundColor: '#059669',
-    color: 'white',
+  clearButton: {
+    position: 'absolute',
+    right: '10px',
+    top: '50%',
+    transform: 'translateY(-50%)',
+    background: 'none',
     border: 'none',
-    padding: '12px 24px',
-    borderRadius: '8px',
-    fontWeight: '600',
+    color: '#94a3b8',
     cursor: 'pointer',
     fontSize: '14px',
+    padding: '4px'
+  },
+  toolbarActions: {
+    display: 'flex',
+    gap: '12px'
+  },
+  toolbarButton: {
     display: 'flex',
     alignItems: 'center',
     gap: '8px',
-    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-  },
-  btnDisabled: {
-    opacity: 0.5,
-    cursor: 'not-allowed'
+    padding: '8px 16px',
+    backgroundColor: 'white',
+    border: '1px solid #e2e8f0',
+    borderRadius: '8px',
+    color: '#475569',
+    fontSize: '13px',
+    fontWeight: '500',
+    cursor: 'pointer',
+    transition: 'all 0.2s'
   },
 
-  // Category list
-  categoryContainer: { 
-    backgroundColor: 'white', 
-    borderRadius: '12px', 
-    border: '1px solid #e2e8f0', 
-    overflow: 'hidden',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
+  // --- Category List ---
+  categoryList: {
+    backgroundColor: 'white',
+    minHeight: '400px'
   },
-  emptyState: {
+  loadingContainer: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
     padding: '48px',
-    textAlign: 'center',
+    gap: '16px',
+    color: '#64748b'
+  },
+  loadingSpinner: {
+    fontSize: '24px',
+    animation: 'spin 1s linear infinite',
+    color: '#059669'
+  },
+  emptyContainer: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '64px',
+    color: '#64748b'
+  },
+  emptyIcon: {
+    fontSize: '48px',
+    color: '#cbd5e1',
+    marginBottom: '16px'
+  },
+  emptyTitle: {
+    fontSize: '18px',
+    fontWeight: '600',
+    color: '#1e293b',
+    marginBottom: '8px'
+  },
+  emptyText: {
+    fontSize: '14px',
     color: '#64748b'
   },
 
-  // Category item
+  // --- Category Item ---
+  categoryWrapper: {
+    display: 'flex',
+    flexDirection: 'column',
+    width: '100%'
+  },
   categoryItem: {
     display: 'flex',
     alignItems: 'center',
-    padding: '14px 16px',
-    borderBottom: '1px solid #e2e8f0',
+    padding: '12px 16px',
+    borderBottom: '1px solid #f1f5f9',
     transition: 'all 0.15s',
-    cursor: 'pointer'
+    cursor: 'pointer',
+    minHeight: '56px'
   },
-  categoryItemSelected: {
-    backgroundColor: '#f0fdf4',
-    borderLeft: '3px solid #22c55e'
-  },
-  categoryItemRoot: {
-    backgroundColor: '#f8fafc'
-  },
-  checkbox: {
-    width: '22px',
-    height: '22px',
-    borderRadius: '6px',
-    border: '2px solid #cbd5e1',
-    backgroundColor: 'white',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: '12px',
-    flexShrink: 0,
-    transition: 'all 0.15s'
-  },
-  checkboxSelected: {
-    border: '2px solid #22c55e',
-    backgroundColor: '#22c55e'
-  },
-  expandIcon: {
+  expandButton: {
     width: '24px',
     height: '24px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    color: '#64748b',
+    background: 'transparent',
+    border: 'none',
+    cursor: 'pointer',
     marginRight: '8px',
+    padding: 0,
+    color: '#64748b',
     borderRadius: '4px',
-    cursor: 'pointer'
+    transition: 'background-color 0.2s'
+  },
+  chevronIcon: {
+    fontSize: '12px'
+  },
+  expandPlaceholder: {
+    width: '24px',
+    height: '24px',
+    marginRight: '8px'
+  },
+  checkbox: {
+    width: '18px',
+    height: '18px',
+    marginRight: '12px',
+    cursor: 'pointer',
+    accentColor: '#22c55e'
   },
   categoryIcon: {
-    fontSize: '22px',
-    marginRight: '14px',
+    width: '32px',
+    height: '32px',
+    borderRadius: '8px',
+    backgroundColor: '#f1f5f9',
     display: 'flex',
-    alignItems: 'center'
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: '12px',
+    fontSize: '16px'
   },
-  categoryImage: {
-    width: '28px',
-    height: '28px',
-    borderRadius: '6px',
-    objectFit: 'cover'
+  iconEmoji: {
+    fontSize: '18px',
+    lineHeight: 1
+  },
+  iconImage: {
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover',
+    borderRadius: '8px'
   },
   categoryName: {
-    fontWeight: '600',
-    color: '#1e293b',
-    fontSize: '15px'
-  },
-  categoryNameChild: {
+    flex: 1,
+    fontSize: '14px',
     fontWeight: '500',
-    fontSize: '14px'
+    color: '#334155'
   },
-  categoryNameSelected: {
-    color: '#166534'
-  },
-  categoryDescription: {
-    fontSize: '12px',
-    color: '#64748b',
-    marginTop: '2px'
-  },
-  childrenCount: {
-    padding: '4px 10px',
+  childCount: {
+    padding: '2px 8px',
     borderRadius: '12px',
-    fontSize: '12px',
-    fontWeight: '500',
-    backgroundColor: '#e0f2fe',
-    color: '#0369a1'
+    fontSize: '11px',
+    fontWeight: '600',
+    backgroundColor: '#f1f5f9',
+    color: '#64748b',
+    marginLeft: '8px'
   },
   childrenContainer: {
-    backgroundColor: '#fafafa'
+    display: 'flex',
+    flexDirection: 'column',
+    width: '100%'
   }
-});
-
-export const styles = getStyles();
+};

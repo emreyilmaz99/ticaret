@@ -191,6 +191,14 @@ const Navbar = () => {
                       <MiniCart cartItems={cartItems} totals={totals} />
                     )}
                   </div>
+
+                  {/* Hesabım (Masaüstü) */}
+                  {!isMobile && (
+                    <Link to="/account/profile" style={styles.actionItem}>
+                      <div style={styles.iconBox}><FaUser /></div>
+                      <span style={styles.actionText}>Hesabım</span>
+                    </Link>
+                  )}
                 </>
               )}
             </div>
