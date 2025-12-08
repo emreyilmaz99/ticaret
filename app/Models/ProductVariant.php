@@ -42,7 +42,7 @@ class ProductVariant extends Model
     // ==================== STOK YÖNETİMİ ====================
 
     /**
-     * Stok düşür (sipariş sonrası)
+     * Stok düşür (sipariş sonrası) - Atomic operation
      */
     public function decrementStock(int $quantity): bool
     {
@@ -50,11 +50,19 @@ class ProductVariant extends Model
             return false;
         }
 
-        if ($this->stock < $quantity) {
-            return false;
+        // Atomic operation ile stok kontrolü ve azaltma
+        // WHERE stock >= quantity koşulu ile race condition'dan korunur
+        $affected = static::where('id', $this->id)
+            ->where('stock', '>=', $quantity)
+            ->update(['stock' => \DB::raw("stock - {$quantity}")]);
+
+        if ($affected === 0) {
+            return false; // Stok yetersiz veya variant bulunamadı
         }
 
-        $this->decrement('stock', $quantity);
+        // Model'i refresh et
+        $this->refresh();
+
         return true;
     }
 

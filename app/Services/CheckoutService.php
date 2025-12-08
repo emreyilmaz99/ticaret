@@ -253,7 +253,7 @@ class CheckoutService extends BaseService
                         $orderItem = $order->items()
                             ->where('iyzico_item_id', $paymentItem->getItemId())
                             ->first();
-                        
+
                         if ($orderItem) {
                             $orderItem->update([
                                 'iyzico_payment_transaction_id' => $paymentItem->getPaymentTransactionId(),
@@ -263,8 +263,38 @@ class CheckoutService extends BaseService
                     }
                 }
 
-                // Stokları düşür
-                $this->decrementStocks($order);
+                // Stokları düşür - artık exception fırlatabilir
+                try {
+                    $this->decrementStocks($order);
+                } catch (\App\Exceptions\InsufficientStockException $e) {
+                    // Stok yetersizse ödemeyi geri al
+                    Log::error('Insufficient stock after payment', [
+                        'order_id' => $order->id,
+                        'error' => $e->getMessage(),
+                    ]);
+
+                    // TODO: İleride iyzico refund API eklenebilir
+                    // $this->iyzicoService->refund($order);
+
+                    // Sipariş durumunu güncelle
+                    $order->update([
+                        'status' => Order::STATUS_CANCELLED,
+                        'payment_status' => Order::PAYMENT_FAILED,
+                    ]);
+
+                    $order->statusHistory()->create([
+                        'old_status' => Order::STATUS_PAID,
+                        'new_status' => Order::STATUS_CANCELLED,
+                        'note' => 'Stok yetersiz - Otomatik iptal: ' . $e->getMessage(),
+                        'changed_by_type' => 'system',
+                        'changed_by_id' => null,
+                    ]);
+
+                    throw new \App\Exceptions\BusinessLogicException(
+                        'Ödeme alındı ancak stok yetersiz. Siparişiniz iptal edildi, ücret iadesi yapılacaktır.',
+                        422
+                    );
+                }
 
                 // Kupon kullanımını kaydet
                 $this->recordCouponUsage($order);
@@ -294,16 +324,18 @@ class CheckoutService extends BaseService
             });
 
         } catch (\Exception $e) {
+            // handleException artık doğru status code döndürecek
             Log::error('Payment callback processing failed', [
                 'order_id' => $order->id,
                 'error' => $e->getMessage(),
             ]);
-            return $this->errorResponse('Ödeme işlenirken hata: ' . $e->getMessage());
+            return $this->handleException($e, 'Ödeme işlenirken hata oluştu');
         }
     }
 
     /**
      * Stokları düşür
+     * @throws \App\Exceptions\InsufficientStockException
      */
     protected function decrementStocks(Order $order): void
     {
@@ -311,7 +343,20 @@ class CheckoutService extends BaseService
 
         foreach ($order->items as $item) {
             if ($item->variant) {
-                $item->variant->decrementStock($item->quantity);
+                // Stok azaltmayı dene
+                $success = $item->variant->decrementStock($item->quantity);
+
+                // Başarısızsa exception fırlat
+                if (!$success) {
+                    // Fresh data ile tekrar kontrol et (race condition için)
+                    $item->variant->refresh();
+
+                    throw new \App\Exceptions\InsufficientStockException(
+                        $item->product_name . ($item->variant_title ? " - {$item->variant_title}" : ''),
+                        $item->variant->stock,
+                        $item->quantity
+                    );
+                }
             }
         }
     }
