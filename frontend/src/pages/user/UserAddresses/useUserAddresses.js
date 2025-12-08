@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getUserAddresses, createUserAddress, updateUserAddress, deleteUserAddress, setDefaultUserAddress } from '../../../features/user/api/userAddressApi';
-import { useToast } from '../../../components/Toast';
+import { useToast } from '../../../components/common/Toast';
 
 export const useUserAddresses = () => {
   const qc = useQueryClient();

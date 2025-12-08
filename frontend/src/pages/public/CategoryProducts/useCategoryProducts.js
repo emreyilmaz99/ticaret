@@ -3,7 +3,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useCart } from '../../../context/CartContext';
-import { useToast } from '../../../components/Toast';
+import { useToast } from '../../../components/common/Toast';
 import { getProducts } from '../../../api/publicApi';
 import { CATEGORY_BANNERS } from './styles';
 

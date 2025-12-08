@@ -5,7 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { getProduct, getRelatedProducts } from '../../../api/publicApi';
 import { useCart } from '../../../context/CartContext';
 import { useFavorites } from '../../../context/FavoritesContext';
-import { useToast } from '../../../components/Toast';
+import { useToast } from '../../../components/common/Toast';
 
 /**
  * Custom hook for ProductDetail page

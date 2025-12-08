@@ -5,7 +5,7 @@ import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import VendorEditModal from './VendorEditModal';
 import VendorCategoryModal from '../../admin/components/VendorCategoryModal';
 import { getVendors, updateVendorStatus } from '../api/vendorApi';
-import { useToast } from '../../../components/Toast';
+import { useToast } from '../../../components/common/Toast';
 
 const ActiveVendorList = () => {
   const queryClient = useQueryClient();

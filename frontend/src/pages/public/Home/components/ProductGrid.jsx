@@ -1,8 +1,8 @@
 // src/pages/public/Home/components/ProductGrid.jsx
 import React from 'react';
 import { FaSpinner } from 'react-icons/fa';
-import ProductCard from '../../../../components/ProductCard';
-import Skeleton from '../../../../components/Skeleton';
+import ProductCard from '../../../../components/common/ProductCard';
+import Skeleton from '../../../../components/ui/Skeleton';
 
 /**
  * Product grid with loading, error, and empty states

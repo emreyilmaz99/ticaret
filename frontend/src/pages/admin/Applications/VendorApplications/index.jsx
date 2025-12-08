@@ -2,7 +2,7 @@
 import React from 'react';
 import useVendorApplications from '../useVendorApplications';
 import { styles } from '../styles';
-import { useToast } from '../../../../components/Toast';
+import { useToast } from '../../../../components/common/Toast';
 import {
   ApplicationTabs,
   SearchBar,

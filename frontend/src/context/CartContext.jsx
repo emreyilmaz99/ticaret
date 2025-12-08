@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
-import { useToast } from '../components/Toast';
+import { useToast } from '../components/common/Toast';
 import * as cartApi from '../api/cartApi';
 
 const CartContext = createContext();

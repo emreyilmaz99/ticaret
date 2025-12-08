@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { useToast } from '../../../components/Toast';
+import { useToast } from '../../../components/common/Toast';
 import { useAuth } from '../../../context/AuthContext';
 import { getProducts, getCategories } from '../../../api/publicApi';
 

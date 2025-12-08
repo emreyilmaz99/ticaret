@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { FaTimes } from 'react-icons/fa';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { updateVendor } from '../api/vendorApi';
-import { useToast } from '../../../components/Toast';
+import { useToast } from '../../../components/common/Toast';
 
 const VendorEditModal = ({ vendor, isOpen = true, onClose }) => {
   const queryClient = useQueryClient();

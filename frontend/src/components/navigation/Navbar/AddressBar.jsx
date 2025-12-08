@@ -2,7 +2,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { FaMapMarkerAlt, FaChevronDown } from 'react-icons/fa';
-import CategoryMenu from '../CategoryMenu';
+import CategoryMenu from '../../common/CategoryMenu';
 import { styles } from './styles';
 
 /**

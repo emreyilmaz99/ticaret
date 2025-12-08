@@ -1,7 +1,7 @@
 import React from 'react';
 import { FaTimes, FaCheck, FaShoppingCart } from 'react-icons/fa';
-import { useCart } from '../context/CartContext';
-import { useToast } from './Toast';
+import { useCart } from '../../context/CartContext';
+import { useToast } from '../common/Toast';
 
 const ComparisonModal = ({ products, onClose }) => {
   const { addToCart } = useCart();

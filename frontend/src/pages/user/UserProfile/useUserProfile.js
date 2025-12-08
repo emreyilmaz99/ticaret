@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getUserProfile, updateUserProfile, updateUserPassword, uploadUserAvatar, deleteUserAvatar } from '../../../features/user/api/userAuthApi';
-import { useToast } from '../../../components/Toast';
+import { useToast } from '../../../components/common/Toast';
 import { useAuth } from '../../../context/AuthContext';
 
 export const useUserProfile = () => {

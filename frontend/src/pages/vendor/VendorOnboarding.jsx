@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getVendorProfile, updateVendorProfile, createVendorAddress, createVendorBankAccount, completeOnboarding } from '../../features/vendor/api/vendorAuthApi';
-import { useToast } from '../../components/Toast';
+import { useToast } from '../../components/common/Toast';
 import { cities, cityPlateCodes } from '../../data/turkeyData';
 
 const VendorOnboarding = () => {

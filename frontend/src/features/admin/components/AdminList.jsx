@@ -3,7 +3,7 @@ import { FaSearch, FaUserShield, FaEdit, FaTrash, FaPlus, FaCheckCircle, FaTimes
 import Pagination from '../../../components/ui/Pagination';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getAdmins, deleteAdmin } from '../api/adminApi';
-import { useToast } from '../../../components/Toast';
+import { useToast } from '../../../components/common/Toast';
 
 const AdminList = () => {
   const [searchTerm, setSearchTerm] = useState('');

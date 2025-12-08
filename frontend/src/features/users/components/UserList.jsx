@@ -7,7 +7,7 @@ import {
 } from 'react-icons/fa';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getUsers, getUser, deleteUser, toggleUserStatus, updateUser } from '../api/userApi';
-import { useToast } from '../../../components/Toast';
+import { useToast } from '../../../components/common/Toast';
 import Pagination from '../../../components/ui/Pagination';
 
 const UserList = () => {

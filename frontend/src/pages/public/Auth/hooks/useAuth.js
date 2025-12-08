@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth as useAuthContext } from '../../../../context/AuthContext';
 import { useCart } from '../../../../context/CartContext';
-import { useToast } from '../../../../components/Toast';
+import { useToast } from '../../../../components/common/Toast';
 
 /**
  * Custom hook for shared auth logic (login/register)

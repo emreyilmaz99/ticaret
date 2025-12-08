@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { vendorLogin } from '../../features/vendor/api/vendorAuthApi';
-import { useToast } from '../../components/Toast';
+import { useToast } from '../../components/common/Toast';
 import { FaStore, FaEnvelope, FaLock, FaArrowRight } from 'react-icons/fa';
 
 // Status constants matching backend

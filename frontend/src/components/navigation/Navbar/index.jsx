@@ -11,8 +11,8 @@ import {
   FaMapMarkerAlt // Adres ikonu için
 } from 'react-icons/fa';
 
-import AddressModal from '../AddressModal';
-import ConfirmModal from '../ConfirmModal';
+import AddressModal from '../../modals/AddressModal';
+import ConfirmModal from '../../modals/ConfirmModal';
 
 // --- Stiller ---
 // DİKKAT: styles.js dosyasını güncelledin, artık getStyles fonksiyonunu import ediyoruz

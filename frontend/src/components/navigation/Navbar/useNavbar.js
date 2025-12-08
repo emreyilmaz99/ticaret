@@ -1,11 +1,11 @@
 import { useState, useContext } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { createUserAddress, deleteUserAddress } from '../../features/user/api/userAddressApi';
-import { useToast } from '../Toast';
-import AuthContext from '../../context/AuthContext';
-import { useFavorites } from '../../context/FavoritesContext';
-import { useCart } from '../../context/CartContext';
+import { createUserAddress, deleteUserAddress } from '../../../features/user/api/userAddressApi';
+import { useToast } from '../../common/Toast';
+import AuthContext from '../../../context/AuthContext';
+import { useFavorites } from '../../../context/FavoritesContext';
+import { useCart } from '../../../context/CartContext';
 import { getStyles } from './styles';
 
 /**

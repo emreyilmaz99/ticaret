@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useToast } from '../../../components/Toast';
+import { useToast } from '../../../components/common/Toast';
 import axios from '../../../lib/axios';
 
 const useVendorPromotions = () => {

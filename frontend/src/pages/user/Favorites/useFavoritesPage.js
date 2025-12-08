@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useFavorites } from '../../../context/FavoritesContext';
 import { useCart } from '../../../context/CartContext';
 import { useAuth } from '../../../context/AuthContext';
-import { useToast } from '../../../components/Toast';
+import { useToast } from '../../../components/common/Toast';
 
 export const useFavoritesPage = () => {
   const { favorites, removeFromFavorites, clearFavorites, loading, count, fetchFavorites } = useFavorites();

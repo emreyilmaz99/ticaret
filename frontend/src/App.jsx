@@ -1,19 +1,19 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
-import { ToastProvider } from './components/Toast';
+import { ToastProvider } from './components/common/Toast';
 import { FavoritesProvider } from './context/FavoritesContext';
 import { CartProvider } from './context/CartContext';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 // --- LAYOUTS (DÜZENLER) ---
-import Navbar from './components/Navbar';
-import Footer from './components/Footer';
-import AdminLayout from './components/AdminLayout'; // Sidebar yapısı burada
-import UserLayout from './components/UserLayout'; // User panel layout
-import PublicLayout from './components/PublicLayout'; // Public layout wrapper
+import Navbar from './components/navigation/Navbar';
+import Footer from './components/common/Footer';
+import AdminLayout from './components/layouts/AdminLayout'; // Sidebar yapısı burada
+import UserLayout from './components/layouts/UserLayout'; // User panel layout
+import PublicLayout from './components/layouts/PublicLayout'; // Public layout wrapper
 
 // --- GÜVENLİK ---
-import AdminPrivateRoute from './components/AdminPrivateRoute'; 
+import AdminPrivateRoute from './components/admin/AdminPrivateRoute'; 
 
 // --- SAYFALAR ---
 // 1. Müşteri Sayfaları (Modüler Yapı)
@@ -56,7 +56,7 @@ import VendorFinance from './pages/vendor/VendorFinance';
 import VendorSettings from './pages/vendor/Settings';
 import VendorShipping from './pages/vendor/Shipping';
 import VendorPromotions from './pages/vendor/Promotions';
-import VendorLayout from './components/VendorLayout';
+import VendorLayout from './components/layouts/VendorLayout';
 import VendorCategories from './pages/vendor/Categories';
 
 // QueryClient for React Query

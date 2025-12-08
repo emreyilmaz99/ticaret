@@ -1,8 +1,8 @@
 import React, { useEffect } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import Navbar from './Navbar';
-import Footer from './Footer';
+import { useAuth } from '../../context/AuthContext';
+import Navbar from '../navigation/Navbar';
+import Footer from '../common/Footer';
 
 const UserLayout = () => {
   const navigate = useNavigate();

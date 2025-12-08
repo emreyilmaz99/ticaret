@@ -9,7 +9,7 @@ import {
   rejectFullApplication
 } from '../../../features/vendor-application/api/vendorApplicationApi';
 import { getActiveCommissionPlans } from '../../../features/commission/api/commissionApi';
-import { useToast } from '../../../components/Toast';
+import { useToast } from '../../../components/common/Toast';
 import axios from '../../../lib/axios';
 
 /**

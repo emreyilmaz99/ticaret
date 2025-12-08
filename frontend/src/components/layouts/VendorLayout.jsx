@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import VendorSidebar from './VendorSidebar';
-import VendorBottomNav from './VendorBottomNav';
-import VendorMobileHeader from './VendorMobileHeader';
+import VendorSidebar from '../vendor/VendorSidebar';
+import VendorBottomNav from '../vendor/VendorBottomNav';
+import VendorMobileHeader from '../vendor/VendorMobileHeader';
 
 const VendorLayout = () => {
   const navigate = useNavigate();
@@ -68,6 +68,7 @@ const VendorLayout = () => {
       {isMobile && (
         <VendorMobileHeader 
           onMenuClick={() => setIsSidebarOpen(true)} 
+          onNotificationClick={() => alert('Bildirimler yakında eklenecek!')}
           title={getPageTitle()}
         />
       )}

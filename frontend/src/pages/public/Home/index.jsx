@@ -1,6 +1,6 @@
 // src/pages/public/Home/index.jsx
 import React from 'react';
-import QuickViewModal from '../../../components/QuickViewModal';
+import QuickViewModal from '../../../components/modals/QuickViewModal';
 
 // Hooks
 import { useHome } from './useHome';

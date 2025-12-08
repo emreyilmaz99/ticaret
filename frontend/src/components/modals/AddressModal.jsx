@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getUserAddresses, deleteUserAddress } from '../features/user/api/userAddressApi';
-import { updateUserProfile } from '../features/user/api/userAuthApi';
+import { getUserAddresses, deleteUserAddress } from '../../features/user/api/userAddressApi';
+import { updateUserProfile } from '../../features/user/api/userAuthApi';
 import { FaTimes, FaMapMarkerAlt, FaCheck, FaChevronDown, FaUser, FaPhone, FaTrash, FaIdCard } from 'react-icons/fa';
-import { cities, districts, getNeighborhoods, cityPlateCodes } from '../data/turkeyData';
-import { useToast } from './Toast';
-import { useAuth } from '../context/AuthContext';
-import LocationMap from './LocationMap';
+import { cities, districts, getNeighborhoods, cityPlateCodes } from '../../data/turkeyData';
+import { useToast } from '../common/Toast';
+import { useAuth } from '../../context/AuthContext';
+import LocationMap from '../common/LocationMap';
 
 const AddressModal = ({ isOpen, onClose, onSave, initialAddress, onDeleteAddress }) => {
   const { user, refreshUser } = useAuth();

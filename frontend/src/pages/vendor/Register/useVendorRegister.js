@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { vendorRegister } from '../../../features/vendor/api/vendorAuthApi';
-import { useToast } from '../../../components/Toast';
+import { useToast } from '../../../components/common/Toast';
 import { INITIAL_FORM_STATE, getStyles } from './styles';
 
 /**

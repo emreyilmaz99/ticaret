@@ -4,7 +4,7 @@ import Pagination from '../../../components/ui/Pagination';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import VendorEditModal from './VendorEditModal';
 import { getVendors, updateVendorStatus } from '../api/vendorApi';
-import { useToast } from '../../../components/Toast';
+import { useToast } from '../../../components/common/Toast';
 
 const VendorList = () => {
   const queryClient = useQueryClient();

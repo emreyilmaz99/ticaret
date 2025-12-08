@@ -1,7 +1,7 @@
 import React from 'react';
 import { FaBars, FaBell, FaStore } from 'react-icons/fa';
 
-const VendorMobileHeader = ({ onMenuClick, title }) => {
+const VendorMobileHeader = ({ onMenuClick, onNotificationClick, title }) => {
   const styles = {
     header: {
       display: 'flex',
@@ -72,7 +72,7 @@ const VendorMobileHeader = ({ onMenuClick, title }) => {
       </div>
       
       <div style={styles.right}>
-        <button style={styles.iconBtn}>
+        <button style={styles.iconBtn} onClick={onNotificationClick}>
           <FaBell />
           <span style={styles.badge} />
         </button>

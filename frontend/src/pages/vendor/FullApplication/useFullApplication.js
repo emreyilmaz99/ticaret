@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { useToast } from '../../../components/Toast';
+import { useToast } from '../../../components/common/Toast';
 import axios from '../../../lib/axios';
 import { INITIAL_FORM_STATE, styles } from './styles';
 

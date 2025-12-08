@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaStar, FaShoppingCart, FaHeart, FaRegHeart, FaEye, FaBolt, FaExchangeAlt } from 'react-icons/fa';
-import { useFavorites } from '../context/FavoritesContext';
-import { useCart } from '../context/CartContext';
-import { useAuth } from '../context/AuthContext';
-import { useToast } from '../components/Toast';
+import { useFavorites } from '../../context/FavoritesContext';
+import { useCart } from '../../context/CartContext';
+import { useAuth } from '../../context/AuthContext';
+import { useToast } from './Toast';
 
 const ProductCard = ({ product, setQuickViewProduct, isCompared, onToggleCompare }) => {
   const { isFavorite, addToFavorites, removeFromFavorites } = useFavorites();

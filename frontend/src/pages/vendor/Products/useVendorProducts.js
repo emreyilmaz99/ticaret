@@ -12,7 +12,7 @@ import {
 } from '../../../features/vendor/api/productApi';
 import { getMyCategoriesForProducts } from '../../../features/vendor/api/categoryApi';
 import { getUnits } from '../../../features/public/api/unitsApi';
-import { useToast } from '../../../components/Toast';
+import { useToast } from '../../../components/common/Toast';
 import axios from '../../../lib/axios';
 
 // Initial form state

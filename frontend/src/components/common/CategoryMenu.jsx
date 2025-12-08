@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { categories } from '../data/categories';
+import { categories } from '../../data/categories';
 import { FaChevronRight } from 'react-icons/fa';
 
 const CategoryMenu = () => {

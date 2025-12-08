@@ -8,7 +8,7 @@ import {
   bulkUpdateProductStatus, 
   deleteProduct 
 } from '../../../features/admin/api/productApi';
-import { useToast } from '../../../components/Toast';
+import { useToast } from '../../../components/common/Toast';
 
 /**
  * Products sayfası için custom hook

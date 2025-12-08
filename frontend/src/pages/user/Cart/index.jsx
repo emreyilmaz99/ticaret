@@ -11,8 +11,8 @@ import {
   VendorGroup,
   CheckoutModal
 } from './components';
-import AddressModal from '../../../components/AddressModal';
-import ConfirmModal from '../../../components/ConfirmModal';
+import AddressModal from '../../../components/modals/AddressModal';
+import ConfirmModal from '../../../components/modals/ConfirmModal';
 
 // --- Custom Hook ---
 import useCartPage from './useCartPage';

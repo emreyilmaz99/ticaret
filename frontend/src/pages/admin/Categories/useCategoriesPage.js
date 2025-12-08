@@ -8,7 +8,7 @@ import {
   updateCategory, 
   deleteCategory 
 } from '../../../features/admin/api/categoryApi';
-import { useToast } from '../../../components/Toast';
+import { useToast } from '../../../components/common/Toast';
 import { toFullUrl } from './styles';
 
 /**

@@ -1,6 +1,6 @@
 import React, { createContext, useState, useContext, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from './AuthContext';
-import { useToast } from '../components/Toast';
+import { useToast } from '../components/common/Toast';
 import * as favoriteApi from '../api/favoriteApi';
 
 const FavoritesContext = createContext();
