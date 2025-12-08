@@ -61,7 +61,7 @@ class VendorPayoutService extends BaseService
     public function getBalance(int $vendorId): float
     {
         $vendor = Vendor::findOrFail($vendorId);
-        return $vendor->balance;
+        return (float) $vendor->balance;
     }
 
     /**

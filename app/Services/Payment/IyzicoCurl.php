@@ -1,8 +1,9 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Payment;
 
 use Iyzipay\Curl;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Custom Curl class that handles SSL certificate verification
@@ -36,7 +37,7 @@ class IyzicoCurl extends Curl
         
         // Log any errors
         if (curl_errno($ch)) {
-            \Log::error('iyzico cURL error', [
+            Log::error('iyzico cURL error', [
                 'error' => curl_error($ch),
                 'errno' => curl_errno($ch),
                 'url' => $url,
