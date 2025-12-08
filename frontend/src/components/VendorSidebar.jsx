@@ -1,11 +1,18 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { FaHome, FaBox, FaShoppingBag, FaSignOutAlt, FaChartLine, FaStore, FaCog, FaWallet, FaTags, FaTruck, FaGift } from 'react-icons/fa';
+import { FaHome, FaBox, FaShoppingBag, FaSignOutAlt, FaStore, FaCog, FaWallet, FaTags, FaTruck, FaGift, FaTimes } from 'react-icons/fa';
 import { vendorLogout } from '../features/vendor/api/vendorAuthApi';
 
-const VendorSidebar = () => {
+const VendorSidebar = ({ isMobile, isOpen, onClose }) => {
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Close sidebar on route change (mobile)
+  useEffect(() => {
+    if (isMobile && onClose) {
+      onClose();
+    }
+  }, [location.pathname]);
 
   const handleLogout = async () => {
     try {
@@ -50,32 +57,56 @@ const VendorSidebar = () => {
       left: 0,
       top: 0,
       boxShadow: '4px 0 24px rgba(0,0,0,0.05)',
-      zIndex: 1000
+      zIndex: 1200,
+      transition: 'transform 0.3s ease-in-out',
+      transform: isMobile ? (isOpen ? 'translateX(0)' : 'translateX(-100%)') : 'none',
     }}>
       {/* LOGO ALANI */}
-      <div style={{ marginBottom: '40px', paddingLeft: '10px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-        <div style={{ 
-          width: '36px', 
-          height: '36px', 
-          backgroundColor: 'white', 
-          borderRadius: '8px', 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'center',
-          color: '#14532d'
-        }}>
-          <FaStore size={20} />
+      <div style={{ marginBottom: '40px', paddingLeft: '10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ 
+            width: '36px', 
+            height: '36px', 
+            backgroundColor: 'white', 
+            borderRadius: '8px', 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center',
+            color: '#14532d'
+          }}>
+            <FaStore size={20} />
+          </div>
+          <div>
+            <h2 style={{ fontSize: '18px', fontWeight: '700', letterSpacing: '-0.5px', color: 'white', margin: 0 }}>
+              Satıcı Paneli
+            </h2>
+            <p style={{ fontSize: '11px', color: '#86efac', marginTop: '2px', margin: 0 }}>Yönetim Konsolu</p>
+          </div>
         </div>
-        <div>
-          <h2 style={{ fontSize: '18px', fontWeight: '700', letterSpacing: '-0.5px', color: 'white', margin: 0 }}>
-            Satıcı Paneli
-          </h2>
-          <p style={{ fontSize: '11px', color: '#86efac', marginTop: '2px', margin: 0 }}>Yönetim Konsolu</p>
-        </div>
+
+        {/* Mobile Close Button */}
+        {isMobile && (
+          <button 
+            onClick={onClose}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: 'white',
+              fontSize: '20px',
+              cursor: 'pointer',
+              padding: '4px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+          >
+            <FaTimes />
+          </button>
+        )}
       </div>
 
       {/* MENÜ LİNKLERİ */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1, overflowY: 'auto' }}>
         <p style={{ fontSize: '11px', textTransform: 'uppercase', color: '#86efac', fontWeight: '700', marginBottom: '12px', paddingLeft: '10px', letterSpacing: '1px' }}>
           Genel Bakış
         </p>

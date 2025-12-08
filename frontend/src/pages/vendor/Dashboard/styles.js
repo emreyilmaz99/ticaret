@@ -123,7 +123,7 @@ export const getStyles = () => ({
   },
   statsGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(4, 1fr)',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
     gap: '24px',
     marginBottom: '32px'
   },
@@ -171,7 +171,7 @@ export const getStyles = () => ({
   },
   chartsGrid: {
     display: 'grid',
-    gridTemplateColumns: '2fr 1fr',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
     gap: '24px',
     marginBottom: '32px'
   },

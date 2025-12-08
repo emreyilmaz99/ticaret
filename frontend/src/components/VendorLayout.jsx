@@ -1,9 +1,14 @@
-import React, { useEffect } from 'react';
-import { Outlet, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import VendorSidebar from './VendorSidebar';
+import VendorBottomNav from './VendorBottomNav';
+import VendorMobileHeader from './VendorMobileHeader';
 
 const VendorLayout = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem('vendor_token');
@@ -12,22 +17,78 @@ const VendorLayout = () => {
     }
   }, [navigate]);
 
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 1024);
+      if (window.innerWidth >= 1024) {
+        setIsSidebarOpen(false);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Get page title based on path
+  const getPageTitle = () => {
+    const path = location.pathname;
+    if (path.includes('/dashboard')) return 'Mağaza Paneli';
+    if (path.includes('/products')) return 'Ürünlerim';
+    if (path.includes('/orders')) return 'Siparişler';
+    if (path.includes('/finance')) return 'Finans';
+    if (path.includes('/settings')) return 'Ayarlar';
+    return 'Satıcı Paneli';
+  };
+
   return (
-    <div style={{ display: 'flex', backgroundColor: '#f8fafc', minHeight: '100vh' }}>
+    <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', backgroundColor: '#f8fafc', minHeight: '100vh' }}>
       {/* Sol taraf: Sidebar */}
-      <VendorSidebar />
+      <VendorSidebar 
+        isMobile={isMobile} 
+        isOpen={isSidebarOpen} 
+        onClose={() => setIsSidebarOpen(false)} 
+      />
+
+      {/* Mobile Overlay */}
+      {isMobile && isSidebarOpen && (
+        <div 
+          onClick={() => setIsSidebarOpen(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            zIndex: 1150,
+            backdropFilter: 'blur(2px)',
+            transition: 'opacity 0.3s ease'
+          }}
+        />
+      )}
+
+      {/* Mobile Header */}
+      {isMobile && (
+        <VendorMobileHeader 
+          onMenuClick={() => setIsSidebarOpen(true)} 
+          title={getPageTitle()}
+        />
+      )}
 
       {/* Sağ taraf: İçerik Alanı */}
-      {/* Sidebar 280px olduğu için içeriği o kadar sağa itiyoruz */}
       <div style={{ 
-        marginLeft: '280px', 
-        width: 'calc(100% - 280px)', 
-        padding: '32px', 
-        backgroundColor: '#f8fafc', // Slate-50
-        minHeight: '100vh' 
+        marginLeft: isMobile ? 0 : '280px', 
+        width: isMobile ? '100%' : 'calc(100% - 280px)', 
+        padding: isMobile ? '16px' : '32px', 
+        paddingBottom: isMobile ? '80px' : '32px', // Bottom nav için boşluk
+        backgroundColor: '#f8fafc',
+        minHeight: '100vh',
+        transition: 'all 0.3s ease'
       }}>
-        <Outlet /> 
+        <Outlet context={{ isMobile }} /> 
       </div>
+
+      {/* Bottom Navigation (Sadece Mobil) */}
+      {isMobile && (
+        <VendorBottomNav onMenuClick={() => setIsSidebarOpen(true)} />
+      )}
     </div>
   );
 };
