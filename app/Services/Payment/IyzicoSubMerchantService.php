@@ -356,18 +356,28 @@ class IyzicoSubMerchantService extends BaseService
      */
     protected function getVendorAddress(Vendor $vendor): ?string
     {
-        $address = $vendor->addresses()
-            ->where('address_type', 'business')
-            ->first();
+        try {
+            // Use is_primary instead of address_type
+            $address = $vendor->addresses()
+                ->where('is_primary', true)
+                ->first();
 
-        if (!$address) {
-            $address = $vendor->addresses()->first();
-        }
+            if (!$address) {
+                $address = $vendor->addresses()->first();
+            }
 
-        if (!$address) {
+            if (!$address) {
+                return null;
+            }
+
+            // Only use city (district column doesn't exist)
+            return trim("{$address->address_line}, {$address->city}");
+        } catch (\Exception $e) {
+            Log::warning('Error getting vendor address', [
+                'vendor_id' => $vendor->id,
+                'error' => $e->getMessage(),
+            ]);
             return null;
         }
-
-        return trim("{$address->address_line}, {$address->district}/{$address->city}");
     }
 }
