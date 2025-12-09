@@ -30,10 +30,9 @@ import PaymentFailed from './pages/user/PaymentFailed'; // Ödeme Başarısız
 import UserOrders from './pages/user/UserOrders'; // Kullanıcı Siparişleri
 import UserOrderDetail from './pages/user/UserOrderDetail'; // Sipariş Detayı
 
-// 2. Admin Sayfaları (Senin klasör yapına göre: src/pages/admin/...)
+// 2. Admin Sayfaları
 import AdminLogin from './pages/admin/AdminLogin'; // Admin Girişi
 import Dashboard from './pages/admin/Dashboard';   // Admin Paneli
-import VendorsPage from './pages/admin/VendorsPage'; // Satıcı Yönetimi (UNUSED NOW, replaced by FullApplicationsPage)
 import ActiveVendorsPage from './pages/admin/ActiveVendorsPage'; // Aktif Satıcılar
 import AdminsPage from './pages/admin/AdminsPage'; // Yönetici Yönetimi
 import UsersPage from './pages/admin/UsersPage'; // Kullanıcı Yönetimi
@@ -52,7 +51,8 @@ import VendorStatusPage from './pages/vendor/StatusPage';
 import VendorDashboard from './pages/vendor/Dashboard';
 import VendorOnboarding from './pages/vendor/VendorOnboarding';
 import VendorProducts from './pages/vendor/Products';
-import VendorOrders from './pages/vendor/VendorOrders';
+// BURASI KRİTİK: Yeni oluşturduğumuz klasörü import ediyoruz
+import VendorOrders from './pages/vendor/Orders'; 
 import VendorFinance from './pages/vendor/VendorFinance';
 import VendorSettings from './pages/vendor/Settings';
 import VendorShipping from './pages/vendor/Shipping';
@@ -79,8 +79,6 @@ function App() {
             <CartProvider>
               <Router>
                 <div className="App">
-                  {/* Not: Navbar'ı buradan kaldırdık, aşağıda sadece müşteri sayfalarına ekledik */}
-                  
                   <Routes>
               
               {/* ======================================= */}
@@ -144,6 +142,7 @@ function App() {
                  <Route path="dashboard" element={<VendorDashboard />} />
                  <Route path="products" element={<VendorProducts />} />
                  <Route path="categories" element={<VendorCategories />} />
+                 {/* Yeni Siparişler Sayfası */}
                  <Route path="orders" element={<VendorOrders />} />
                  <Route path="finance" element={<VendorFinance />} />
                  <Route path="shipping" element={<VendorShipping />} />
@@ -159,9 +158,6 @@ function App() {
                 <Route path="addresses" element={<UserAddresses />} />
                 <Route path="orders" element={<UserOrders />} />
                 <Route path="orders/:orderNumber" element={<UserOrderDetail />} />
-                {/* İleride eklenecekler */}
-                {/* <Route path="favorites" element={<UserFavorites />} /> */}
-                {/* <Route path="reviews" element={<UserReviews />} /> */}
               </Route>
 
               </Routes>
