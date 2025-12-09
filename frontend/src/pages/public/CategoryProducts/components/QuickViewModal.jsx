@@ -20,7 +20,7 @@ export const QuickViewModal = ({ product, onClose, onAddToCart, styles }) => {
           {/* Image */}
           <div style={styles.quickViewImage}>
             <img
-              src={product.main_photo?.file_path || '/placeholder.jpg'}
+              src={product.image || '/placeholder.jpg'}
               alt={product.name}
               style={{ width: '100%', height: 'auto', borderRadius: '12px' }}
             />

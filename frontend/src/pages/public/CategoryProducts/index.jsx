@@ -1,24 +1,22 @@
-// src/pages/public/CategoryProducts/index.jsx
 import React from 'react';
-import { getStyles } from './styles';
+import getStyles from './styles';
 import { useCategoryProducts } from './useCategoryProducts';
+
 import {
-  CategoryBanner,
-  Breadcrumb,
-  FilterSidebar,
+  Breadcrumb,    // Sadece Breadcrumb kaldı
+  FilterSidebar, // Sidebar'ı stiller ile düzelttik
   SortBar,
-  ProductsGrid,
+  ProductsGrid,  // Yenilenmiş Grid
   CompareBar,
   QuickViewModal
 } from './components';
 
-/**
- * CategoryProducts Page - Displays products filtered by category
- * Features: Infinite scroll, filtering, sorting, comparison, quick view
- */
+// ProductsGrid'i doğrudan components klasöründen çekiyoruz
+import { ProductsGrid as GridComponent } from './components/ProductsGrid'; 
+// Not: Eğer ProductsGrid export default ise: import ProductsGrid from './components/ProductsGrid';
+
 const CategoryProducts = () => {
   const {
-    // State
     isMobile,
     viewMode,
     sortBy,
@@ -27,27 +25,18 @@ const CategoryProducts = () => {
     quickViewProduct,
     showMobileFilters,
     compareList,
-
-    // Data
     products,
     isLoading,
     isFetchingNextPage,
     hasNextPage,
-    currentBanner,
-    breadcrumbs,
-
-    // Refs
+    breadcrumbs, // Banner verisine ihtiyacımız kalmadı
     loadMoreRef,
-
-    // Setters
     setViewMode,
     setSortBy,
     setPriceRange,
     setQuickViewProduct,
     setShowMobileFilters,
     setIsCompareModalOpen,
-
-    // Handlers
     handleAddToCart,
     toggleCompare,
     toggleBrand,
@@ -57,32 +46,36 @@ const CategoryProducts = () => {
 
   return (
     <div style={styles.container}>
-      {/* Category Banner */}
-      <CategoryBanner banner={currentBanner} styles={styles} />
+      
+      {/* BANNER KALDIRILDI. Sayfa direkt başlıyor. */}
 
-      {/* Breadcrumb */}
       <div style={styles.wrapper}>
-        <Breadcrumb items={breadcrumbs} styles={styles} />
+        {/* Navigasyon Yolu (Breadcrumb) */}
+        <div style={styles.breadcrumbArea}>
+          <Breadcrumb items={breadcrumbs} styles={styles} />
+        </div>
 
         <div style={styles.mainContent}>
-          {/* Filter Sidebar - Desktop */}
-          <FilterSidebar
-            isMobile={isMobile}
-            showMobileFilters={showMobileFilters}
-            onCloseMobile={() => setShowMobileFilters(false)}
-            priceRange={priceRange}
-            setPriceRange={setPriceRange}
-            selectedBrands={selectedBrands}
-            toggleBrand={toggleBrand}
-            styles={styles}
-          />
+          {/* Sidebar - Artık Beyaz Kutu İçinde ve Sticky */}
+          <div style={styles.sidebar}>
+             <FilterSidebar
+                isMobile={isMobile}
+                showMobileFilters={showMobileFilters}
+                onCloseMobile={() => setShowMobileFilters(false)}
+                priceRange={priceRange}
+                setPriceRange={setPriceRange}
+                selectedBrands={selectedBrands}
+                toggleBrand={toggleBrand}
+                styles={styles} // styles.js'deki yeni input stillerini kullanacak
+             />
+          </div>
 
-          {/* Products Section */}
+          {/* Ana Ürün Alanı */}
           <main style={styles.productsSection}>
-            {/* Sort Bar */}
+            {/* Sıralama Barı */}
             <SortBar
               isMobile={isMobile}
-              productCount={products.length}
+              productCount={products ? products.length : 0}
               sortBy={sortBy}
               setSortBy={setSortBy}
               viewMode={viewMode}
@@ -91,8 +84,8 @@ const CategoryProducts = () => {
               styles={styles}
             />
 
-            {/* Products Grid */}
-            <ProductsGrid
+            {/* Ürünler Grid */}
+            <GridComponent
               products={products}
               viewMode={viewMode}
               compareList={compareList}
@@ -109,21 +102,21 @@ const CategoryProducts = () => {
         </div>
       </div>
 
-      {/* Compare Bar */}
       <CompareBar
         compareList={compareList}
         onRemove={toggleCompare}
-        onOpenModal={() => setIsCompareModalOpen(true)}
+        onOpenModal={() => setIsCompareModalOpen && setIsCompareModalOpen(true)}
         styles={styles}
       />
 
-      {/* Quick View Modal */}
-      <QuickViewModal
-        product={quickViewProduct}
-        onClose={() => setQuickViewProduct(null)}
-        onAddToCart={handleAddToCart}
-        styles={styles}
-      />
+      {quickViewProduct && (
+        <QuickViewModal
+          product={quickViewProduct}
+          onClose={() => setQuickViewProduct(null)}
+          onAddToCart={handleAddToCart}
+          styles={styles}
+        />
+      )}
     </div>
   );
 };

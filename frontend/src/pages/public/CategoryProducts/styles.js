@@ -1,223 +1,253 @@
 // src/pages/public/CategoryProducts/styles.js
 
-// Category banners
+// --- 1. EKSİK OLAN VERİLER (Hata Çözümü İçin Eklendi) ---
+// Hook dosyası bunu import ettiği için burada durması şart, ama ekranda kullanmayacağız.
 export const CATEGORY_BANNERS = {
-  'elektronik': {
-    image: 'https://images.unsplash.com/photo-1550009158-9ebf69173e03?ixlib=rb-4.0.3&auto=format&fit=crop&w=1600&q=80',
-    title: 'Elektronik Dünyası',
-    description: 'En yeni teknoloji ürünleri, bilgisayarlar, telefonlar ve daha fazlası burada.'
+  default: {
+    image: '',
+    title: '',
+    description: '',
   },
-  'moda': {
-    image: 'https://images.unsplash.com/photo-1445205170230-053b83016050?ixlib=rb-4.0.3&auto=format&fit=crop&w=1600&q=80',
-    title: 'Moda & Giyim',
-    description: 'Sezonun en trend parçaları ve kombin önerileri.'
-  },
-  'ev-yasam': {
-    image: 'https://images.unsplash.com/photo-1484101403633-562f891dc89a?ixlib=rb-4.0.3&auto=format&fit=crop&w=1600&q=80',
-    title: 'Ev & Yaşam',
-    description: 'Eviniz için aradığınız her şey, dekorasyondan mobilyaya.'
-  },
-  'default': {
-    image: 'https://images.unsplash.com/photo-1472851294608-415522f96319?ixlib=rb-4.0.3&auto=format&fit=crop&w=1600&q=80',
-    title: 'Alışverişin Keyfini Çıkarın',
-    description: 'Binlerce ürün, uygun fiyatlar ve hızlı teslimat.'
-  }
 };
 
-// Mock brands
-export const MOCK_BRANDS = ['Apple', 'Samsung', 'Lenovo', 'Asus', 'HP', 'Dell', 'Huawei'];
+export const MOCK_BRANDS = ['Apple', 'Samsung', 'Lenovo', 'Asus', 'HP', 'Dyson', 'Sony', 'Huawei', 'Xiaomi'];
 
-export const getStyles = (isMobile) => ({
+// --- 2. PREMIUM RENK PALETİ ---
+const COLORS = {
+  bgBody: '#F3F4F6',       // Cool Gray
+  bgSurface: '#FFFFFF',    // Beyaz
+  textMain: '#111827',     // Koyu Antrasit
+  textMuted: '#6B7280',    // Gri Metin
+  border: '#E5E7EB',       // İnce Çizgiler
+  primary: '#059669',      // Emerald Green (Ana Renk)
+  primaryHover: '#047857', // Koyu Yeşil
+  danger: '#DC2626',       // İndirim Kırmızısı
+  shadowSubtle: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+  shadowCard: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)',
+  shadowHover: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+};
+
+const getStyles = (isMobile = false) => ({
+  // --- ANA YAPI ---
   container: {
-    backgroundColor: '#f8fafc',
-    paddingBottom: isMobile ? '60px' : '80px',
-    fontFamily: '"Inter", sans-serif',
-  },
-  banner: {
-    height: isMobile ? '140px' : '200px',
-    width: '100%',
-    backgroundSize: 'cover',
-    backgroundPosition: 'center',
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'center',
-    alignItems: 'center',
-    color: 'white',
-    textAlign: 'center',
-    marginBottom: isMobile ? '20px' : '32px',
-    padding: isMobile ? '0 16px' : '0',
-  },
-  bannerTitle: {
-    fontSize: isMobile ? '22px' : '32px',
-    fontWeight: '800',
-    marginBottom: '8px',
-  },
-  bannerDesc: {
-    fontSize: isMobile ? '13px' : '16px',
-    opacity: 0.9,
-    maxWidth: '600px',
+    backgroundColor: COLORS.bgBody,
+    minHeight: '100vh',
+    paddingTop: '20px',
+    paddingBottom: '80px',
+    fontFamily: '"Plus Jakarta Sans", "Inter", sans-serif',
   },
   wrapper: {
-    maxWidth: '1200px',
+    maxWidth: '1360px',
     margin: '0 auto',
-    padding: isMobile ? '0 12px' : '0 20px',
+    padding: isMobile ? '0 16px' : '0 40px',
   },
-  breadcrumb: {
-    display: isMobile ? 'none' : 'flex',
-    alignItems: 'center',
-    gap: '8px',
+  
+  breadcrumbArea: {
+    marginBottom: '20px',
+    color: COLORS.textMuted,
     fontSize: '13px',
-    color: '#64748b',
-    marginBottom: '16px',
   },
-  content: {
+
+  // --- DÜZEN (SIDEBAR + GRID) ---
+  mainContent: {
     display: 'flex',
-    gap: isMobile ? '16px' : '32px',
+    gap: '32px',
     alignItems: 'flex-start',
-    flexDirection: isMobile ? 'column' : 'row',
   },
+
+  // --- SOL SIDEBAR (FİLTRELER - Çerçeveli) ---
   sidebar: {
-    width: isMobile ? '100%' : '260px',
+    width: '280px',
     flexShrink: 0,
-    backgroundColor: 'white',
-    borderRadius: isMobile ? '12px' : '16px',
-    border: '1px solid #e2e8f0',
-    padding: isMobile ? '16px' : '24px',
-    position: isMobile ? 'relative' : 'sticky',
-    top: isMobile ? 'auto' : '20px',
+    display: isMobile ? 'none' : 'block',
+    backgroundColor: COLORS.bgSurface,
+    borderRadius: '16px',
+    border: `1px solid ${COLORS.border}`,
+    padding: '24px',
+    position: 'sticky',
+    top: '100px',
+    boxShadow: COLORS.shadowCard,
   },
-  main: {
-    flex: 1,
-    width: '100%',
-  },
-  filterSection: {
-    marginBottom: isMobile ? '16px' : '24px',
-    borderBottom: '1px solid #f1f5f9',
-    paddingBottom: isMobile ? '16px' : '24px',
-  },
+  
   filterTitle: {
-    fontSize: isMobile ? '13px' : '14px',
+    fontSize: '14px',
     fontWeight: '700',
-    color: '#1e293b',
-    marginBottom: isMobile ? '12px' : '16px',
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    color: COLORS.textMain,
+    marginBottom: '12px',
+    textTransform: 'uppercase',
+    letterSpacing: '0.5px',
   },
-  checkboxLabel: {
+
+  priceFilterGroup: {
     display: 'flex',
     alignItems: 'center',
-    gap: isMobile ? '8px' : '10px',
-    fontSize: isMobile ? '13px' : '14px',
-    color: '#475569',
-    marginBottom: isMobile ? '10px' : '12px',
-    cursor: 'pointer',
-  },
-  priceInputs: {
-    display: 'flex',
-    gap: isMobile ? '8px' : '10px',
-    alignItems: 'center',
+    gap: '10px',
+    marginBottom: '24px',
   },
   priceInput: {
     width: '100%',
-    padding: isMobile ? '8px 10px' : '8px 12px',
+    padding: '10px',
     borderRadius: '8px',
-    border: '1px solid #e2e8f0',
-    fontSize: isMobile ? '12px' : '13px',
+    border: `1px solid ${COLORS.border}`,
+    fontSize: '14px',
     outline: 'none',
+    color: COLORS.textMain,
+    backgroundColor: '#F9FAFB',
+    transition: 'border-color 0.2s',
   },
+
+  // --- SAĞ TARAF ---
+  productsSection: {
+    flex: 1,
+    width: '100%',
+  },
+
+  // --- SORT BAR ---
   sortBar: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: isMobile ? '16px' : '24px',
-    backgroundColor: 'white',
-    padding: isMobile ? '12px 14px' : '16px 24px',
-    borderRadius: isMobile ? '10px' : '12px',
-    border: '1px solid #e2e8f0',
-    flexWrap: isMobile ? 'wrap' : 'nowrap',
-    gap: isMobile ? '10px' : '0',
+    marginBottom: '20px',
+    padding: '16px 24px',
+    backgroundColor: COLORS.bgSurface,
+    borderRadius: '16px',
+    border: `1px solid ${COLORS.border}`,
+    boxShadow: COLORS.shadowSubtle,
   },
-  mobileFilterBtn: {
-    display: isMobile ? 'flex' : 'none',
-    alignItems: 'center',
-    gap: '6px',
-    padding: '8px 14px',
-    backgroundColor: '#f1f5f9',
-    border: '1px solid #e2e8f0',
-    borderRadius: '8px',
-    fontSize: '13px',
-    fontWeight: '500',
-    color: '#475569',
-    cursor: 'pointer',
-  },
-  select: {
-    padding: isMobile ? '6px 10px' : '8px 12px',
-    borderRadius: '8px',
-    border: '1px solid #e2e8f0',
-    fontSize: isMobile ? '12px' : '14px',
-    color: '#475569',
-    outline: 'none',
-    cursor: 'pointer',
-  },
+
+  // --- GRID ---
   grid: {
     display: 'grid',
-    gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(auto-fill, minmax(240px, 1fr))',
+    gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(auto-fill, minmax(260px, 1fr))',
     gap: isMobile ? '12px' : '24px',
   },
-  emptyState: {
-    textAlign: 'center',
-    padding: isMobile ? '40px 20px' : '60px',
-    backgroundColor: 'white',
-    borderRadius: isMobile ? '12px' : '16px',
-    border: '1px solid #e2e8f0',
-    color: '#64748b',
-  },
-  // Compare bar
-  compareBar: {
-    position: 'fixed',
-    bottom: isMobile ? '10px' : '20px',
-    left: '50%',
-    transform: 'translateX(-50%)',
-    backgroundColor: 'white',
-    padding: isMobile ? '12px 16px' : '16px 24px',
-    borderRadius: isMobile ? '12px' : '16px',
-    boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
+
+  // --- ÜRÜN KARTI (ELİT GÖRÜNÜM) ---
+  card: {
+    backgroundColor: COLORS.bgSurface,
+    borderRadius: '16px',
+    border: `1px solid ${COLORS.border}`,
+    overflow: 'hidden',
     display: 'flex',
-    alignItems: 'center',
-    gap: isMobile ? '12px' : '24px',
-    zIndex: 1000,
-    border: '1px solid #e2e8f0',
-    animation: 'slideUp 0.3s ease',
-    maxWidth: isMobile ? '95%' : 'auto',
+    flexDirection: 'column',
+    position: 'relative',
+    transition: 'all 0.3s ease',
+    cursor: 'pointer',
   },
-  compareBtn: {
-    padding: isMobile ? '8px 14px' : '10px 20px',
-    backgroundColor: '#059669',
+  imgWrap: {
+    position: 'relative',
+    width: '100%',
+    paddingTop: '110%',
+    backgroundColor: '#fff', 
+    borderBottom: `1px solid ${COLORS.bgBody}`,
+    overflow: 'hidden',
+  },
+  img: {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    transform: 'translate(-50%, -50%)',
+    width: '85%', 
+    height: '85%',
+    objectFit: 'contain',
+    transition: 'transform 0.5s ease',
+  },
+
+  // İndirim Rozeti
+  badge: {
+    position: 'absolute',
+    top: '12px',
+    left: '12px',
+    background: COLORS.danger,
+    color: 'white',
+    padding: '4px 10px',
+    borderRadius: '6px',
+    fontSize: '11px',
+    fontWeight: '700',
+    zIndex: 2,
+    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+  },
+
+  content: {
+    padding: '16px',
+    display: 'flex',
+    flexDirection: 'column',
+    flex: 1,
+    gap: '8px',
+  },
+  
+  brand: {
+    fontSize: '11px',
+    fontWeight: '700',
+    color: COLORS.primary,
+    textTransform: 'uppercase',
+    letterSpacing: '1px',
+    marginBottom: '4px',
+  },
+  title: {
+    fontSize: isMobile ? '13px' : '15px',
+    fontWeight: '600',
+    color: COLORS.textMain,
+    lineHeight: '1.4',
+    display: '-webkit-box',
+    WebkitLineClamp: 2,
+    WebkitBoxOrient: 'vertical',
+    overflow: 'hidden',
+    height: '42px', 
+  },
+
+  priceRow: {
+    display: 'flex',
+    alignItems: 'baseline',
+    gap: '8px',
+    marginTop: 'auto',
+    marginBottom: '12px',
+  },
+  price: {
+    fontSize: '18px',
+    fontWeight: '800',
+    color: COLORS.textMain,
+  },
+  priceOld: {
+    fontSize: '13px',
+    color: COLORS.textMuted,
+    textDecoration: 'line-through',
+  },
+
+  // --- BUTON (Klas Yeşil) ---
+  addToCartBtn: {
+    width: '100%',
+    padding: '12px',
+    backgroundColor: COLORS.primary,
     color: 'white',
     border: 'none',
-    borderRadius: '8px',
+    borderRadius: '10px',
     fontWeight: '600',
+    fontSize: '14px',
     cursor: 'pointer',
     display: 'flex',
     alignItems: 'center',
-    gap: isMobile ? '6px' : '8px',
-    fontSize: isMobile ? '12px' : '14px',
+    justifyContent: 'center',
+    gap: '8px',
+    transition: 'all 0.2s',
+    letterSpacing: '0.3px',
+    boxShadow: '0 4px 6px rgba(5, 150, 105, 0.2)',
   },
-  compareItem: {
-    position: 'relative',
-    width: isMobile ? '32px' : '40px',
-    height: isMobile ? '32px' : '40px',
-    borderRadius: '8px',
-    border: '1px solid #e2e8f0',
-    overflow: 'hidden',
-  },
-  viewBtn: (isActive) => ({
-    padding: '8px', 
-    borderRadius: '6px', 
-    border: 'none', 
-    backgroundColor: isActive ? '#ecfdf5' : 'transparent',
-    color: isActive ? '#059669' : '#64748b',
-    cursor: 'pointer'
-  }),
 });
+
+// Yardımcılar
+export const resolveImage = (product) => {
+  if (!product) return 'https://via.placeholder.com/400x400?text=Urun';
+  if (typeof product === 'string') return product;
+  if (product.image) return product.image;
+  if (product.main_photo?.file_path) return product.main_photo.file_path;
+  if (product.images && product.images.length) return product.images[0];
+  return 'https://via.placeholder.com/400x400?text=Urun';
+};
+
+export const formatPrice = (price) => {
+  if (price === null || price === undefined) return '-';
+  return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(price);
+};
+
+export default getStyles;

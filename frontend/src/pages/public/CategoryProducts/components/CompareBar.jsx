@@ -20,7 +20,7 @@ export const CompareBar = ({
           {compareList.map(product => (
             <div key={product.id} style={styles.compareProduct}>
               <img
-                src={product.main_photo?.file_path || '/placeholder.jpg'}
+                src={product.image || '/placeholder.jpg'}
                 alt={product.name}
                 style={styles.compareProductImage}
               />
