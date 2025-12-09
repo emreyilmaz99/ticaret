@@ -42,6 +42,8 @@ import { FullApplicationsPage, VendorApplicationsPage } from './pages/admin/Appl
 import CommissionPlans from './pages/admin/CommissionPlans';
 import ProductsPage from './pages/admin/Products';
 import CategoriesPage from './pages/admin/Categories';
+// YENİ EKLENEN: Admin Siparişler Sayfası
+import AdminOrders from './pages/admin/Orders'; 
 
 // 3. Satıcı Sayfaları
 import VendorLogin from './pages/vendor/VendorLogin';
@@ -51,7 +53,6 @@ import VendorStatusPage from './pages/vendor/StatusPage';
 import VendorDashboard from './pages/vendor/Dashboard';
 import VendorOnboarding from './pages/vendor/VendorOnboarding';
 import VendorProducts from './pages/vendor/Products';
-// BURASI KRİTİK: Yeni oluşturduğumuz klasörü import ediyoruz
 import VendorOrders from './pages/vendor/Orders'; 
 import VendorFinance from './pages/vendor/VendorFinance';
 import VendorSettings from './pages/vendor/Settings';
@@ -124,6 +125,9 @@ function App() {
                   <Route path="/admin/admins" element={<AdminsPage />} />
                   <Route path="/admin/users" element={<UsersPage />} />
                   
+                  {/* YENİ EKLENEN ROTA: SİPARİŞ YÖNETİMİ */}
+                  <Route path="/admin/orders" element={<AdminOrders />} />
+                  
                 </Route>
 
               </Route>
@@ -142,7 +146,6 @@ function App() {
                  <Route path="dashboard" element={<VendorDashboard />} />
                  <Route path="products" element={<VendorProducts />} />
                  <Route path="categories" element={<VendorCategories />} />
-                 {/* Yeni Siparişler Sayfası */}
                  <Route path="orders" element={<VendorOrders />} />
                  <Route path="finance" element={<VendorFinance />} />
                  <Route path="shipping" element={<VendorShipping />} />

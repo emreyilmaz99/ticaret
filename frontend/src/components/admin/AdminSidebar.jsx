@@ -1,6 +1,10 @@
+// src/components/admin/AdminSidebar.jsx
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { FaHome, FaBox, FaUsers, FaSignOutAlt, FaChartLine, FaStore, FaUserShield, FaPercentage, FaLeaf, FaLayerGroup } from 'react-icons/fa';
+import { 
+  FaHome, FaBox, FaUsers, FaSignOutAlt, FaStore, 
+  FaUserShield, FaPercentage, FaLeaf, FaLayerGroup, FaShoppingBag 
+} from 'react-icons/fa';
 
 const AdminSidebar = () => {
   const navigate = useNavigate();
@@ -21,6 +25,11 @@ const AdminSidebar = () => {
       { path: '/admin/active-vendors', icon: FaStore, label: 'Satıcılar' },
       { path: '/admin/vendors', icon: FaStore, label: 'Satıcı Başvuruları' },
       { path: '/admin/vendor-applications', icon: FaUsers, label: 'Ön Başvurular' },
+      
+      // --- YENİ EKLENEN SİPARİŞLER ---
+      { path: '/admin/orders', icon: FaShoppingBag, label: 'Siparişler' },
+      // -----------------------------
+
       { path: '/admin/commission-plans', icon: FaPercentage, label: 'Komisyon Planları' },
       { path: '/admin/categories', icon: FaLayerGroup, label: 'Kategoriler' },
       { path: '/admin/products', icon: FaBox, label: 'Ürünler' },
