@@ -81,7 +81,7 @@ export const useHome = () => {
   ];
 
   // Get products from API response
-  const products = productsData?.data?.products || [];
+  const products = productsData?.data || [];
 
   // Filter by rating (client-side)
   const filteredProducts = products.filter(product => {

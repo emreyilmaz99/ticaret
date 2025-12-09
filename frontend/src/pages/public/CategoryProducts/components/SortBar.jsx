@@ -57,20 +57,26 @@ export const SortBar = ({
         {!isMobile && (
           <div style={styles.viewToggle}>
             <button
-              onClick={() => setViewMode('grid')}
+              onClick={() => {
+                console.log('Grid button clicked');
+                setViewMode('grid');
+              }}
               style={{
                 ...styles.viewBtn,
-                backgroundColor: viewMode === 'grid' ? '#ff6b35' : '#f0f0f0',
+                backgroundColor: viewMode === 'grid' ? '#064e3b' : '#f0f0f0',
                 color: viewMode === 'grid' ? '#fff' : '#333'
               }}
             >
               <FaThLarge />
             </button>
             <button
-              onClick={() => setViewMode('list')}
+              onClick={() => {
+                console.log('List button clicked');
+                setViewMode('list');
+              }}
               style={{
                 ...styles.viewBtn,
-                backgroundColor: viewMode === 'list' ? '#ff6b35' : '#f0f0f0',
+                backgroundColor: viewMode === 'list' ? '#064e3b' : '#f0f0f0',
                 color: viewMode === 'list' ? '#fff' : '#333'
               }}
             >

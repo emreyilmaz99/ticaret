@@ -17,6 +17,14 @@ export const getFeaturedProducts = async (limit = 8) => {
 };
 
 /**
+ * Get main categories with product counts
+ */
+export const getMainCategories = async () => {
+  const response = await axios.get('/v1/products/categories');
+  return response.data;
+};
+
+/**
  * Get single product by slug
  */
 export const getProduct = async (slug) => {

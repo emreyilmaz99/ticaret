@@ -6,4 +6,6 @@ export { SortBar } from './SortBar';
 export { ProductCard } from './ProductCard';
 export { ProductsGrid } from './ProductsGrid';
 export { CompareBar } from './CompareBar';
+export { CompareModal } from './CompareModal';
 export { QuickViewModal } from './QuickViewModal';
+

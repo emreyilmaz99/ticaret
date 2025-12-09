@@ -90,8 +90,8 @@ class PublicProductService extends BaseService
             });
 
             return $this->successResponse([
-                'products' => $transformedProducts,
-                'pagination' => [
+                'data' => $transformedProducts,
+                'meta' => [
                     'current_page' => $products->currentPage(),
                     'last_page' => $products->lastPage(),
                     'per_page' => $products->perPage(),
@@ -431,5 +431,40 @@ class PublicProductService extends BaseService
             ] : null,
             'attributes' => $variant->variantMetadata->pluck('meta_value', 'meta_key')->toArray(),
         ];
+    }
+
+    /**
+     * Get main categories (parent_id = null) with product counts
+     */
+    public function getMainCategories(): ServiceResponse
+    {
+        try {
+            $categories = Category::whereNull('parent_id')
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->orderBy('name')
+                ->get()
+                ->map(function ($category) {
+                    // Doğrudan kategoriye bağlı ürünler
+                    $directCount = $category->directProducts()->count();
+                    
+                    // Alt kategorilere bağlı ürünler
+                    $childrenCount = 0;
+                    foreach ($category->children as $child) {
+                        $childrenCount += $child->directProducts()->count();
+                    }
+                    
+                    return [
+                        'id' => $category->id,
+                        'name' => $category->name,
+                        'slug' => $category->slug,
+                        'count' => $directCount + $childrenCount,
+                    ];
+                });
+
+            return $this->successResponse(['categories' => $categories]);
+        } catch (\Exception $e) {
+            return $this->handleException($e, 'Ana kategoriler alınamadı');
+        }
     }
 }

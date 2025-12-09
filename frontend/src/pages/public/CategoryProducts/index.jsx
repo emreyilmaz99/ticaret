@@ -3,17 +3,14 @@ import getStyles from './styles';
 import { useCategoryProducts } from './useCategoryProducts';
 
 import {
-  Breadcrumb,    // Sadece Breadcrumb kaldı
-  FilterSidebar, // Sidebar'ı stiller ile düzelttik
+  Breadcrumb,
+  FilterSidebar,
   SortBar,
-  ProductsGrid,  // Yenilenmiş Grid
+  ProductsGrid,
   CompareBar,
+  CompareModal,
   QuickViewModal
 } from './components';
-
-// ProductsGrid'i doğrudan components klasöründen çekiyoruz
-import { ProductsGrid as GridComponent } from './components/ProductsGrid'; 
-// Not: Eğer ProductsGrid export default ise: import ProductsGrid from './components/ProductsGrid';
 
 const CategoryProducts = () => {
   const {
@@ -21,25 +18,29 @@ const CategoryProducts = () => {
     viewMode,
     sortBy,
     priceRange,
-    selectedBrands,
+    searchQuery,
+    selectedCategories,
     quickViewProduct,
     showMobileFilters,
     compareList,
+    isCompareModalOpen,
     products,
     isLoading,
     isFetchingNextPage,
     hasNextPage,
-    breadcrumbs, // Banner verisine ihtiyacımız kalmadı
+    breadcrumbs,
+    availableCategories,
     loadMoreRef,
     setViewMode,
     setSortBy,
     setPriceRange,
+    setSearchQuery,
     setQuickViewProduct,
     setShowMobileFilters,
     setIsCompareModalOpen,
     handleAddToCart,
     toggleCompare,
-    toggleBrand,
+    toggleCategory,
   } = useCategoryProducts();
 
   const styles = getStyles(isMobile);
@@ -57,18 +58,19 @@ const CategoryProducts = () => {
 
         <div style={styles.mainContent}>
           {/* Sidebar - Artık Beyaz Kutu İçinde ve Sticky */}
-          <div style={styles.sidebar}>
-             <FilterSidebar
-                isMobile={isMobile}
-                showMobileFilters={showMobileFilters}
-                onCloseMobile={() => setShowMobileFilters(false)}
-                priceRange={priceRange}
-                setPriceRange={setPriceRange}
-                selectedBrands={selectedBrands}
-                toggleBrand={toggleBrand}
-                styles={styles} // styles.js'deki yeni input stillerini kullanacak
-             />
-          </div>
+          <FilterSidebar
+            isMobile={isMobile}
+            showMobileFilters={showMobileFilters}
+            onCloseMobile={() => setShowMobileFilters(false)}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            priceRange={priceRange}
+            setPriceRange={setPriceRange}
+            selectedCategories={selectedCategories}
+            toggleCategory={toggleCategory}
+            availableCategories={availableCategories}
+            styles={styles}
+          />
 
           {/* Ana Ürün Alanı */}
           <main style={styles.productsSection}>
@@ -85,7 +87,7 @@ const CategoryProducts = () => {
             />
 
             {/* Ürünler Grid */}
-            <GridComponent
+            <ProductsGrid
               products={products}
               viewMode={viewMode}
               compareList={compareList}
@@ -105,7 +107,7 @@ const CategoryProducts = () => {
       <CompareBar
         compareList={compareList}
         onRemove={toggleCompare}
-        onOpenModal={() => setIsCompareModalOpen && setIsCompareModalOpen(true)}
+        onOpenModal={() => setIsCompareModalOpen(true)}
         styles={styles}
       />
 
@@ -114,6 +116,14 @@ const CategoryProducts = () => {
           product={quickViewProduct}
           onClose={() => setQuickViewProduct(null)}
           onAddToCart={handleAddToCart}
+          styles={styles}
+        />
+      )}
+
+      {isCompareModalOpen && (
+        <CompareModal
+          compareList={compareList}
+          onClose={() => setIsCompareModalOpen(false)}
           styles={styles}
         />
       )}

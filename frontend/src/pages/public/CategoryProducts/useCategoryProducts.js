@@ -1,10 +1,10 @@
 // src/pages/public/CategoryProducts/useCategoryProducts.js
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { useInfiniteQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { useCart } from '../../../context/CartContext';
 import { useToast } from '../../../components/common/Toast';
-import { getProducts } from '../../../api/publicApi';
+import { getProducts, getMainCategories } from '../../../api/publicApi';
 import { CATEGORY_BANNERS } from './styles';
 
 /**
@@ -21,8 +21,9 @@ export const useCategoryProducts = () => {
   // UI State
   const [viewMode, setViewMode] = useState('grid');
   const [sortBy, setSortBy] = useState('featured');
+  const [searchQuery, setSearchQuery] = useState('');
   const [priceRange, setPriceRange] = useState({ min: '', max: '' });
-  const [selectedBrands, setSelectedBrands] = useState([]);
+  const [selectedCategories, setSelectedCategories] = useState([]);
   const [quickViewProduct, setQuickViewProduct] = useState(null);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   
@@ -51,6 +52,15 @@ export const useCategoryProducts = () => {
     ...(subcategoryName ? [{ name: subcategoryName, path: '#' }] : [])
   ];
 
+  // Fetch main categories
+  const { data: categoriesData } = useQuery({
+    queryKey: ['mainCategories'],
+    queryFn: getMainCategories,
+    staleTime: 5 * 60 * 1000, // 5 minutes cache
+  });
+
+  const availableCategories = categoriesData?.data?.categories || [];
+
   // Infinite Query
   const {
     data,
@@ -59,14 +69,26 @@ export const useCategoryProducts = () => {
     isFetchingNextPage,
     isLoading
   } = useInfiniteQuery({
-    queryKey: ['products', categoryId, subcategoryName, sortBy],
-    queryFn: ({ pageParam = 1 }) => getProducts({
-      category_id: categoryId,
-      subcategory: subcategoryName, 
-      sort_by: sortBy,
-      per_page: 12,
-      page: pageParam
-    }),
+    queryKey: ['products', categoryId, subcategoryName, sortBy, selectedCategories],
+    queryFn: ({ pageParam = 1 }) => {
+      const params = {
+        sort_by: sortBy,
+        per_page: 12,
+        page: pageParam
+      };
+      
+      // Kategori filtresi: önce kullanıcı seçimi, sonra URL parametresi
+      const selectedCategoryId = selectedCategories.length > 0 ? selectedCategories[0] : categoryId;
+      if (selectedCategoryId) {
+        params.category_id = selectedCategoryId;
+      }
+      
+      if (subcategoryName) {
+        params.subcategory = subcategoryName;
+      }
+      
+      return getProducts(params);
+    },
     getNextPageParam: (lastPage, allPages) => {
       const currentPage = lastPage.meta?.current_page || allPages.length;
       const lastPageNum = lastPage.meta?.last_page || 5; 
@@ -74,7 +96,7 @@ export const useCategoryProducts = () => {
     }
   });
 
-  const products = data?.pages.flatMap(page => page.data?.products || []) || [];
+  const products = data?.pages.flatMap(page => page.data || []) || [];
 
   // Intersection Observer for infinite scroll
   useEffect(() => {
@@ -119,11 +141,11 @@ export const useCategoryProducts = () => {
     }
   }, [compareList, showToast]);
 
-  const toggleBrand = useCallback((brand, isChecked) => {
-    if (isChecked) {
-      setSelectedBrands(prev => [...prev, brand]);
+  const toggleCategory = useCallback((categoryId) => {
+    if (categoryId === null) {
+      setSelectedCategories([]);
     } else {
-      setSelectedBrands(prev => prev.filter(b => b !== brand));
+      setSelectedCategories([categoryId]);
     }
   }, []);
 
@@ -137,7 +159,8 @@ export const useCategoryProducts = () => {
     viewMode,
     sortBy,
     priceRange,
-    selectedBrands,
+    searchQuery,
+    selectedCategories,
     quickViewProduct,
     showMobileFilters,
     compareList,
@@ -150,6 +173,7 @@ export const useCategoryProducts = () => {
     hasNextPage,
     currentBanner,
     breadcrumbs,
+    availableCategories,
 
     // Refs
     loadMoreRef,
@@ -158,6 +182,7 @@ export const useCategoryProducts = () => {
     setViewMode,
     setSortBy,
     setPriceRange,
+    setSearchQuery,
     setQuickViewProduct,
     setShowMobileFilters,
     setIsCompareModalOpen,
@@ -165,6 +190,6 @@ export const useCategoryProducts = () => {
     // Handlers
     handleAddToCart,
     toggleCompare,
-    toggleBrand,
+    toggleCategory,
   };
 };

@@ -1,7 +1,6 @@
 // src/pages/public/CategoryProducts/components/FilterSidebar.jsx
-import React from 'react';
-import { FaTimes } from 'react-icons/fa';
-import { MOCK_BRANDS } from '../styles';
+import React, { useState } from 'react';
+import { FaTimes, FaSearch } from 'react-icons/fa';
 
 /**
  * Filter sidebar component for desktop and mobile
@@ -10,10 +9,13 @@ export const FilterSidebar = ({
   isMobile,
   showMobileFilters,
   onCloseMobile,
+  searchQuery,
+  setSearchQuery,
   priceRange,
   setPriceRange,
-  selectedBrands,
-  toggleBrand,
+  selectedCategories,
+  toggleCategory,
+  availableCategories,
   styles
 }) => {
   // Mobile overlay
@@ -34,10 +36,13 @@ export const FilterSidebar = ({
             </button>
           </div>
           <FilterContent
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
             priceRange={priceRange}
             setPriceRange={setPriceRange}
-            selectedBrands={selectedBrands}
-            toggleBrand={toggleBrand}
+            selectedCategories={selectedCategories}
+            toggleCategory={toggleCategory}
+            availableCategories={availableCategories}
             styles={styles}
           />
         </div>
@@ -50,10 +55,13 @@ export const FilterSidebar = ({
     return (
       <aside style={styles.sidebar}>
         <FilterContent
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
           priceRange={priceRange}
           setPriceRange={setPriceRange}
-          selectedBrands={selectedBrands}
-          toggleBrand={toggleBrand}
+          selectedCategories={selectedCategories}
+          toggleCategory={toggleCategory}
+          availableCategories={availableCategories}
           styles={styles}
         />
       </aside>
@@ -67,16 +75,81 @@ export const FilterSidebar = ({
  * Filter content (shared between mobile and desktop)
  */
 const FilterContent = ({
+  searchQuery,
+  setSearchQuery,
   priceRange,
   setPriceRange,
-  selectedBrands,
-  toggleBrand,
+  selectedCategories,
+  toggleCategory,
+  availableCategories,
   styles
 }) => {
   return (
     <>
-      {/* Price Filter */}
+      {/* Search Filter */}
       <div style={styles.filterSection}>
+        <h3 style={styles.filterTitle}>Ürün Ara</h3>
+        <div style={{ position: 'relative' }}>
+          <FaSearch style={{
+            position: 'absolute',
+            left: '12px',
+            top: '50%',
+            transform: 'translateY(-50%)',
+            color: '#9CA3AF',
+            fontSize: '14px'
+          }} />
+          <input
+            type="text"
+            placeholder="Ürün adı, marka..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            style={{
+              ...styles.priceInput,
+              paddingLeft: '40px',
+              marginBottom: 0,
+            }}
+          />
+        </div>
+      </div>
+
+      {/* Category Filter */}
+      <div style={styles.filterSection}>
+        <h3 style={styles.filterTitle}>Kategoriler</h3>
+        <div style={styles.brandList}>
+          <label style={styles.brandItem}>
+            <input
+              type="radio"
+              checked={selectedCategories.length === 0}
+              onChange={() => toggleCategory(null)}
+              style={styles.brandCheckbox}
+            />
+            <span style={styles.brandLabel}>Tüm Ürünler</span>
+          </label>
+          {availableCategories.map(category => (
+            <label key={category.id} style={styles.brandItem}>
+              <input
+                type="radio"
+                checked={selectedCategories.includes(category.id)}
+                onChange={() => toggleCategory(category.id)}
+                style={styles.brandCheckbox}
+              />
+              <span style={styles.brandLabel}>
+                {category.name}
+                <span style={{ 
+                  color: '#9CA3AF', 
+                  fontSize: '12px', 
+                  marginLeft: '6px' 
+                }}>
+                  ({category.count})
+                </span>
+              </span>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {/* Price Filter */}
+      <div style={{...styles.filterSection, borderBottom: 'none', marginBottom: 0, paddingBottom: 0}}>
         <h3 style={styles.filterTitle}>Fiyat Aralığı</h3>
         <div style={styles.priceInputs}>
           <input
@@ -94,24 +167,6 @@ const FilterContent = ({
             onChange={(e) => setPriceRange({ ...priceRange, max: e.target.value })}
             style={styles.priceInput}
           />
-        </div>
-      </div>
-
-      {/* Brand Filter */}
-      <div style={styles.filterSection}>
-        <h3 style={styles.filterTitle}>Markalar</h3>
-        <div style={styles.brandList}>
-          {MOCK_BRANDS.map(brand => (
-            <label key={brand} style={styles.brandItem}>
-              <input
-                type="checkbox"
-                checked={selectedBrands.includes(brand)}
-                onChange={(e) => toggleBrand(brand, e.target.checked)}
-                style={styles.brandCheckbox}
-              />
-              <span style={styles.brandLabel}>{brand}</span>
-            </label>
-          ))}
         </div>
       </div>
     </>

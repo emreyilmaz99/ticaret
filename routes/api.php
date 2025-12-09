@@ -213,6 +213,7 @@ Route::get('v1/categories/{slug}', [\App\Http\Controllers\Api\V1\Public\Category
 
 // products (public)
 Route::get('v1/products', [PublicProductController::class, 'index']);
+Route::get('v1/products/categories', [PublicProductController::class, 'categories']);
 Route::get('v1/products/featured', [PublicProductController::class, 'featured']);
 Route::get('v1/products/{slug}', [PublicProductController::class, 'show']);
 Route::get('v1/products/{slug}/related', [PublicProductController::class, 'related']);

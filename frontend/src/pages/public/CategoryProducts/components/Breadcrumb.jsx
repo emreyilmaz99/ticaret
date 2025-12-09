@@ -15,7 +15,7 @@ export const Breadcrumb = ({ items, styles }) => {
             to={item.path}
             style={{
               ...styles.breadcrumbLink,
-              color: index === items.length - 1 ? '#ff6b35' : '#666'
+              color: index === items.length - 1 ? '#064e3b' : '#666'
             }}
           >
             {item.name}
