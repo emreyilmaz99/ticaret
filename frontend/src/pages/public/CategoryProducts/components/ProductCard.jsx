@@ -83,17 +83,29 @@ export const ProductCard = ({
       transition: 'transform 0.3s ease, box-shadow 0.3s ease',
       position: 'relative',
       cursor: 'pointer',
+      ...(viewMode === 'list' && !isMobile ? {
+        display: 'flex',
+        flexDirection: 'row',
+        maxHeight: '200px',
+        borderRadius: '16px',
+      } : {}),
     },
     cardImage: {
-      width: isMobile ? 'calc(100% - 16px)' : 'calc(100% - 24px)',
-      aspectRatio: '1/1',
+      width: viewMode === 'list' && !isMobile ? '200px' : (isMobile ? 'calc(100% - 16px)' : 'calc(100% - 24px)'),
+      aspectRatio: viewMode === 'list' && !isMobile ? 'auto' : '1/1',
+      height: viewMode === 'list' && !isMobile ? '200px' : 'auto',
       objectFit: 'cover',
       backgroundColor: '#f8fafc',
-      margin: isMobile ? '8px' : '12px',
-      borderRadius: isMobile ? '12px' : '24px',
+      margin: viewMode === 'list' && !isMobile ? '0' : (isMobile ? '8px' : '12px'),
+      borderRadius: viewMode === 'list' && !isMobile ? '0' : (isMobile ? '12px' : '24px'),
+      flexShrink: 0,
     },
     cardBody: {
-      padding: isMobile ? '0 12px 12px 12px' : '0 24px 24px 24px',
+      padding: viewMode === 'list' && !isMobile ? '20px 24px' : (isMobile ? '0 12px 12px 12px' : '0 24px 24px 24px'),
+      flex: viewMode === 'list' && !isMobile ? 1 : 'initial',
+      display: viewMode === 'list' && !isMobile ? 'flex' : 'block',
+      flexDirection: viewMode === 'list' && !isMobile ? 'column' : 'initial',
+      justifyContent: viewMode === 'list' && !isMobile ? 'space-between' : 'initial',
     },
     cardCategory: {
       fontSize: isMobile ? '10px' : '12px',
@@ -206,12 +218,16 @@ export const ProductCard = ({
       style={cardStyles.card} 
       onClick={handleCardClick}
       onMouseEnter={(e) => {
-        e.currentTarget.style.transform = 'translateY(-8px)';
-        e.currentTarget.style.boxShadow = '0 25px 50px -10px rgba(0, 0, 0, 0.15)';
+        if (viewMode !== 'list' || isMobile) {
+          e.currentTarget.style.transform = 'translateY(-8px)';
+          e.currentTarget.style.boxShadow = '0 25px 50px -10px rgba(0, 0, 0, 0.15)';
+        }
       }}
       onMouseLeave={(e) => {
-        e.currentTarget.style.transform = 'translateY(0)';
-        e.currentTarget.style.boxShadow = '0 20px 40px -10px rgba(0, 0, 0, 0.07)';
+        if (viewMode !== 'list' || isMobile) {
+          e.currentTarget.style.transform = 'translateY(0)';
+          e.currentTarget.style.boxShadow = '0 20px 40px -10px rgba(0, 0, 0, 0.07)';
+        }
       }}
     >
       {/* Discount Badge */}

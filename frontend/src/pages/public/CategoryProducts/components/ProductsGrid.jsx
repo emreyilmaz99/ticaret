@@ -33,7 +33,11 @@ export const ProductsGrid = ({
 
   return (
     <>
-      <div style={styles.grid}>
+      <div style={viewMode === 'list' ? {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '16px'
+      } : styles.grid}>
         {products.map((product) => (
           <ProductCard
             key={product.id}
@@ -42,6 +46,7 @@ export const ProductsGrid = ({
             onQuickView={onQuickView}
             isInCompareList={compareList.includes(product.id)}
             onToggleCompare={onToggleCompare}
+            viewMode={viewMode}
           />
         ))}
       </div>
