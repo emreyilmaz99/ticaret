@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Product;
 
+use App\Services\BaseService;
 use App\Models\Product;
 use App\Models\Vendor;
 use App\Repositories\Interfaces\ProductRepositoryInterface;
@@ -14,7 +15,7 @@ use App\Repositories\Interfaces\ProductVariantMetadataRepositoryInterface;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
 
-class ProductService
+class ProductService extends BaseService
 {
     protected ProductRepositoryInterface $repo;
     protected TagRepositoryInterface $tagRepo;

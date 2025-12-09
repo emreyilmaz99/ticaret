@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Product;
 
+use App\Services\BaseService;
 use App\Core\ServiceResponse;
 use App\Repositories\Interfaces\CategoryRepositoryInterface;
 use Illuminate\Support\Str;

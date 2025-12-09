@@ -1,9 +1,10 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Cart;
 
 use App\Core\ServiceResponse;
 use App\Models\Cart;
+use App\Services\BaseService;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\User;

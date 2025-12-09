@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Payment;
 
+use App\Services\BaseService;
 use App\Services\Payment\IyzicoSubMerchantService;
 use App\Services\Payment\IyzicoCheckoutService;
 use App\Services\Payment\IyzicoUtilityService;

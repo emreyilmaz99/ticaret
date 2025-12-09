@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\User\InitializeCheckoutRequest;
 use App\Models\Order;
 use App\Models\UserAddress;
-use App\Services\CheckoutService;
+use App\Services\Order\CheckoutService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;

@@ -3,7 +3,7 @@
 namespace App\Services\Vendor;
 
 use App\Services\BaseService;
-use App\Services\IyzicoService;
+use App\Services\Payment\IyzicoService;
 use App\Repositories\VendorApplicationRepository;
 use App\Repositories\VendorRepository;
 use App\Models\VendorApplication;

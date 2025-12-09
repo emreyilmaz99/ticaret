@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Api\V1\Vendor;
 use App\Http\Controllers\Controller;
 use App\Traits\ResponseHttp;
 use App\Http\Requests\Api\V1\Vendor\RegisterVendorRequest;
-use App\Services\VendorService;
+use App\Services\Vendor\VendorService;
 use App\Http\Resources\Api\V1\Shared\VendorResource;
 
 class RegistrationController extends Controller

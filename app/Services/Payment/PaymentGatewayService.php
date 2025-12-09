@@ -2,7 +2,7 @@
 
 namespace App\Services\Payment;
 
-use App\Services\IyzicoService;
+use App\Services\Payment\IyzicoService;
 use App\Core\ServiceResponse;
 use App\Models\Order;
 use App\Models\User;

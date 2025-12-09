@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api\V1\Vendor;
 
 use App\Http\Controllers\Controller;
-use App\Services\CategoryService;
+use App\Services\Product\CategoryService;
 use App\Traits\ResponseHttp;
 use Illuminate\Http\Request;
 

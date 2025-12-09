@@ -1,10 +1,11 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Product;
 
 use App\Core\ServiceResponse;
 use App\Models\Category;
 use App\Models\Product;
+use App\Services\BaseService;
 use Illuminate\Http\Request;
 
 class PublicProductService extends BaseService

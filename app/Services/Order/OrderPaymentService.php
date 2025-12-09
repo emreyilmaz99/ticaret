@@ -4,9 +4,9 @@ namespace App\Services\Order;
 
 use App\Services\BaseService;
 use App\Models\Order;
-use App\Services\StockService;
-use App\Services\CouponService;
-use App\Services\CartService;
+use App\Services\Product\StockService;
+use App\Services\Order\CouponService;
+use App\Services\Cart\CartService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 

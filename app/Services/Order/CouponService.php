@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Order;
 
+use App\Services\BaseService;
 use App\Models\CouponUsage;
 use App\Models\Order;
 use App\Models\VendorCoupon;
