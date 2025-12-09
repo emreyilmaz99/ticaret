@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\V1\Admin\VendorPayoutController as AdminVendorPayou
 use App\Http\Controllers\Api\V1\Admin\CommissionPlanController;
 use App\Http\Controllers\Api\V1\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\Api\V1\Admin\CategoryController as AdminCategoryController;
+use App\Http\Controllers\Api\V1\Admin\TaxClassController as AdminTaxClassController;
 
 // Vendor controllers
 use App\Http\Controllers\Api\V1\Vendor\VendorAuthController;
@@ -33,6 +34,7 @@ use App\Http\Controllers\Api\V1\Public\VendorController as PublicVendorControlle
 use App\Http\Controllers\Api\V1\Public\VendorApplicationController as PublicVendorApplicationController;
 use App\Http\Controllers\Api\V1\Admin\VendorApplicationController as AdminVendorApplicationController;
 use App\Http\Controllers\Api\V1\Public\ProductController as PublicProductController;
+use App\Http\Controllers\Api\V1\Public\TaxClassController as PublicTaxClassController;
 
 // Checkout controller
 use App\Http\Controllers\Api\V1\User\CheckoutController;
@@ -123,6 +125,13 @@ Route::prefix('v1/admin')->group(function () {
         Route::delete('categories/{category}', [AdminCategoryController::class, 'destroy']);
         Route::post('categories/bulk-status', [AdminCategoryController::class, 'bulkUpdateStatus']);
         Route::post('categories/update-order', [AdminCategoryController::class, 'updateOrder']);
+
+        // tax classes management
+        Route::get('tax-classes', [AdminTaxClassController::class, 'index']);
+        Route::post('tax-classes', [AdminTaxClassController::class, 'store']);
+        Route::get('tax-classes/{id}', [AdminTaxClassController::class, 'show']);
+        Route::put('tax-classes/{id}', [AdminTaxClassController::class, 'update']);
+        Route::delete('tax-classes/{id}', [AdminTaxClassController::class, 'destroy']);
     });
 });
 
@@ -210,6 +219,10 @@ Route::get('v1/units', [\App\Http\Controllers\Api\V1\Public\UnitsController::cla
 Route::get('v1/categories', [\App\Http\Controllers\Api\V1\Public\CategoryController::class, 'index']);
 Route::get('v1/categories/tree', [\App\Http\Controllers\Api\V1\Public\CategoryController::class, 'tree']);
 Route::get('v1/categories/{slug}', [\App\Http\Controllers\Api\V1\Public\CategoryController::class, 'show']);
+
+// tax classes (public - for vendors and product display)
+Route::get('v1/tax-classes', [PublicTaxClassController::class, 'index']);
+Route::post('v1/tax-classes/calculate', [PublicTaxClassController::class, 'calculate']);
 
 // products (public)
 Route::get('v1/products', [PublicProductController::class, 'index']);

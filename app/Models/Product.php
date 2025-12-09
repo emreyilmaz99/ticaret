@@ -15,7 +15,7 @@ class Product extends Model
     public $incrementing = false;
 
     protected $fillable = [
-        'id','vendor_id','category_id','sku','slug','name','short_description','description','type','status','is_featured','tax_class','commission_rate',
+        'id','vendor_id','category_id','sku','slug','name','short_description','description','type','status','is_featured','tax_class_id','commission_plan_id',
         'rejection_reason','rejected_at','rejected_by'
         // Removed variant-specific fields: 'price','compare_at_price','weight','length','width','height'
         // These now live in product_variants table only
@@ -36,6 +36,16 @@ class Product extends Model
     public function category()
     {
         return $this->belongsTo(\App\Models\Category::class, 'category_id');
+    }
+
+    public function taxClass()
+    {
+        return $this->belongsTo(TaxClass::class);
+    }
+
+    public function commissionPlan()
+    {
+        return $this->belongsTo(CommissionPlan::class);
     }
 
     public function variants()
