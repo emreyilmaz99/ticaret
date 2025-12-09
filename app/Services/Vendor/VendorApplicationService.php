@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Vendor;
 
+use App\Services\BaseService;
 use App\Services\Vendor\VendorApplicationPreService;
 use App\Services\Vendor\VendorApplicationFullService;
 use App\Services\Vendor\VendorApplicationQueryService;

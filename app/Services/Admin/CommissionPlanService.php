@@ -1,9 +1,10 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Admin;
 
 use App\Repositories\Interfaces\CommissionPlanRepositoryInterface;
 use App\Repositories\VendorRepository;
+use App\Services\BaseService;
 
 class CommissionPlanService extends BaseService
 {

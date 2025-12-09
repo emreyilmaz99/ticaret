@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Vendor;
 
+use App\Services\BaseService;
 use App\Repositories\VendorRepository;
 use App\Services\Vendor\VendorAddressService;
 use App\Services\Vendor\VendorBankAccountService;

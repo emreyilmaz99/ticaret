@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Api\V1\User;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\User\ToggleFavoriteRequest;
 use App\Http\Requests\Api\V1\User\CheckFavoritesRequest;
-use App\Services\FavoriteService;
+use App\Services\User\FavoriteService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 

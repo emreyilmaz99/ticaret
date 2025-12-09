@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\Http\Controllers\Api\V1\Admin\BaseAdminController;
 use App\Http\Resources\Api\V1\Admin\VendorResource;
-use App\Services\VendorService;
+use App\Services\Vendor\VendorService;
 use Illuminate\Http\Request;
 
 class VendorController extends BaseAdminController

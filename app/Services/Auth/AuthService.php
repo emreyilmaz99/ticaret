@@ -1,11 +1,12 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Auth;
 
 use App\Core\ServiceResponse;
 use App\Models\Admin;
 use App\Models\User;
 use App\Models\Vendor;
+use App\Services\BaseService;
 use Illuminate\Support\Facades\Hash;
 
 class AuthService extends BaseService

@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Product;
 
+use App\Services\BaseService;
 use App\Exceptions\InsufficientStockException;
 use App\Models\Order;
 use App\Models\ProductVariant;

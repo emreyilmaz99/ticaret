@@ -1,9 +1,10 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Admin;
 
 use App\Repositories\AdminRepository;
 use App\Core\ServiceResponse;
+use App\Services\BaseService;
 use App\Models\VendorPayout;
 use App\Models\Vendor;
 use Illuminate\Support\Facades\DB;

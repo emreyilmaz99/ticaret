@@ -7,7 +7,7 @@ use App\Http\Requests\Api\V1\Vendor\StoreProductRequest;
 use App\Http\Requests\Api\V1\Vendor\UpdateProductRequest;
 use App\Http\Resources\Api\V1\Shared\ProductResource;
 use App\Models\Product;
-use App\Services\ProductService;
+use App\Services\Product\ProductService;
 use App\Traits\ResponseHttp;
 use Illuminate\Http\Request;
 

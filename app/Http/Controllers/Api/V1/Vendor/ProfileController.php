@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Api\V1\Vendor;
 use App\Http\Controllers\Api\V1\Vendor\BaseVendorController;
 use App\Http\Requests\Api\V1\Vendor\UpdateProfileRequest;
 use App\Http\Resources\Api\V1\Admin\VendorResource;
-use App\Services\VendorService;
+use App\Services\Vendor\VendorService;
 use Illuminate\Http\Request;
 
 class ProfileController extends BaseVendorController
