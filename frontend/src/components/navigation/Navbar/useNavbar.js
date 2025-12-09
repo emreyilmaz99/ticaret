@@ -1,12 +1,14 @@
 import { useState, useContext } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { createUserAddress, deleteUserAddress } from '../../../features/user/api/userAddressApi';
+import { getCategoryTree } from '../../../api/publicApi';
 import { useToast } from '../../common/Toast';
 import AuthContext from '../../../context/AuthContext';
 import { useFavorites } from '../../../context/FavoritesContext';
 import { useCart } from '../../../context/CartContext';
 import { getStyles } from './styles';
+import * as FaIcons from 'react-icons/fa';
 
 /**
  * Navbar bileşeni için tüm business logic'i içeren custom hook
@@ -36,6 +38,25 @@ const useNavbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const queryClient = useQueryClient();
+
+  // --- Icon Mapping ---
+  const getIconComponent = (iconName) => {
+    if (!iconName) return FaIcons.FaBox;
+    const IconComponent = FaIcons[iconName];
+    return IconComponent || FaIcons.FaBox;
+  };
+
+  // --- Kategorileri Çek ---
+  const { data: categoriesData, isLoading: categoriesLoading } = useQuery({
+    queryKey: ['navbar-categories'],
+    queryFn: getCategoryTree,
+    staleTime: 1000 * 60 * 30, // 30 dakika cache
+  });
+
+  const categories = (categoriesData?.data || []).slice(0, 8).map(cat => ({
+    ...cat,
+    IconComponent: getIconComponent(cat.icon)
+  }));
 
   // --- Adres Kaydetme Mutation ---
   const createAddressMutation = useMutation({
@@ -177,6 +198,10 @@ const useNavbar = () => {
     cartItems,
     totals,
     itemCount,
+    
+    // Kategoriler
+    categories,
+    categoriesLoading,
     
     // Fonksiyonlar
     getLinkStyle,

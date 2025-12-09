@@ -67,6 +67,8 @@ const Navbar = () => {
     cartItems,
     totals,
     itemCount,
+    categories,
+    categoriesLoading,
     getLinkStyle,
     handleLogout,
     handleSearch,
@@ -221,34 +223,25 @@ const Navbar = () => {
 
           {/* 2. Story Tipi Kategoriler */}
           <div style={styles.storyContainer}>
-            <Link to="/electronics" style={styles.storyItem}>
-              <div style={styles.storyCircle}>📱</div>
-              <span style={styles.storyText}>Elektronik</span>
-            </Link>
-            <Link to="/fashion" style={styles.storyItem}>
-              <div style={styles.storyCircle}>👕</div>
-              <span style={styles.storyText}>Moda</span>
-            </Link>
-            <Link to="/home" style={styles.storyItem}>
-              <div style={styles.storyCircle}>🏠</div>
-              <span style={styles.storyText}>Ev</span>
-            </Link>
-            <Link to="/market" style={styles.storyItem}>
-              <div style={styles.storyCircle}>🍎</div>
-              <span style={styles.storyText}>Market</span>
-            </Link>
-            <Link to="/cosmetics" style={styles.storyItem}>
-              <div style={styles.storyCircle}>💄</div>
-              <span style={styles.storyText}>Kozmetik</span>
-            </Link>
-            <Link to="/sports" style={styles.storyItem}>
-              <div style={styles.storyCircle}>⚽</div>
-              <span style={styles.storyText}>Spor</span>
-            </Link>
-            <Link to="/hobby" style={styles.storyItem}>
-              <div style={styles.storyCircle}>🎮</div>
-              <span style={styles.storyText}>Hobi</span>
-            </Link>
+            {categoriesLoading ? (
+              <span style={{fontSize: '12px', color: '#64748b', padding: '10px'}}>Yükleniyor...</span>
+            ) : (
+              categories.map((cat) => {
+                const Icon = cat.IconComponent;
+                return (
+                  <Link 
+                    key={cat.id}
+                    to={`/products?category=${cat.slug}`}
+                    style={styles.storyItem}
+                  >
+                    <div style={styles.storyCircle}>
+                      <Icon style={{fontSize: '20px'}} />
+                    </div>
+                    <span style={styles.storyText}>{cat.name}</span>
+                  </Link>
+                );
+              })
+            )}
           </div>
         </>
       ) : (
@@ -265,14 +258,22 @@ const Navbar = () => {
             </div>
 
             {/* Kategoriler (Instagram Story Tarzı Kaydırma) */}
-            <Link to="/electronics" style={styles.categoryLink}>📱 Elektronik</Link>
-            <Link to="/fashion" style={styles.categoryLink}>👕 Moda</Link>
-            <Link to="/home" style={styles.categoryLink}>🏠 Ev & Yaşam</Link>
-            <Link to="/market" style={styles.categoryLink}>🍎 Süpermarket</Link>
-            <Link to="/cosmetics" style={styles.categoryLink}>💄 Kozmetik</Link>
-            <Link to="/sports" style={styles.categoryLink}>⚽ Spor</Link>
-            <Link to="/hobby" style={styles.categoryLink}>🎮 Hobi</Link>
-            <Link to="/books" style={styles.categoryLink}>📚 Kitap</Link>
+            {categoriesLoading ? (
+              <span style={{fontSize: '14px', color: '#64748b'}}>Yükleniyor...</span>
+            ) : (
+              categories.map((cat) => {
+                const Icon = cat.IconComponent;
+                return (
+                  <Link 
+                    key={cat.id}
+                    to={`/products?category=${cat.slug}`}
+                    style={styles.categoryLink}
+                  >
+                    <Icon style={{marginRight: '6px', fontSize: '14px'}} /> {cat.name}
+                  </Link>
+                );
+              })
+            )}
 
           </div>
         </div>

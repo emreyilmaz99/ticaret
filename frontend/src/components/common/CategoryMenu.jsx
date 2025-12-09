@@ -1,10 +1,28 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { categories } from '../../data/categories';
 import { FaChevronRight } from 'react-icons/fa';
+import { useQuery } from '@tanstack/react-query';
+import { getCategoryTree } from '../../api/publicApi';
+import * as FaIcons from 'react-icons/fa';
 
 const CategoryMenu = () => {
   const [activeCategory, setActiveCategory] = useState(null);
+
+  // Icon mapping
+  const getIconComponent = (iconName) => {
+    if (!iconName) return FaIcons.FaBox;
+    const IconComponent = FaIcons[iconName];
+    return IconComponent || FaIcons.FaBox;
+  };
+
+  // Kategorileri çek
+  const { data: categoriesData, isLoading } = useQuery({
+    queryKey: ['categoriesTree'],
+    queryFn: getCategoryTree,
+    staleTime: 1000 * 60 * 30,
+  });
+
+  const categories = categoriesData?.data || [];
 
   const styles = {
     container: {
@@ -98,67 +116,93 @@ const CategoryMenu = () => {
     }
   };
 
+  if (isLoading) {
+    return (
+      <nav style={styles.container}>
+        <ul style={styles.menuList}>
+          <li style={styles.menuItem}>
+            <span style={styles.menuLink}>Yükleniyor...</span>
+          </li>
+        </ul>
+      </nav>
+    );
+  }
+
   return (
     <nav style={styles.container} onMouseLeave={() => setActiveCategory(null)}>
       <ul style={styles.menuList}>
-        {categories.map((category) => (
-          <li 
-            key={category.id} 
-            style={styles.menuItem}
-            onMouseEnter={() => setActiveCategory(category.id)}
-          >
-            <Link 
-              to={`/products?category=${category.id}`} 
-              style={{
-                ...styles.menuLink,
-                ...(activeCategory === category.id ? styles.activeLink : {})
-              }}
+        {categories.map((category) => {
+          const subcategories = category.active_children || [];
+          const Icon = getIconComponent(category.icon);
+          
+          return (
+            <li 
+              key={category.id} 
+              style={styles.menuItem}
+              onMouseEnter={() => setActiveCategory(category.id)}
             >
-              <span style={{ fontSize: '16px', color: activeCategory === category.id ? '#059669' : '#94a3b8' }}>
-                {category.icon}
-              </span>
-              {category.title}
-            </Link>
+              <Link 
+                to={`/products?category=${category.slug}`}
+                style={{
+                  ...styles.menuLink,
+                  ...(activeCategory === category.id ? styles.activeLink : {})
+                }}
+              >
+                <span style={{ fontSize: '16px', color: activeCategory === category.id ? '#059669' : '#94a3b8' }}>
+                  <Icon />
+                </span>
+                {category.name}
+              </Link>
 
-            {/* Mega Menu Dropdown */}
-            <div style={{
-              ...styles.megaMenu,
-              ...(activeCategory === category.id ? styles.megaMenuActive : {})
-            }}>
-              {category.subcategories.map((sub, index) => (
-                <div key={index} style={styles.column}>
-                  <div style={styles.columnTitle}>
-                    {sub.title}
-                  </div>
-                  <ul style={styles.subList}>
-                    {sub.items.map((item, idx) => (
-                      <li key={idx}>
+              {/* Mega Menu Dropdown */}
+              {subcategories.length > 0 && (
+                <div style={{
+                  ...styles.megaMenu,
+                  ...(activeCategory === category.id ? styles.megaMenuActive : {})
+                }}>
+                  {subcategories.map((subCategory) => {
+                    const subSubCategories = subCategory.active_children || [];
+                    
+                    return (
+                      <div key={subCategory.id} style={styles.column}>
                         <Link 
-                          to={`/products?category=${category.id}&subcategory=${encodeURIComponent(item)}`}
-                          style={styles.subItem}
-                          onMouseEnter={(e) => {
-                            e.target.style.color = styles.subItemHover.color;
-                            e.target.style.transform = styles.subItemHover.transform;
-                          }}
-                          onMouseLeave={(e) => {
-                            e.target.style.color = styles.subItem.color;
-                            e.target.style.transform = 'none';
-                          }}
+                          to={`/products?category=${subCategory.slug}`}
+                          style={styles.columnTitle}
                         >
-                          <FaChevronRight size={8} style={{ opacity: 0.5 }} />
-                          {item}
+                          {subCategory.name}
                         </Link>
-                      </li>
-                    ))}
-                  </ul>
+                        {subSubCategories.length > 0 && (
+                          <ul style={styles.subList}>
+                            {subSubCategories.map((item) => (
+                              <li key={item.id}>
+                                <Link 
+                                  to={`/products?category=${item.slug}`}
+                                  style={styles.subItem}
+                                  onMouseEnter={(e) => {
+                                    e.target.style.color = styles.subItemHover.color;
+                                    e.target.style.transform = styles.subItemHover.transform;
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    e.target.style.color = styles.subItem.color;
+                                    e.target.style.transform = 'none';
+                                  }}
+                                >
+                                  <FaChevronRight size={8} style={{ opacity: 0.5 }} />
+                                  {item.name}
+                                </Link>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
-              ))}
-            </div>
-          </li>
-        ))}
+              )}
+            </li>
+          );
+        })}
       </ul>
     </nav>
   );
-};
-
-export default CategoryMenu;
+};export default CategoryMenu;
