@@ -49,7 +49,7 @@ export const useVendorCategories = () => {
       const response = await axios.get(`${BACKEND_URL}/api/v1/vendor/my-categories`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      return response.data.data || [];
+      return response.data.data?.categories || [];
     }
   });
 

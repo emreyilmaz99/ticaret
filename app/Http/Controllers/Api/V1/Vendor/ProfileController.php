@@ -6,15 +6,18 @@ use App\Http\Controllers\Api\V1\Vendor\BaseVendorController;
 use App\Http\Requests\Api\V1\Vendor\UpdateProfileRequest;
 use App\Http\Resources\Api\V1\Admin\VendorResource;
 use App\Services\Vendor\VendorService;
+use App\Services\Vendor\VendorCategoryService;
 use Illuminate\Http\Request;
 
 class ProfileController extends BaseVendorController
 {
     protected VendorService $service;
+    protected VendorCategoryService $categoryService;
 
-    public function __construct(VendorService $service)
+    public function __construct(VendorService $service, VendorCategoryService $categoryService)
     {
         $this->service = $service;
+        $this->categoryService = $categoryService;
     }
 
     public function update(UpdateProfileRequest $request)
@@ -104,15 +107,9 @@ class ProfileController extends BaseVendorController
             return $this->error('Yetkisiz', 401);
         }
 
-        $categories = $vendor->allowedCategories()
-            ->with('parent:id,name,slug')
-            ->orderBy('name')
-            ->get(['categories.id', 'categories.name', 'categories.slug', 'categories.icon', 'categories.parent_id']);
+        $result = $this->categoryService->getMyCategories($vendor->id);
 
-        return $this->success([
-            'categories' => $categories,
-            'total' => $categories->count()
-        ]);
+        return $this->fromServiceResponse($result);
     }
 
     /**
@@ -125,51 +122,9 @@ class ProfileController extends BaseVendorController
             return $this->error('Yetkisiz', 401);
         }
 
-        // Get vendor's selected category IDs
-        $selectedCategoryIds = $vendor->allowedCategories()->pluck('categories.id')->toArray();
+        $result = $this->categoryService->getMyCategoriesForProducts($vendor->id);
 
-        if (empty($selectedCategoryIds)) {
-            return $this->success([
-                'categories' => [],
-                'total' => 0
-            ]);
-        }
-
-        // Get all descendant category IDs recursively
-        $allCategoryIds = $this->getAllDescendantIds($selectedCategoryIds);
-
-        // Fetch all these categories with parent info
-        $categories = \App\Models\Category::whereIn('id', $allCategoryIds)
-            ->where('is_active', true)
-            ->with('parent:id,name,slug')
-            ->orderBy('name')
-            ->get(['id', 'name', 'slug', 'icon', 'image', 'parent_id']);
-
-        return $this->success([
-            'categories' => $categories,
-            'total' => $categories->count()
-        ]);
-    }
-
-    /**
-     * Helper: Get all descendant category IDs including given IDs
-     */
-    private function getAllDescendantIds(array $categoryIds): array
-    {
-        $allIds = $categoryIds;
-        
-        // Get children of these categories
-        $childIds = \App\Models\Category::whereIn('parent_id', $categoryIds)
-            ->where('is_active', true)
-            ->pluck('id')
-            ->toArray();
-        
-        if (!empty($childIds)) {
-            // Recursively get children's children
-            $allIds = array_merge($allIds, $this->getAllDescendantIds($childIds));
-        }
-        
-        return array_unique($allIds);
+        return $this->fromServiceResponse($result);
     }
 
     /**
@@ -193,17 +148,8 @@ class ProfileController extends BaseVendorController
 
         $categoryIds = $request->input('category_ids');
 
-        // Sync categories - vendor freely chooses
-        $vendor->allowedCategories()->sync($categoryIds);
+        $result = $this->categoryService->updateMyCategories($vendor->id, $categoryIds);
 
-        $categories = $vendor->allowedCategories()
-            ->with('parent:id,name,slug')
-            ->orderBy('name')
-            ->get(['categories.id', 'categories.name', 'categories.slug', 'categories.icon', 'categories.parent_id']);
-
-        return $this->success([
-            'categories' => $categories,
-            'total' => $categories->count()
-        ], 'Kategoriler güncellendi');
+        return $this->fromServiceResponse($result);
     }
 }
