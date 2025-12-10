@@ -1,14 +1,14 @@
 // src/pages/vendor/VendorOrders/index.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   FaSearch, FaFilter, FaDownload, FaPrint, 
   FaShoppingBag, FaClock, FaUndo, FaWallet, 
   FaEye, FaCheck, FaTruck, FaTimes, FaBoxOpen, FaFileExcel 
 } from 'react-icons/fa';
 
-// Stiller ve Veri
+// Stiller ve Hook
 import { getStyles } from './styles';
-import { MOCK_ORDERS, KPI_STATS } from './data';
+import { useVendorOrders } from './useVendorOrders';
 
 // Modal ve Servisler
 import OrderDetailModal from './OrderDetailModal';
@@ -17,76 +17,35 @@ import { printInvoice } from './invoiceService';
 const VendorOrders = () => {
   const styles = getStyles();
   
-  // --- STATE YÖNETİMİ ---
-  const [orders, setOrders] = useState(MOCK_ORDERS); // Ana Veri
-  const [filteredOrders, setFilteredOrders] = useState(MOCK_ORDERS); // Ekranda Görünen
+  // Custom hook'tan veri ve fonksiyonlar
+  const {
+    orders,
+    stats,
+    isLoadingOrders,
+    isLoadingStats,
+    searchTerm,
+    setSearchTerm,
+    statusFilter,
+    setStatusFilter,
+    minAmount,
+    setMinAmount,
+    maxAmount,
+    setMaxAmount,
+    updateOrderStatus,
+    cancelOrder
+  } = useVendorOrders();
   
-  // Temel Filtreler
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-
   // Gelişmiş Filtreler
-  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false); // Paneli aç/kapa
-  const [minAmount, setMinAmount] = useState('');
-  const [maxAmount, setMaxAmount] = useState('');
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
 
   // Modal
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // --- 1. ANA FİLTRELEME MOTORU ---
-  // Herhangi bir filtre değiştiğinde burası çalışır
-  useEffect(() => {
-    let result = orders;
-
-    // A. Arama Filtresi (ID veya Müşteri Adı)
-    if (searchTerm) {
-      const lowerTerm = searchTerm.toLowerCase();
-      result = result.filter(order => 
-        order.id.toLowerCase().includes(lowerTerm) ||
-        order.customer.name.toLowerCase().includes(lowerTerm)
-      );
-    }
-
-    // B. Durum (Status) Filtresi
-    if (statusFilter !== 'all') {
-      result = result.filter(order => order.status === statusFilter);
-    }
-
-    // C. Tutar Aralığı Filtresi (Gelişmiş)
-    if (minAmount) {
-      result = result.filter(order => order.amount >= parseFloat(minAmount));
-    }
-    if (maxAmount) {
-      result = result.filter(order => order.amount <= parseFloat(maxAmount));
-    }
-
-    setFilteredOrders(result);
-  }, [searchTerm, statusFilter, minAmount, maxAmount, orders]);
-
-  // --- 2. AKSİYONLAR ---
-
-  const updateOrderStatus = (id, newStatus) => {
-    const updatedList = orders.map(order => 
-      order.id === id ? { ...order, status: newStatus } : order
-    );
-    setOrders(updatedList);
-    
-    if (selectedOrder && selectedOrder.id === id) {
-      setSelectedOrder({ ...selectedOrder, status: newStatus });
-    }
-  };
-
-  const handleCancel = (id) => {
-    if (window.confirm('Bu siparişi iptal etmek istediğinize emin misiniz?')) {
-      updateOrderStatus(id, 'cancelled');
-    }
-  };
-
-  // --- 3. EXCEL İNDİRME ---
+  // --- EXCEL İNDİRME ---
   const handleDownloadExcel = () => {
     const headers = ["Siparis No", "Musteri", "Tarih", "Tutar", "Odeme", "Durum"];
-    const rows = filteredOrders.map(order => [
+    const rows = orders.map(order => [
       order.id, order.customer.name, order.date, order.amount, order.paymentMethod, order.status
     ]);
     const csvContent = [headers.join(","), ...rows.map(row => row.join(","))].join("\n");
@@ -100,15 +59,15 @@ const VendorOrders = () => {
     document.body.removeChild(link);
   };
 
-  // --- 4. TOPLU YAZDIRMA ---
+  // --- TOPLU YAZDIRMA ---
   const handleBulkPrint = () => {
-    if (filteredOrders.length === 0) return alert("Yazdırılacak sipariş yok.");
+    if (orders.length === 0) return alert("Yazdırılacak sipariş yok.");
     const printWindow = window.open('', '_blank', 'width=800,height=600');
     printWindow.document.write(`
       <html><head><title>Sipariş Listesi</title>
       <style>table{width:100%;border-collapse:collapse;} th,td{border:1px solid #ddd;padding:8px;text-align:left;}</style>
       </head><body><h2>Sipariş Listesi</h2><table><thead><tr><th>No</th><th>Müşteri</th><th>Tutar</th><th>Durum</th></tr></thead><tbody>
-      ${filteredOrders.map(o => `<tr><td>${o.id}</td><td>${o.customer.name}</td><td>${o.amount} TL</td><td>${o.status}</td></tr>`).join('')}
+      ${orders.map(o => `<tr><td>${o.id}</td><td>${o.customer.name}</td><td>${o.amount} TL</td><td>${o.status}</td></tr>`).join('')}
       </tbody></table><script>window.onload=function(){window.print();}</script></body></html>
     `);
     printWindow.document.close();
@@ -158,7 +117,7 @@ const VendorOrders = () => {
 
       {/* 2. KPI KARTLARI */}
       <div style={styles.statsGrid}>
-        {KPI_STATS.map((stat, index) => (
+        {stats.map((stat, index) => (
           <div key={index} style={styles.statCard}>
             <div style={styles.statInfo}>
               <span style={styles.statLabel}>{stat.label}</span>
@@ -168,6 +127,7 @@ const VendorOrders = () => {
               {stat.icon === 'FaShoppingBag' && <FaShoppingBag size={20} />}
               {stat.icon === 'FaClock' && <FaClock size={20} />}
               {stat.icon === 'FaWallet' && <FaWallet size={20} />}
+              {stat.icon === 'FaBoxOpen' && <FaBoxOpen size={20} />}
               {stat.icon === 'FaUndo' && <FaUndo size={20} />}
             </div>
           </div>
@@ -262,8 +222,16 @@ const VendorOrders = () => {
             </tr>
           </thead>
           <tbody>
-            {filteredOrders.length > 0 ? (
-              filteredOrders.map((order) => (
+            {isLoadingOrders ? (
+              <tr>
+                <td colSpan="7" style={{padding:'60px', textAlign:'center', color:'#6B7280'}}>
+                  <div style={{display:'flex', flexDirection:'column', alignItems:'center', gap:'10px'}}>
+                    <span>Yüklüyor...</span>
+                  </div>
+                </td>
+              </tr>
+            ) : orders.length > 0 ? (
+              orders.map((order) => (
                 <tr 
                   key={order.id} 
                   style={styles.tr}
@@ -302,25 +270,25 @@ const VendorOrders = () => {
                     <div style={styles.actionGroup}>
                       
                       {order.status === 'pending' && (
-                        <button style={{...styles.actionBtnSmall, ...styles.btnApprove}} onClick={() => updateOrderStatus(order.id, 'processing')}>
+                        <button style={{...styles.actionBtnSmall, ...styles.btnApprove}} onClick={() => updateOrderStatus(order.order_id, 'processing')}>
                           <FaCheck /> Onayla
                         </button>
                       )}
 
                       {order.status === 'processing' && (
-                        <button style={{...styles.actionBtnSmall, ...styles.btnShip}} onClick={() => updateOrderStatus(order.id, 'shipped')}>
+                        <button style={{...styles.actionBtnSmall, ...styles.btnShip}} onClick={() => updateOrderStatus(order.order_id, 'shipped')}>
                           <FaTruck /> Kargola
                         </button>
                       )}
 
                       {order.status === 'shipped' && (
-                        <button style={{...styles.actionBtnSmall, ...styles.btnApprove}} onClick={() => updateOrderStatus(order.id, 'delivered')}>
+                        <button style={{...styles.actionBtnSmall, ...styles.btnApprove}} onClick={() => updateOrderStatus(order.order_id, 'delivered')}>
                           <FaBoxOpen /> Teslim Et
                         </button>
                       )}
 
                       {(order.status === 'pending' || order.status === 'processing') && (
-                        <button style={{...styles.actionBtnSmall, ...styles.btnCancel}} onClick={() => handleCancel(order.id)}>
+                        <button style={{...styles.actionBtnSmall, ...styles.btnCancel}} onClick={() => cancelOrder(order.order_id)}>
                           <FaTimes /> İptal
                         </button>
                       )}
@@ -352,7 +320,7 @@ const VendorOrders = () => {
         isOpen={isModalOpen} 
         onClose={handleCloseModal}
         onStatusUpdate={updateOrderStatus}
-        onCancel={handleCancel}
+        onCancel={cancelOrder}
         styles={styles}
       />
 

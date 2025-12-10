@@ -24,6 +24,7 @@ class UpdateProductRequest extends FormRequest
             'sku' => ['nullable','string','max:100'],
             'is_featured' => ['nullable','boolean'],
             'category_id' => ['nullable', 'exists:categories,id'],
+            'tax_class_id' => ['nullable', 'exists:tax_classes,id'],
             'unit_id' => ['nullable','exists:units,id'],
             'images' => ['nullable', 'array'],
             'images.*' => ['image', 'mimes:jpeg,png,jpg,gif,webp', 'max:5120'],

@@ -95,18 +95,75 @@ const OrderDetailModal = ({
           <h4 style={styles.infoTitle}>Ürünler ({order.products?.length || 0})</h4>
           <div style={styles.productList}>
             {order.products && order.products.map((product) => (
-              <div key={product.id} style={styles.productItem}>
-                <img src={product.image} alt={product.name} style={styles.productImg} />
-                <div style={styles.productDetails}>
-                  <span style={styles.productName}>{product.name}</span>
-                  <span style={styles.productVariant}>{product.variant}</span>
-                </div>
-                <div style={{textAlign: 'right'}}>
-                  <div style={{fontSize: '13px', color: '#6B7280'}}>{product.qty} x {product.price} TL</div>
-                  <div style={styles.productPrice}>
-                    {new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(product.price * product.qty)}
+              <div key={product.id}>
+                <div style={styles.productItem}>
+                  <img src={product.image} alt={product.name} style={styles.productImg} />
+                  <div style={styles.productDetails}>
+                    <span style={styles.productName}>{product.name}</span>
+                    <span style={styles.productVariant}>{product.variant}</span>
+                  </div>
+                  <div style={{textAlign: 'right'}}>
+                    <div style={{fontSize: '13px', color: '#6B7280'}}>{product.qty} x {product.price} TL</div>
+                    <div style={styles.productPrice}>
+                      {new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(product.price * product.qty)}
+                    </div>
                   </div>
                 </div>
+                
+                {/* Finansal Detaylar */}
+                {product.financials && (
+                  <div style={{
+                    marginTop: '12px',
+                    marginLeft: '72px',
+                    padding: '16px',
+                    backgroundColor: '#F9FAFB',
+                    borderRadius: '8px',
+                    fontSize: '13px'
+                  }}>
+                    <div style={{fontWeight: '600', color: '#111827', marginBottom: '12px'}}>💰 Fatura Detayları</div>
+                    
+                    <div style={{display: 'flex', flexDirection: 'column', gap: '8px'}}>
+                      <div style={{display: 'flex', justifyContent: 'space-between', color: '#4B5563'}}>
+                        <span>Ürün Fiyatı (KDV Hariç):</span>
+                        <span style={{fontWeight: '500'}}>₺{product.financials.price_without_tax}</span>
+                      </div>
+                      <div style={{display: 'flex', justifyContent: 'space-between', color: '#059669'}}>
+                        <span>KDV (%{product.financials.tax_rate}):</span>
+                        <span style={{fontWeight: '500'}}>+₺{product.financials.tax_amount}</span>
+                      </div>
+                      <div style={{
+                        display: 'flex', 
+                        justifyContent: 'space-between', 
+                        paddingTop: '8px',
+                        borderTop: '1px dashed #E5E7EB',
+                        fontWeight: '600',
+                        color: '#111827'
+                      }}>
+                        <span>Müşteri Ödemesi:</span>
+                        <span>₺{product.financials.price_with_tax}</span>
+                      </div>
+                      
+                      <div style={{height: '8px'}}></div>
+                      
+                      <div style={{display: 'flex', justifyContent: 'space-between', color: '#DC2626'}}>
+                        <span>Platform Komisyonu (%{product.financials.commission_rate}):</span>
+                        <span style={{fontWeight: '500'}}>-₺{product.financials.commission_amount}</span>
+                      </div>
+                      <div style={{
+                        display: 'flex', 
+                        justifyContent: 'space-between', 
+                        paddingTop: '8px',
+                        borderTop: '1px dashed #E5E7EB',
+                        fontWeight: '700',
+                        fontSize: '14px',
+                        color: '#059669'
+                      }}>
+                        <span>🏢 Satıcı Hak Ediş:</span>
+                        <span>₺{product.financials.vendor_earning}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -137,7 +194,7 @@ const OrderDetailModal = ({
             {(order.status === 'pending' || order.status === 'processing') && (
               <button 
                 style={{...styles.modalBtn, ...styles.btnCancel, backgroundColor: '#FEF2F2', border: '1px solid #FECACA', fontSize:'13px', padding:'10px 16px'}}
-                onClick={() => { onCancel(order.id); onClose(); }}
+                onClick={() => { onCancel(order.order_id); onClose(); }}
               >
                 <FaTimesCircle /> İptal Et
               </button>
@@ -146,17 +203,17 @@ const OrderDetailModal = ({
 
           <div style={{display:'flex', gap:'12px'}}>
             {order.status === 'pending' && (
-              <button style={{...styles.modalBtn, ...styles.btnApprove}} onClick={() => onStatusUpdate(order.id, 'processing')}>
+              <button style={{...styles.modalBtn, ...styles.btnApprove}} onClick={() => onStatusUpdate(order.order_id, 'processing')}>
                 <FaCheck /> Onayla
               </button>
             )}
             {order.status === 'processing' && (
-              <button style={{...styles.modalBtn, ...styles.btnShip}} onClick={() => onStatusUpdate(order.id, 'shipped')}>
+              <button style={{...styles.modalBtn, ...styles.btnShip}} onClick={() => onStatusUpdate(order.order_id, 'shipped')}>
                 <FaTruck /> Kargoya Ver
               </button>
             )}
             {order.status === 'shipped' && (
-              <button style={{...styles.modalBtn, ...styles.btnApprove}} onClick={() => onStatusUpdate(order.id, 'delivered')}>
+              <button style={{...styles.modalBtn, ...styles.btnApprove}} onClick={() => onStatusUpdate(order.order_id, 'delivered')}>
                 <FaBoxOpen /> Teslim Et
               </button>
             )}

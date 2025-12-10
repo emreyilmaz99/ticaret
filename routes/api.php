@@ -165,6 +165,12 @@ Route::prefix('v1/vendor')->group(function () {
         Route::get('my-categories/for-products', [VendorProfileController::class, 'myCategoriesForProducts']);
         Route::put('my-categories', [VendorProfileController::class, 'updateMyCategories']);
 
+        // vendor orders
+        Route::get('orders', [\App\Http\Controllers\Api\V1\Vendor\OrderController::class, 'index']);
+        Route::get('orders/stats', [\App\Http\Controllers\Api\V1\Vendor\OrderController::class, 'stats']);
+        Route::put('orders/{orderId}/status', [\App\Http\Controllers\Api\V1\Vendor\OrderController::class, 'updateStatus']);
+        Route::post('orders/{orderId}/cancel', [\App\Http\Controllers\Api\V1\Vendor\OrderController::class, 'cancel']);
+
         // vendor addresses
         Route::get('addresses', [VendorAddressController::class, 'index']);
         Route::post('addresses', [VendorAddressController::class, 'store']);

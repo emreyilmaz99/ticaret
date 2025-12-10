@@ -32,7 +32,7 @@ class Vendor extends Authenticatable
         'rating_avg',     // Computed field for performance
         'rating_count',   // Computed field for performance
         'balance',
-        'commission_rate',
+        // Removed: 'commission_rate' - use commission_plan_id instead
         // Removed: 'settings', 'metadata' - now in separate tables
         'status',
         'onboarding_completed',

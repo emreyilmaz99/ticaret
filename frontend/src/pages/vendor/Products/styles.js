@@ -876,6 +876,17 @@ export const styles = {
     color: '#334155', 
     marginBottom: '8px' 
   },
+  readOnlyValue: {
+    padding: '12px 16px',
+    backgroundColor: '#f8fafc',
+    borderRadius: '8px',
+    fontSize: '14px',
+    color: '#475569',
+    border: '1px solid #e2e8f0',
+    minHeight: '44px',
+    display: 'flex',
+    alignItems: 'center'
+  },
   formInput: { 
     width: '100%', 
     padding: '10px 12px', 

@@ -24,6 +24,14 @@ class ProductResource extends JsonResource
             }),
             'category_id' => $this->category_id,
             'category' => $this->whenLoaded('category', function () { return $this->category ? ['id' => $this->category->id, 'name' => $this->category->name] : null; }),
+            'tax_class_id' => $this->tax_class_id,
+            'tax_class' => $this->whenLoaded('taxClass', function () { 
+                return $this->taxClass ? [
+                    'id' => $this->taxClass->id, 
+                    'name' => $this->taxClass->name,
+                    'rate' => $this->taxClass->rate
+                ] : null; 
+            }),
             'sku' => $this->sku,
             'slug' => $this->slug,
             'name' => $this->name,

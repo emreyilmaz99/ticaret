@@ -24,6 +24,7 @@ class StoreProductRequest extends FormRequest
             'sku' => ['nullable','string','max:100'],
             'is_featured' => ['nullable','boolean'],
             'category_id' => ['required', 'exists:categories,id'],
+            'tax_class_id' => ['required', 'exists:tax_classes,id'],
             'unit_id' => ['nullable','exists:units,id'],
             // extra fields for extended product creation
             'tags' => ['nullable','array'],
@@ -46,6 +47,8 @@ class StoreProductRequest extends FormRequest
             'name.min' => 'Ürün adı en az 2 karakter olmalıdır',
             'category_id.required' => 'Kategori seçimi zorunludur',
             'category_id.exists' => 'Geçersiz kategori',
+            'tax_class_id.required' => 'Vergi sınıfı seçimi zorunludur',
+            'tax_class_id.exists' => 'Geçersiz vergi sınıfı',
             'price.required_if' => 'Basit ürünler için fiyat zorunludur',
             'price.min' => 'Fiyat 0\'dan büyük olmalıdır',
             'stock.required_if' => 'Basit ürünler için stok zorunludur',

@@ -40,6 +40,7 @@ import UsersPage from './pages/admin/UsersPage'; // Kullanıcı Yönetimi
 // Modüler Admin Sayfaları
 import { FullApplicationsPage, VendorApplicationsPage } from './pages/admin/Applications';
 import CommissionPlans from './pages/admin/CommissionPlans';
+import TaxClasses from './pages/admin/TaxClasses';
 import ProductsPage from './pages/admin/Products';
 import CategoriesPage from './pages/admin/Categories';
 // YENİ EKLENEN: Admin Siparişler Sayfası
@@ -120,6 +121,7 @@ function App() {
                   <Route path="/admin/vendors" element={<FullApplicationsPage />} />
                   <Route path="/admin/vendor-applications" element={<VendorApplicationsPage />} />
                   <Route path="/admin/commission-plans" element={<CommissionPlans />} />
+                  <Route path="/admin/tax-classes" element={<TaxClasses />} />
                   <Route path="/admin/products" element={<ProductsPage />} />
                   <Route path="/admin/categories" element={<CategoriesPage />} />
                   <Route path="/admin/admins" element={<AdminsPage />} />

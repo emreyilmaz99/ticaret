@@ -1,6 +1,7 @@
 // src/pages/vendor/Products/index.jsx
 import React from 'react';
 import useVendorProducts from './useVendorProducts';
+import { useTaxClasses } from './hooks/useTaxClasses';
 import { styles } from './styles';
 import {
   ProductHeader,
@@ -15,6 +16,8 @@ import {
 } from './components';
 
 const VendorProductsPage = () => {
+  const { taxClasses } = useTaxClasses();
+  
   const {
     // Data
     products,
@@ -168,6 +171,7 @@ const VendorProductsPage = () => {
         setFormData={setFormData}
         groupedCategories={groupedCategories}
         units={units}
+        taxClasses={taxClasses}
         selectedProduct={selectedProduct}
         tagInput={tagInput}
         setTagInput={setTagInput}

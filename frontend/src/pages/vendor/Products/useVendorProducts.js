@@ -19,6 +19,7 @@ import axios from '../../../lib/axios';
 const initialFormState = {
   name: '',
   category_id: '',
+  tax_class_id: '',
   price: '',
   stock: 0,
   description: '',
@@ -234,6 +235,7 @@ const useVendorProducts = () => {
     setFormData({
       name: product.name || '',
       category_id: product.category_id || '',
+      tax_class_id: product.tax_class_id || '',
       price: product.price || '',
       stock: product.stock || 0,
       description: product.description || '',
@@ -256,6 +258,7 @@ const useVendorProducts = () => {
     setFormData({
       name: product.name || '',
       category_id: product.category_id || '',
+      tax_class_id: product.tax_class_id || '',
       price: product.price || '',
       stock: product.stock || 0,
       description: product.description || '',
@@ -361,6 +364,10 @@ const useVendorProducts = () => {
       toast.warning('Uyarı', 'Lütfen bir kategori seçiniz.');
       return;
     }
+    if (!formData.tax_class_id) {
+      toast.warning('Uyarı', 'Lütfen bir vergi sınıfı seçiniz.');
+      return;
+    }
     if (formData.type === 'simple') {
       if (!formData.price || parseFloat(formData.price) <= 0) {
         toast.warning('Uyarı', 'Lütfen geçerli bir satış fiyatı giriniz.');
@@ -379,6 +386,7 @@ const useVendorProducts = () => {
     const fd = new FormData();
     fd.append('name', formData.name);
     fd.append('category_id', formData.category_id);
+    fd.append('tax_class_id', formData.tax_class_id);
     fd.append('type', formData.type);
     fd.append('description', formData.description);
     fd.append('short_description', formData.short_description);

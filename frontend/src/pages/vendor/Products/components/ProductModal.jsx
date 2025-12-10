@@ -19,6 +19,7 @@ const ProductModal = ({
   setFormData,
   groupedCategories,
   units,
+  taxClasses,
   selectedProduct,
   tagInput,
   setTagInput,
@@ -50,6 +51,7 @@ const ProductModal = ({
             formData={formData}
             setFormData={setFormData}
             groupedCategories={groupedCategories}
+            taxClasses={taxClasses}
             readOnly={readOnly}
           />
         );
