@@ -1,72 +1,54 @@
-// src/pages/vendor/VendorOrders/index.jsx
-import React, { useState, useEffect } from 'react';
+// src/pages/admin/Orders/index.jsx
+import React, { useState } from 'react';
 import { 
   FaSearch, FaFilter, FaDownload, FaPrint, 
   FaShoppingBag, FaClock, FaUndo, FaWallet, 
   FaEye, FaCheck, FaTruck, FaTimes, FaBoxOpen, FaFileExcel,
-  FaStore, FaUsers // EKLENDİ: Eksik ikonlar buraya eklendi
+  FaStore, FaUsers
 } from 'react-icons/fa';
 
 import { getStyles } from './styles';
-import { MOCK_ORDERS, KPI_STATS } from './data';
+import { useAdminOrders } from './useAdminOrders';
 import OrderDetailModal from './OrderDetailModal';
 
-const VendorOrders = () => {
+const AdminOrders = () => {
   const styles = getStyles();
   
-  // --- STATE ---
-  const [orders, setOrders] = useState(MOCK_ORDERS);
-  const [filteredOrders, setFilteredOrders] = useState(MOCK_ORDERS);
-  
-  // Temel Filtreler
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
+  // Custom hook'tan veri ve fonksiyonlar
+  const {
+    orders,
+    stats,
+    isLoadingOrders,
+    isLoadingStats,
+    searchTerm,
+    setSearchTerm,
+    statusFilter,
+    setStatusFilter,
+    minAmount,
+    setMinAmount,
+    maxAmount,
+    setMaxAmount,
+    updateOrderStatus,
+    cancelOrder
+  } = useAdminOrders();
 
   // Gelişmiş Filtreler
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
-  const [minAmount, setMinAmount] = useState('');
-  const [maxAmount, setMaxAmount] = useState('');
 
   // Modal
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // --- FİLTRELEME MANTIĞI ---
-  useEffect(() => {
-    let result = orders;
-
-    if (searchTerm) {
-      const lowerTerm = searchTerm.toLowerCase();
-      result = result.filter(order => 
-        order.id.toLowerCase().includes(lowerTerm) ||
-        order.customer.name.toLowerCase().includes(lowerTerm)
-      );
-    }
-
-    if (statusFilter !== 'all') {
-      result = result.filter(order => order.status === statusFilter);
-    }
-
-    if (minAmount) {
-      result = result.filter(order => order.amount >= parseFloat(minAmount));
-    }
-    if (maxAmount) {
-      result = result.filter(order => order.amount <= parseFloat(maxAmount));
-    }
-
-    setFilteredOrders(result);
-  }, [searchTerm, statusFilter, minAmount, maxAmount, orders]);
-
   // --- AKSİYONLAR ---
 
   // Excel İndirme
   const handleDownloadExcel = () => {
-    if (filteredOrders.length === 0) {
+    if (orders.length === 0) {
       alert("İndirilecek veri bulunamadı.");
       return;
     }
     const headers = ["Siparis No", "Musteri", "Tarih", "Odeme Yontemi", "Tutar", "Durum"];
-    const rows = filteredOrders.map(order => [
+    const rows = orders.map(order => [
       order.id, `"${order.customer.name}"`, order.date, order.paymentMethod, order.amount, order.status
     ]);
     const csvContent = [headers.join(","), ...rows.map(row => row.join(","))].join("\n");
@@ -82,7 +64,7 @@ const VendorOrders = () => {
 
   // Toplu Yazdırma
   const handleBulkPrint = () => {
-    if (filteredOrders.length === 0) {
+    if (orders.length === 0) {
       alert("Yazdırılacak sipariş yok.");
       return;
     }
@@ -91,29 +73,11 @@ const VendorOrders = () => {
       <html><head><title>Sipariş Listesi</title>
       <style>body{font-family:sans-serif;padding:20px;} table{width:100%;border-collapse:collapse;margin-top:20px;} th,td{border:1px solid #ddd;padding:10px;text-align:left;font-size:12px;} th{background-color:#f4f4f4;}</style>
       </head><body><h2>Sipariş Listesi</h2><table><thead><tr><th>No</th><th>Müşteri</th><th>Tutar</th><th>Durum</th></tr></thead>
-      <tbody>${filteredOrders.map(o => `<tr><td>${o.id}</td><td>${o.customer.name}</td><td>${new Intl.NumberFormat('tr-TR',{style:'currency',currency:'TRY'}).format(o.amount)}</td><td>${o.status}</td></tr>`).join('')}</tbody></table>
+      <tbody>${orders.map(o => `<tr><td>${o.id}</td><td>${o.customer.name}</td><td>${new Intl.NumberFormat('tr-TR',{style:'currency',currency:'TRY'}).format(o.amount)}</td><td>${o.status}</td></tr>`).join('')}</tbody></table>
       <script>window.onload=function(){window.print();}</script></body></html>
     `;
     printWindow.document.write(printContent);
     printWindow.document.close();
-  };
-
-  const updateOrderStatus = (id, newStatus, e = null) => {
-    if(e) e.stopPropagation();
-    const updatedList = orders.map(order => 
-      order.id === id ? { ...order, status: newStatus } : order
-    );
-    setOrders(updatedList);
-    if (selectedOrder && selectedOrder.id === id) {
-      setSelectedOrder({ ...selectedOrder, status: newStatus });
-    }
-  };
-
-  const handleCancel = (id, e = null) => {
-    if(e) e.stopPropagation();
-    if (window.confirm('Bu siparişi iptal etmek istediğinize emin misiniz?')) {
-      updateOrderStatus(id, 'cancelled');
-    }
   };
 
   const handleViewDetail = (order) => {
@@ -158,13 +122,12 @@ const VendorOrders = () => {
 
       {/* KPI Stats */}
       <div style={styles.statsGrid}>
-        {KPI_STATS.map((stat, index) => (
+        {stats.map((stat, index) => (
           <div key={index} style={styles.statCard}>
             <div style={styles.statInfo}>
               <span style={styles.statLabel}>{stat.label}</span>
               <span style={styles.statValue}>{stat.value}</span>
             </div>
-            {/* DÜZELTME BURADA: Eksik olan ikon kontrolleri eklendi */}
             <div style={styles.statIconBox(stat.color)}>
               {stat.icon === 'FaShoppingBag' && <FaShoppingBag size={20} />}
               {stat.icon === 'FaClock' && <FaClock size={20} />}
@@ -230,16 +193,24 @@ const VendorOrders = () => {
             <tr>
               <th style={styles.th}>Sipariş No</th>
               <th style={styles.th}>Müşteri</th>
+              <th style={styles.th}>Satıcı</th>
               <th style={styles.th}>Tarih</th>
-              <th style={styles.th}>Ödeme</th>
               <th style={styles.th}>Tutar</th>
               <th style={styles.th}>Durum</th>
               <th style={styles.th}>İşlem</th>
             </tr>
           </thead>
           <tbody>
-            {filteredOrders.length > 0 ? (
-              filteredOrders.map((order) => (
+            {isLoadingOrders ? (
+              <tr>
+                <td colSpan="7" style={{padding:'60px', textAlign:'center', color:'#6B7280'}}>
+                  <div style={{display:'flex', flexDirection:'column', alignItems:'center', gap:'10px'}}>
+                    <span>Yükleniyor...</span>
+                  </div>
+                </td>
+              </tr>
+            ) : orders.length > 0 ? (
+              orders.map((order) => (
                 <tr 
                   key={order.id} style={styles.tr}
                   onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F9FAFB'}
@@ -251,13 +222,32 @@ const VendorOrders = () => {
                     <div style={{fontSize:'12px', color:'#6B7280', marginTop:'4px'}}>{order.items} Ürün</div>
                   </td>
                   <td style={styles.td}>
-                    <div style={styles.customerInfo}>
+                    <div 
+                      style={styles.customerInfo}
+                      title={`Email: ${order.customer.email}\nTelefon: ${order.customer.phone || 'Belirtilmemiş'}`}
+                    >
                       <span style={styles.customerName}>{order.customer.name}</span>
                       <span style={styles.customerEmail}>{order.customer.email}</span>
                     </div>
                   </td>
+                  <td style={styles.td}>
+                    {order.vendors && order.vendors.length > 0 ? (
+                      <div 
+                        style={{...styles.customerInfo, cursor: 'pointer'}}
+                        title={order.vendors.map(v => 
+                          `${v.name}\nEmail: ${v.email}\nTelefon: ${v.phone || 'Belirtilmemiş'}\nVergi No: ${v.tax_id || 'Belirtilmemiş'}`
+                        ).join('\n\n')}
+                      >
+                        <span style={styles.customerName}>{order.vendors[0].name}</span>
+                        {order.vendors.length > 1 && (
+                          <span style={{fontSize:'12px', color:'#6B7280'}}>+{order.vendors.length - 1} satıcı</span>
+                        )}
+                      </div>
+                    ) : (
+                      <span style={{fontSize:'13px', color:'#9CA3AF'}}>-</span>
+                    )}
+                  </td>
                   <td style={styles.td}><span style={styles.date}>{order.date}</span></td>
-                  <td style={styles.td}><span style={{fontSize:'13px', color:'#374151'}}>{order.paymentMethod}</span></td>
                   <td style={styles.td}>
                     <span style={styles.price}>
                       {new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(order.amount)}
@@ -290,10 +280,10 @@ const VendorOrders = () => {
 
       <OrderDetailModal 
         order={selectedOrder} isOpen={isModalOpen} onClose={handleCloseModal}
-        onStatusUpdate={updateOrderStatus} onCancel={handleCancel} styles={styles}
+        onStatusUpdate={updateOrderStatus} onCancel={cancelOrder} styles={styles}
       />
     </div>
   );
 };
 
-export default VendorOrders;
+export default AdminOrders;

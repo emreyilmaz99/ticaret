@@ -132,6 +132,12 @@ Route::prefix('v1/admin')->group(function () {
         Route::get('tax-classes/{id}', [AdminTaxClassController::class, 'show']);
         Route::put('tax-classes/{id}', [AdminTaxClassController::class, 'update']);
         Route::delete('tax-classes/{id}', [AdminTaxClassController::class, 'destroy']);
+
+        // orders management
+        Route::get('orders', [\App\Http\Controllers\Api\V1\Admin\OrderController::class, 'index']);
+        Route::get('orders/stats', [\App\Http\Controllers\Api\V1\Admin\OrderController::class, 'stats']);
+        Route::put('orders/{orderId}/status', [\App\Http\Controllers\Api\V1\Admin\OrderController::class, 'updateStatus']);
+        Route::post('orders/{orderId}/cancel', [\App\Http\Controllers\Api\V1\Admin\OrderController::class, 'cancel']);
     });
 });
 

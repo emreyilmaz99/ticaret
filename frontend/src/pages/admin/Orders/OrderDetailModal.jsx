@@ -111,15 +111,26 @@ const OrderDetailModal = ({ order, isOpen, onClose, styles }) => {
                 {/* Satıcı */}
                 <div style={styles.infoCard}>
                   <h4 style={{fontSize:'12px', color:'#64748B', fontWeight:700, marginTop:0}}>SATICI</h4>
-                  <div style={{display:'flex', alignItems:'center', gap:'10px', marginTop:'10px'}}>
-                    <div style={{width:'36px', height:'36px', borderRadius:'8px', backgroundColor:'#E2E8F0', display:'flex', alignItems:'center', justifyContent:'center'}}>
-                      <FaStore color="#475569" />
+                  {order.vendors && order.vendors.length > 0 ? (
+                    <div style={{display:'flex', flexDirection:'column', gap:'8px', marginTop:'10px'}}>
+                      {order.vendors.map((vendor, idx) => (
+                        <div key={idx} style={{display:'flex', alignItems:'center', gap:'10px'}}>
+                          <div style={{width:'36px', height:'36px', borderRadius:'8px', backgroundColor:'#E2E8F0', display:'flex', alignItems:'center', justifyContent:'center'}}>
+                            <FaStore color="#475569" />
+                          </div>
+                          <div>
+                            <div style={{fontWeight:600}}>
+                              {vendor.name}
+                              {vendor.id && <span style={{fontSize:'11px', color:'#9CA3AF', marginLeft:'4px'}}>#{vendor.id}</span>}
+                            </div>
+                            <div style={{fontSize:'12px', color:'#64748B'}}>{vendor.email}</div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                    <div>
-                      <div style={{fontWeight:600}}>{order.vendor.name}</div>
-                      <div style={{fontSize:'12px', color:'#64748B'}}>Puan: {order.vendor.rating}</div>
-                    </div>
-                  </div>
+                  ) : (
+                    <div style={{fontSize:'13px', color:'#9CA3AF', marginTop:'10px'}}>Satıcı bilgisi yok</div>
+                  )}
                 </div>
 
                 {/* Müşteri */}
@@ -128,7 +139,10 @@ const OrderDetailModal = ({ order, isOpen, onClose, styles }) => {
                   <div style={{display:'flex', alignItems:'center', gap:'10px', marginTop:'10px'}}>
                     <img src={order.customer.avatar} alt="" style={{width:'36px', height:'36px', borderRadius:'50%'}} />
                     <div>
-                      <div style={{fontWeight:600}}>{order.customer.name}</div>
+                      <div style={{fontWeight:600}}>
+                        {order.customer.name}
+                        {order.customer.id && <span style={{fontSize:'11px', color:'#9CA3AF', marginLeft:'4px'}}>#{order.customer.id}</span>}
+                      </div>
                       <div style={{fontSize:'12px', color:'#64748B'}}>{order.customer.phone}</div>
                     </div>
                   </div>
@@ -144,73 +158,135 @@ const OrderDetailModal = ({ order, isOpen, onClose, styles }) => {
                 </div>
               </div>
 
-              {/* Ürün Tablosu */}
-              <table style={{width:'100%', borderCollapse:'collapse', marginTop:'20px'}}>
-                <thead style={{backgroundColor:'#F8FAFC'}}>
-                  <tr>
-                    <th style={{textAlign:'left', padding:'10px', fontSize:'12px', color:'#64748B'}}>ÜRÜN</th>
-                    <th style={{textAlign:'center', padding:'10px', fontSize:'12px', color:'#64748B'}}>ADET</th>
-                    <th style={{textAlign:'right', padding:'10px', fontSize:'12px', color:'#64748B'}}>TUTAR</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {order.products.map((p, i) => (
-                    <tr key={i} style={{borderBottom:'1px dashed #E2E8F0'}}>
-                      <td style={{padding:'12px', display:'flex', alignItems:'center', gap:'10px'}}>
-                        {p.image && <img src={p.image} style={{width:'40px', height:'40px', borderRadius:'4px', objectFit:'cover'}} alt="" />}
-                        <span style={{fontSize:'14px', fontWeight:500}}>{p.name}</span>
-                      </td>
-                      <td style={{padding:'12px', textAlign:'center'}}>{p.qty}</td>
-                      <td style={{padding:'12px', textAlign:'right', fontWeight:600}}>
-                        {new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(p.price)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-
-              {/* --- YENİLENMİŞ ÖZET ALANI --- */}
-              <div style={{display:'flex', justifyContent:'flex-end', marginTop:'30px'}}>
-                <div style={{
-                  width:'900px', 
-                  backgroundColor:'#fff', 
-                  border:'1px solid #E2E8F0', // Çerçeve ekledik
-                  borderRadius:'8px',
-                  padding:'20px',
-                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' // Hafif gölge
-                }}>
-                  
-                  {/* Ara Toplam */}
-                  <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'12px', fontSize:'14px', color:'#64748B'}}>
-                    <span>Ürün Toplamı</span>
-                    <span style={{fontWeight:500, color:'#1E293B'}}>
-                      {new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(order.amount)}
-                    </span>
+              {/* Ürün Listesi */}
+              <h4 style={{fontSize:'14px', fontWeight:700, marginTop:'30px', marginBottom:'16px'}}>
+                Ürünler ({order.products?.length || 0})
+              </h4>
+              <div style={{display:'flex', flexDirection:'column', gap:'16px'}}>
+                {order.products && order.products.map((product, idx) => (
+                  <div key={idx}>
+                    <div style={{
+                      display:'flex', 
+                      alignItems:'center', 
+                      gap:'12px', 
+                      padding:'16px',
+                      backgroundColor:'#fff',
+                      border:'1px solid #E2E8F0',
+                      borderRadius:'8px'
+                    }}>
+                      {product.image && (
+                        <a 
+                          href={`/product/${product.slug || product.id}`} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          style={{flexShrink: 0}}
+                        >
+                          <img 
+                            src={product.image.startsWith('http') ? product.image : `http://127.0.0.1:8000${product.image}`}
+                            style={{width:'60px', height:'60px', borderRadius:'8px', objectFit:'cover', cursor:'pointer'}} 
+                            alt={product.name}
+                          />
+                        </a>
+                      )}
+                      <div style={{flex:1}}>
+                        <a 
+                          href={`/product/${product.slug || product.id}`} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          style={{textDecoration:'none', color:'inherit'}}
+                        >
+                          <div style={{fontSize:'14px', fontWeight:600, color:'#111827', cursor:'pointer', ':hover':{color:'#059669'}}}>
+                            {product.name}
+                          </div>
+                        </a>
+                        {product.variant && (
+                          <div style={{fontSize:'12px', color:'#6B7280', marginTop:'4px'}}>{product.variant}</div>
+                        )}
+                      </div>
+                      <div style={{textAlign:'right'}}>
+                        <div style={{fontSize:'13px', color:'#6B7280'}}>{product.qty} x ₺{product.price}</div>
+                        <div style={{fontSize:'15px', fontWeight:600, color:'#111827', marginTop:'4px'}}>
+                          {new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(product.price * product.qty)}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Finansal Detaylar */}
+                    {product.financials && (
+                      <div style={{
+                        marginTop: '12px',
+                        marginLeft: '72px',
+                        padding: '16px',
+                        backgroundColor: '#F9FAFB',
+                        borderRadius: '8px',
+                        fontSize: '13px'
+                      }}>
+                        <div style={{fontWeight: '600', color: '#111827', marginBottom: '12px'}}>💰 Fatura Detayları</div>
+                        
+                        <div style={{display: 'flex', flexDirection: 'column', gap: '8px'}}>
+                          <div style={{display: 'flex', justifyContent: 'space-between', color: '#4B5563'}}>
+                            <span>Ürün Fiyatı (KDV Hariç):</span>
+                            <span style={{fontWeight: '500'}}>₺{product.financials.price_without_tax}</span>
+                          </div>
+                          <div style={{display: 'flex', justifyContent: 'space-between', color: '#059669'}}>
+                            <span>KDV (%{product.financials.tax_rate}):</span>
+                            <span style={{fontWeight: '500'}}>+₺{product.financials.tax_amount}</span>
+                          </div>
+                          <div style={{
+                            display: 'flex', 
+                            justifyContent: 'space-between', 
+                            paddingTop: '8px',
+                            borderTop: '1px dashed #E5E7EB',
+                            fontWeight: '600',
+                            color: '#111827'
+                          }}>
+                            <span>Müşteri Ödemesi:</span>
+                            <span>₺{product.financials.price_with_tax}</span>
+                          </div>
+                          
+                          <div style={{height: '8px'}}></div>
+                          
+                          <div style={{display: 'flex', justifyContent: 'space-between', color: '#DC2626'}}>
+                            <span>Platform Komisyonu (%{product.financials.commission_rate}):</span>
+                            <span style={{fontWeight: '500'}}>-₺{product.financials.commission_amount}</span>
+                          </div>
+                          <div style={{
+                            display: 'flex', 
+                            justifyContent: 'space-between', 
+                            paddingTop: '8px',
+                            borderTop: '1px dashed #E5E7EB',
+                            fontWeight: '700',
+                            fontSize: '14px',
+                            color: '#059669'
+                          }}>
+                            <span>🏢 Satıcı Hak Ediş:</span>
+                            <span>₺{product.financials.vendor_earning}</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
+                ))}
+              </div>
 
-                  {/* Komisyon */}
-                  <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'16px', fontSize:'14px', color:'#64748B'}}>
-                    <span>Platform Komisyonu (%10)</span>
-                    <span style={{fontWeight:500, color:'#166534'}}>
-                      + {new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(order.commission)}
-                    </span>
-                  </div>
-
-                  {/* Çizgi */}
-                  <div style={{height:'1px', backgroundColor:'#E2E8F0', marginBottom:'16px'}}></div>
-
-                  {/* Genel Toplam */}
-                  <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
-                    <span style={{fontSize:'16px', fontWeight:700, color:'#0F172A'}}>GENEL TOPLAM</span>
-                    <span style={{fontSize:'20px', fontWeight:800, color:'#0F172A'}}>
-                      {new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(order.amount)}
-                    </span>
-                  </div>
-                  
-                  <div style={{fontSize:'11px', color:'#94A3B8', marginTop:'8px', textAlign:'right'}}>
-                    KDV Dahildir
-                  </div>
-
+              {/* Toplam Özeti */}
+              <div style={{marginTop:'30px', padding:'20px', backgroundColor:'#F8FAFC', borderRadius:'8px'}}>
+                <div style={{display:'flex', justifyContent:'space-between', marginBottom:'10px', fontSize:'14px', color:'#64748B'}}>
+                  <span>Ara Toplam</span>
+                  <span style={{fontWeight:500, color:'#1E293B'}}>
+                    {new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(order.amount)}
+                  </span>
+                </div>
+                <div style={{display:'flex', justifyContent:'space-between', marginBottom:'16px', fontSize:'14px', color:'#64748B'}}>
+                  <span>Kargo</span>
+                  <span style={{fontWeight:500, color:'#1E293B'}}>₺0,00</span>
+                </div>
+                <div style={{height:'1px', backgroundColor:'#E2E8F0', marginBottom:'16px'}}></div>
+                <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+                  <span style={{fontSize:'16px', fontWeight:700, color:'#0F172A'}}>Genel Toplam</span>
+                  <span style={{fontSize:'20px', fontWeight:800, color:'#0F172A'}}>
+                    {new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(order.amount)}
+                  </span>
                 </div>
               </div>
 

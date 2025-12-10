@@ -1,0 +1,140 @@
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useToast } from '../../../components/common/Toast';
+import axios from 'axios';
+
+const BACKEND_URL = 'http://127.0.0.1:8000';
+
+export const useAdminOrders = () => {
+  const queryClient = useQueryClient();
+  const { showSuccess, showError } = useToast();
+  
+  // Filters
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [minAmount, setMinAmount] = useState('');
+  const [maxAmount, setMaxAmount] = useState('');
+
+  // Build query params
+  const buildQueryParams = () => {
+    const params = new URLSearchParams();
+    if (searchTerm) params.append('search', searchTerm);
+    if (statusFilter !== 'all') params.append('status', statusFilter);
+    if (minAmount) params.append('min_amount', minAmount);
+    if (maxAmount) params.append('max_amount', maxAmount);
+    return params.toString();
+  };
+
+  // Fetch orders
+  const { 
+    data: ordersData = { orders: [], total: 0 }, 
+    isLoading: isLoadingOrders,
+    error: ordersError
+  } = useQuery({
+    queryKey: ['adminOrders', searchTerm, statusFilter, minAmount, maxAmount],
+    queryFn: async () => {
+      const token = localStorage.getItem('admin_token');
+      const queryString = buildQueryParams();
+      const response = await axios.get(
+        `${BACKEND_URL}/api/v1/admin/orders${queryString ? '?' + queryString : ''}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      return response.data.data;
+    }
+  });
+
+  // Fetch stats
+  const { 
+    data: statsData = { stats: [] },
+    isLoading: isLoadingStats
+  } = useQuery({
+    queryKey: ['adminOrderStats'],
+    queryFn: async () => {
+      const token = localStorage.getItem('admin_token');
+      const response = await axios.get(`${BACKEND_URL}/api/v1/admin/orders/stats`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      return response.data.data;
+    }
+  });
+
+  // Update status mutation
+  const updateStatusMutation = useMutation({
+    mutationFn: async ({ orderId, status }) => {
+      const token = localStorage.getItem('admin_token');
+      const response = await axios.put(
+        `${BACKEND_URL}/api/v1/admin/orders/${orderId}/status`,
+        { status },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminOrders'] });
+      queryClient.invalidateQueries({ queryKey: ['adminOrderStats'] });
+      showSuccess('Sipariş durumu güncellendi');
+    },
+    onError: (error) => {
+      showError(error.response?.data?.message || 'Durum güncellenemedi');
+    }
+  });
+
+  // Cancel order mutation
+  const cancelOrderMutation = useMutation({
+    mutationFn: async (orderId) => {
+      const token = localStorage.getItem('admin_token');
+      const response = await axios.post(
+        `${BACKEND_URL}/api/v1/admin/orders/${orderId}/cancel`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminOrders'] });
+      queryClient.invalidateQueries({ queryKey: ['adminOrderStats'] });
+      showSuccess('Sipariş iptal edildi');
+    },
+    onError: (error) => {
+      showError(error.response?.data?.message || 'Sipariş iptal edilemedi');
+    }
+  });
+
+  // Helper functions
+  const updateOrderStatus = (orderId, newStatus) => {
+    updateStatusMutation.mutate({ orderId, status: newStatus });
+  };
+
+  const cancelOrder = (orderId) => {
+    if (window.confirm('Bu siparişi iptal etmek istediğinize emin misiniz?')) {
+      cancelOrderMutation.mutate(orderId);
+    }
+  };
+
+  return {
+    // Data
+    orders: ordersData.orders || [],
+    stats: statsData.stats || [],
+    
+    // Loading states
+    isLoadingOrders,
+    isLoadingStats,
+    
+    // Filters
+    searchTerm,
+    setSearchTerm,
+    statusFilter,
+    setStatusFilter,
+    minAmount,
+    setMinAmount,
+    maxAmount,
+    setMaxAmount,
+    
+    // Actions
+    updateOrderStatus,
+    cancelOrder,
+    
+    // Error
+    error: ordersError
+  };
+};
