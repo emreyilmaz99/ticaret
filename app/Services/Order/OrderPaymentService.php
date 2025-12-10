@@ -173,7 +173,7 @@ class OrderPaymentService extends BaseService
     {
         $order->statusHistory()->create([
             'old_status' => Order::STATUS_PENDING,
-            'new_status' => Order::STATUS_PAID,
+            'new_status' => Order::STATUS_CONFIRMED,
             'note' => 'Ödeme başarılı - Payment ID: ' . $data['payment_id'],
             'changed_by_type' => 'system',
             'changed_by_id' => null,
