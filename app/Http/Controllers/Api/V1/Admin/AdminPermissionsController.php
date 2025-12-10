@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\Http\Controllers\Api\V1\Admin\BaseAdminController;
 use App\Http\Requests\Api\V1\Admin\UpdateAdminPermissionsRequest;
-use App\Services\AdminService;
+use App\Services\Admin\AdminService;
 use Illuminate\Http\Request;
 
 class AdminPermissionsController extends BaseAdminController

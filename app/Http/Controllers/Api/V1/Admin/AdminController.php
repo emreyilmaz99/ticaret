@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\Http\Controllers\Api\V1\Admin\BaseAdminController;
 use App\Http\Resources\Api\V1\Admin\AdminResource;
-use App\Services\AdminService;
+use App\Services\Admin\AdminService;
 use Illuminate\Http\Request;
 
 class AdminController extends BaseAdminController

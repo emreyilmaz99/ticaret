@@ -108,5 +108,19 @@ class OrderController extends BaseAdminController
             'data' => ['notes' => $notes]
         ]);
     }
+
+    /**
+     * Get user's other orders
+     */
+    public function getUserOrders(int $orderId)
+    {
+        $order = \App\Models\Order::findOrFail($orderId);
+        $orders = $this->service->getUserOrders($order->user_id, $orderId);
+
+        return response()->json([
+            'success' => true,
+            'data' => ['orders' => $orders]
+        ]);
+    }
 }
 

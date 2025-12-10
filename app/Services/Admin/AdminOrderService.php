@@ -380,5 +380,31 @@ class AdminOrderService extends BaseService
                 ];
             })->toArray();
     }
+
+    /**
+     * Get user's other orders
+     */
+    public function getUserOrders(int $userId, int $excludeOrderId = null)
+    {
+        $query = Order::where('user_id', $userId)
+            ->select('id', 'order_number', 'status', 'payment_status', 'total', 'created_at')
+            ->orderBy('created_at', 'desc');
+
+        if ($excludeOrderId) {
+            $query->where('id', '!=', $excludeOrderId);
+        }
+
+        return $query->limit(10)->get()->map(function ($order) {
+            return [
+                'id' => $order->id,
+                'order_number' => $order->order_number,
+                'status' => $order->status,
+                'payment_status' => $order->payment_status,
+                'total' => (float) $order->total,
+                'created_at' => $order->created_at->format('d.m.Y H:i'),
+            ];
+        })->toArray();
+    }
 }
+
 

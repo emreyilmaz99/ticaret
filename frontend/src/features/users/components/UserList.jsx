@@ -31,6 +31,9 @@ const UserList = () => {
   const [modalMode, setModalMode] = useState(null); // 'view' | 'edit'
   const [editForm, setEditForm] = useState({});
   const [confirmDelete, setConfirmDelete] = useState(null);
+  const [activeTab, setActiveTab] = useState('details'); // 'details' | 'orders'
+  const [userOrders, setUserOrders] = useState([]);
+  const [loadingOrders, setLoadingOrders] = useState(false);
 
   // Debounce search
   useEffect(() => {
@@ -120,6 +123,7 @@ const UserList = () => {
   const openViewModal = (user) => {
     setSelectedUser(user);
     setModalMode('view');
+    setActiveTab('details');
   };
 
   const openEditModal = () => {
@@ -140,7 +144,35 @@ const UserList = () => {
     setSelectedUser(null);
     setModalMode(null);
     setEditForm({});
+    setActiveTab('details');
+    setUserOrders([]);
   };
+
+  // Kullanıcı siparişlerini yükle
+  const loadUserOrders = async (userId) => {
+    setLoadingOrders(true);
+    try {
+      const token = localStorage.getItem('admin_token');
+      const response = await fetch(`http://127.0.0.1:8000/api/v1/admin/users/${userId}/orders`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await response.json();
+      if (data.success) {
+        setUserOrders(data.data.orders || []);
+      }
+    } catch (error) {
+      console.error('Siparişler yüklenirken hata:', error);
+    } finally {
+      setLoadingOrders(false);
+    }
+  };
+
+  // Siparişler sekmesine geçildiğinde yükle
+  useEffect(() => {
+    if (activeTab === 'orders' && selectedUser?.id && userOrders.length === 0) {
+      loadUserOrders(selectedUser.id);
+    }
+  }, [activeTab, selectedUser?.id]);
 
   const handleEditSubmit = (e) => {
     e.preventDefault();
@@ -648,90 +680,221 @@ const UserList = () => {
               </button>
             </div>
 
+            {/* Tabs */}
+            {modalMode === 'view' && (
+              <div style={{ display: 'flex', borderBottom: '2px solid #f1f5f9', padding: '0 24px' }}>
+                <button
+                  onClick={() => setActiveTab('details')}
+                  style={{
+                    padding: '12px 20px',
+                    border: 'none',
+                    background: 'none',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontWeight: activeTab === 'details' ? '600' : '400',
+                    color: activeTab === 'details' ? '#3b82f6' : '#64748b',
+                    borderBottom: activeTab === 'details' ? '2px solid #3b82f6' : 'none',
+                    marginBottom: '-2px'
+                  }}
+                >
+                  Detaylar
+                </button>
+                <button
+                  onClick={() => setActiveTab('orders')}
+                  style={{
+                    padding: '12px 20px',
+                    border: 'none',
+                    background: 'none',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontWeight: activeTab === 'orders' ? '600' : '400',
+                    color: activeTab === 'orders' ? '#3b82f6' : '#64748b',
+                    borderBottom: activeTab === 'orders' ? '2px solid #3b82f6' : 'none',
+                    marginBottom: '-2px'
+                  }}
+                >
+                  Siparişler {userOrders.length > 0 && `(${userOrders.length})`}
+                </button>
+              </div>
+            )}
+
             <div style={styles.modalBody}>
               {userDetailLoading ? (
                 <div style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>Yükleniyor...</div>
               ) : modalMode === 'view' && userDetail ? (
                 <>
-                  {/* User Header */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '24px', paddingBottom: '24px', borderBottom: '1px solid #e2e8f0' }}>
-                    <div style={{ ...styles.avatar, width: '64px', height: '64px', fontSize: '24px' }}>
-                      {userDetail.avatar ? (
-                        <img src={userDetail.avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      ) : (
-                        <FaUser />
-                      )}
-                    </div>
-                    <div>
-                      <h3 style={{ fontSize: '20px', fontWeight: '700', color: '#0f172a', margin: 0 }}>{userDetail.name}</h3>
-                      <p style={{ color: '#64748b', margin: '4px 0 0' }}>ID: #{userDetail.id}</p>
-                    </div>
-                    <div style={{ marginLeft: 'auto' }}>
-                      <span style={styles.badge(userDetail.is_active ? 'green' : 'red')}>
-                        {userDetail.is_active ? 'Aktif' : 'Pasif'}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Info Grid */}
-                  <div style={styles.infoGrid}>
-                    <div style={styles.infoItem}>
-                      <span style={styles.infoLabel}><FaEnvelope size={12} /> Email</span>
-                      <span style={styles.infoValue}>{userDetail.email}</span>
-                    </div>
-                    <div style={styles.infoItem}>
-                      <span style={styles.infoLabel}><FaPhone size={12} /> Telefon</span>
-                      <span style={styles.infoValue}>{userDetail.phone || '-'}</span>
-                    </div>
-                    <div style={styles.infoItem}>
-                      <span style={styles.infoLabel}><FaVenusMars size={12} /> Cinsiyet</span>
-                      <span style={styles.infoValue}>{getGenderText(userDetail.gender)}</span>
-                    </div>
-                    <div style={styles.infoItem}>
-                      <span style={styles.infoLabel}><FaCalendarAlt size={12} /> Doğum Tarihi</span>
-                      <span style={styles.infoValue}>{formatDate(userDetail.birth_date)}</span>
-                    </div>
-                    <div style={styles.infoItem}>
-                      <span style={styles.infoLabel}><FaCheckCircle size={12} /> Email Doğrulama</span>
-                      <span style={styles.infoValue}>
-                        {userDetail.email_verified_at ? (
-                          <span style={{ color: '#059669' }}>Doğrulanmış ({formatDateTime(userDetail.email_verified_at)})</span>
-                        ) : (
-                          <span style={{ color: '#f59e0b' }}>Doğrulanmamış</span>
-                        )}
-                      </span>
-                    </div>
-                    <div style={styles.infoItem}>
-                      <span style={styles.infoLabel}><FaCalendarAlt size={12} /> Son Giriş</span>
-                      <span style={styles.infoValue}>{formatDateTime(userDetail.last_login_at)}</span>
-                    </div>
-                    <div style={styles.infoItem}>
-                      <span style={styles.infoLabel}><FaMapMarkerAlt size={12} /> Adres Sayısı</span>
-                      <span style={styles.infoValue}>{userDetail.addresses_count ?? userDetail.addresses?.length ?? 0} adet</span>
-                    </div>
-                    <div style={styles.infoItem}>
-                      <span style={styles.infoLabel}><FaCalendarAlt size={12} /> Kayıt Tarihi</span>
-                      <span style={styles.infoValue}>{formatDateTime(userDetail.created_at)}</span>
-                    </div>
-                  </div>
-
-                  {/* Addresses */}
-                  {userDetail.addresses && userDetail.addresses.length > 0 && (
-                    <div style={{ marginTop: '24px', paddingTop: '24px', borderTop: '1px solid #e2e8f0' }}>
-                      <h4 style={{ fontSize: '14px', fontWeight: '600', color: '#0f172a', marginBottom: '12px' }}>Kayıtlı Adresler</h4>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                        {userDetail.addresses.map((addr, idx) => (
-                          <div key={idx} style={{ padding: '12px', backgroundColor: '#f8fafc', borderRadius: '8px', fontSize: '14px' }}>
-                            <div style={{ fontWeight: '600', marginBottom: '4px' }}>
-                              {addr.title || `Adres ${idx + 1}`}
-                              {addr.is_default && <span style={{ marginLeft: '8px', fontSize: '11px', color: '#059669' }}>(Varsayılan)</span>}
-                            </div>
-                            <div style={{ color: '#64748b' }}>
-                              {addr.address_line}, {addr.district}/{addr.city}
-                            </div>
-                          </div>
-                        ))}
+                  {/* Detaylar Tab */}
+                  {activeTab === 'details' && (
+                    <>
+                      {/* User Header */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '24px', paddingBottom: '24px', borderBottom: '1px solid #e2e8f0' }}>
+                        <div style={{ ...styles.avatar, width: '64px', height: '64px', fontSize: '24px' }}>
+                          {userDetail.avatar ? (
+                            <img src={userDetail.avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          ) : (
+                            <FaUser />
+                          )}
+                        </div>
+                        <div>
+                          <h3 style={{ fontSize: '20px', fontWeight: '700', color: '#0f172a', margin: 0 }}>{userDetail.name}</h3>
+                          <p style={{ color: '#64748b', margin: '4px 0 0' }}>ID: #{userDetail.id}</p>
+                        </div>
+                        <div style={{ marginLeft: 'auto' }}>
+                          <span style={styles.badge(userDetail.is_active ? 'green' : 'red')}>
+                            {userDetail.is_active ? 'Aktif' : 'Pasif'}
+                          </span>
+                        </div>
                       </div>
+
+                      {/* Info Grid */}
+                      <div style={styles.infoGrid}>
+                        <div style={styles.infoItem}>
+                          <span style={styles.infoLabel}><FaEnvelope size={12} /> Email</span>
+                          <span style={styles.infoValue}>{userDetail.email}</span>
+                        </div>
+                        <div style={styles.infoItem}>
+                          <span style={styles.infoLabel}><FaPhone size={12} /> Telefon</span>
+                          <span style={styles.infoValue}>{userDetail.phone || '-'}</span>
+                        </div>
+                        <div style={styles.infoItem}>
+                          <span style={styles.infoLabel}><FaVenusMars size={12} /> Cinsiyet</span>
+                          <span style={styles.infoValue}>{getGenderText(userDetail.gender)}</span>
+                        </div>
+                        <div style={styles.infoItem}>
+                          <span style={styles.infoLabel}><FaCalendarAlt size={12} /> Doğum Tarihi</span>
+                          <span style={styles.infoValue}>{formatDate(userDetail.birth_date)}</span>
+                        </div>
+                        <div style={styles.infoItem}>
+                          <span style={styles.infoLabel}><FaCheckCircle size={12} /> Email Doğrulama</span>
+                          <span style={styles.infoValue}>
+                            {userDetail.email_verified_at ? (
+                              <span style={{ color: '#059669' }}>Doğrulanmış ({formatDateTime(userDetail.email_verified_at)})</span>
+                            ) : (
+                              <span style={{ color: '#f59e0b' }}>Doğrulanmamış</span>
+                            )}
+                          </span>
+                        </div>
+                        <div style={styles.infoItem}>
+                          <span style={styles.infoLabel}><FaCalendarAlt size={12} /> Son Giriş</span>
+                          <span style={styles.infoValue}>{formatDateTime(userDetail.last_login_at)}</span>
+                        </div>
+                        <div style={styles.infoItem}>
+                          <span style={styles.infoLabel}><FaMapMarkerAlt size={12} /> Adres Sayısı</span>
+                          <span style={styles.infoValue}>{userDetail.addresses_count ?? userDetail.addresses?.length ?? 0} adet</span>
+                        </div>
+                        <div style={styles.infoItem}>
+                          <span style={styles.infoLabel}><FaCalendarAlt size={12} /> Kayıt Tarihi</span>
+                          <span style={styles.infoValue}>{formatDateTime(userDetail.created_at)}</span>
+                        </div>
+                      </div>
+
+                      {/* Addresses */}
+                      {userDetail.addresses && userDetail.addresses.length > 0 && (
+                        <div style={{ marginTop: '24px', paddingTop: '24px', borderTop: '1px solid #e2e8f0' }}>
+                          <h4 style={{ fontSize: '14px', fontWeight: '600', color: '#0f172a', marginBottom: '12px' }}>Kayıtlı Adresler</h4>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                            {userDetail.addresses.map((addr, idx) => (
+                              <div key={idx} style={{ padding: '12px', backgroundColor: '#f8fafc', borderRadius: '8px', fontSize: '14px' }}>
+                                <div style={{ fontWeight: '600', marginBottom: '4px' }}>
+                                  {addr.title || `Adres ${idx + 1}`}
+                                  {addr.is_default && <span style={{ marginLeft: '8px', fontSize: '11px', color: '#059669' }}>(Varsayılan)</span>}
+                                </div>
+                                <div style={{ color: '#64748b' }}>
+                                  {addr.address_line}, {addr.district}/{addr.city}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  )}
+
+                  {/* Siparişler Tab */}
+                  {activeTab === 'orders' && (
+                    <div>
+                      {loadingOrders ? (
+                        <div style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>
+                          Siparişler yükleniyor...
+                        </div>
+                      ) : userOrders.length === 0 ? (
+                        <div style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>
+                          Bu kullanıcının henüz siparişi bulunmuyor.
+                        </div>
+                      ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                          {userOrders.map((order) => (
+                            <div
+                              key={order.id}
+                              style={{
+                                padding: '16px',
+                                backgroundColor: '#f8fafc',
+                                border: '1px solid #e2e8f0',
+                                borderRadius: '8px',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.borderColor = '#3b82f6';
+                                e.currentTarget.style.backgroundColor = '#eff6ff';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.borderColor = '#e2e8f0';
+                                e.currentTarget.style.backgroundColor = '#f8fafc';
+                              }}
+                              onClick={() => window.location.href = `/admin/orders?id=${order.id}`}
+                            >
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '8px' }}>
+                                <div>
+                                  <div style={{ fontSize: '14px', fontWeight: '600', color: '#0f172a' }}>
+                                    Sipariş #{order.order_number}
+                                  </div>
+                                  <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>
+                                    {new Date(order.created_at).toLocaleDateString('tr-TR', { 
+                                      year: 'numeric', 
+                                      month: 'long', 
+                                      day: 'numeric',
+                                      hour: '2-digit',
+                                      minute: '2-digit'
+                                    })}
+                                  </div>
+                                </div>
+                                <div style={{ textAlign: 'right' }}>
+                                  <span style={{
+                                    ...styles.badge(
+                                      order.status === 'delivered' ? 'green' :
+                                      order.status === 'cancelled' ? 'red' :
+                                      order.status === 'pending' ? 'yellow' : 'blue'
+                                    ),
+                                    marginBottom: '4px',
+                                    display: 'inline-block'
+                                  }}>
+                                    {order.status === 'pending' ? 'Beklemede' :
+                                     order.status === 'processing' ? 'İşleniyor' :
+                                     order.status === 'shipped' ? 'Kargoda' :
+                                     order.status === 'delivered' ? 'Teslim Edildi' :
+                                     order.status === 'cancelled' ? 'İptal Edildi' : order.status}
+                                  </span>
+                                  <div style={{ fontSize: '16px', fontWeight: '700', color: '#0f172a', marginTop: '4px' }}>
+                                    ₺{parseFloat(order.total).toFixed(2)}
+                                  </div>
+                                </div>
+                              </div>
+                              <div style={{ 
+                                fontSize: '12px', 
+                                color: order.payment_status === 'paid' ? '#059669' : 
+                                       order.payment_status === 'pending' ? '#f59e0b' : '#dc2626',
+                                fontWeight: '500'
+                              }}>
+                                Ödeme: {order.payment_status === 'paid' ? 'Ödendi' :
+                                        order.payment_status === 'pending' ? 'Beklemede' :
+                                        order.payment_status === 'failed' ? 'Başarısız' : 
+                                        order.payment_status === 'refunded' ? 'İade Edildi' : order.payment_status}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   )}
                 </>

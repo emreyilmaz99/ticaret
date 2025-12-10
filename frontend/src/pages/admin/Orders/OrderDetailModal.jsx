@@ -23,6 +23,8 @@ const OrderDetailModal = ({ order, isOpen, onClose, styles, onCancel }) => {
   const [cancelReason, setCancelReason] = useState('');
   const [orderNotes, setOrderNotes] = useState([]);
   const [loadingNotes, setLoadingNotes] = useState(false);
+  const [userOrders, setUserOrders] = useState([]);
+  const [loadingUserOrders, setLoadingUserOrders] = useState(false);
 
   // --- İŞLEVLER ---
 
@@ -49,8 +51,28 @@ const OrderDetailModal = ({ order, isOpen, onClose, styles, onCancel }) => {
   useEffect(() => {
     if (isOpen && order?.order_id) {
       loadNotes();
+      loadUserOrders();
     }
   }, [isOpen, order?.order_id]);
+
+  // Kullanıcının diğer siparişlerini yükle
+  const loadUserOrders = async () => {
+    setLoadingUserOrders(true);
+    try {
+      const token = localStorage.getItem('admin_token');
+      const response = await axios.get(
+        `${BACKEND_URL}/api/v1/admin/orders/${order.order_id}/user-orders`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (response.data.success) {
+        setUserOrders(response.data.data.orders || []);
+      }
+    } catch (error) {
+      console.error('Kullanıcı siparişleri yüklenirken hata:', error);
+    } finally {
+      setLoadingUserOrders(false);
+    }
+  };
 
   // 1. Zorla İptal Et (Admin Yetkisi)
   const handleForceCancel = () => {
@@ -174,6 +196,12 @@ const OrderDetailModal = ({ order, isOpen, onClose, styles, onCancel }) => {
             onClick={() => setActiveTab('notes')}
           >
             Sipariş Notları {orderNotes.length > 0 && `(${orderNotes.length})`}
+          </button>
+          <button 
+            style={styles.tabBtn(activeTab === 'user-orders')} 
+            onClick={() => setActiveTab('user-orders')}
+          >
+            Kullanıcı Siparişleri {userOrders.length > 0 && `(${userOrders.length})`}
           </button>
         </div>
 
@@ -625,6 +653,118 @@ const OrderDetailModal = ({ order, isOpen, onClose, styles, onCancel }) => {
                       </div>
                     </div>
                   ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* TAB 4: KULLANICI SİPARİŞLERİ */}
+          {activeTab === 'user-orders' && (
+            <div>
+              <h3 style={{fontSize:'16px', fontWeight:700, marginBottom:'20px', display:'flex', alignItems:'center', gap:'8px'}}>
+                <FaUser color="#3B82F6" /> {order.customer?.name || 'Kullanıcı'}'nın Diğer Siparişleri ({userOrders.length})
+              </h3>
+
+              {loadingUserOrders ? (
+                <div style={{padding:'40px', textAlign:'center', color:'#9CA3AF'}}>
+                  Siparişler yükleniyor...
+                </div>
+              ) : userOrders.length === 0 ? (
+                <div style={{
+                  padding:'40px',
+                  textAlign:'center',
+                  backgroundColor:'#F9FAFB',
+                  borderRadius:'12px',
+                  border:'2px dashed #E5E7EB'
+                }}>
+                  <FaUser size={48} color="#D1D5DB" style={{marginBottom:'16px'}} />
+                  <p style={{color:'#6B7280', fontSize:'14px', margin:0}}>
+                    Başka sipariş bulunamadı
+                  </p>
+                </div>
+              ) : (
+                <div style={{
+                  display:'flex',
+                  flexDirection:'column',
+                  gap:'12px'
+                }}>
+                  {userOrders.map((userOrder) => {
+                    const getStatusColor = (status) => {
+                      switch(status) {
+                        case 'delivered': return '#059669';
+                        case 'cancelled': return '#DC2626';
+                        case 'pending': return '#F59E0B';
+                        case 'processing': return '#3B82F6';
+                        default: return '#64748B';
+                      }
+                    };
+
+                    const getStatusText = (status) => {
+                      switch(status) {
+                        case 'pending': return 'Beklemede';
+                        case 'confirmed': return 'Onaylandı';
+                        case 'processing': return 'Hazırlanıyor';
+                        case 'shipped': return 'Kargoda';
+                        case 'delivered': return 'Teslim Edildi';
+                        case 'cancelled': return 'İptal';
+                        default: return status;
+                      }
+                    };
+
+                    return (
+                      <div key={userOrder.id} style={{
+                        padding:'16px',
+                        backgroundColor:'white',
+                        border:'1px solid #E5E7EB',
+                        borderRadius:'12px',
+                        display:'flex',
+                        justifyContent:'space-between',
+                        alignItems:'center',
+                        transition:'all 0.2s',
+                        cursor:'pointer'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.borderColor = '#3B82F6';
+                        e.currentTarget.style.boxShadow = '0 4px 6px rgba(59, 130, 246, 0.1)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.borderColor = '#E5E7EB';
+                        e.currentTarget.style.boxShadow = 'none';
+                      }}
+                      >
+                        <div style={{flex:1}}>
+                          <div style={{display:'flex', alignItems:'center', gap:'12px', marginBottom:'8px'}}>
+                            <span style={{
+                              fontSize:'14px',
+                              fontWeight:700,
+                              color:'#0F172A',
+                              fontFamily:'monospace'
+                            }}>
+                              #{userOrder.order_number}
+                            </span>
+                            <span style={{
+                              fontSize:'11px',
+                              padding:'4px 8px',
+                              backgroundColor: getStatusColor(userOrder.status) + '20',
+                              color: getStatusColor(userOrder.status),
+                              borderRadius:'6px',
+                              fontWeight:600
+                            }}>
+                              {getStatusText(userOrder.status)}
+                            </span>
+                          </div>
+                          <div style={{fontSize:'12px', color:'#64748B'}}>
+                            ID: {userOrder.id} • {userOrder.created_at}
+                          </div>
+                        </div>
+                        <div style={{textAlign:'right'}}>
+                          <div style={{fontSize:'18px', fontWeight:700, color:'#0F172A'}}>
+                            {new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(userOrder.total)}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>

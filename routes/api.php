@@ -56,6 +56,7 @@ Route::prefix('v1/admin')->group(function () {
         Route::put('users/{user}', [UserController::class, 'update']);
         Route::put('users/{user}/toggle-status', [UserController::class, 'toggleStatus']);
         Route::delete('users/{user}', [UserController::class, 'destroy']);
+        Route::get('users/{user}/orders', [UserController::class, 'getUserOrders']);
         // vendors CRUD (admin)
         Route::get('vendors', [AdminVendorController::class, 'index']);
         Route::post('vendors', [AdminVendorController::class, 'store']);
@@ -140,6 +141,7 @@ Route::prefix('v1/admin')->group(function () {
         Route::post('orders/{orderId}/cancel', [\App\Http\Controllers\Api\V1\Admin\OrderController::class, 'cancel']);
         Route::post('orders/{orderId}/notes', [\App\Http\Controllers\Api\V1\Admin\OrderController::class, 'addNote']);
         Route::get('orders/{orderId}/notes', [\App\Http\Controllers\Api\V1\Admin\OrderController::class, 'getNotes']);
+        Route::get('orders/{orderId}/user-orders', [\App\Http\Controllers\Api\V1\Admin\OrderController::class, 'getUserOrders']);
     });
 });
 

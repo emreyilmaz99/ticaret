@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\Http\Controllers\Api\V1\Admin\BaseAdminController;
 use App\Http\Resources\Api\V1\Admin\UserResource;
-use App\Services\UserService;
+use App\Services\User\UserService;
 use Illuminate\Http\Request;
 
 class UserController extends BaseAdminController
@@ -95,4 +95,31 @@ class UserController extends BaseAdminController
             $updatedUser->is_active ? 'Kullanıcı aktif edildi' : 'Kullanıcı pasife alındı'
         );
     }
+
+    public function getUserOrders(int $id)
+    {
+        $user = $this->service->find($id);
+        if (! $user) {
+            return $this->error('User not found', 404);
+        }
+
+        $orders = \App\Models\Order::where('user_id', $id)
+            ->select('id', 'order_number', 'status', 'payment_status', 'total', 'created_at')
+            ->orderBy('created_at', 'desc')
+            ->limit(20)
+            ->get()
+            ->map(function ($order) {
+                return [
+                    'id' => $order->id,
+                    'order_number' => $order->order_number,
+                    'status' => $order->status,
+                    'payment_status' => $order->payment_status,
+                    'total' => (float) $order->total,
+                    'created_at' => $order->created_at->format('d.m.Y H:i'),
+                ];
+            });
+
+        return $this->success(['orders' => $orders]);
+    }
 }
+
