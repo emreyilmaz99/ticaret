@@ -262,6 +262,37 @@ const OrderDetailModal = ({ order, isOpen, onClose, styles, onCancel }) => {
                 </div>
               </div>
 
+              {/* Kupon Bilgisi */}
+              {order.coupon_discount > 0 && (
+                <div style={{
+                  marginTop: '24px',
+                  padding: '16px',
+                  backgroundColor: '#FEF3C7',
+                  border: '1px solid #FDE68A',
+                  borderRadius: '8px',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
+                }}>
+                  <div>
+                    <div style={{ fontSize: '14px', fontWeight: '600', color: '#92400E', marginBottom: '4px' }}>
+                      🎟️ Kupon Uygulandı
+                    </div>
+                    <div style={{ fontSize: '13px', color: '#78350F' }}>
+                      Kod: <strong>{order.coupon_code}</strong>
+                      {order.coupon && order.coupon.min_order_amount > 0 && (
+                        <span style={{ marginLeft: '12px', fontSize: '12px' }}>
+                          (Min. Sipariş: ₺{order.coupon.min_order_amount})
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div style={{ fontSize: '18px', fontWeight: '700', color: '#059669' }}>
+                    -₺{parseFloat(order.coupon_discount).toFixed(2)}
+                  </div>
+                </div>
+              )}
+
               {/* Ürün Listesi */}
               <h4 style={{fontSize:'14px', fontWeight:700, marginTop:'30px', marginBottom:'16px'}}>
                 Ürünler ({order.products?.length || 0})
@@ -378,9 +409,17 @@ const OrderDetailModal = ({ order, isOpen, onClose, styles, onCancel }) => {
                 <div style={{display:'flex', justifyContent:'space-between', marginBottom:'10px', fontSize:'14px', color:'#64748B'}}>
                   <span>Ara Toplam</span>
                   <span style={{fontWeight:500, color:'#1E293B'}}>
-                    {new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(order.amount)}
+                    {new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(order.subtotal || order.amount)}
                   </span>
                 </div>
+                
+                {order.coupon_discount > 0 && (
+                  <div style={{display:'flex', justifyContent:'space-between', marginBottom:'10px', fontSize:'14px', color:'#059669'}}>
+                    <span>İndirim ({order.coupon_code || 'Kupon'})</span>
+                    <span style={{fontWeight:500}}>-{new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(order.coupon_discount)}</span>
+                  </div>
+                )}
+                
                 <div style={{display:'flex', justifyContent:'space-between', marginBottom:'16px', fontSize:'14px', color:'#64748B'}}>
                   <span>Kargo</span>
                   <span style={{fontWeight:500, color:'#1E293B'}}>₺0,00</span>

@@ -3,7 +3,7 @@ import {
   FaSearch, FaUser, FaTrash, FaEye, FaFilter, FaTimes, 
   FaPhone, FaEnvelope, FaMapMarkerAlt, FaCalendarAlt, 
   FaVenusMars, FaCheckCircle, FaTimesCircle, FaSortAmountDown,
-  FaSortAmountUp, FaToggleOn, FaToggleOff, FaEdit
+  FaSortAmountUp, FaToggleOn, FaToggleOff, FaEdit, FaCopy
 } from 'react-icons/fa';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getUsers, getUser, deleteUser, toggleUserStatus, updateUser } from '../api/userApi';
@@ -846,8 +846,30 @@ const UserList = () => {
                             >
                               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '8px' }}>
                                 <div>
-                                  <div style={{ fontSize: '14px', fontWeight: '600', color: '#0f172a' }}>
+                                  <div style={{ fontSize: '14px', fontWeight: '600', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px' }}>
                                     Sipariş #{order.order_number}
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        navigator.clipboard.writeText(order.order_number);
+                                        toast.success('Sipariş ID kopyalandı!');
+                                      }}
+                                      style={{
+                                        background: 'transparent',
+                                        border: 'none',
+                                        cursor: 'pointer',
+                                        color: '#64748b',
+                                        padding: '4px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        transition: 'color 0.2s'
+                                      }}
+                                      onMouseEnter={(e) => e.currentTarget.style.color = '#3b82f6'}
+                                      onMouseLeave={(e) => e.currentTarget.style.color = '#64748b'}
+                                      title="Sipariş ID'sini kopyala"
+                                    >
+                                      <FaCopy size={14} />
+                                    </button>
                                   </div>
                                   <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>
                                     {new Date(order.created_at).toLocaleDateString('tr-TR', { 

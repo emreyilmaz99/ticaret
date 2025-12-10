@@ -91,16 +91,74 @@ const OrderDetailModal = ({
             </div>
           </div>
 
+          {/* Kupon Bilgisi */}
+          {order.coupon_discount > 0 && (
+            <div style={{
+              marginTop: '24px',
+              padding: '16px',
+              backgroundColor: '#FEF3C7',
+              border: '1px solid #FDE68A',
+              borderRadius: '8px',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center'
+            }}>
+              <div>
+                <div style={{ fontSize: '14px', fontWeight: '600', color: '#92400E', marginBottom: '4px' }}>
+                  🎟️ Kupon Uygulandı
+                </div>
+                <div style={{ fontSize: '13px', color: '#78350F' }}>
+                  Kod: <strong>{order.coupon_code}</strong>
+                  {order.coupon && order.coupon.min_order_amount > 0 && (
+                    <span style={{ marginLeft: '12px', fontSize: '12px' }}>
+                      (Min. Sipariş: ₺{order.coupon.min_order_amount})
+                    </span>
+                  )}
+                </div>
+              </div>
+              <div style={{ fontSize: '18px', fontWeight: '700', color: '#059669' }}>
+                -₺{parseFloat(order.coupon_discount).toFixed(2)}
+              </div>
+            </div>
+          )}
+
           {/* Ürünler */}
           <h4 style={styles.infoTitle}>Ürünler ({order.products?.length || 0})</h4>
           <div style={styles.productList}>
             {order.products && order.products.map((product) => (
               <div key={product.id}>
                 <div style={styles.productItem}>
-                  <img src={product.image} alt={product.name} style={styles.productImg} />
+                  <img 
+                    src={product.image?.startsWith('http') ? product.image : `http://127.0.0.1:8000${product.image}`} 
+                    alt={product.name} 
+                    style={{
+                      ...styles.productImg, 
+                      cursor: product.slug ? 'pointer' : 'default'
+                    }}
+                    onClick={() => {
+                      if (product.slug) {
+                        window.open(`http://localhost:5173/product/${product.slug}`, '_blank');
+                      }
+                    }}
+                  />
                   <div style={styles.productDetails}>
-                    <span style={styles.productName}>{product.name}</span>
-                    <span style={styles.productVariant}>{product.variant}</span>
+                    <span 
+                      style={{
+                        ...styles.productName, 
+                        cursor: product.slug ? 'pointer' : 'default',
+                        textDecoration: product.slug ? 'underline' : 'none'
+                      }}
+                      onClick={() => {
+                        if (product.slug) {
+                          window.open(`http://localhost:5173/product/${product.slug}`, '_blank');
+                        }
+                      }}
+                    >
+                      {product.name}
+                    </span>
+                    {product.variant && product.variant !== 'Default' && (
+                      <span style={styles.productVariant}>{product.variant}</span>
+                    )}
                   </div>
                   <div style={{textAlign: 'right'}}>
                     <div style={{fontSize: '13px', color: '#6B7280'}}>{product.qty} x {product.price} TL</div>
@@ -171,9 +229,27 @@ const OrderDetailModal = ({
           {/* Toplam */}
           <div style={styles.totalSection}>
             <div>
-              <div style={styles.totalRow}><span>Ara Toplam</span><span>{new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(order.amount)}</span></div>
-              <div style={styles.totalRow}><span>Kargo</span><span>0,00 ₺</span></div>
-              <div style={styles.grandTotal}><span>Genel Toplam</span><span>{new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(order.amount)}</span></div>
+              <div style={styles.totalRow}>
+                <span>Ara Toplam</span>
+                <span>{new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(order.subtotal || order.amount)}</span>
+              </div>
+              
+              {order.coupon_discount > 0 && (
+                <div style={{...styles.totalRow, color: '#059669'}}>
+                  <span>İndirim ({order.coupon_code || 'Kupon'})</span>
+                  <span>-{new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(order.coupon_discount)}</span>
+                </div>
+              )}
+              
+              <div style={styles.totalRow}>
+                <span>Kargo</span>
+                <span>0,00 ₺</span>
+              </div>
+              
+              <div style={styles.grandTotal}>
+                <span>Genel Toplam</span>
+                <span>{new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(order.amount)}</span>
+              </div>
             </div>
           </div>
         </div>

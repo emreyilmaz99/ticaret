@@ -19,7 +19,7 @@ class VendorOrderService extends BaseService
             $query = OrderItem::where('vendor_id', $vendorId)
                 ->with([
                     'order' => function ($q) {
-                        $q->with('user:id,name,email');
+                        $q->with(['user:id,name,email', 'coupon:id,code,discount_amount,min_order_amount']);
                     },
                     'product:id,name,slug,tax_class_id,vendor_id',
                     'product.photos:id,product_id,url,sort_order',
@@ -63,6 +63,10 @@ class VendorOrderService extends BaseService
                 $firstItem = $items->first();
                 $order = $firstItem->order;
                 $vendor = $firstItem->product?->vendor;
+                
+                // Calculate coupon discount per item
+                $totalBeforeDiscount = $items->sum('line_total');
+                $couponDiscount = (float) ($order->coupon_discount ?? 0);
 
                 return [
                     'id' => $order->order_number,
@@ -82,11 +86,19 @@ class VendorOrderService extends BaseService
                     ],
                     'shippingAddress' => $this->formatAddress($order->shipping_address),
                     'date' => $order->created_at->format('d M Y, H:i'),
-                    'amount' => (float) $items->sum('line_total'),
+                    'amount' => (float) (($order->total_amount ?: $totalBeforeDiscount) - $couponDiscount),
+                    'subtotal' => (float) ($order->subtotal ?: $totalBeforeDiscount),
+                    'coupon_discount' => $couponDiscount,
+                    'coupon_code' => $order->coupon_code ?? null,
+                    'coupon' => $order->coupon ? [
+                        'code' => $order->coupon->code,
+                        'discount_amount' => $order->coupon->discount_amount,
+                        'min_order_amount' => $order->coupon->min_order_amount,
+                    ] : null,
                     'paymentMethod' => $this->getPaymentMethodLabel($order),
                     'status' => $firstItem->status,
                     'items' => $items->count(),
-                    'products' => $items->map(function ($item) {
+                    'products' => $items->map(function ($item) use ($totalBeforeDiscount, $couponDiscount) {
                         $imageUrl = 'https://via.placeholder.com/200';
                         if ($item->product && $item->product->photos && $item->product->photos->isNotEmpty()) {
                             $imageUrl = $item->product->photos->first()->url;
@@ -95,11 +107,12 @@ class VendorOrderService extends BaseService
                         return [
                             'id' => $item->product_id,
                             'name' => $item->product_name,
+                            'slug' => $item->product->slug ?? '',
                             'variant' => $item->variant_title ?? '',
                             'price' => (float) $item->unit_price,
                             'qty' => $item->quantity,
                             'image' => $imageUrl,
-                            'financials' => $this->calculateFinancials($item)
+                            'financials' => $this->calculateFinancials($item, $totalBeforeDiscount, $couponDiscount)
                         ];
                     })->values()->toArray()
                 ];
@@ -313,28 +326,37 @@ class VendorOrderService extends BaseService
     }
 
     /**
-     * Calculate financial breakdown for an order item
+     * Calculate financial breakdown for an order item with coupon discount
      * 
      * Formula:
-     * - Customer Payment (with tax) = order_item.price
-     * - Price without tax = price / (1 + tax_rate/100)
-     * - Tax amount = price - price_without_tax
+     * - Original price = order_item.line_total
+     * - Coupon discount proportion = (item_price / total_price) * total_coupon_discount
+     * - Price after coupon = original_price - coupon_proportion
+     * - Price without tax = price_after_coupon / (1 + tax_rate/100)
+     * - Tax amount = price_after_coupon - price_without_tax
      * - Commission = price_without_tax * (commission_rate/100)
      * - Vendor earning = price_without_tax - commission
-     * 
-     * Validation: vendor_earning + commission + tax = customer_payment
      */
-    private function calculateFinancials(OrderItem $orderItem): array
+    private function calculateFinancials(OrderItem $orderItem, float $totalBeforeDiscount = 0, float $totalCouponDiscount = 0): array
     {
-        $price = (float) $orderItem->line_total; // Total price including tax
+        $originalPrice = (float) $orderItem->line_total; // Original price including tax
         $taxRate = (float) ($orderItem->product?->taxClass?->rate ?? 0);
         $commissionRate = (float) ($orderItem->product?->vendor?->commissionPlan?->rate ?? 0);
         
+        // Calculate this item's share of the coupon discount
+        $itemCouponDiscount = 0;
+        if ($totalBeforeDiscount > 0 && $totalCouponDiscount > 0) {
+            $itemCouponDiscount = ($originalPrice / $totalBeforeDiscount) * $totalCouponDiscount;
+        }
+        
+        // Price after coupon discount
+        $priceAfterCoupon = $originalPrice - $itemCouponDiscount;
+        
         // Calculate price without tax
-        $priceWithoutTax = $price / (1 + ($taxRate / 100));
+        $priceWithoutTax = $priceAfterCoupon / (1 + ($taxRate / 100));
         
         // Calculate tax amount
-        $taxAmount = $price - $priceWithoutTax;
+        $taxAmount = $priceAfterCoupon - $priceWithoutTax;
         
         // Calculate commission (based on price without tax)
         $commissionAmount = $priceWithoutTax * ($commissionRate / 100);
@@ -343,7 +365,7 @@ class VendorOrderService extends BaseService
         $vendorEarning = $priceWithoutTax - $commissionAmount;
         
         return [
-            'price_with_tax' => round($price, 2),
+            'price_with_tax' => round($priceAfterCoupon, 2),
             'price_without_tax' => round($priceWithoutTax, 2),
             'tax_rate' => $taxRate,
             'tax_amount' => round($taxAmount, 2),

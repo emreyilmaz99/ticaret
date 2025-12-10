@@ -18,6 +18,7 @@ class AdminOrderService extends BaseService
         try {
             $query = Order::with([
                 'user:id,name,email',
+                'coupon:id,code,discount_amount,min_order_amount',
                 'items.product:id,name,slug,vendor_id,tax_class_id',
                 'items.product.photos:id,product_id,url,sort_order',
                 'items.product.vendor:id,company_name,email,phone,tax_id,commission_plan_id',
@@ -59,8 +60,12 @@ class AdminOrderService extends BaseService
 
             // Transform to admin-centric structure
             $transformedOrders = $orders->map(function ($order) {
-                // Calculate total commission from all items
-                $totalCommission = $order->items->sum(function ($item) {
+                // Calculate totals and coupon
+                $totalBeforeDiscount = $order->items->sum('line_total');
+                $couponDiscount = (float) ($order->coupon_discount ?? 0);
+                
+                // Calculate total commission from all items (after coupon)
+                $totalCommission = $order->items->sum(function ($item) use ($totalBeforeDiscount, $couponDiscount) {
                     $vendor = $item->product?->vendor;
                     $commissionPlan = $vendor?->commissionPlan;
                     
@@ -68,8 +73,16 @@ class AdminOrderService extends BaseService
                         return 0;
                     }
 
-                    $priceWithoutTax = $item->unit_price / (1 + ($item->product->taxClass->rate ?? 0) / 100);
-                    return $priceWithoutTax * ($commissionPlan->rate / 100) * $item->quantity;
+                    // Apply proportional coupon discount
+                    $originalPrice = (float) $item->line_total;
+                    $itemCouponDiscount = 0;
+                    if ($totalBeforeDiscount > 0 && $couponDiscount > 0) {
+                        $itemCouponDiscount = ($originalPrice / $totalBeforeDiscount) * $couponDiscount;
+                    }
+                    $priceAfterCoupon = $originalPrice - $itemCouponDiscount;
+                    
+                    $priceWithoutTax = $priceAfterCoupon / (1 + ($item->product->taxClass->rate ?? 0) / 100);
+                    return $priceWithoutTax * ($commissionPlan->rate / 100);
                 });
 
                 // Get unique vendors with contact info
@@ -102,6 +115,14 @@ class AdminOrderService extends BaseService
                     'shippingAddress' => $this->formatAddress($order->shipping_address),
                     'date' => $order->created_at->format('d M Y, H:i'),
                     'amount' => (float) $order->total,
+                    'subtotal' => (float) ($order->subtotal ?: $totalBeforeDiscount),
+                    'coupon_discount' => $couponDiscount,
+                    'coupon_code' => $order->coupon_code ?? null,
+                    'coupon' => $order->coupon ? [
+                        'code' => $order->coupon->code,
+                        'discount_amount' => $order->coupon->discount_amount,
+                        'min_order_amount' => $order->coupon->min_order_amount,
+                    ] : null,
                     'commission' => round($totalCommission, 2),
                     'paymentMethod' => $this->getPaymentMethodLabel($order),
                     'status' => $order->status,
@@ -117,7 +138,7 @@ class AdminOrderService extends BaseService
                             'created_at' => $history->created_at->format('d M Y, H:i'),
                         ];
                     })->toArray(),
-                    'products' => $order->items->map(function ($item) {
+                    'products' => $order->items->map(function ($item) use ($totalBeforeDiscount, $couponDiscount) {
                         $imageUrl = 'https://via.placeholder.com/200';
                         if ($item->product && $item->product->photos && $item->product->photos->isNotEmpty()) {
                             $imageUrl = $item->product->photos->first()->url;
@@ -132,7 +153,7 @@ class AdminOrderService extends BaseService
                             'qty' => $item->quantity,
                             'image' => $imageUrl,
                             'vendor' => $item->product?->vendor?->company_name ?? 'Bilinmeyen',
-                            'financials' => $this->calculateFinancials($item)
+                            'financials' => $this->calculateFinancials($item, $totalBeforeDiscount, $couponDiscount)
                         ];
                     })->values()->toArray()
                 ];
@@ -297,26 +318,37 @@ class AdminOrderService extends BaseService
     }
 
     /**
-     * Calculate financial breakdown for an order item
+     * Calculate financial breakdown for an order item with coupon discount
      * 
      * Formula:
-     * - Customer Payment (with tax) = order_item.line_total
-     * - Price without tax = line_total / (1 + tax_rate/100)
-     * - Tax amount = line_total - price_without_tax
+     * - Original price = order_item.line_total
+     * - Coupon discount proportion = (item_price / total_price) * total_coupon_discount
+     * - Price after coupon = original_price - coupon_proportion
+     * - Price without tax = price_after_coupon / (1 + tax_rate/100)
+     * - Tax amount = price_after_coupon - price_without_tax
      * - Commission = price_without_tax * (commission_rate/100)
      * - Vendor earning = price_without_tax - commission
      */
-    private function calculateFinancials(\App\Models\OrderItem $orderItem): array
+    private function calculateFinancials(\App\Models\OrderItem $orderItem, float $totalBeforeDiscount = 0, float $totalCouponDiscount = 0): array
     {
-        $price = (float) $orderItem->line_total; // Total price including tax
+        $originalPrice = (float) $orderItem->line_total; // Original price including tax
         $taxRate = (float) ($orderItem->product?->taxClass?->rate ?? 0);
         $commissionRate = (float) ($orderItem->product?->vendor?->commissionPlan?->rate ?? 0);
         
+        // Calculate this item's share of the coupon discount
+        $itemCouponDiscount = 0;
+        if ($totalBeforeDiscount > 0 && $totalCouponDiscount > 0) {
+            $itemCouponDiscount = ($originalPrice / $totalBeforeDiscount) * $totalCouponDiscount;
+        }
+        
+        // Price after coupon discount
+        $priceAfterCoupon = $originalPrice - $itemCouponDiscount;
+        
         // Calculate price without tax
-        $priceWithoutTax = $price / (1 + ($taxRate / 100));
+        $priceWithoutTax = $priceAfterCoupon / (1 + ($taxRate / 100));
         
         // Calculate tax amount
-        $taxAmount = $price - $priceWithoutTax;
+        $taxAmount = $priceAfterCoupon - $priceWithoutTax;
         
         // Calculate commission (based on price without tax)
         $commissionAmount = $priceWithoutTax * ($commissionRate / 100);
@@ -325,7 +357,7 @@ class AdminOrderService extends BaseService
         $vendorEarning = $priceWithoutTax - $commissionAmount;
         
         return [
-            'price_with_tax' => round($price, 2),
+            'price_with_tax' => round($priceAfterCoupon, 2),
             'price_without_tax' => round($priceWithoutTax, 2),
             'tax_rate' => $taxRate,
             'tax_amount' => round($taxAmount, 2),
