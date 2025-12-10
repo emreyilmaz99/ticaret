@@ -24,7 +24,8 @@ class VendorOrderService extends BaseService
                     'product:id,name,slug,tax_class_id,vendor_id',
                     'product.photos:id,product_id,url,sort_order',
                     'product.taxClass:id,name,rate',
-                    'product.vendor:id,commission_plan_id',
+                    'product.vendor:id,company_name,email,phone,tax_id,commission_plan_id',
+                    'product.vendor.addresses',
                     'product.vendor.commissionPlan:id,name,rate',
                     'variant:id,title,sku'
                 ])
@@ -58,9 +59,10 @@ class VendorOrderService extends BaseService
             $orderItems = $query->get()->groupBy('order_id');
 
             // Transform to order-centric structure
-            $orders = $orderItems->map(function ($items, $orderId) {
+            $orders = $orderItems->map(function ($items, $orderId) use ($vendorId) {
                 $firstItem = $items->first();
                 $order = $firstItem->order;
+                $vendor = $firstItem->product?->vendor;
 
                 return [
                     'id' => $order->order_number,
@@ -70,6 +72,13 @@ class VendorOrderService extends BaseService
                         'email' => $order->user->email ?? '',
                         'phone' => $order->shipping_address['phone'] ?? '',
                         'avatar' => "https://ui-avatars.com/api/?name=" . urlencode($order->user->name ?? 'User') . "&background=random"
+                    ],
+                    'vendor' => [
+                        'name' => $vendor->company_name ?? 'Satıcı',
+                        'email' => $vendor->email ?? '',
+                        'phone' => $vendor->phone ?? '',
+                        'tax_id' => $vendor->tax_id ?? '',
+                        'address' => $vendor->addresses->first()?->full_address ?? ''
                     ],
                     'shippingAddress' => $this->formatAddress($order->shipping_address),
                     'date' => $order->created_at->format('d M Y, H:i'),
