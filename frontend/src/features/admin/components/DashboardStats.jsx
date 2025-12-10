@@ -61,16 +61,27 @@ export const DashboardStats = () => {
       <div style={{ 
         backgroundColor: 'var(--primary)', 
         color: 'white',
-        padding: '32px', 
-        borderRadius: 'var(--radius)', 
+        padding: '28px 32px', 
+        borderRadius: '16px', 
         marginBottom: '32px',
         backgroundImage: 'linear-gradient(135deg, var(--primary) 0%, #4338ca 100%)',
-        boxShadow: '0 10px 15px -3px rgba(79, 70, 229, 0.3)'
+        boxShadow: '0 10px 15px -3px rgba(79, 70, 229, 0.3)',
+        border: '1px solid rgba(255, 255, 255, 0.1)',
       }}>
-        <h1 style={{ fontSize: '24px', fontWeight: '700', marginBottom: '8px' }}>
+        <h1 style={{ 
+          fontSize: '26px', 
+          fontWeight: '800', 
+          marginBottom: '6px',
+          letterSpacing: '-0.02em',
+          margin: 0,
+        }}>
           Hoş Geldin, {admin?.name} 👋
         </h1>
-        <p style={{ opacity: 0.9, fontSize: '15px' }}>
+        <p style={{ 
+          opacity: 0.9, 
+          fontSize: '15px',
+          margin: '6px 0 0 0',
+        }}>
           Bugün mağazanda neler olup bittiğine bir göz atalım.
         </p>
       </div>

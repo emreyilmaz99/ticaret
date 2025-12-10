@@ -173,41 +173,45 @@ const TaxClasses = () => {
 const styles = {
   container: {
     padding: '32px',
-    maxWidth: '1400px',
-    margin: '0 auto',
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#F3F4F6',
     minHeight: '100vh'
   },
   header: {
     display: 'flex',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: '32px'
+    alignItems: 'center',
+    marginBottom: '32px',
+    background: 'linear-gradient(135deg, rgb(248, 250, 252) 0%, rgb(241, 245, 249) 100%)',
+    padding: '28px 32px',
+    borderRadius: '16px',
+    border: '1px solid rgb(226, 232, 240)'
   },
   title: {
-    fontSize: '28px',
-    fontWeight: '700',
-    color: '#111827',
-    margin: '0 0 8px 0'
+    fontSize: '26px',
+    fontWeight: '800',
+    color: 'rgb(15, 23, 42)',
+    margin: 0,
+    letterSpacing: '-0.02em'
   },
   subtitle: {
-    fontSize: '14px',
-    color: '#6B7280',
-    margin: 0
+    fontSize: '15px',
+    color: 'rgb(100, 116, 139)',
+    margin: '6px 0 0 0',
   },
   createBtn: {
     display: 'flex',
     alignItems: 'center',
     gap: '8px',
     padding: '12px 24px',
-    backgroundColor: '#10B981',
+    backgroundColor: '#059669',
     color: '#FFF',
     border: 'none',
-    borderRadius: '8px',
+    borderRadius: '12px',
     fontSize: '14px',
     fontWeight: '600',
     cursor: 'pointer',
-    transition: 'all 0.2s'
+    transition: 'all 0.2s',
+    boxShadow: '0 4px 12px rgba(5, 150, 105, 0.25)',
   },
   tableContainer: {
     backgroundColor: '#FFF',

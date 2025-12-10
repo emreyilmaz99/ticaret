@@ -6,45 +6,55 @@
 export const getStyles = (isMobile = false) => ({
   // Container
   container: {
-    padding: isMobile ? '16px' : '24px',
+    padding: isMobile ? '16px' : '32px',
     fontFamily: "'Inter', sans-serif",
     color: '#1e293b',
+    backgroundColor: '#F3F4F6',
+    minHeight: '100vh',
   },
   
-  // Header
+  // Header - Siparişler sayfasındaki gibi
   header: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: '24px',
+    marginBottom: '32px',
+    background: 'linear-gradient(135deg, rgb(248, 250, 252) 0%, rgb(241, 245, 249) 100%)',
+    padding: isMobile ? '20px 24px' : '28px 32px',
+    borderRadius: '16px',
+    border: '1px solid rgb(226, 232, 240)',
     flexWrap: 'wrap',
-    gap: '16px'
+    gap: '24px'
   },
   title: {
-    fontSize: isMobile ? '20px' : '24px',
-    fontWeight: '700',
-    color: '#0f172a',
+    fontSize: '26px',
+    fontWeight: '800',
+    color: 'rgb(15, 23, 42)',
     margin: 0,
+    letterSpacing: '-0.02em',
   },
   subtitle: {
-    color: '#64748b',
-    marginTop: '4px',
-    fontSize: '14px',
+    color: 'rgb(100, 116, 139)',
+    margin: '6px 0 0 0',
+    fontSize: '15px',
   },
   
   // Create Button
   createBtn: {
-    padding: '10px 20px',
-    background: '#3b82f6',
+    padding: '12px 24px',
+    background: '#059669',
     color: 'white',
     border: 'none',
-    borderRadius: '8px',
-    fontWeight: '500',
+    borderRadius: '12px',
+    fontWeight: '600',
+    fontSize: '14px',
     cursor: 'pointer',
     display: 'flex',
     alignItems: 'center',
     gap: '8px',
-    transition: 'background 0.2s',
+    transition: 'all 0.2s ease',
+    boxShadow: '0 4px 12px rgba(5, 150, 105, 0.25)',
+    fontFamily: '"Inter", sans-serif',
   },
   
   // Table

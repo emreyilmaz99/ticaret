@@ -7,29 +7,37 @@
 export const getStyles = (isMobile = false) => ({
   // Container stilleri
   container: { 
-    padding: isMobile ? '16px' : '24px', 
+    padding: isMobile ? '16px' : '32px', 
     fontFamily: "'Inter', sans-serif", 
-    color: '#1e293b' 
+    color: '#1e293b',
+    backgroundColor: '#F3F4F6',
+    minHeight: '100vh',
   },
   
-  // Header stilleri
+  // Header stilleri - Siparişler sayfasındaki gibi
   header: { 
     display: 'flex', 
     justifyContent: 'space-between', 
     alignItems: 'center', 
-    marginBottom: '24px',
+    marginBottom: '32px',
+    background: 'linear-gradient(135deg, rgb(248, 250, 252) 0%, rgb(241, 245, 249) 100%)',
+    padding: isMobile ? '20px 24px' : '28px 32px',
+    borderRadius: '16px',
+    border: '1px solid rgb(226, 232, 240)',
     flexWrap: 'wrap',
-    gap: '16px'
+    gap: '24px'
   },
   title: { 
-    fontSize: isMobile ? '20px' : '24px', 
-    fontWeight: '700', 
-    color: '#0f172a' 
+    fontSize: '26px', 
+    fontWeight: '800', 
+    color: 'rgb(15, 23, 42)',
+    letterSpacing: '-0.02em',
+    margin: 0
   },
   subtitle: { 
-    color: '#64748b', 
-    fontSize: '14px', 
-    marginTop: '4px' 
+    color: 'rgb(100, 116, 139)', 
+    fontSize: '15px', 
+    margin: '6px 0 0 0',
   },
 
   // Stats kartları
@@ -97,7 +105,7 @@ export const getStyles = (isMobile = false) => ({
 
   // Buton stilleri
   btnPrimary: { 
-    backgroundColor: '#7c3aed', 
+    backgroundColor: '#059669', 
     color: 'white', 
     border: 'none', 
     padding: '10px 20px', 
@@ -107,7 +115,8 @@ export const getStyles = (isMobile = false) => ({
     display: 'flex', 
     alignItems: 'center', 
     gap: '8px',
-    transition: 'background-color 0.2s'
+    transition: 'background-color 0.2s',
+    boxShadow: '0 4px 12px rgba(5, 150, 105, 0.25)',
   },
   btnSecondary: { 
     backgroundColor: 'white', 
