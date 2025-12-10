@@ -635,12 +635,15 @@ const OrderDetailModal = ({ order, isOpen, onClose, styles, onCancel }) => {
         {/* FOOTER ACTIONS - İŞLEVSEL HALE GELDİ */}
         <div style={styles.modalFooter}>
           
-          <button 
-            style={{...styles.btnSecondary, color:'#DC2626', borderColor:'#FECACA'}}
-            onClick={() => setShowCancelModal(true)}
-          >
-            <FaBan style={{marginRight:'6px'}} /> İptal Et (Zorla)
-          </button>
+          {/* İptal butonu sadece teslim edilmemiş siparişlerde göster */}
+          {order.status !== 'delivered' && (
+            <button 
+              style={{...styles.btnSecondary, color:'#DC2626', borderColor:'#FECACA'}}
+              onClick={() => setShowCancelModal(true)}
+            >
+              <FaBan style={{marginRight:'6px'}} /> İptal Et (Zorla)
+            </button>
+          )}
 
           <div style={{marginLeft:'auto', display:'flex', gap:'12px'}}>
             <button 
