@@ -126,6 +126,11 @@ class Order extends Model
         return $this->hasMany(OrderStatusHistory::class)->orderBy('created_at', 'desc');
     }
 
+    public function notes(): HasMany
+    {
+        return $this->hasMany(OrderNote::class)->orderBy('created_at', 'desc');
+    }
+
     public function coupon(): BelongsTo
     {
         return $this->belongsTo(VendorCoupon::class, 'coupon_id');

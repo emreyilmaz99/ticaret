@@ -138,6 +138,8 @@ Route::prefix('v1/admin')->group(function () {
         Route::get('orders/stats', [\App\Http\Controllers\Api\V1\Admin\OrderController::class, 'stats']);
         Route::put('orders/{orderId}/status', [\App\Http\Controllers\Api\V1\Admin\OrderController::class, 'updateStatus']);
         Route::post('orders/{orderId}/cancel', [\App\Http\Controllers\Api\V1\Admin\OrderController::class, 'cancel']);
+        Route::post('orders/{orderId}/notes', [\App\Http\Controllers\Api\V1\Admin\OrderController::class, 'addNote']);
+        Route::get('orders/{orderId}/notes', [\App\Http\Controllers\Api\V1\Admin\OrderController::class, 'getNotes']);
     });
 });
 

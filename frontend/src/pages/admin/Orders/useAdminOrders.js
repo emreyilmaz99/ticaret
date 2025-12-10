@@ -81,11 +81,11 @@ export const useAdminOrders = () => {
 
   // Cancel order mutation
   const cancelOrderMutation = useMutation({
-    mutationFn: async (orderId) => {
+    mutationFn: async ({ orderId, reason }) => {
       const token = localStorage.getItem('admin_token');
       const response = await axios.post(
         `${BACKEND_URL}/api/v1/admin/orders/${orderId}/cancel`,
-        {},
+        { reason },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       return response.data;
@@ -105,10 +105,8 @@ export const useAdminOrders = () => {
     updateStatusMutation.mutate({ orderId, status: newStatus });
   };
 
-  const cancelOrder = (orderId) => {
-    if (window.confirm('Bu siparişi iptal etmek istediğinize emin misiniz?')) {
-      cancelOrderMutation.mutate(orderId);
-    }
+  const cancelOrder = ({ orderId, reason }) => {
+    cancelOrderMutation.mutate({ orderId, reason });
   };
 
   return {

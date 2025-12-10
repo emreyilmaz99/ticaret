@@ -1,30 +1,71 @@
 // src/pages/admin/Orders/OrderDetailModal.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   FaTimes, FaStore, FaUser, FaMapMarkerAlt, FaFileInvoice, 
-  FaBan, FaCheckCircle, FaHistory, FaStickyNote 
+  FaBan, FaCheckCircle, FaHistory, FaStickyNote, FaUserShield, FaCog 
 } from 'react-icons/fa';
+import axios from 'axios';
+
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:8000';
 
 // YENİ SERVİSİ IMPORT EDİYORUZ (Aynı klasörde invoiceService.js olmalı)
 import { printInvoice } from './invoiceService';
 
-const OrderDetailModal = ({ order, isOpen, onClose, styles }) => {
+const OrderDetailModal = ({ order, isOpen, onClose, styles, onCancel }) => {
   if (!isOpen || !order) return null;
 
   // --- STATE YÖNETİMİ ---
-  const [activeTab, setActiveTab] = useState('details'); // 'details' | 'history'
+  const [activeTab, setActiveTab] = useState('details'); // 'details' | 'history' | 'notes'
   const [adminNote, setAdminNote] = useState('');
+  const [visibleToVendor, setVisibleToVendor] = useState(true);
+  const [visibleToCustomer, setVisibleToCustomer] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
+  const [orderNotes, setOrderNotes] = useState([]);
+  const [loadingNotes, setLoadingNotes] = useState(false);
 
   // --- İŞLEVLER ---
 
+  // Notları yükle
+  const loadNotes = async () => {
+    setLoadingNotes(true);
+    try {
+      const token = localStorage.getItem('admin_token');
+      const response = await axios.get(
+        `${BACKEND_URL}/api/v1/admin/orders/${order.order_id}/notes`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (response.data.success) {
+        setOrderNotes(response.data.data.notes || []);
+      }
+    } catch (error) {
+      console.error('Notlar yüklenirken hata:', error);
+    } finally {
+      setLoadingNotes(false);
+    }
+  };
+
+  // --- NOTLARI YÜK ---
+  useEffect(() => {
+    if (isOpen && order?.order_id) {
+      loadNotes();
+    }
+  }, [isOpen, order?.order_id]);
+
   // 1. Zorla İptal Et (Admin Yetkisi)
   const handleForceCancel = () => {
-    const reason = prompt("Lütfen iptal sebebini girin (Satıcıya iletilecek):");
-    if (reason) {
-      // API İptal İsteği Simülasyonu
-      alert(`Sipariş #${order.id} başarıyla iptal edildi.\nSebep: ${reason}`);
-      onClose();
+    if (!cancelReason.trim()) {
+      alert('Lütfen iptal sebebini girin');
+      return;
     }
+    
+    if (onCancel) {
+      onCancel({ orderId: order.order_id, reason: cancelReason });
+    }
+    
+    setShowCancelModal(false);
+    setCancelReason('');
+    onClose();
   };
 
   // 2. Fatura/Ekstre Yazdır
@@ -34,10 +75,39 @@ const OrderDetailModal = ({ order, isOpen, onClose, styles }) => {
   };
 
   // 3. Not Kaydet
-  const handleSaveNote = () => {
-    if(!adminNote.trim()) return;
-    alert(`Not sisteme kaydedildi: "${adminNote}"`);
-    setAdminNote('');
+  const handleSaveNote = async () => {
+    if(!adminNote.trim()) {
+      alert('Lütfen bir not girin');
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('admin_token');
+      const response = await axios.post(
+        `${BACKEND_URL}/api/v1/admin/orders/${order.order_id}/notes`,
+        {
+          note: adminNote,
+          is_visible_to_vendor: visibleToVendor,
+          is_visible_to_customer: visibleToCustomer
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
+
+      if (response.data.success) {
+        alert('Not başarıyla kaydedildi');
+        setAdminNote('');
+        setVisibleToVendor(true);
+        setVisibleToCustomer(false);
+        // Notları yeniden yükle
+        loadNotes();
+        // Notlar sekmesine geç
+        setActiveTab('notes');
+      }
+    } catch (error) {
+      alert('Not kaydedilirken hata: ' + (error.response?.data?.message || error.message));
+    }
   };
 
   // Güvenlik Kontrolü: Eğer styles.modalStatusBadge bir fonksiyon değilse hata vermesin
@@ -98,6 +168,12 @@ const OrderDetailModal = ({ order, isOpen, onClose, styles }) => {
             onClick={() => setActiveTab('history')}
           >
             Geçmiş & İşlemler
+          </button>
+          <button 
+            style={styles.tabBtn(activeTab === 'notes')} 
+            onClick={() => setActiveTab('notes')}
+          >
+            Sipariş Notları {orderNotes.length > 0 && `(${orderNotes.length})`}
           </button>
         </div>
 
@@ -304,23 +380,70 @@ const OrderDetailModal = ({ order, isOpen, onClose, styles }) => {
                   <h4 style={{fontSize:'14px', fontWeight:700, marginBottom:'16px', display:'flex', alignItems:'center', gap:'8px'}}>
                     <FaHistory color="#64748B" /> Sipariş Geçmişi
                   </h4>
-                  <div style={styles.timelineContainer}>
-                    <div style={styles.timelineItem}>
-                      {/* Fonksiyon çağrısı güvenliği */}
-                      <div style={typeof styles.timelineDot === 'function' ? styles.timelineDot('#10B981') : {}}></div>
-                      <div style={styles.timelineDate}>Bugün, 14:30</div>
-                      <div style={styles.timelineText}>Sipariş oluşturuldu.</div>
-                    </div>
-                    <div style={styles.timelineItem}>
-                      <div style={typeof styles.timelineDot === 'function' ? styles.timelineDot('#3B82F6') : {}}></div>
-                      <div style={styles.timelineDate}>Bugün, 14:35</div>
-                      <div style={styles.timelineText}>Ödeme onaylandı (Kredi Kartı).</div>
-                    </div>
-                    <div style={styles.timelineItem}>
-                      <div style={typeof styles.timelineDot === 'function' ? styles.timelineDot('#E2E8F0') : {}}></div>
-                      <div style={styles.timelineDate}>-</div>
-                      <div style={styles.timelineText} styles={{color:'#94A3B8'}}>Satıcı onayı bekleniyor...</div>
-                    </div>
+                  <div style={{position:'relative', paddingLeft:'24px'}}>
+                    {/* Dikey çizgi */}
+                    <div style={{
+                      position:'absolute',
+                      left:'8px',
+                      top:'8px',
+                      bottom:'8px',
+                      width:'2px',
+                      backgroundColor:'#E5E7EB'
+                    }}></div>
+
+                    {order.status_history && order.status_history.length > 0 ? (
+                      order.status_history.map((history, idx) => {
+                        const getColor = () => {
+                          if (history.new_status === 'cancelled') return '#DC2626';
+                          if (history.new_status === 'delivered') return '#059669';
+                          if (history.new_status === 'confirmed') return '#3B82F6';
+                          if (history.new_status === 'shipped') return '#F59E0B';
+                          if (history.new_status === 'processing') return '#8B5CF6';
+                          return '#64748B';
+                        };
+
+                        return (
+                          <div key={idx} style={{position:'relative', paddingBottom:'24px'}}>
+                            {/* Renkli nokta */}
+                            <div style={{
+                              position:'absolute',
+                              left:'-20px',
+                              top:'4px',
+                              width:'16px',
+                              height:'16px',
+                              borderRadius:'50%',
+                              backgroundColor: getColor(),
+                              border:'3px solid white',
+                              boxShadow:'0 0 0 1px #E5E7EB'
+                            }}></div>
+
+                            <div>
+                              <div style={{fontSize:'14px', fontWeight:600, color:'#111827', marginBottom:'4px'}}>
+                                {history.new_status === 'pending' && 'Sipariş Oluşturuldu'}
+                                {history.new_status === 'confirmed' && 'Ödeme Onaylandı'}
+                                {history.new_status === 'processing' && 'Hazırlanıyor'}
+                                {history.new_status === 'shipped' && 'Kargoya Verildi'}
+                                {history.new_status === 'delivered' && 'Teslim Edildi'}
+                                {history.new_status === 'cancelled' && 'İptal Edildi'}
+                                {!['pending','confirmed','processing','shipped','delivered','cancelled'].includes(history.new_status) && history.new_status}
+                              </div>
+                              {history.note && (
+                                <div style={{fontSize:'13px', color:'#6B7280', marginBottom:'4px', fontStyle:'italic'}}>
+                                  "{history.note}"
+                                </div>
+                              )}
+                              <div style={{fontSize:'12px', color:'#9CA3AF'}}>
+                                {history.changed_by_name} • {history.created_at}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <div style={{padding:'20px', textAlign:'center', color:'#9CA3AF', fontSize:'14px'}}>
+                        Henüz geçmiş kaydı yok
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -331,10 +454,36 @@ const OrderDetailModal = ({ order, isOpen, onClose, styles }) => {
                   </h4>
                   <textarea 
                     style={styles.noteArea} 
-                    placeholder="Siparişle ilgili özel bir not düşün (Sadece adminler görür)..."
+                    placeholder="Siparişle ilgili özel bir not ekleyin..."
                     value={adminNote}
                     onChange={(e) => setAdminNote(e.target.value)}
                   ></textarea>
+                  
+                  {/* Görünürlük Ayarları */}
+                  <div style={{marginTop:'12px', marginBottom:'16px'}}>
+                    <div style={{fontSize:'13px', fontWeight:600, color:'#374151', marginBottom:'8px'}}>
+                      Bu notu kimler görebilir?
+                    </div>
+                    <label style={{display:'flex', alignItems:'center', gap:'8px', fontSize:'13px', color:'#6B7280', marginBottom:'6px', cursor:'pointer'}}>
+                      <input 
+                        type="checkbox" 
+                        checked={visibleToVendor}
+                        onChange={(e) => setVisibleToVendor(e.target.checked)}
+                        style={{width:'16px', height:'16px'}}
+                      />
+                      <span>Satıcı görebilir</span>
+                    </label>
+                    <label style={{display:'flex', alignItems:'center', gap:'8px', fontSize:'13px', color:'#6B7280', cursor:'pointer'}}>
+                      <input 
+                        type="checkbox" 
+                        checked={visibleToCustomer}
+                        onChange={(e) => setVisibleToCustomer(e.target.checked)}
+                        style={{width:'16px', height:'16px'}}
+                      />
+                      <span>Müşteri görebilir</span>
+                    </label>
+                  </div>
+
                   <button 
                     style={{...styles.btnPrimary, width:'100%', padding:'8px'}}
                     onClick={handleSaveNote}
@@ -347,6 +496,140 @@ const OrderDetailModal = ({ order, isOpen, onClose, styles }) => {
             </div>
           )}
 
+          {/* TAB 3: SİPARİŞ NOTLARI */}
+          {activeTab === 'notes' && (
+            <div>
+              <h3 style={{fontSize:'16px', fontWeight:700, marginBottom:'20px', display:'flex', alignItems:'center', gap:'8px'}}>
+                <FaStickyNote color="#059669" /> Sipariş Notları ({orderNotes.length})
+              </h3>
+
+              {loadingNotes ? (
+                <div style={{padding:'40px', textAlign:'center', color:'#9CA3AF'}}>
+                  Notlar yükleniyor...
+                </div>
+              ) : orderNotes.length === 0 ? (
+                <div style={{
+                  padding:'40px',
+                  textAlign:'center',
+                  backgroundColor:'#F9FAFB',
+                  borderRadius:'12px',
+                  border:'2px dashed #E5E7EB'
+                }}>
+                  <FaStickyNote size={48} color="#D1D5DB" style={{marginBottom:'16px'}} />
+                  <p style={{color:'#6B7280', fontSize:'14px', margin:0}}>
+                    Henüz not eklenmemiş
+                  </p>
+                  <p style={{color:'#9CA3AF', fontSize:'13px', marginTop:'8px'}}>
+                    "Geçmiş & İşlemler" sekmesinden not ekleyebilirsiniz
+                  </p>
+                </div>
+              ) : (
+                <div style={{
+                  display:'flex',
+                  flexDirection:'column',
+                  gap:'16px'
+                }}>
+                  {orderNotes.map((note, idx) => (
+                    <div key={note.id} style={{
+                      padding:'16px',
+                      backgroundColor:'#FFFBEB',
+                      border:'1px solid #FDE68A',
+                      borderRadius:'12px',
+                      position:'relative'
+                    }}>
+                      {/* Not Header */}
+                      <div style={{
+                        display:'flex',
+                        alignItems:'center',
+                        justifyContent:'space-between',
+                        marginBottom:'12px',
+                        paddingBottom:'12px',
+                        borderBottom:'1px dashed #FDE68A'
+                      }}>
+                        <div style={{display:'flex', alignItems:'center', gap:'8px'}}>
+                          <div style={{
+                            width:'32px',
+                            height:'32px',
+                            borderRadius:'50%',
+                            backgroundColor:'#FBBF24',
+                            color:'white',
+                            display:'flex',
+                            alignItems:'center',
+                            justifyContent:'center',
+                            fontSize:'14px',
+                            fontWeight:'700'
+                          }}>
+                            {note.admin_name?.charAt(0) || 'A'}
+                          </div>
+                          <div>
+                            <div style={{fontSize:'13px', fontWeight:600, color:'#92400E'}}>
+                              {note.admin_name}
+                            </div>
+                            <div style={{fontSize:'11px', color:'#B45309'}}>
+                              {note.created_at}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Görünürlük Badge'leri */}
+                        <div style={{display:'flex', gap:'6px'}}>
+                          {note.is_visible_to_vendor && (
+                            <span style={{
+                              fontSize:'10px',
+                              padding:'4px 8px',
+                              backgroundColor:'#DBEAFE',
+                              color:'#1E40AF',
+                              borderRadius:'4px',
+                              fontWeight:600
+                            }}>
+                              <FaStore size={10} style={{marginRight:'4px'}} />
+                              Satıcı
+                            </span>
+                          )}
+                          {note.is_visible_to_customer && (
+                            <span style={{
+                              fontSize:'10px',
+                              padding:'4px 8px',
+                              backgroundColor:'#D1FAE5',
+                              color:'#065F46',
+                              borderRadius:'4px',
+                              fontWeight:600
+                            }}>
+                              <FaUser size={10} style={{marginRight:'4px'}} />
+                              Müşteri
+                            </span>
+                          )}
+                          {!note.is_visible_to_vendor && !note.is_visible_to_customer && (
+                            <span style={{
+                              fontSize:'10px',
+                              padding:'4px 8px',
+                              backgroundColor:'#FEE2E2',
+                              color:'#991B1B',
+                              borderRadius:'4px',
+                              fontWeight:600
+                            }}>
+                              🔒 Gizli
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Not İçeriği */}
+                      <div style={{
+                        fontSize:'14px',
+                        color:'#78350F',
+                        lineHeight:'1.6',
+                        whiteSpace:'pre-wrap'
+                      }}>
+                        {note.note}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
         </div>
 
         {/* FOOTER ACTIONS - İŞLEVSEL HALE GELDİ */}
@@ -354,7 +637,7 @@ const OrderDetailModal = ({ order, isOpen, onClose, styles }) => {
           
           <button 
             style={{...styles.btnSecondary, color:'#DC2626', borderColor:'#FECACA'}}
-            onClick={handleForceCancel}
+            onClick={() => setShowCancelModal(true)}
           >
             <FaBan style={{marginRight:'6px'}} /> İptal Et (Zorla)
           </button>
@@ -373,6 +656,80 @@ const OrderDetailModal = ({ order, isOpen, onClose, styles }) => {
           </div>
 
         </div>
+
+        {/* İptal Modal */}
+        {showCancelModal && (
+          <div style={{
+            position:'fixed',
+            top:0,
+            left:0,
+            right:0,
+            bottom:0,
+            backgroundColor:'rgba(0,0,0,0.5)',
+            display:'flex',
+            alignItems:'center',
+            justifyContent:'center',
+            zIndex:10000
+          }} onClick={() => setShowCancelModal(false)}>
+            <div style={{
+              backgroundColor:'white',
+              padding:'24px',
+              borderRadius:'12px',
+              maxWidth:'500px',
+              width:'90%'
+            }} onClick={(e) => e.stopPropagation()}>
+              <h3 style={{margin:'0 0 16px 0', fontSize:'18px', fontWeight:700}}>Siparişi İptal Et</h3>
+              <p style={{margin:'0 0 16px 0', fontSize:'14px', color:'#6B7280'}}>
+                Bu işlem geri alınamaz. İptal sebebini açıklayın:
+              </p>
+              <textarea 
+                value={cancelReason}
+                onChange={(e) => setCancelReason(e.target.value)}
+                placeholder="İptal sebebini girin (müşteri ve satıcı görecek)"
+                style={{
+                  width:'100%',
+                  minHeight:'100px',
+                  padding:'12px',
+                  border:'1px solid #E2E8F0',
+                  borderRadius:'8px',
+                  fontSize:'14px',
+                  fontFamily:'inherit',
+                  resize:'vertical'
+                }}
+              />
+              <div style={{display:'flex', gap:'12px', marginTop:'16px', justifyContent:'flex-end'}}>
+                <button 
+                  onClick={() => setShowCancelModal(false)}
+                  style={{
+                    padding:'8px 16px',
+                    border:'1px solid #E2E8F0',
+                    borderRadius:'8px',
+                    backgroundColor:'white',
+                    cursor:'pointer',
+                    fontSize:'14px'
+                  }}
+                >
+                  Vazgeç
+                </button>
+                <button 
+                  onClick={handleForceCancel}
+                  style={{
+                    padding:'8px 16px',
+                    border:'none',
+                    borderRadius:'8px',
+                    backgroundColor:'#DC2626',
+                    color:'white',
+                    cursor:'pointer',
+                    fontSize:'14px',
+                    fontWeight:600
+                  }}
+                >
+                  Siparişi İptal Et
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
       </div>
     </div>

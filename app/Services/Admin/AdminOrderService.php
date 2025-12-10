@@ -5,6 +5,7 @@ namespace App\Services\Admin;
 use App\Services\BaseService;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\OrderNote;
 use Illuminate\Support\Facades\DB;
 
 class AdminOrderService extends BaseService
@@ -22,7 +23,8 @@ class AdminOrderService extends BaseService
                 'items.product.vendor:id,company_name,email,phone,tax_id,commission_plan_id',
                 'items.product.vendor.commissionPlan:id,rate',
                 'items.product.taxClass:id,name,rate',
-                'items.variant:id,title,sku'
+                'items.variant:id,title,sku',
+                'statusHistory'
             ])->orderBy('created_at', 'desc');
 
             // Filters
@@ -105,6 +107,16 @@ class AdminOrderService extends BaseService
                     'status' => $order->status,
                     'payment_status' => $order->payment_status,
                     'items' => $order->items->count(),
+                    'status_history' => $order->statusHistory->map(function ($history) {
+                        return [
+                            'old_status' => $history->old_status,
+                            'new_status' => $history->new_status,
+                            'note' => $history->note,
+                            'changed_by_type' => $history->changed_by_type,
+                            'changed_by_name' => $history->changed_by_name,
+                            'created_at' => $history->created_at->format('d M Y, H:i'),
+                        ];
+                    })->toArray(),
                     'products' => $order->items->map(function ($item) {
                         $imageUrl = 'https://via.placeholder.com/200';
                         if ($item->product && $item->product->photos && $item->product->photos->isNotEmpty()) {
@@ -218,24 +230,37 @@ class AdminOrderService extends BaseService
     }
 
     /**
-     * Cancel order
+     * Cancel order (Admin only)
      */
-    public function cancelOrder(int $orderId)
+    public function cancelOrder(int $orderId, string $reason = null, int $adminId = null)
     {
         try {
             $order = Order::findOrFail($orderId);
 
-            if (!in_array($order->status, [Order::STATUS_PENDING, Order::STATUS_CONFIRMED])) {
+            if (!in_array($order->status, [Order::STATUS_PENDING, Order::STATUS_CONFIRMED, Order::STATUS_PROCESSING])) {
                 return $this->errorResponse('Bu sipariş iptal edilemez', 400);
             }
 
-            $order->updateStatus(Order::STATUS_CANCELLED);
+            DB::beginTransaction();
 
-            // Also cancel all order items
+            // Order durumunu güncelle
+            $noteText = $reason ? "Admin İptali: {$reason}" : 'Admin tarafından iptal edildi';
+            
+            $order->updateStatus(
+                Order::STATUS_CANCELLED,
+                $noteText,
+                'admin',
+                $adminId
+            );
+
+            // Tüm order item'ları iptal et
             $order->items()->update(['status' => OrderItem::STATUS_CANCELLED]);
+
+            DB::commit();
 
             return $this->successResponse(null, 'Sipariş iptal edildi');
         } catch (\Exception $e) {
+            DB::rollBack();
             return $this->handleException($e, 'Sipariş iptal edilemedi');
         }
     }
@@ -309,4 +334,51 @@ class AdminOrderService extends BaseService
             'vendor_earning' => round($vendorEarning, 2),
         ];
     }
+
+    /**
+     * Add note to order
+     */
+    public function addNote(int $orderId, string $note, int $adminId, bool $visibleToVendor = true, bool $visibleToCustomer = false)
+    {
+        $order = Order::findOrFail($orderId);
+
+        $orderNote = OrderNote::create([
+            'order_id' => $orderId,
+            'admin_id' => $adminId,
+            'note' => $note,
+            'is_visible_to_vendor' => $visibleToVendor,
+            'is_visible_to_customer' => $visibleToCustomer,
+        ]);
+
+        return [
+            'id' => $orderNote->id,
+            'note' => $orderNote->note,
+            'admin_name' => $orderNote->admin->name ?? 'Admin',
+            'is_visible_to_vendor' => $orderNote->is_visible_to_vendor,
+            'is_visible_to_customer' => $orderNote->is_visible_to_customer,
+            'created_at' => $orderNote->created_at->format('d.m.Y H:i'),
+        ];
+    }
+
+    /**
+     * Get order notes
+     */
+    public function getNotes(int $orderId)
+    {
+        return OrderNote::where('order_id', $orderId)
+            ->with('admin:id,name')
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(function ($note) {
+                return [
+                    'id' => $note->id,
+                    'note' => $note->note,
+                    'admin_name' => $note->admin->name ?? 'Admin',
+                    'is_visible_to_vendor' => $note->is_visible_to_vendor,
+                    'is_visible_to_customer' => $note->is_visible_to_customer,
+                    'created_at' => $note->created_at->format('d.m.Y H:i'),
+                ];
+            })->toArray();
+    }
 }
+
