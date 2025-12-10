@@ -9,7 +9,8 @@ export const OrderCard = ({
   formatPrice, 
   getStatusConfig, 
   getPaymentStatusConfig,
-  styles 
+  styles,
+  onDetailClick // <--- YENİ PROP: Tıklama fonksiyonunu buradan alıyoruz
 }) => {
   const statusConfig = getStatusConfig(order.status);
   const paymentConfig = getPaymentStatusConfig(order.payment_status);
@@ -54,7 +55,7 @@ export const OrderCard = ({
       {/* Order Items Preview */}
       <div style={styles.orderBody}>
         <div style={styles.productsContainer}>
-          {/* Products */}
+          {/* Products - Ürün detaylarına giden linkler aynen kalabilir */}
           <div style={styles.productImages}>
             <div style={styles.imageList}>
               {(order.items || []).slice(0, 4).map((item, idx) => (
@@ -116,13 +117,25 @@ export const OrderCard = ({
           <FiCalendar size={16} />
           {formatDate(order.created_at)}
         </div>
-        <Link
-          to={`/account/orders/${order.order_number}`}
-          style={styles.detailLink}
+        
+        {/* DEĞİŞİKLİK BURADA: Link yerine Button kullanıyoruz */}
+        <button
+          onClick={onDetailClick} // Parent'tan gelen fonksiyonu çalıştır
+          style={{
+            ...styles.detailLink, // Mevcut stilleri koru (renk, font vs.)
+            background: 'transparent', // Butonun varsayılan gri arka planını kaldır
+            border: 'none',            // Butonun çerçevesini kaldır
+            cursor: 'pointer',         // Tıklanabilir imleci ekle
+            padding: 0,                // Varsa padding'i sıfırla (link gibi görünmesi için)
+            display: 'flex',           // Flex yapısını koru
+            alignItems: 'center',
+            fontSize: 'inherit',       // Font boyutunu inherit al
+            fontFamily: 'inherit'
+          }}
         >
           Detayları Görüntüle
           <FiChevronRight size={16} />
-        </Link>
+        </button>
       </div>
     </div>
   );

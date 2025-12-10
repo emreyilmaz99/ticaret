@@ -69,7 +69,7 @@ export const useCategoryProducts = () => {
     isFetchingNextPage,
     isLoading
   } = useInfiniteQuery({
-    queryKey: ['products', categoryId, subcategoryName, sortBy, selectedCategories],
+    queryKey: ['products', categoryId, subcategoryName, sortBy, selectedCategories, priceRange],
     queryFn: ({ pageParam = 1 }) => {
       const params = {
         sort_by: sortBy,
@@ -85,6 +85,14 @@ export const useCategoryProducts = () => {
       
       if (subcategoryName) {
         params.subcategory = subcategoryName;
+      }
+      
+      // Fiyat aralığı filtresi
+      if (priceRange.min && priceRange.min !== '') {
+        params.min_price = priceRange.min;
+      }
+      if (priceRange.max && priceRange.max !== '') {
+        params.max_price = priceRange.max;
       }
       
       return getProducts(params);
@@ -122,10 +130,9 @@ export const useCategoryProducts = () => {
 
   // Handlers
   const handleAddToCart = useCallback((product) => {
-    addToCart(product);
-    showToast(`${product.name} sepete eklendi!`, 'success');
+    addToCart(product); // CartContext zaten toast gösteriyor
     setQuickViewProduct(null);
-  }, [addToCart, showToast]);
+  }, [addToCart]);
 
   const toggleCompare = useCallback((product) => {
     if (compareList.find(p => p.id === product.id)) {
@@ -136,8 +143,16 @@ export const useCategoryProducts = () => {
         showToast('En fazla 3 ürün karşılaştırabilirsiniz.', 'warning');
         return;
       }
-      setCompareList([...compareList, product]);
+      const newCompareList = [...compareList, product];
+      setCompareList(newCompareList);
       showToast('Ürün karşılaştırma listesine eklendi.', 'success');
+      
+      // 2 veya daha fazla ürün varsa otomatik modal aç
+      if (newCompareList.length >= 2) {
+        setTimeout(() => {
+          setIsCompareModalOpen(true);
+        }, 500); // Toast gösterildikten sonra modal açılsın
+      }
     }
   }, [compareList, showToast]);
 

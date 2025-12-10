@@ -105,7 +105,7 @@ const FilterContent = ({
             onChange={(e) => setSearchQuery(e.target.value)}
             style={{
               ...styles.priceInput,
-              paddingLeft: '40px',
+              paddingLeft: '42px',
               marginBottom: 0,
             }}
           />

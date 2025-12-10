@@ -1,13 +1,17 @@
-// src/pages/user/UserOrders/index.jsx
-import React from 'react';
+import React, { useState } from 'react';
 import { FiLoader, FiXCircle } from 'react-icons/fi';
 import { useUserOrders } from './useUserOrders';
 import { styles } from './styles';
 import { OrderCard } from './components/OrderCard';
 import { EmptyOrders } from './components/EmptyOrders';
 import { OrdersHeader } from './components/OrdersHeader';
+// Dosya yapına göre bir üst klasöre çıkıp UserOrderDetail'i alıyoruz
+import UserOrderDetail from '../UserOrderDetail'; 
 
 const UserOrders = () => {
+  // 1. STATE: Hangi siparişin detayının açılacağını tutar. Null ise modal kapalıdır.
+  const [selectedOrderId, setSelectedOrderId] = useState(null);
+
   const {
     orders,
     pagination,
@@ -20,6 +24,16 @@ const UserOrders = () => {
     getPaymentStatusConfig,
     handlePageChange
   } = useUserOrders();
+
+  // Modal Açma Fonksiyonu
+  const handleOpenDetail = (orderId) => {
+    setSelectedOrderId(orderId);
+  };
+
+  // Modal Kapatma Fonksiyonu
+  const handleCloseDetail = () => {
+    setSelectedOrderId(null);
+  };
 
   if (isLoading) {
     return (
@@ -64,6 +78,8 @@ const UserOrders = () => {
             getStatusConfig={getStatusConfig}
             getPaymentStatusConfig={getPaymentStatusConfig}
             styles={styles}
+            // 2. DEĞİŞİKLİK: Link yerine tıklama fonksiyonunu gönderiyoruz
+            onDetailClick={() => handleOpenDetail(order.id)}
           />
         ))}
       </div>
@@ -97,6 +113,14 @@ const UserOrders = () => {
             Sonraki
           </button>
         </div>
+      )}
+
+      {/* 3. DEĞİŞİKLİK: MODAL ENTEGRASYONU */}
+      {selectedOrderId && (
+        <UserOrderDetail 
+          orderId={selectedOrderId} 
+          onClose={handleCloseDetail} 
+        />
       )}
     </div>
   );

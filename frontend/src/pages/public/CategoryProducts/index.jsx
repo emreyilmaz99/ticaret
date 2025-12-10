@@ -104,12 +104,7 @@ const CategoryProducts = () => {
         </div>
       </div>
 
-      <CompareBar
-        compareList={compareList}
-        onRemove={toggleCompare}
-        onOpenModal={() => setIsCompareModalOpen(true)}
-        styles={styles}
-      />
+      {/* CompareBar kaldırıldı - Sadece modal kullanılıyor */}
 
       {quickViewProduct && (
         <QuickViewModal
@@ -124,6 +119,7 @@ const CategoryProducts = () => {
         <CompareModal
           compareList={compareList}
           onClose={() => setIsCompareModalOpen(false)}
+          onRemove={toggleCompare}
           styles={styles}
         />
       )}
