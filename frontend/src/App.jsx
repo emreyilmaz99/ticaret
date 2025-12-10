@@ -29,6 +29,7 @@ import PaymentSuccess from './pages/user/PaymentSuccess'; // Ödeme Başarılı
 import PaymentFailed from './pages/user/PaymentFailed'; // Ödeme Başarısız
 import UserOrders from './pages/user/UserOrders'; // Kullanıcı Siparişleri
 import UserOrderDetail from './pages/user/UserOrderDetail'; // Sipariş Detayı
+import Invoice from './pages/user/Invoice'; // Fatura
 
 // 2. Admin Sayfaları
 import AdminLogin from './pages/admin/AdminLogin'; // Admin Girişi
@@ -164,6 +165,9 @@ function App() {
                 <Route path="orders" element={<UserOrders />} />
                 <Route path="orders/:orderNumber" element={<UserOrderDetail />} />
               </Route>
+
+              {/* Fatura Sayfası - Layout dışında tam ekran */}
+              <Route path="/invoice/:orderNumber" element={<Invoice />} />
 
               </Routes>
               </div>

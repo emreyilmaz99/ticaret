@@ -25,7 +25,7 @@ export const OrderCard = ({
             <p style={styles.headerLabel}>Sipariş No</p>
             <p style={styles.headerValue}>{order.order_number}</p>
           </div>
-          <div style={{ display: 'none', '@media (min-width: 640px)': { display: 'block' } }}>
+          <div>
             <p style={styles.headerLabel}>Tarih</p>
             <p style={{ ...styles.headerValue, display: 'flex', alignItems: 'center', gap: '4px' }}>
               <FiCalendar size={16} />

@@ -10,7 +10,7 @@ import { getOrder } from '../../../features/checkout/api/checkoutApi';
 
 const UserOrders = () => {
   // STATE: Hangi siparişin detayının gösterileceğini tutar. Null ise detay kapalıdır.
-  const [expandedOrderId, setExpandedOrderId] = useState(null);
+  const [expandedOrderNumber, setExpandedOrderNumber] = useState(null);
 
   const {
     orders,
@@ -26,15 +26,15 @@ const UserOrders = () => {
   } = useUserOrders();
 
   // Detay toggle fonksiyonu
-  const handleToggleDetail = (orderId) => {
-    setExpandedOrderId(expandedOrderId === orderId ? null : orderId);
+  const handleToggleDetail = (orderNumber) => {
+    setExpandedOrderNumber(expandedOrderNumber === orderNumber ? null : orderNumber);
   };
 
   // Seçili siparişin detayını çek
   const { data: orderDetail, isLoading: isDetailLoading } = useQuery({
-    queryKey: ['orderDetail', expandedOrderId],
-    queryFn: () => getOrder(expandedOrderId),
-    enabled: !!expandedOrderId,
+    queryKey: ['orderDetail', expandedOrderNumber],
+    queryFn: () => getOrder(expandedOrderNumber),
+    enabled: !!expandedOrderNumber,
   });
 
   if (isLoading) {
@@ -80,11 +80,11 @@ const UserOrders = () => {
               getStatusConfig={getStatusConfig}
               getPaymentStatusConfig={getPaymentStatusConfig}
               styles={styles}
-              onDetailClick={() => handleToggleDetail(order.id)}
+              onDetailClick={() => handleToggleDetail(order.order_number)}
             />
             
             {/* Detay Bölümü - Expand/Collapse */}
-            {expandedOrderId === order.id && (
+            {expandedOrderNumber === order.order_number && (
               <div style={{
                 backgroundColor: '#f9fafb',
                 border: '1px solid #e5e7eb',
@@ -100,7 +100,7 @@ const UserOrders = () => {
                   </div>
                 ) : orderDetail ? (
                   <OrderDetailContent 
-                    order={orderDetail.data} 
+                    order={orderDetail.data.order} 
                     formatPrice={formatPrice} 
                     formatDate={formatDate}
                   />
@@ -156,7 +156,7 @@ const OrderDetailContent = ({ order, formatPrice, formatDate }) => {
           Sipariş Ürünleri
         </h3>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {order.items?.map((item, idx) => (
+          {order.products?.map((item, idx) => (
             <div key={idx} style={{
               display: 'flex',
               gap: '16px',
@@ -166,19 +166,25 @@ const OrderDetailContent = ({ order, formatPrice, formatDate }) => {
               border: '1px solid #e5e7eb'
             }}>
               <img
-                src={item.product?.photos?.[0]?.file_path || 'https://via.placeholder.com/80'}
-                alt={item.product_name}
+                src={item.image}
+                alt={item.name}
                 style={{ width: '80px', height: '80px', objectFit: 'contain', borderRadius: '8px' }}
+                onError={(e) => { e.target.src = 'https://via.placeholder.com/80'; }}
               />
               <div style={{ flex: 1 }}>
                 <p style={{ fontSize: '14px', fontWeight: '600', color: '#111827', marginBottom: '4px' }}>
-                  {item.product_name}
+                  {item.name}
                 </p>
+                {item.variant && (
+                  <p style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '4px' }}>
+                    {item.variant}
+                  </p>
+                )}
                 <p style={{ fontSize: '13px', color: '#6b7280' }}>
-                  Adet: {item.quantity}
+                  Adet: {item.qty}
                 </p>
                 <p style={{ fontSize: '14px', fontWeight: '700', color: '#059669', marginTop: '8px' }}>
-                  {formatPrice(item.price * item.quantity)}
+                  {formatPrice(item.price_after_coupon)}
                 </p>
               </div>
             </div>
@@ -194,7 +200,7 @@ const OrderDetailContent = ({ order, formatPrice, formatDate }) => {
           </h4>
           {order.shipping_address && (
             <p style={{ fontSize: '13px', color: '#6b7280', lineHeight: '1.6' }}>
-              {order.shipping_address.address}<br />
+              {order.shipping_address.address_line}<br />
               {order.shipping_address.district}, {order.shipping_address.city}<br />
               {order.shipping_address.postal_code}
             </p>
@@ -205,11 +211,11 @@ const OrderDetailContent = ({ order, formatPrice, formatDate }) => {
           <h4 style={{ fontSize: '14px', fontWeight: '700', color: '#111827', marginBottom: '12px' }}>
             Fatura Adresi
           </h4>
-          {order.billing_address && (
+          {(order.billing_address || order.shipping_address) && (
             <p style={{ fontSize: '13px', color: '#6b7280', lineHeight: '1.6' }}>
-              {order.billing_address.address}<br />
-              {order.billing_address.district}, {order.billing_address.city}<br />
-              {order.billing_address.postal_code}
+              {(order.billing_address?.address_line || order.shipping_address?.address_line)}<br />
+              {(order.billing_address?.district || order.shipping_address?.district)}, {(order.billing_address?.city || order.shipping_address?.city)}<br />
+              {(order.billing_address?.postal_code || order.shipping_address?.postal_code)}
             </p>
           )}
         </div>
@@ -217,21 +223,71 @@ const OrderDetailContent = ({ order, formatPrice, formatDate }) => {
 
       {/* Ödeme Özeti */}
       <div style={{ padding: '20px', backgroundColor: '#ffffff', borderRadius: '12px', border: '1px solid #e5e7eb' }}>
-        <h4 style={{ fontSize: '14px', fontWeight: '700', color: '#111827', marginBottom: '12px' }}>
-          Ödeme Özeti
-        </h4>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+          <h4 style={{ fontSize: '14px', fontWeight: '700', color: '#111827' }}>
+            Ödeme Özeti
+          </h4>
+          <button
+            onClick={() => window.open(`/invoice/${order.order_number}`, '_blank')}
+            style={{
+              padding: '6px 12px',
+              backgroundColor: '#ffffff',
+              border: '1px solid #d1d5db',
+              borderRadius: '6px',
+              fontSize: '12px',
+              fontWeight: '500',
+              color: '#374151',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              transition: 'all 0.2s'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.backgroundColor = '#f9fafb';
+              e.target.style.borderColor = '#9ca3af';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.backgroundColor = '#ffffff';
+              e.target.style.borderColor = '#d1d5db';
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+              <polyline points="10 9 9 9 8 9"></polyline>
+            </svg>
+            Faturayı Görüntüle
+          </button>
+        </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
             <span style={{ color: '#6b7280' }}>Ara Toplam:</span>
             <span style={{ color: '#111827', fontWeight: '600' }}>{formatPrice(order.subtotal)}</span>
           </div>
+          {order.coupon_discount > 0 && (
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
+              <span style={{ color: '#059669' }}>
+                Kupon İndirimi {order.coupon_code && `(${order.coupon_code})`}:
+              </span>
+              <span style={{ color: '#059669', fontWeight: '600' }}>-{formatPrice(order.coupon_discount)}</span>
+            </div>
+          )}
+          {order.tax_amount > 0 && (
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
+              <span style={{ color: '#6b7280' }}>KDV:</span>
+              <span style={{ color: '#111827', fontWeight: '600' }}>{formatPrice(order.tax_amount)}</span>
+            </div>
+          )}
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
             <span style={{ color: '#6b7280' }}>Kargo:</span>
             <span style={{ color: '#111827', fontWeight: '600' }}>{formatPrice(order.shipping_cost || 0)}</span>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '15px', fontWeight: '700', paddingTop: '8px', borderTop: '1px solid #e5e7eb' }}>
             <span style={{ color: '#111827' }}>Toplam:</span>
-            <span style={{ color: '#059669' }}>{formatPrice(order.total)}</span>
+            <span style={{ color: '#059669' }}>{formatPrice(order.amount)}</span>
           </div>
         </div>
       </div>
