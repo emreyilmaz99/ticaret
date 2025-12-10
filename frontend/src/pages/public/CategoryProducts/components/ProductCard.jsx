@@ -1,6 +1,5 @@
-// src/pages/public/CategoryProducts/components/ProductCard.jsx
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { 
   FaHeart, 
   FaRegHeart, 
@@ -14,9 +13,6 @@ import { useFavorites } from '../../../../context/FavoritesContext';
 import { useAuth } from '../../../../context/AuthContext';
 import { useToast } from '../../../../components/common/Toast';
 
-/**
- * Product card component - modern design matching Home page
- */
 export const ProductCard = ({
   product,
   viewMode,
@@ -24,7 +20,7 @@ export const ProductCard = ({
   onToggleCompare,
   onAddToCart,
   onQuickView,
-  styles
+  styles: propStyles
 }) => {
   const { isFavorite, addToFavorites, removeFromFavorites } = useFavorites();
   const { user } = useAuth();
@@ -33,6 +29,8 @@ export const ProductCard = ({
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const isFav = isFavorite(product.id);
 
+  const productUrl = `/product/${product.slug || product.id}`;
+
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 768);
     window.addEventListener('resize', handleResize);
@@ -40,15 +38,14 @@ export const ProductCard = ({
   }, []);
 
   const handleToggleFavorite = (e) => {
+    e.preventDefault();
     e.stopPropagation();
-    if (isFav) {
-      removeFromFavorites(product.id);
-    } else {
-      addToFavorites(product);
-    }
+    if (isFav) removeFromFavorites(product.id);
+    else addToFavorites(product);
   };
 
   const handleAddToCart = (e) => {
+    e.preventDefault();
     e.stopPropagation();
     if (!user) {
       showToast('Sepete ürün eklemek için lütfen giriş yapın.', 'warning');
@@ -59,6 +56,7 @@ export const ProductCard = ({
   };
 
   const handleBuyNow = (e) => {
+    e.preventDefault();
     e.stopPropagation();
     if (!user) {
       showToast('Satın alma işlemi için lütfen giriş yapın.', 'warning');
@@ -69,283 +67,207 @@ export const ProductCard = ({
     navigate('/cart');
   };
 
-  const handleCardClick = () => {
-    navigate(`/product/${product.slug}`);
+  const handleQuickView = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (onQuickView) onQuickView(product);
+    else navigate(productUrl);
   };
 
+  const handleToggleCompare = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (onToggleCompare) onToggleCompare(product);
+  };
+
+  // --- KATEGORİ İSMİNİ GÜVENLİ ALMA (HATA ÇÖZÜMÜ) ---
+  const getCategoryName = () => {
+    if (product.vendor_name) return product.vendor_name;
+    // Eğer product.category bir obje ise .name'ini al, string ise kendisini al
+    if (product.category && typeof product.category === 'object') {
+      return product.category.name || 'GENEL';
+    }
+    return product.category || 'GENEL';
+  };
+
+  // --- STİLLER ---
   const cardStyles = {
     card: {
       backgroundColor: 'white',
-      borderRadius: isMobile ? '16px' : '32px',
+      borderRadius: isMobile ? '16px' : '24px',
       overflow: 'hidden',
-      border: 'none',
-      boxShadow: '0 20px 40px -10px rgba(0, 0, 0, 0.07)',
+      border: '1px solid #f1f5f9',
+      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
       transition: 'transform 0.3s ease, box-shadow 0.3s ease',
       position: 'relative',
       cursor: 'pointer',
-      ...(viewMode === 'list' && !isMobile ? {
-        display: 'flex',
-        flexDirection: 'row',
-        maxHeight: '200px',
-        borderRadius: '16px',
-      } : {}),
+      display: 'block',
+      textDecoration: 'none',
+      color: 'inherit',
+      ...(viewMode === 'list' && !isMobile ? { display: 'flex', flexDirection: 'row', maxHeight: '240px' } : {}),
     },
     cardImage: {
-      width: viewMode === 'list' && !isMobile ? '200px' : (isMobile ? 'calc(100% - 16px)' : 'calc(100% - 24px)'),
+      width: viewMode === 'list' && !isMobile ? '220px' : '100%',
       aspectRatio: viewMode === 'list' && !isMobile ? 'auto' : '1/1',
-      height: viewMode === 'list' && !isMobile ? '200px' : 'auto',
-      objectFit: 'cover',
-      backgroundColor: '#f8fafc',
-      margin: viewMode === 'list' && !isMobile ? '0' : (isMobile ? '8px' : '12px'),
-      borderRadius: viewMode === 'list' && !isMobile ? '0' : (isMobile ? '12px' : '24px'),
+      height: viewMode === 'list' && !isMobile ? '100%' : 'auto',
+      objectFit: 'contain',
+      backgroundColor: 'white',
+      padding: '16px',
       flexShrink: 0,
     },
     cardBody: {
-      padding: viewMode === 'list' && !isMobile ? '20px 24px' : (isMobile ? '0 12px 12px 12px' : '0 24px 24px 24px'),
+      padding: viewMode === 'list' && !isMobile ? '24px' : '16px',
       flex: viewMode === 'list' && !isMobile ? 1 : 'initial',
-      display: viewMode === 'list' && !isMobile ? 'flex' : 'block',
-      flexDirection: viewMode === 'list' && !isMobile ? 'column' : 'initial',
-      justifyContent: viewMode === 'list' && !isMobile ? 'space-between' : 'initial',
+      display: 'flex',
+      flexDirection: 'column',
+      justifyContent: 'space-between',
+      height: viewMode === 'list' && !isMobile ? '100%' : 'auto',
     },
     cardCategory: {
-      fontSize: isMobile ? '10px' : '12px',
-      color: '#64748b',
+      fontSize: '11px',
+      color: '#059669',
       textTransform: 'uppercase',
-      fontWeight: '600',
-      marginBottom: '4px',
+      fontWeight: '700',
+      marginBottom: '6px',
+      letterSpacing: '0.5px',
     },
     cardTitle: {
-      fontSize: isMobile ? '13px' : '15px',
+      fontSize: isMobile ? '14px' : '15px',
       fontWeight: '600',
       color: '#1e293b',
       marginBottom: '8px',
       lineHeight: '1.4',
-      height: isMobile ? '36px' : '42px',
+      height: '42px',
       overflow: 'hidden',
+      display: '-webkit-box',
+      WebkitLineClamp: 2,
+      WebkitBoxOrient: 'vertical',
     },
     rating: {
       display: 'flex',
       alignItems: 'center',
       gap: '4px',
-      fontSize: isMobile ? '10px' : '12px',
+      fontSize: '12px',
       color: '#f59e0b',
-      marginBottom: isMobile ? '8px' : '12px',
+      marginBottom: '12px',
     },
     priceRow: {
       display: 'flex',
       justifyContent: 'space-between',
-      alignItems: 'center',
-      flexWrap: isMobile ? 'wrap' : 'nowrap',
-      gap: isMobile ? '8px' : '0',
+      alignItems: 'flex-end',
+      marginTop: 'auto',
     },
-    price: {
-      fontSize: isMobile ? '14px' : '18px',
-      fontWeight: '700',
-      color: '#059669',
-    },
-    oldPrice: {
-      fontSize: isMobile ? '11px' : '13px',
-      color: '#94a3b8',
-      textDecoration: 'line-through',
-      display: 'block',
-      marginBottom: '2px',
-    },
-    actions: {
-      display: 'flex',
-      gap: isMobile ? '4px' : '8px',
-    },
+    priceGroup: { display: 'flex', flexDirection: 'column' },
+    price: { fontSize: isMobile ? '16px' : '18px', fontWeight: '800', color: '#1e293b' },
+    oldPrice: { fontSize: '12px', color: '#94a3b8', textDecoration: 'line-through', marginBottom: '2px' },
+    actions: { display: 'flex', gap: '8px' },
     addToCartBtn: {
-      width: isMobile ? '30px' : '36px',
-      height: isMobile ? '30px' : '36px',
-      borderRadius: '50%',
-      backgroundColor: '#ecfdf5',
-      color: '#059669',
-      border: 'none',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      cursor: 'pointer',
-      transition: 'background-color 0.2s',
+      width: '36px', height: '36px', borderRadius: '10px', backgroundColor: '#059669', color: 'white',
+      border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+      transition: 'all 0.2s', boxShadow: '0 4px 6px -1px rgba(5, 150, 105, 0.3)',
     },
     buyNowBtn: {
-      height: isMobile ? '30px' : '36px',
-      padding: isMobile ? '0 8px' : '0 12px',
-      borderRadius: isMobile ? '15px' : '18px',
-      backgroundColor: '#059669',
-      color: 'white',
-      border: 'none',
-      display: 'flex',
-      alignItems: 'center',
-      gap: isMobile ? '4px' : '6px',
-      fontSize: isMobile ? '10px' : '12px',
-      fontWeight: '700',
-      cursor: 'pointer',
-      transition: 'background-color 0.2s',
+      height: '36px', padding: '0 16px', borderRadius: '10px', backgroundColor: '#f0fdf4',
+      color: '#059669', border: '1px solid #d1fae5', display: 'flex', alignItems: 'center', gap: '6px',
+      fontSize: '12px', fontWeight: '700', cursor: 'pointer', transition: 'all 0.2s',
     },
     discountBadge: {
-      position: 'absolute',
-      top: isMobile ? '8px' : '12px',
-      left: isMobile ? '8px' : '12px',
-      backgroundColor: '#ef4444',
-      color: 'white',
-      fontSize: isMobile ? '10px' : '12px',
-      fontWeight: '700',
-      padding: isMobile ? '2px 6px' : '4px 8px',
-      borderRadius: '6px',
-      zIndex: 3,
+      position: 'absolute', top: '12px', left: '12px', backgroundColor: '#dc2626', color: 'white',
+      fontSize: '11px', fontWeight: '700', padding: '4px 8px', borderRadius: '6px', zIndex: 3,
+      boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+    },
+    actionOverlay: {
+      position: 'absolute', top: '12px', right: '12px', display: 'flex', flexDirection: 'column', gap: '8px', zIndex: 10,
     },
     cardActionBtn: {
-      width: isMobile ? '28px' : '32px',
-      height: isMobile ? '28px' : '32px',
-      borderRadius: '50%',
-      backgroundColor: 'white',
-      border: 'none',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      cursor: 'pointer',
-      color: '#64748b',
-      transition: 'all 0.2s',
-      position: 'absolute',
-      right: isMobile ? '8px' : '12px',
-      zIndex: 2,
-      boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+      width: '32px', height: '32px', borderRadius: '50%', backgroundColor: 'white', border: '1px solid #e2e8f0',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#64748b',
+      transition: 'all 0.2s', boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
     },
   };
 
   return (
-    <div 
-      style={cardStyles.card} 
-      onClick={handleCardClick}
+    <div
+      style={cardStyles.card}
       onMouseEnter={(e) => {
-        if (viewMode !== 'list' || isMobile) {
-          e.currentTarget.style.transform = 'translateY(-8px)';
-          e.currentTarget.style.boxShadow = '0 25px 50px -10px rgba(0, 0, 0, 0.15)';
+        if (!isMobile) {
+          e.currentTarget.style.transform = 'translateY(-5px)';
+          e.currentTarget.style.boxShadow = '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)';
         }
       }}
       onMouseLeave={(e) => {
-        if (viewMode !== 'list' || isMobile) {
+        if (!isMobile) {
           e.currentTarget.style.transform = 'translateY(0)';
-          e.currentTarget.style.boxShadow = '0 20px 40px -10px rgba(0, 0, 0, 0.07)';
+          e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.05)';
         }
       }}
     >
-      {/* Discount Badge */}
       {product.discount_percent > 0 && (
-        <div style={cardStyles.discountBadge}>
-          -{product.discount_percent}%
-        </div>
+        <div style={cardStyles.discountBadge}>%{product.discount_percent} İndirim</div>
       )}
       
-      {/* Action Buttons - Right Side */}
-      <button 
-        style={{ ...cardStyles.cardActionBtn, top: isMobile ? '8px' : '12px' }} 
-        onClick={handleToggleFavorite}
-        title={isFav ? "Favorilerden Çıkar" : "Favorilere Ekle"}
-      >
-        {isFav ? <FaHeart color="#ef4444" size={isMobile ? 12 : 14} /> : <FaRegHeart size={isMobile ? 12 : 14} />}
-      </button>
-      
-      <button 
-        style={{ ...cardStyles.cardActionBtn, top: isMobile ? '40px' : '52px' }} 
-        onClick={(e) => {
-          e.stopPropagation();
-          onQuickView(product);
-        }}
-        title="Hızlı Bakış"
-      >
-        <FaEye size={isMobile ? 12 : 14} />
-      </button>
-
-      {onToggleCompare && (
-        <button 
-          style={{ 
-            ...cardStyles.cardActionBtn, 
-            top: isMobile ? '72px' : '92px',
-            backgroundColor: isInCompareList ? '#059669' : 'white',
-            color: isInCompareList ? 'white' : '#64748b',
-          }} 
-          onClick={(e) => {
-            e.stopPropagation();
-            onToggleCompare(product);
-          }}
-          title="Karşılaştır"
-        >
-          <FaExchangeAlt size={isMobile ? 12 : 14} />
+      <div style={cardStyles.actionOverlay}>
+        <button style={cardStyles.cardActionBtn} onClick={handleToggleFavorite} title="Favori">
+          {isFav ? <FaHeart color="#ef4444" size={14} /> : <FaRegHeart size={14} />}
         </button>
-      )}
+        <button style={cardStyles.cardActionBtn} onClick={handleQuickView} title="Hızlı Bakış">
+          <FaEye size={14} />
+        </button>
+        {onToggleCompare && (
+          <button 
+            style={{ 
+              ...cardStyles.cardActionBtn,
+              backgroundColor: isInCompareList ? '#059669' : 'white',
+              color: isInCompareList ? 'white' : '#64748b',
+              borderColor: isInCompareList ? '#059669' : '#e2e8f0'
+            }} 
+            onClick={handleToggleCompare} title="Karşılaştır"
+          >
+            <FaExchangeAlt size={14} />
+          </button>
+        )}
+      </div>
 
-      {/* Product Image */}
-      <img
-        src={product.image || '/placeholder.jpg'}
-        alt={product.name}
-        style={cardStyles.cardImage}
-      />
+      <Link to={productUrl} style={{ textDecoration: 'none', color: 'inherit' }}>
+        <img
+          src={product.image || 'https://via.placeholder.com/300?text=Urun'}
+          alt={product.name}
+          style={cardStyles.cardImage}
+        />
+      </Link>
 
-      {/* Product Info */}
       <div style={cardStyles.cardBody}>
-        <div style={cardStyles.cardCategory}>
-          {product.vendor_name || 'MARKA'}
-        </div>
-        
-        <h3 style={cardStyles.cardTitle}>
-          {product.name}
-        </h3>
+        <div>
+          {/* GÜVENLİ KATEGORİ GÖSTERİMİ */}
+          <div style={cardStyles.cardCategory}>{getCategoryName()}</div>
+          
+          <Link to={productUrl} style={{ textDecoration: 'none', color: 'inherit' }}>
+            <h3 style={cardStyles.cardTitle}>{product.name}</h3>
+          </Link>
 
-        {/* Rating */}
-        <div style={cardStyles.rating}>
-          {[...Array(5)].map((_, i) => (
-            <FaStar
-              key={i}
-              color={i < (product.rating || 4) ? '#f59e0b' : '#e0e0e0'}
-              size={isMobile ? 10 : 12}
-            />
-          ))}
-          <span style={{ color: '#64748b', marginLeft: '4px' }}>
-            ({product.review_count || 0})
-          </span>
+          <div style={cardStyles.rating}>
+            {[...Array(5)].map((_, i) => (
+              <FaStar key={i} color={i < (product.rating || 4) ? '#f59e0b' : '#e2e8f0'} size={12} />
+            ))}
+            <span style={{ color: '#94a3b8', marginLeft: '4px' }}>({product.review_count || 0})</span>
+          </div>
         </div>
 
-        {/* Price & Actions */}
         <div style={cardStyles.priceRow}>
-          <div>
+          <div style={cardStyles.priceGroup}>
             {product.discount_percent > 0 && product.original_price && (
-              <span style={cardStyles.oldPrice}>
-                {product.original_price?.toLocaleString('tr-TR')} TL
-              </span>
+              <span style={cardStyles.oldPrice}>{product.original_price.toLocaleString('tr-TR')} TL</span>
             )}
-            <div style={cardStyles.price}>
-              {product.price?.toLocaleString('tr-TR')} TL
-            </div>
+            <div style={cardStyles.price}>{product.price?.toLocaleString('tr-TR')} TL</div>
           </div>
           
           <div style={cardStyles.actions}>
-            <button
-              style={cardStyles.addToCartBtn}
-              onClick={handleAddToCart}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#d1fae5';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = '#ecfdf5';
-              }}
-              title="Sepete Ekle"
-            >
-              <FaShoppingCart size={isMobile ? 12 : 14} />
+            <button style={cardStyles.buyNowBtn} onClick={handleBuyNow} title="Hemen Satın Al">
+              <FaBolt size={12} />
+              <span style={{display: isMobile ? 'none' : 'inline'}}>Hemen Al</span>
             </button>
-            
-            <button
-              style={cardStyles.buyNowBtn}
-              onClick={handleBuyNow}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#047857';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = '#059669';
-              }}
-            >
-              <FaBolt size={isMobile ? 10 : 12} />
-              Hemen Al
+            <button style={cardStyles.addToCartBtn} onClick={handleAddToCart} title="Sepete Ekle">
+              <FaShoppingCart size={14} />
             </button>
           </div>
         </div>
