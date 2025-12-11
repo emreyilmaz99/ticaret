@@ -204,7 +204,18 @@ export const ProductCard = ({
         }
       }}
     >
-      {product.discount_percent > 0 && (
+      {/* Featured Deal Badge - API'den gelen kampanya bilgisi */}
+      {product.has_deal && product.deal_badge && (
+        <div style={{
+          ...cardStyles.discountBadge,
+          backgroundColor: product.deal_badge.color || '#ef4444'
+        }}>
+          {product.deal_badge.text || `%${Math.round(product.discount_percentage)} İndirim`}
+        </div>
+      )}
+      
+      {/* Eski discount alanı (geriye dönük uyumluluk) */}
+      {!product.has_deal && product.discount_percent > 0 && (
         <div style={cardStyles.discountBadge}>%{product.discount_percent} İndirim</div>
       )}
       
@@ -257,10 +268,20 @@ export const ProductCard = ({
 
         <div style={cardStyles.priceRow}>
           <div style={cardStyles.priceGroup}>
-            {product.discount_percent > 0 && product.original_price && (
+            {/* Featured deal'den gelen orijinal fiyat (üstü çizili) */}
+            {product.has_deal && product.original_price && (
               <span style={cardStyles.oldPrice}>{product.original_price.toLocaleString('tr-TR')} TL</span>
             )}
-            <div style={cardStyles.price}>{product.price?.toLocaleString('tr-TR')} TL</div>
+            {/* Eski discount alanı için geriye dönük destek */}
+            {!product.has_deal && product.discount_percent > 0 && product.original_price && (
+              <span style={cardStyles.oldPrice}>{product.original_price.toLocaleString('tr-TR')} TL</span>
+            )}
+            <div style={{
+              ...cardStyles.price,
+              color: product.has_deal ? '#ef4444' : '#1e293b'
+            }}>
+              {product.price?.toLocaleString('tr-TR')} TL
+            </div>
           </div>
           
           <div style={cardStyles.actions}>
