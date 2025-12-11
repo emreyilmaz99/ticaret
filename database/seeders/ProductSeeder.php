@@ -12,13 +12,13 @@ class ProductSeeder extends Seeder
 {
     public function run(): void
     {
-        $vendorId = 11;
+        $vendorId = 4;
         $unitId = 1; // Adet
 
         $products = [
             // iPhone 15 Pro Max
             [
-                'category_id' => 3,
+                'category_id' => 409,
                 'name' => 'iPhone 15 Pro Max 256GB',
                 'short_description' => 'Apple iPhone 15 Pro Max, 256GB depolama, Titanium kasa',
                 'description' => '<p>Apple iPhone 15 Pro Max, guclu A17 Pro cip ile donatilmis en gelismis iPhone modelidir.</p><ul><li>6.7 inc Super Retina XDR ekran</li><li>A17 Pro cip</li><li>48MP Pro kamera sistemi</li><li>USB-C baglanti</li><li>Titanium tasarim</li></ul>',
@@ -38,7 +38,7 @@ class ProductSeeder extends Seeder
             ],
             // iPhone 14
             [
-                'category_id' => 3,
+                'category_id' => 409,
                 'name' => 'iPhone 14 128GB',
                 'short_description' => 'Apple iPhone 14, 128GB depolama alani',
                 'description' => '<p>iPhone 14, A15 Bionic cip ile guclendirilmis akilli telefon.</p>',
@@ -56,7 +56,7 @@ class ProductSeeder extends Seeder
             ],
             // Samsung S24 Ultra
             [
-                'category_id' => 4,
+                'category_id' => 410,
                 'name' => 'Samsung Galaxy S24 Ultra 512GB',
                 'short_description' => 'Samsung Galaxy S24 Ultra, 512GB, S Pen destekli',
                 'description' => '<p>Samsung Galaxy S24 Ultra, yapay zeka destekli Galaxy AI ozellikleri.</p>',
@@ -75,7 +75,7 @@ class ProductSeeder extends Seeder
             ],
             // Samsung A55
             [
-                'category_id' => 4,
+                'category_id' => 410,
                 'name' => 'Samsung Galaxy A55 5G 256GB',
                 'short_description' => 'Samsung Galaxy A55 5G, 256GB depolama',
                 'description' => '<p>Galaxy A55 5G, orta segment fiyatiyla premium ozellikler sunar.</p>',
@@ -93,7 +93,7 @@ class ProductSeeder extends Seeder
             ],
             // Xiaomi 14 Ultra
             [
-                'category_id' => 5,
+                'category_id' => 411,
                 'name' => 'Xiaomi 14 Ultra 512GB',
                 'short_description' => 'Xiaomi 14 Ultra, Leica kamera sistemi',
                 'description' => '<p>Xiaomi 14 Ultra, Leica ile ortaklasa gelistirilen profesyonel kamera sistemi.</p>',
@@ -111,7 +111,7 @@ class ProductSeeder extends Seeder
             ],
             // Redmi Note 13 Pro+
             [
-                'category_id' => 5,
+                'category_id' => 411,
                 'name' => 'Xiaomi Redmi Note 13 Pro+ 256GB',
                 'short_description' => 'Redmi Note 13 Pro+, 200MP kamera',
                 'description' => '<p>Redmi Note 13 Pro+, uygun fiyatiyla 200MP kamera sunar.</p>',
@@ -129,7 +129,7 @@ class ProductSeeder extends Seeder
             ],
             // MacBook Pro 14
             [
-                'category_id' => 9,
+                'category_id' => 415,
                 'name' => 'MacBook Pro 14 M3 Pro 512GB',
                 'short_description' => 'Apple MacBook Pro 14 inc, M3 Pro cip',
                 'description' => '<p>MacBook Pro 14 inc, M3 Pro cip ile profesyonel is akislari icin tasarlandi.</p>',
@@ -148,7 +148,7 @@ class ProductSeeder extends Seeder
             ],
             // ASUS ROG
             [
-                'category_id' => 9,
+                'category_id' => 415,
                 'name' => 'ASUS ROG Strix G16 Gaming Laptop',
                 'short_description' => 'ASUS ROG Strix G16, RTX 4070, Intel i9',
                 'description' => '<p>ASUS ROG Strix G16, guclu oyun performansi icin tasarlanmis gaming laptop.</p>',
@@ -165,7 +165,7 @@ class ProductSeeder extends Seeder
             ],
             // Samsung TV
             [
-                'category_id' => 14,
+                'category_id' => 420,
                 'name' => 'Samsung 65 Neo QLED 4K Smart TV',
                 'short_description' => 'Samsung 65 inc Neo QLED 4K Akilli TV',
                 'description' => '<p>Samsung Neo QLED 4K TV, Quantum Matrix teknolojisi ile ustun goruntu kalitesi.</p>',
@@ -182,7 +182,7 @@ class ProductSeeder extends Seeder
             ],
             // LG OLED
             [
-                'category_id' => 14,
+                'category_id' => 420,
                 'name' => 'LG 55 OLED evo C4 4K Smart TV',
                 'short_description' => 'LG 55 inc OLED evo 4K Akilli TV',
                 'description' => '<p>LG OLED evo C4, sonsuz kontrast ve mukemmel siyahlar ile sinema deneyimi.</p>',
@@ -199,7 +199,7 @@ class ProductSeeder extends Seeder
             ],
             // PS5
             [
-                'category_id' => 24,
+                'category_id' => 430,
                 'name' => 'PlayStation 5 Slim Digital Edition',
                 'short_description' => 'Sony PS5 Slim Digital Edition',
                 'description' => '<p>PlayStation 5 Slim, daha kompakt tasarimiyla ayni guclu oyun deneyimi.</p>',
@@ -216,7 +216,7 @@ class ProductSeeder extends Seeder
             ],
             // Xbox
             [
-                'category_id' => 24,
+                'category_id' => 431,
                 'name' => 'Xbox Series X 1TB',
                 'short_description' => 'Microsoft Xbox Series X, 1TB SSD',
                 'description' => '<p>Xbox Series X, en guclu Xbox konsolu olarak 4K oyunlari 120fps te oynatir.</p>',
@@ -233,7 +233,7 @@ class ProductSeeder extends Seeder
             ],
             // Sony A7 IV
             [
-                'category_id' => 19,
+                'category_id' => 426,
                 'name' => 'Sony Alpha A7 IV Full Frame Aynasiz',
                 'short_description' => 'Sony A7 IV, 33MP Full Frame Aynasiz Fotograf Makinesi',
                 'description' => '<p>Sony A7 IV, profesyonel fotografcilar icin gelistirilmis hibrit bir full frame aynasiz fotograf makinesi.</p>',
@@ -251,7 +251,7 @@ class ProductSeeder extends Seeder
             ],
             // iPad Pro
             [
-                'category_id' => 10,
+                'category_id' => 417,
                 'name' => 'iPad Pro 12.9 M4 256GB WiFi',
                 'short_description' => 'Apple iPad Pro 12.9 inc, M4 cip, WiFi',
                 'description' => '<p>iPad Pro M4, en guclu iPad olup profesyoneller icin tasarlandi.</p>',
@@ -269,7 +269,7 @@ class ProductSeeder extends Seeder
             ],
             // Galaxy Tab S9
             [
-                'category_id' => 10,
+                'category_id' => 417,
                 'name' => 'Samsung Galaxy Tab S9 Ultra 512GB',
                 'short_description' => 'Samsung Galaxy Tab S9 Ultra, 14.6 inc AMOLED',
                 'description' => '<p>Galaxy Tab S9 Ultra, buyuk ekrani ve guclu ozellikleriyle uretkenlik odakli tablet.</p>',
@@ -286,7 +286,7 @@ class ProductSeeder extends Seeder
             ],
             // AirPods Pro
             [
-                'category_id' => 27,
+                'category_id' => 422,
                 'name' => 'Apple AirPods Pro 2. Nesil USB-C',
                 'short_description' => 'Apple AirPods Pro (2. nesil) USB-C sarj kutusuyla',
                 'description' => '<p>AirPods Pro 2, gelismis aktif gurultu engelleme ve kisisellestirilmis mekansal ses sunar.</p>',
@@ -303,7 +303,7 @@ class ProductSeeder extends Seeder
             ],
             // Sony WH-1000XM5
             [
-                'category_id' => 27,
+                'category_id' => 422,
                 'name' => 'Sony WH-1000XM5 Kablosuz Kulaklik',
                 'short_description' => 'Sony WH-1000XM5, Premium Kablosuz Kulaklik',
                 'description' => '<p>Sony WH-1000XM5, sinifinin en iyi gurultu engelleme ozelligine sahip premium kulaklik.</p>',
@@ -321,7 +321,7 @@ class ProductSeeder extends Seeder
             ],
             // Apple Watch Series 9
             [
-                'category_id' => 28,
+                'category_id' => 458,
                 'name' => 'Apple Watch Series 9 45mm GPS',
                 'short_description' => 'Apple Watch Series 9, 45mm, GPS',
                 'description' => '<p>Apple Watch Series 9, S9 SiP ile daha parlak ekran ve yeni cift dokunma ozelligi sunar.</p>',
@@ -339,7 +339,7 @@ class ProductSeeder extends Seeder
             ],
             // Galaxy Watch6
             [
-                'category_id' => 28,
+                'category_id' => 458,
                 'name' => 'Samsung Galaxy Watch6 Classic 47mm',
                 'short_description' => 'Samsung Galaxy Watch6 Classic, 47mm, LTE',
                 'description' => '<p>Galaxy Watch6 Classic, doner cercevesi ve premium tasarimiyla dikkat ceker.</p>',
@@ -371,7 +371,6 @@ class ProductSeeder extends Seeder
                 'type' => $productData['type'],
                 'status' => $productData['status'],
                 'is_featured' => $productData['is_featured'],
-                'tax_class' => $productData['tax_class'],
             ]);
 
             // Create variants

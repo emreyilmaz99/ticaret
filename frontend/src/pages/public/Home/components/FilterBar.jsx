@@ -74,11 +74,17 @@ const FilterBar = ({
 
       {/* Sort Order */}
       <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '12px' }}>
-        <span style={{ fontSize: '14px', color: '#64748b' }}>Sırala:</span>
+        <span style={{ fontSize: '14px', color: '#64748b', whiteSpace: 'nowrap' }}>Sırala:</span>
         <select 
           value={sortOrder}
           onChange={(e) => setSortOrder(e.target.value)}
-          style={styles.filterSelect}
+          style={{
+            ...styles.filterSelect,
+            minWidth: '140px',
+            maxWidth: '160px',
+            fontSize: '13px',
+            padding: '10px 12px'
+          }}
         >
           <option value="featured">Önerilen</option>
           <option value="price-asc">En Düşük Fiyat</option>

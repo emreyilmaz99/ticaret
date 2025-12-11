@@ -102,7 +102,7 @@ const Home = () => {
         {/* Product Grid */}
         <main style={styles.content}>
           <ProductGrid 
-            products={filteredProducts}
+            products={filteredProducts.slice(0, 12)}
             isLoading={productsLoading}
             error={productsError}
             favorites={favorites}
@@ -112,8 +112,63 @@ const Home = () => {
             clearFilters={clearFilters}
             styles={styles}
           />
+          
+          {/* View All Products Button */}
+          {filteredProducts.length > 0 && (
+            <div style={{
+              display: 'flex',
+              justifyContent: 'center',
+              margin: '60px 0',
+            }}>
+              <a
+                href="/products"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  padding: '16px 48px',
+                  backgroundColor: '#059669',
+                  color: 'white',
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  borderRadius: '16px',
+                  textDecoration: 'none',
+                  boxShadow: '0 10px 30px -10px rgba(5, 150, 105, 0.4)',
+                  transition: 'all 0.3s ease',
+                  cursor: 'pointer',
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.transform = 'translateY(-2px)';
+                  e.target.style.boxShadow = '0 20px 40px -10px rgba(5, 150, 105, 0.5)';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.transform = 'translateY(0)';
+                  e.target.style.boxShadow = '0 10px 30px -10px rgba(5, 150, 105, 0.4)';
+                }}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="3" y="3" width="7" height="7"></rect>
+                  <rect x="14" y="3" width="7" height="7"></rect>
+                  <rect x="14" y="14" width="7" height="7"></rect>
+                  <rect x="3" y="14" width="7" height="7"></rect>
+                </svg>
+                Tüm Ürünleri Görüntüle
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M5 12h14M12 5l7 7-7 7"/>
+                </svg>
+              </a>
+            </div>
+          )}
         </main>
       </div>
+
+      {/* Divider */}
+      <div style={{
+        maxWidth: '1200px',
+        margin: '80px auto',
+        height: '1px',
+        background: 'linear-gradient(90deg, transparent, #e2e8f0 20%, #e2e8f0 80%, transparent)',
+      }} />
 
       {/* Deal of the Day */}
       <DealSection addToCart={addToCart} styles={styles} isMobile={isMobile} />
