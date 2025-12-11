@@ -27,6 +27,8 @@ class FeaturedDealController extends Controller
 
                 return [
                     'id' => $deal->id,
+                    'product_id' => $deal->product_id,
+                    'variant_id' => $deal->variant_id,
                     'title' => $deal->title,
                     'description' => $deal->description,
                     'deal_price' => (float) $deal->deal_price,
@@ -35,6 +37,8 @@ class FeaturedDealController extends Controller
                     'background_color' => $deal->background_color,
                     'badge_text' => $deal->badge_text,
                     'badge_color' => $deal->badge_color,
+                    'starts_at' => $deal->starts_at?->toIso8601String(),
+                    'ends_at' => $deal->ends_at?->toIso8601String(),
                     'remaining_time' => $deal->remaining_time,
                     'product' => [
                         'id' => $product->id,

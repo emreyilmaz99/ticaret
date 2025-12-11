@@ -12,7 +12,7 @@ const DealSection = ({ addToCart, styles, isMobile }) => {
   const [deals, setDeals] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [timeLeft, setTimeLeft] = useState({ hours: 0, minutes: 0, seconds: 0 });
+  const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
 
   // Fetch featured deals from API
   useEffect(() => {
@@ -46,12 +46,13 @@ const DealSection = ({ addToCart, styles, isMobile }) => {
       const difference = endTime - now;
 
       if (difference > 0) {
+        const days = Math.floor(difference / (1000 * 60 * 60 * 24));
         const hours = Math.floor((difference / (1000 * 60 * 60)) % 24);
         const minutes = Math.floor((difference / (1000 * 60)) % 60);
         const seconds = Math.floor((difference / 1000) % 60);
-        setTimeLeft({ hours, minutes, seconds });
+        setTimeLeft({ days, hours, minutes, seconds });
       } else {
-        setTimeLeft({ hours: 0, minutes: 0, seconds: 0 });
+        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
       }
     };
 
@@ -333,32 +334,227 @@ const DealSection = ({ addToCart, styles, isMobile }) => {
           >
             <FaEye /> İncele
           </a>
-          
-          {/* Countdown Timer */}
-          {currentDeal.ends_at && (
+        </div>
+
+        {/* Countdown Timer - Ayrı Satır */}
+        {currentDeal.ends_at ? (
+          <div style={{ 
+            marginTop: '24px',
+            display: 'flex', 
+            flexDirection: isMobile ? 'column' : 'row',
+            alignItems: 'center', 
+            justifyContent: isMobile ? 'center' : 'flex-start',
+            gap: isMobile ? '12px' : '16px', 
+            background: 'linear-gradient(135deg, rgba(251, 191, 36, 0.15) 0%, rgba(239, 68, 68, 0.15) 100%)',
+            padding: isMobile ? '16px 20px' : '20px 32px', 
+            borderRadius: '20px',
+            backdropFilter: 'blur(10px)',
+            border: '2px solid rgba(251, 191, 36, 0.3)',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1)',
+            animation: 'pulse 2s ease-in-out infinite',
+          }}>
+            <style>{`
+              @keyframes pulse {
+                0%, 100% { box-shadow: 0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1), 0 0 0 0 rgba(251, 191, 36, 0.4); }
+                50% { box-shadow: 0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1), 0 0 0 8px rgba(251, 191, 36, 0); }
+              }
+            `}</style>
             <div style={{ 
               display: 'flex', 
               alignItems: 'center', 
-              gap: '12px', 
-              backgroundColor: 'rgba(255,255,255,0.1)', 
-              padding: isMobile ? '10px 20px' : '12px 24px', 
-              borderRadius: '50px' 
+              gap: '10px',
+              color: '#fbbf24',
             }}>
-              <FaClock /> 
-              <div style={{ 
-                display: 'flex', 
-                gap: '8px', 
-                fontSize: '20px', 
-                fontWeight: '700', 
-                color: '#ef4444' 
+              <div style={{
+                background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
+                borderRadius: '50%',
+                padding: '10px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 4px 15px rgba(251, 191, 36, 0.4)',
               }}>
-                <span>{formatTime(timeLeft.hours)}</span>:
-                <span>{formatTime(timeLeft.minutes)}</span>:
-                <span>{formatTime(timeLeft.seconds)}</span>
+                <FaClock style={{ fontSize: '18px', color: '#0f172a' }} />
+              </div>
+              <div>
+                <span style={{ 
+                  fontSize: '16px', 
+                  fontWeight: '800',
+                  textTransform: 'uppercase',
+                  letterSpacing: '1px',
+                  display: 'block',
+                }}>
+                  🔥 KAMPANYA BİTİMİNE
+                </span>
+                <span style={{
+                  fontSize: '11px',
+                  opacity: 0.7,
+                  fontWeight: '500',
+                }}>
+                  Acele edin, fırsat kaçmasın!
+                </span>
               </div>
             </div>
-          )}
-        </div>
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center',
+              gap: '8px', 
+            }}>
+              {/* Gün */}
+              <div style={{ 
+                textAlign: 'center',
+                background: 'linear-gradient(180deg, rgba(251, 191, 36, 0.3) 0%, rgba(251, 191, 36, 0.1) 100%)',
+                padding: isMobile ? '10px 14px' : '12px 16px',
+                borderRadius: '14px',
+                minWidth: isMobile ? '52px' : '60px',
+                border: '1px solid rgba(251, 191, 36, 0.3)',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+              }}>
+                <div style={{ 
+                  fontSize: isMobile ? '24px' : '32px', 
+                  fontWeight: '900', 
+                  color: '#fbbf24',
+                  lineHeight: 1,
+                  textShadow: '0 2px 10px rgba(251, 191, 36, 0.5)',
+                }}>
+                  {timeLeft.days}
+                </div>
+                <div style={{ 
+                  fontSize: '10px', 
+                  color: 'rgba(255,255,255,0.8)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px',
+                  marginTop: '4px',
+                  fontWeight: '600',
+                }}>Gün</div>
+              </div>
+              <span style={{ fontSize: '28px', fontWeight: '700', color: '#fbbf24', opacity: 0.6 }}>:</span>
+              {/* Saat */}
+              <div style={{ 
+                textAlign: 'center',
+                background: 'linear-gradient(180deg, rgba(251, 191, 36, 0.3) 0%, rgba(251, 191, 36, 0.1) 100%)',
+                padding: isMobile ? '10px 14px' : '12px 16px',
+                borderRadius: '14px',
+                minWidth: isMobile ? '52px' : '60px',
+                border: '1px solid rgba(251, 191, 36, 0.3)',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+              }}>
+                <div style={{ 
+                  fontSize: isMobile ? '24px' : '32px', 
+                  fontWeight: '900', 
+                  color: '#fbbf24',
+                  lineHeight: 1,
+                  textShadow: '0 2px 10px rgba(251, 191, 36, 0.5)',
+                }}>
+                  {formatTime(timeLeft.hours)}
+                </div>
+                <div style={{ 
+                  fontSize: '10px', 
+                  color: 'rgba(255,255,255,0.8)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px',
+                  marginTop: '4px',
+                  fontWeight: '600',
+                }}>Saat</div>
+              </div>
+              <span style={{ fontSize: '28px', fontWeight: '700', color: '#fbbf24', opacity: 0.6 }}>:</span>
+              {/* Dakika */}
+              <div style={{ 
+                textAlign: 'center',
+                background: 'linear-gradient(180deg, rgba(251, 191, 36, 0.3) 0%, rgba(251, 191, 36, 0.1) 100%)',
+                padding: isMobile ? '10px 14px' : '12px 16px',
+                borderRadius: '14px',
+                minWidth: isMobile ? '52px' : '60px',
+                border: '1px solid rgba(251, 191, 36, 0.3)',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+              }}>
+                <div style={{ 
+                  fontSize: isMobile ? '24px' : '32px', 
+                  fontWeight: '900', 
+                  color: '#fbbf24',
+                  lineHeight: 1,
+                  textShadow: '0 2px 10px rgba(251, 191, 36, 0.5)',
+                }}>
+                  {formatTime(timeLeft.minutes)}
+                </div>
+                <div style={{ 
+                  fontSize: '10px', 
+                  color: 'rgba(255,255,255,0.8)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px',
+                  marginTop: '4px',
+                  fontWeight: '600',
+                }}>Dakika</div>
+              </div>
+              <span style={{ fontSize: '28px', fontWeight: '700', color: '#fbbf24', opacity: 0.6 }}>:</span>
+              {/* Saniye */}
+              <div style={{ 
+                textAlign: 'center',
+                background: 'linear-gradient(180deg, rgba(239, 68, 68, 0.4) 0%, rgba(239, 68, 68, 0.15) 100%)',
+                padding: isMobile ? '10px 14px' : '12px 16px',
+                borderRadius: '14px',
+                minWidth: isMobile ? '52px' : '60px',
+                border: '1px solid rgba(239, 68, 68, 0.4)',
+                boxShadow: '0 4px 12px rgba(239, 68, 68, 0.3)',
+                animation: 'secondPulse 1s ease-in-out infinite',
+              }}>
+                <style>{`
+                  @keyframes secondPulse {
+                    0%, 100% { transform: scale(1); }
+                    50% { transform: scale(1.02); }
+                  }
+                `}</style>
+                <div style={{ 
+                  fontSize: isMobile ? '24px' : '32px', 
+                  fontWeight: '900', 
+                  color: '#ef4444',
+                  lineHeight: 1,
+                  textShadow: '0 2px 10px rgba(239, 68, 68, 0.5)',
+                }}>
+                  {formatTime(timeLeft.seconds)}
+                </div>
+                <div style={{ 
+                  fontSize: '10px', 
+                  color: 'rgba(255,255,255,0.8)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px',
+                  marginTop: '4px',
+                  fontWeight: '600',
+                }}>Saniye</div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div style={{ 
+            marginTop: '24px',
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: isMobile ? 'center' : 'flex-start',
+            gap: '12px', 
+            background: 'linear-gradient(135deg, rgba(52, 211, 153, 0.2) 0%, rgba(16, 185, 129, 0.2) 100%)',
+            padding: '16px 24px', 
+            borderRadius: '16px',
+            border: '1px solid rgba(52, 211, 153, 0.3)',
+          }}>
+            <div style={{
+              background: 'linear-gradient(135deg, #34d399 0%, #10b981 100%)',
+              borderRadius: '50%',
+              padding: '8px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}>
+              <FaClock style={{ fontSize: '16px', color: '#0f172a' }} />
+            </div>
+            <span style={{ 
+              fontSize: '14px', 
+              fontWeight: '700',
+              color: '#34d399',
+            }}>
+              ✨ Süresiz Kampanya - Stoklar Tükenene Kadar!
+            </span>
+          </div>
+        )}
       </div>
       
       {/* Product Image - Desktop only */}

@@ -13,17 +13,23 @@ export const useFeaturedDeals = () => {
   const [modalMode, setModalMode] = useState('create'); // 'create' or 'edit'
   const [selectedDeal, setSelectedDeal] = useState(null);
   const [filterStatus, setFilterStatus] = useState('all'); // all, active, expired, upcoming, inactive
+  const [currentPage, setCurrentPage] = useState(1);
+  const [deleteConfirmId, setDeleteConfirmId] = useState(null); // For delete confirmation modal
+  const [togglingId, setTogglingId] = useState(null); // Track which deal is being toggled
+  const [deletingId, setDeletingId] = useState(null); // Track which deal is being deleted
+  const ITEMS_PER_PAGE = 4;
 
   // Fetch deals
   const { 
     data: dealsData, 
     isLoading,
-    error
+    error,
+    refetch: refetchDeals
   } = useQuery({
     queryKey: ['featuredDeals', filterStatus],
     queryFn: async () => {
       const token = localStorage.getItem('admin_token');
-      const params = filterStatus !== 'all' ? `?filter=${filterStatus}` : '';
+      const params = filterStatus !== 'all' ? `?status=${filterStatus}` : '';
       const response = await axios.get(
         `${BACKEND_URL}/api/v1/admin/featured-deals${params}`,
         { headers: { Authorization: `Bearer ${token}` } }
@@ -57,13 +63,14 @@ export const useFeaturedDeals = () => {
       );
       return response.data;
     },
-    onSuccess: () => {
-      showSuccess('Öne çıkan ürün oluşturuldu');
-      queryClient.invalidateQueries(['featuredDeals']);
+    onSuccess: async () => {
+      showSuccess('✅ Öne çıkan ürün başarıyla oluşturuldu!');
+      await queryClient.invalidateQueries({ queryKey: ['featuredDeals'] });
+      await refetchDeals();
       closeModal();
     },
     onError: (error) => {
-      showError(error.response?.data?.message || 'Oluşturulamadı');
+      showError('❌ ' + (error.response?.data?.message || 'Oluşturma işlemi başarısız!'));
     }
   });
 
@@ -78,37 +85,43 @@ export const useFeaturedDeals = () => {
       );
       return response.data;
     },
-    onSuccess: () => {
-      showSuccess('Öne çıkan ürün güncellendi');
-      queryClient.invalidateQueries(['featuredDeals']);
+    onSuccess: async () => {
+      showSuccess('✅ Öne çıkan ürün başarıyla güncellendi!');
+      await queryClient.invalidateQueries({ queryKey: ['featuredDeals'] });
+      await refetchDeals();
       closeModal();
     },
     onError: (error) => {
-      showError(error.response?.data?.message || 'Güncellenemedi');
+      showError('❌ ' + (error.response?.data?.message || 'Güncelleme işlemi başarısız!'));
     }
   });
 
   // Delete mutation
   const deleteMutation = useMutation({
     mutationFn: async (id) => {
+      setDeletingId(id);
       const token = localStorage.getItem('admin_token');
       await axios.delete(
         `${BACKEND_URL}/api/v1/admin/featured-deals/${id}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
     },
-    onSuccess: () => {
-      showSuccess('Öne çıkan ürün silindi');
-      queryClient.invalidateQueries(['featuredDeals']);
+    onSuccess: async () => {
+      showSuccess('🗑️ Öne çıkan ürün başarıyla silindi!');
+      await queryClient.invalidateQueries({ queryKey: ['featuredDeals'] });
+      await refetchDeals();
+      setDeletingId(null);
     },
     onError: (error) => {
-      showError(error.response?.data?.message || 'Silinemedi');
+      showError('❌ ' + (error.response?.data?.message || 'Silme işlemi başarısız!'));
+      setDeletingId(null);
     }
   });
 
   // Toggle active mutation
   const toggleMutation = useMutation({
     mutationFn: async (id) => {
+      setTogglingId(id);
       const token = localStorage.getItem('admin_token');
       const response = await axios.post(
         `${BACKEND_URL}/api/v1/admin/featured-deals/${id}/toggle`,
@@ -117,12 +130,16 @@ export const useFeaturedDeals = () => {
       );
       return response.data;
     },
-    onSuccess: () => {
-      showSuccess('Durum güncellendi');
-      queryClient.invalidateQueries(['featuredDeals']);
+    onSuccess: async (data) => {
+      const status = data?.data?.is_active ? 'aktif' : 'pasif';
+      showSuccess(`🔄 Ürün durumu ${status} olarak güncellendi!`);
+      await queryClient.invalidateQueries({ queryKey: ['featuredDeals'] });
+      await refetchDeals();
+      setTogglingId(null);
     },
     onError: (error) => {
-      showError(error.response?.data?.message || 'Güncellenemedi');
+      showError('❌ ' + (error.response?.data?.message || 'Durum değiştirme işlemi başarısız!'));
+      setTogglingId(null);
     }
   });
 
@@ -137,12 +154,13 @@ export const useFeaturedDeals = () => {
       );
       return response.data;
     },
-    onSuccess: () => {
-      showSuccess('Sıralama güncellendi');
-      queryClient.invalidateQueries(['featuredDeals']);
+    onSuccess: async () => {
+      showSuccess('📋 Sıralama başarıyla güncellendi!');
+      await queryClient.invalidateQueries({ queryKey: ['featuredDeals'] });
+      await refetchDeals();
     },
     onError: (error) => {
-      showError(error.response?.data?.message || 'Sıralama güncellenemedi');
+      showError('❌ ' + (error.response?.data?.message || 'Sıralama güncellenemedi!'));
     }
   });
 
@@ -173,11 +191,22 @@ export const useFeaturedDeals = () => {
     }
   };
 
-  // Delete handler
+  // Delete handler - shows confirmation
   const handleDelete = (id) => {
-    if (window.confirm('Bu öne çıkan ürünü silmek istediğinizden emin misiniz?')) {
-      deleteMutation.mutate(id);
+    setDeleteConfirmId(id);
+  };
+
+  // Confirm delete
+  const confirmDelete = () => {
+    if (deleteConfirmId) {
+      deleteMutation.mutate(deleteConfirmId);
+      setDeleteConfirmId(null);
     }
+  };
+
+  // Cancel delete
+  const cancelDelete = () => {
+    setDeleteConfirmId(null);
   };
 
   // Toggle handler
@@ -190,17 +219,37 @@ export const useFeaturedDeals = () => {
     reorderMutation.mutate(deals);
   };
 
+  // Pagination
+  const allDeals = dealsData?.deals || [];
+  const totalPages = Math.ceil(allDeals.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const paginatedDeals = allDeals.slice(startIndex, endIndex);
+
+  // Reset to page 1 when filter changes
+  const handleFilterChange = (newFilter) => {
+    setFilterStatus(newFilter);
+    setCurrentPage(1);
+  };
+
   return {
     // Data
-    deals: dealsData?.deals || [],
+    deals: paginatedDeals,
     stats: dealsData?.stats || {},
     products: productsData?.products || [],
     isLoading,
     error,
+    refetchDeals,
     
     // Filter
     filterStatus,
-    setFilterStatus,
+    setFilterStatus: handleFilterChange,
+    
+    // Pagination
+    currentPage,
+    totalPages,
+    setCurrentPage,
+    totalDeals: allDeals.length,
     
     // Modal
     isModalOpen,
@@ -209,6 +258,11 @@ export const useFeaturedDeals = () => {
     openCreateModal,
     openEditModal,
     closeModal,
+    
+    // Delete confirmation
+    deleteConfirmId,
+    confirmDelete,
+    cancelDelete,
     
     // Actions
     handleSubmit,
@@ -222,5 +276,7 @@ export const useFeaturedDeals = () => {
     isDeleting: deleteMutation.isPending,
     isToggling: toggleMutation.isPending,
     isReordering: reorderMutation.isPending,
+    togglingId,
+    deletingId,
   };
 };

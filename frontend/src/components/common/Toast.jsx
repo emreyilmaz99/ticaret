@@ -276,6 +276,11 @@ export const ToastProvider = ({ children }) => {
     info: (title, message, duration) => addToast('info', title, message, duration),
     // Backwards compatible showToast function
     showToast,
+    // Shorthand functions for quick alerts
+    showSuccess: (message, duration) => addToast('success', 'Başarılı', message, duration),
+    showError: (message, duration) => addToast('error', 'Hata', message, duration),
+    showWarning: (message, duration) => addToast('warning', 'Uyarı', message, duration),
+    showInfo: (message, duration) => addToast('info', 'Bilgi', message, duration),
   };
 
   return (

@@ -101,46 +101,59 @@ export default function ProductSelectorDrawer({ isOpen, onClose, onSelect }) {
           right: 0,
           bottom: 0,
           width: '100%',
-          maxWidth: '600px',
-          backgroundColor: 'white',
-          boxShadow: '-4px 0 20px rgba(0, 0, 0, 0.15)',
+          maxWidth: '500px',
+          backgroundColor: '#fafafa',
+          boxShadow: '-8px 0 30px rgba(0, 0, 0, 0.15)',
           zIndex: 10001,
           display: 'flex',
           flexDirection: 'column',
+          animation: 'slideIn 0.3s ease-out',
         }}
       >
+        <style>{`
+          @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+          }
+          @keyframes spin { to { transform: rotate(360deg); } }
+        `}</style>
+        
         {/* Header */}
         <div style={{
-          backgroundColor: '#4f46e5',
-          padding: '20px',
+          background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+          padding: '24px',
           color: 'white',
+          borderRadius: '0 0 24px 24px',
+          boxShadow: '0 4px 20px rgba(16, 185, 129, 0.3)',
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h2 style={{ fontSize: '20px', fontWeight: '600', margin: 0 }}>Ürün Seç</h2>
+            <h2 style={{ fontSize: '22px', fontWeight: '700', margin: 0, letterSpacing: '-0.5px' }}>Ürün Seç</h2>
             <button
               type="button"
               onClick={handleClose}
               style={{
-                background: 'none',
+                background: 'rgba(255,255,255,0.2)',
                 border: 'none',
                 color: 'white',
                 cursor: 'pointer',
-                padding: '8px',
+                padding: '10px',
+                borderRadius: '12px',
+                transition: 'all 0.2s',
               }}
             >
-              <FaTimes size={20} />
+              <FaTimes size={18} />
             </button>
           </div>
           
           {/* Search */}
-          <div style={{ marginTop: '16px', position: 'relative' }}>
+          <div style={{ marginTop: '20px', position: 'relative' }}>
             <FaSearch style={{ 
               position: 'absolute', 
-              left: '12px', 
+              left: '16px', 
               top: '50%', 
               transform: 'translateY(-50%)',
               color: '#9ca3af',
-              fontSize: '14px'
+              fontSize: '16px'
             }} />
             <input
               type="text"
@@ -149,11 +162,13 @@ export default function ProductSelectorDrawer({ isOpen, onClose, onSelect }) {
               onChange={(e) => setSearchTerm(e.target.value)}
               style={{
                 width: '100%',
-                padding: '10px 12px 10px 40px',
-                borderRadius: '8px',
+                padding: '14px 16px 14px 48px',
+                borderRadius: '14px',
                 border: 'none',
-                fontSize: '14px',
+                fontSize: '15px',
                 outline: 'none',
+                backgroundColor: 'white',
+                boxShadow: '0 2px 10px rgba(0,0,0,0.08)',
               }}
             />
           </div>
@@ -177,13 +192,14 @@ export default function ProductSelectorDrawer({ isOpen, onClose, onSelect }) {
                 onClick={fetchProducts}
                 style={{
                   marginTop: '16px',
-                  padding: '10px 20px',
-                  backgroundColor: '#4f46e5',
+                  padding: '12px 24px',
+                  background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
                   color: 'white',
                   border: 'none',
-                  borderRadius: '8px',
+                  borderRadius: '12px',
                   cursor: 'pointer',
-                  fontWeight: '500',
+                  fontWeight: '600',
+                  boxShadow: '0 4px 14px rgba(16, 185, 129, 0.3)',
                 }}
               >
                 Tekrar Dene
@@ -197,14 +213,13 @@ export default function ProductSelectorDrawer({ isOpen, onClose, onSelect }) {
               padding: '48px' 
             }}>
               <div style={{
-                width: '32px',
-                height: '32px',
+                width: '40px',
+                height: '40px',
                 border: '4px solid #e5e7eb',
-                borderTopColor: '#4f46e5',
+                borderTopColor: '#10b981',
                 borderRadius: '50%',
                 animation: 'spin 1s linear infinite',
               }} />
-              <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
             </div>
           ) : (
             <div>
@@ -212,22 +227,29 @@ export default function ProductSelectorDrawer({ isOpen, onClose, onSelect }) {
                 <div
                   key={product.id}
                   style={{
-                    padding: '16px',
-                    borderBottom: '1px solid #e5e7eb',
-                    backgroundColor: selectedProduct?.id === product.id ? '#eef2ff' : 'white',
+                    padding: '16px 20px',
+                    margin: '8px 12px',
+                    borderRadius: '16px',
+                    backgroundColor: selectedProduct?.id === product.id ? '#ecfdf5' : 'white',
+                    border: selectedProduct?.id === product.id ? '2px solid #10b981' : '1px solid #e5e7eb',
                     cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    boxShadow: selectedProduct?.id === product.id 
+                      ? '0 4px 12px rgba(16, 185, 129, 0.15)' 
+                      : '0 2px 8px rgba(0,0,0,0.04)',
                   }}
                   onClick={() => handleProductSelect(product)}
                 >
-                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px' }}>
                     {/* Product Image */}
                     <div style={{
-                      width: '80px',
-                      height: '80px',
-                      borderRadius: '8px',
+                      width: '72px',
+                      height: '72px',
+                      borderRadius: '12px',
                       overflow: 'hidden',
                       border: '1px solid #e5e7eb',
                       flexShrink: 0,
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
                     }}>
                       {product.photos && product.photos[0] ? (
                         <img
@@ -253,17 +275,17 @@ export default function ProductSelectorDrawer({ isOpen, onClose, onSelect }) {
 
                     {/* Product Info */}
                     <div style={{ flex: 1 }}>
-                      <h3 style={{ margin: 0, fontSize: '15px', fontWeight: '500', color: '#111827' }}>
+                      <h3 style={{ margin: 0, fontSize: '15px', fontWeight: '600', color: '#1e293b' }}>
                         {product.name}
                       </h3>
-                      <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#6b7280' }}>
+                      <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#94a3b8' }}>
                         SKU: {product.sku}
                       </p>
-                      <p style={{ margin: '4px 0 0', fontSize: '14px', fontWeight: '600', color: '#059669' }}>
-                        ₺{parseFloat(product.price || 0).toFixed(2)}
+                      <p style={{ margin: '6px 0 0', fontSize: '15px', fontWeight: '700', color: '#10b981' }}>
+                        ₺{parseFloat(product.price || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
                       </p>
                       {product.vendor && (
-                        <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#9ca3af' }}>
+                        <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#94a3b8' }}>
                           Satıcı: {product.vendor.business_name}
                         </p>
                       )}
@@ -275,10 +297,11 @@ export default function ProductSelectorDrawer({ isOpen, onClose, onSelect }) {
                         width: '28px',
                         height: '28px',
                         borderRadius: '50%',
-                        backgroundColor: '#4f46e5',
+                        background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
+                        boxShadow: '0 2px 8px rgba(16, 185, 129, 0.4)',
                       }}>
                         <FaCheck style={{ color: 'white', fontSize: '12px' }} />
                       </div>
@@ -301,14 +324,15 @@ export default function ProductSelectorDrawer({ isOpen, onClose, onSelect }) {
                               handleVariantSelect(variant);
                             }}
                             style={{
-                              padding: '12px',
-                              borderRadius: '8px',
+                              padding: '12px 14px',
+                              borderRadius: '12px',
                               border: selectedVariant?.id === variant.id 
-                                ? '2px solid #4f46e5' 
+                                ? '2px solid #10b981' 
                                 : '1px solid #e5e7eb',
-                              backgroundColor: selectedVariant?.id === variant.id ? '#eef2ff' : 'white',
+                              backgroundColor: selectedVariant?.id === variant.id ? '#ecfdf5' : 'white',
                               cursor: 'pointer',
                               textAlign: 'left',
+                              transition: 'all 0.2s',
                             }}
                           >
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -343,24 +367,27 @@ export default function ProductSelectorDrawer({ isOpen, onClose, onSelect }) {
 
         {/* Footer */}
         <div style={{
-          padding: '16px 20px',
+          padding: '20px 24px',
           borderTop: '1px solid #e5e7eb',
-          backgroundColor: '#f9fafb',
+          backgroundColor: 'white',
           display: 'flex',
           justifyContent: 'space-between',
           gap: '12px',
+          boxShadow: '0 -4px 20px rgba(0,0,0,0.05)',
         }}>
           <button
             type="button"
             onClick={handleClose}
             style={{
-              padding: '10px 20px',
-              borderRadius: '8px',
-              border: '1px solid #d1d5db',
+              padding: '14px 28px',
+              borderRadius: '12px',
+              border: '1px solid #e5e7eb',
               backgroundColor: 'white',
-              color: '#374151',
-              fontWeight: '500',
+              color: '#64748b',
+              fontWeight: '600',
               cursor: 'pointer',
+              transition: 'all 0.2s',
+              fontSize: '15px',
             }}
           >
             İptal
@@ -370,17 +397,22 @@ export default function ProductSelectorDrawer({ isOpen, onClose, onSelect }) {
             onClick={handleConfirm}
             disabled={!selectedProduct}
             style={{
-              padding: '10px 20px',
-              borderRadius: '8px',
+              padding: '14px 28px',
+              borderRadius: '12px',
               border: 'none',
-              backgroundColor: selectedProduct ? '#4f46e5' : '#9ca3af',
-              color: 'white',
-              fontWeight: '500',
+              background: selectedProduct 
+                ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' 
+                : '#e5e7eb',
+              color: selectedProduct ? 'white' : '#9ca3af',
+              fontWeight: '600',
               cursor: selectedProduct ? 'pointer' : 'not-allowed',
-              opacity: selectedProduct ? 1 : 0.6,
+              opacity: selectedProduct ? 1 : 0.7,
+              boxShadow: selectedProduct ? '0 4px 14px rgba(16, 185, 129, 0.4)' : 'none',
+              transition: 'all 0.2s',
+              fontSize: '15px',
             }}
           >
-            {selectedProduct ? (selectedVariant ? 'Varyantı Seç' : 'Ürünü Seç') : 'Ürün Seçin'}
+            {selectedProduct ? (selectedVariant ? 'Varyantı Seç' : 'Ürün Seçin') : 'Ürün Seçin'}
           </button>
         </div>
       </div>

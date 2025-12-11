@@ -23,6 +23,8 @@ class AdminFeaturedDealController extends Controller
         // Filter by status
         if ($request->has('status')) {
             if ($request->status === 'active') {
+                $query->where('is_active', true);
+            } elseif ($request->status === 'current') {
                 $query->current();
             } elseif ($request->status === 'expired') {
                 $query->expired();
@@ -35,10 +37,21 @@ class AdminFeaturedDealController extends Controller
 
         $deals = $query->paginate($request->per_page ?? 15);
 
+        // Calculate stats
+        $stats = [
+            'total' => FeaturedDeal::count(),
+            'active' => FeaturedDeal::where('is_active', true)->count(),
+            'current' => FeaturedDeal::current()->count(),
+            'upcoming' => FeaturedDeal::upcoming()->count(),
+            'expired' => FeaturedDeal::expired()->count(),
+            'inactive' => FeaturedDeal::where('is_active', false)->count(),
+        ];
+
         return response()->json([
             'success' => true,
             'data' => [
                 'deals' => $deals->items(),
+                'stats' => $stats,
                 'pagination' => [
                     'current_page' => $deals->currentPage(),
                     'last_page' => $deals->lastPage(),

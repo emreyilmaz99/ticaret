@@ -74,7 +74,7 @@ export const useHome = () => {
   // Transform categories
   const categories = [
     { id: 'all', name: 'Tüm Ürünler' },
-    ...(categoriesData?.data?.categories || []).map(cat => ({
+    ...(categoriesData?.data || []).map(cat => ({
       id: cat.id,
       name: cat.name,
       slug: cat.slug,
