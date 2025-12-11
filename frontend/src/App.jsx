@@ -45,7 +45,8 @@ import TaxClasses from './pages/admin/TaxClasses';
 import ProductsPage from './pages/admin/Products';
 import CategoriesPage from './pages/admin/Categories';
 // YENİ EKLENEN: Admin Siparişler Sayfası
-import AdminOrders from './pages/admin/Orders'; 
+import AdminOrders from './pages/admin/Orders';
+import FeaturedDealsPage from './pages/admin/FeaturedDeals'; 
 
 // 3. Satıcı Sayfaları
 import VendorLogin from './pages/vendor/VendorLogin';
@@ -130,6 +131,9 @@ function App() {
                   
                   {/* YENİ EKLENEN ROTA: SİPARİŞ YÖNETİMİ */}
                   <Route path="/admin/orders" element={<AdminOrders />} />
+                  
+                  {/* YENİ EKLENEN ROTA: ÖNE ÇIKAN ÜRÜNLER */}
+                  <Route path="/admin/featured-deals" element={<FeaturedDealsPage />} />
                   
                 </Route>
 

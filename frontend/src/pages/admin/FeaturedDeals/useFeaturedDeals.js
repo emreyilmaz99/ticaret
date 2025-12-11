@@ -1,0 +1,226 @@
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useToast } from '../../../components/common/Toast';
+import axios from 'axios';
+
+const BACKEND_URL = 'http://127.0.0.1:8000';
+
+export const useFeaturedDeals = () => {
+  const queryClient = useQueryClient();
+  const { showSuccess, showError } = useToast();
+  
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalMode, setModalMode] = useState('create'); // 'create' or 'edit'
+  const [selectedDeal, setSelectedDeal] = useState(null);
+  const [filterStatus, setFilterStatus] = useState('all'); // all, active, expired, upcoming, inactive
+
+  // Fetch deals
+  const { 
+    data: dealsData, 
+    isLoading,
+    error
+  } = useQuery({
+    queryKey: ['featuredDeals', filterStatus],
+    queryFn: async () => {
+      const token = localStorage.getItem('admin_token');
+      const params = filterStatus !== 'all' ? `?filter=${filterStatus}` : '';
+      const response = await axios.get(
+        `${BACKEND_URL}/api/v1/admin/featured-deals${params}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      return response.data.data;
+    }
+  });
+
+  // Fetch products for dropdown
+  const { data: productsData } = useQuery({
+    queryKey: ['productsForDeals'],
+    queryFn: async () => {
+      const token = localStorage.getItem('admin_token');
+      const response = await axios.get(
+        `${BACKEND_URL}/api/v1/admin/featured-deals/create`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      return response.data.data;
+    },
+    enabled: isModalOpen // Only fetch when modal is open
+  });
+
+  // Create mutation
+  const createMutation = useMutation({
+    mutationFn: async (data) => {
+      const token = localStorage.getItem('admin_token');
+      const response = await axios.post(
+        `${BACKEND_URL}/api/v1/admin/featured-deals`,
+        data,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      return response.data;
+    },
+    onSuccess: () => {
+      showSuccess('Öne çıkan ürün oluşturuldu');
+      queryClient.invalidateQueries(['featuredDeals']);
+      closeModal();
+    },
+    onError: (error) => {
+      showError(error.response?.data?.message || 'Oluşturulamadı');
+    }
+  });
+
+  // Update mutation
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, data }) => {
+      const token = localStorage.getItem('admin_token');
+      const response = await axios.put(
+        `${BACKEND_URL}/api/v1/admin/featured-deals/${id}`,
+        data,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      return response.data;
+    },
+    onSuccess: () => {
+      showSuccess('Öne çıkan ürün güncellendi');
+      queryClient.invalidateQueries(['featuredDeals']);
+      closeModal();
+    },
+    onError: (error) => {
+      showError(error.response?.data?.message || 'Güncellenemedi');
+    }
+  });
+
+  // Delete mutation
+  const deleteMutation = useMutation({
+    mutationFn: async (id) => {
+      const token = localStorage.getItem('admin_token');
+      await axios.delete(
+        `${BACKEND_URL}/api/v1/admin/featured-deals/${id}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+    },
+    onSuccess: () => {
+      showSuccess('Öne çıkan ürün silindi');
+      queryClient.invalidateQueries(['featuredDeals']);
+    },
+    onError: (error) => {
+      showError(error.response?.data?.message || 'Silinemedi');
+    }
+  });
+
+  // Toggle active mutation
+  const toggleMutation = useMutation({
+    mutationFn: async (id) => {
+      const token = localStorage.getItem('admin_token');
+      const response = await axios.post(
+        `${BACKEND_URL}/api/v1/admin/featured-deals/${id}/toggle`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      return response.data;
+    },
+    onSuccess: () => {
+      showSuccess('Durum güncellendi');
+      queryClient.invalidateQueries(['featuredDeals']);
+    },
+    onError: (error) => {
+      showError(error.response?.data?.message || 'Güncellenemedi');
+    }
+  });
+
+  // Reorder mutation
+  const reorderMutation = useMutation({
+    mutationFn: async (deals) => {
+      const token = localStorage.getItem('admin_token');
+      const response = await axios.post(
+        `${BACKEND_URL}/api/v1/admin/featured-deals/reorder`,
+        { deals },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      return response.data;
+    },
+    onSuccess: () => {
+      showSuccess('Sıralama güncellendi');
+      queryClient.invalidateQueries(['featuredDeals']);
+    },
+    onError: (error) => {
+      showError(error.response?.data?.message || 'Sıralama güncellenemedi');
+    }
+  });
+
+  // Modal actions
+  const openCreateModal = () => {
+    setModalMode('create');
+    setSelectedDeal(null);
+    setIsModalOpen(true);
+  };
+
+  const openEditModal = (deal) => {
+    setModalMode('edit');
+    setSelectedDeal(deal);
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setSelectedDeal(null);
+  };
+
+  // Submit handler
+  const handleSubmit = (formData) => {
+    if (modalMode === 'create') {
+      createMutation.mutate(formData);
+    } else {
+      updateMutation.mutate({ id: selectedDeal.id, data: formData });
+    }
+  };
+
+  // Delete handler
+  const handleDelete = (id) => {
+    if (window.confirm('Bu öne çıkan ürünü silmek istediğinizden emin misiniz?')) {
+      deleteMutation.mutate(id);
+    }
+  };
+
+  // Toggle handler
+  const handleToggle = (id) => {
+    toggleMutation.mutate(id);
+  };
+
+  // Reorder handler
+  const handleReorder = (deals) => {
+    reorderMutation.mutate(deals);
+  };
+
+  return {
+    // Data
+    deals: dealsData?.deals || [],
+    stats: dealsData?.stats || {},
+    products: productsData?.products || [],
+    isLoading,
+    error,
+    
+    // Filter
+    filterStatus,
+    setFilterStatus,
+    
+    // Modal
+    isModalOpen,
+    modalMode,
+    selectedDeal,
+    openCreateModal,
+    openEditModal,
+    closeModal,
+    
+    // Actions
+    handleSubmit,
+    handleDelete,
+    handleToggle,
+    handleReorder,
+    
+    // Mutation states
+    isCreating: createMutation.isPending,
+    isUpdating: updateMutation.isPending,
+    isDeleting: deleteMutation.isPending,
+    isToggling: toggleMutation.isPending,
+    isReordering: reorderMutation.isPending,
+  };
+};

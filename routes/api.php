@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\V1\Admin\CommissionPlanController;
 use App\Http\Controllers\Api\V1\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\Api\V1\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controllers\Api\V1\Admin\TaxClassController as AdminTaxClassController;
+use App\Http\Controllers\Api\V1\Admin\AdminFeaturedDealController;
 
 // Vendor controllers
 use App\Http\Controllers\Api\V1\Vendor\VendorAuthController;
@@ -35,6 +36,7 @@ use App\Http\Controllers\Api\V1\Public\VendorApplicationController as PublicVend
 use App\Http\Controllers\Api\V1\Admin\VendorApplicationController as AdminVendorApplicationController;
 use App\Http\Controllers\Api\V1\Public\ProductController as PublicProductController;
 use App\Http\Controllers\Api\V1\Public\TaxClassController as PublicTaxClassController;
+use App\Http\Controllers\Api\V1\Public\FeaturedDealController;
 
 // Checkout controller
 use App\Http\Controllers\Api\V1\User\CheckoutController;
@@ -142,6 +144,16 @@ Route::prefix('v1/admin')->group(function () {
         Route::post('orders/{orderId}/notes', [\App\Http\Controllers\Api\V1\Admin\OrderController::class, 'addNote']);
         Route::get('orders/{orderId}/notes', [\App\Http\Controllers\Api\V1\Admin\OrderController::class, 'getNotes']);
         Route::get('orders/{orderId}/user-orders', [\App\Http\Controllers\Api\V1\Admin\OrderController::class, 'getUserOrders']);
+
+        // featured deals management
+        Route::get('featured-deals', [AdminFeaturedDealController::class, 'index']);
+        Route::get('featured-deals/create', [AdminFeaturedDealController::class, 'create']);
+        Route::post('featured-deals', [AdminFeaturedDealController::class, 'store']);
+        Route::get('featured-deals/{deal}', [AdminFeaturedDealController::class, 'show']);
+        Route::put('featured-deals/{deal}', [AdminFeaturedDealController::class, 'update']);
+        Route::delete('featured-deals/{deal}', [AdminFeaturedDealController::class, 'destroy']);
+        Route::post('featured-deals/{deal}/toggle', [AdminFeaturedDealController::class, 'toggle']);
+        Route::post('featured-deals/reorder', [AdminFeaturedDealController::class, 'reorder']);
     });
 });
 
@@ -246,6 +258,11 @@ Route::get('v1/products/categories', [PublicProductController::class, 'categorie
 Route::get('v1/products/featured', [PublicProductController::class, 'featured']);
 Route::get('v1/products/{slug}', [PublicProductController::class, 'show']);
 Route::get('v1/products/{slug}/related', [PublicProductController::class, 'related']);
+
+// featured deals (public)
+Route::get('v1/featured-deals', [FeaturedDealController::class, 'index']);
+Route::post('v1/featured-deals/{deal}/click', [FeaturedDealController::class, 'click']);
+Route::post('v1/featured-deals/{deal}/conversion', [FeaturedDealController::class, 'conversion']);
 
 // Cart API (supports both guest and authenticated users)
 // Uses optional auth - will authenticate if token present, otherwise continue as guest
