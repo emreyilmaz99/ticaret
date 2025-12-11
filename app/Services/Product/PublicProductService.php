@@ -16,7 +16,7 @@ class PublicProductService extends BaseService
     public function getProducts(Request $request): ServiceResponse
     {
         try {
-            $query = Product::with(['variants', 'photos', 'category', 'vendor:id,name,slug'])
+            $query = Product::with(['variants', 'photos', 'category', 'vendor:id,name,slug', 'activeFeaturedDeal'])
                 ->where('status', 'active')
                 ->whereHas('vendor', fn($q) => $q->where('status', 'active'));
 
@@ -119,7 +119,8 @@ class PublicProductService extends BaseService
                 'vendor.metadata',
                 'tags',
                 'productMetadata',
-                'settings'
+                'settings',
+                'activeFeaturedDeal'
             ])
                 ->where('slug', $slug)
                 ->where('status', 'active')
@@ -237,6 +238,13 @@ class PublicProductService extends BaseService
         $maxPrice = $product->variants->max('price');
         $totalStock = $product->variants->sum('stock');
         $mainPhoto = $product->photos->sortBy('sort_order')->first();
+        
+        // Get active featured deal (eager loaded - no extra query!)
+        $featuredDeal = $product->activeFeaturedDeal;
+        
+        // Use deal price if available, otherwise regular price
+        $displayPrice = $featuredDeal ? $featuredDeal->deal_price : $minPrice;
+        $originalPrice = $featuredDeal ? $featuredDeal->original_price : null;
 
         return [
             'id' => $product->id,
@@ -253,7 +261,14 @@ class PublicProductService extends BaseService
                 'name' => $product->vendor->name,
                 'slug' => $product->vendor->slug,
             ] : null,
-            'price' => $minPrice,
+            'price' => $displayPrice, // Indirimli fiyat varsa onu göster
+            'original_price' => $originalPrice, // Üstü çizilecek fiyat
+            'discount_percentage' => $featuredDeal?->discount_percentage,
+            'has_deal' => $featuredDeal !== null,
+            'deal_badge' => $featuredDeal ? [
+                'text' => $featuredDeal->badge_text,
+                'color' => $featuredDeal->badge_color,
+            ] : null,
             'price_range' => $minPrice !== $maxPrice ? [
                 'min' => $minPrice,
                 'max' => $maxPrice,
@@ -280,6 +295,11 @@ class PublicProductService extends BaseService
         $totalStock = $product->variants->sum('stock');
         $lowStockThreshold = 5;
         $showLowStockWarning = $totalStock > 0 && $totalStock <= $lowStockThreshold;
+
+        // Get active featured deal (eager loaded)
+        $featuredDeal = $product->activeFeaturedDeal;
+        $displayPrice = $featuredDeal ? $featuredDeal->deal_price : $minPrice;
+        $originalPrice = $featuredDeal ? $featuredDeal->original_price : null;
 
         // Build breadcrumb
         $breadcrumb = [];
@@ -331,7 +351,15 @@ class PublicProductService extends BaseService
                 ] : null,
             ] : null,
             'vendor' => $vendorData,
-            'price' => $minPrice,
+            'price' => $displayPrice,
+            'original_price' => $originalPrice,
+            'discount_percentage' => $featuredDeal?->discount_percentage,
+            'has_deal' => $featuredDeal !== null,
+            'deal_badge' => $featuredDeal ? [
+                'text' => $featuredDeal->badge_text,
+                'color' => $featuredDeal->badge_color,
+            ] : null,
+            'deal_ends_at' => $featuredDeal?->ends_at,
             'price_range' => $minPrice !== $maxPrice ? [
                 'min' => $minPrice,
                 'max' => $maxPrice,

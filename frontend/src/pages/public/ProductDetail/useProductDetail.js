@@ -116,7 +116,8 @@ export const useProductDetail = () => {
   }, [showLightbox]);
 
   // Calculated values
-  const currentPrice = selectedVariant?.price || product?.price || 0;
+  // If product has deal, use deal price; otherwise use variant/product price
+  const currentPrice = product?.has_deal ? product?.price : (selectedVariant?.price || product?.price || 0);
   const currentStock = selectedVariant?.stock ?? product?.stock ?? 0;
   const isInStock = currentStock > 0;
   const showLowStockWarning = product?.low_stock_warning || (selectedVariant?.low_stock);

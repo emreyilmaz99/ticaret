@@ -43,10 +43,18 @@ const OrderSummary = ({
             <span>{(totals?.subtotal || 0).toLocaleString('tr-TR')} TL</span>
           </div>
           
-          {/* İndirim */}
+          {/* Kampanya İndirimi */}
+          {(totals?.deal_discount || 0) > 0 && (
+            <div style={{ ...styles.row, color: '#ef4444' }}>
+              <span>🔥 Kampanya Tasarrufu</span>
+              <span>-{(totals?.deal_discount || 0).toLocaleString('tr-TR')} TL</span>
+            </div>
+          )}
+          
+          {/* Kupon İndirimi */}
           {(totals?.discount || 0) > 0 && (
             <div style={{ ...styles.row, color: '#16a34a' }}>
-              <span>İndirim ({coupon?.code})</span>
+              <span>Kupon İndirimi ({coupon?.code})</span>
               <span>-{(totals?.discount || 0).toLocaleString('tr-TR')} TL</span>
             </div>
           )}

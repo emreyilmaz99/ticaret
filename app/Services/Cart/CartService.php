@@ -55,7 +55,8 @@ class CartService extends BaseService
             $quantity = $data['quantity'] ?? 1;
 
             // Validate product
-            $product = Product::where('id', $productId)
+            $product = Product::with('activeFeaturedDeal')
+                ->where('id', $productId)
                 ->where('status', 'active')
                 ->first();
 
@@ -63,7 +64,10 @@ class CartService extends BaseService
                 return $this->errorResponse('Ürün bulunamadı', 404);
             }
 
-            // Get price from variant
+            // Check for active featured deal
+            $featuredDeal = $product->activeFeaturedDeal;
+            
+            // Get price from variant or deal price
             $price = $product->variants()->first()?->price ?? 0;
             $variant = null;
 
@@ -84,7 +88,11 @@ class CartService extends BaseService
                     );
                 }
 
-                $price = $variant->price;
+                // Use deal price if available, otherwise variant price
+                $price = $featuredDeal ? $featuredDeal->deal_price : $variant->price;
+            } else {
+                // No variant selected, use deal price if available
+                $price = $featuredDeal ? $featuredDeal->deal_price : $price;
             }
 
             // Check if item already exists in cart
@@ -424,12 +432,22 @@ class CartService extends BaseService
         $discount = (float) ($cart->discount_amount ?? 0);
         $total = $subtotal - $discount + $totalShipping;
 
+        // Featured deal indirimlerini hesapla
+        $dealDiscount = 0;
+        foreach ($allItems as $item) {
+            if ($item['has_deal'] && isset($item['original_price'])) {
+                $savingsPerItem = ($item['original_price'] - $item['unit_price']) * $item['quantity'];
+                $dealDiscount += $savingsPerItem;
+            }
+        }
+
         return [
             'items' => $allItems,
             'vendor_groups' => array_values($vendorGroups),
             'totals' => [
                 'subtotal' => round($subtotal, 2),
                 'discount' => round($discount, 2),
+                'deal_discount' => round($dealDiscount, 2),
                 'shipping' => round($totalShipping, 2),
                 'shipping_breakdown' => $shippingBreakdown,
                 'total' => round(max(0, $total), 2),
@@ -464,13 +482,64 @@ class CartService extends BaseService
             }
         }
 
+        // Get active featured deal for this product
+        $featuredDeal = $item->product?->activeFeaturedDeal;
+        $currentPrice = null;
+        $originalPrice = null;
+        $hasDeal = false;
+        $dealBadge = null;
+        $discountPercentage = null;
+        $priceNeedsUpdate = false;
+
+        // Determine correct price based on current deal status
+        if ($featuredDeal) {
+            // Deal is active - use deal price
+            $currentPrice = (float) $featuredDeal->deal_price;
+            $originalPrice = (float) $featuredDeal->original_price;
+            $hasDeal = true;
+            $discountPercentage = $featuredDeal->discount_percentage;
+            $dealBadge = [
+                'text' => $featuredDeal->badge_text,
+                'color' => $featuredDeal->badge_color,
+            ];
+            
+            // Check if cart item price needs update
+            if ((float) $item->unit_price !== $currentPrice) {
+                $priceNeedsUpdate = true;
+            }
+        } else {
+            // No active deal - use variant or product price
+            if ($item->variant) {
+                $currentPrice = (float) $item->variant->price;
+            } else {
+                $currentPrice = (float) $item->product->variants()->first()?->price ?? 0;
+            }
+            
+            // Check if cart item price needs update (deal might have ended)
+            if ((float) $item->unit_price !== $currentPrice) {
+                $priceNeedsUpdate = true;
+            }
+        }
+
+        // Update cart item price if needed
+        if ($priceNeedsUpdate) {
+            $item->update([
+                'unit_price' => $currentPrice,
+                'line_total' => $currentPrice * $item->quantity,
+            ]);
+        }
+
         return [
             'id' => $item->id,
             'product_id' => $item->product_id,
             'variant_id' => $item->variant_id,
             'quantity' => $item->quantity,
-            'unit_price' => (float) $item->unit_price,
-            'line_total' => (float) $item->line_total,
+            'unit_price' => $currentPrice,
+            'original_price' => $originalPrice,
+            'discount_percentage' => $discountPercentage,
+            'has_deal' => $hasDeal,
+            'deal_badge' => $dealBadge,
+            'line_total' => $currentPrice * $item->quantity,
             'vendor_id' => $item->product?->vendor_id,
             'product' => [
                 'id' => $item->product?->id,

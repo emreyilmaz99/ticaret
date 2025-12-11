@@ -50,6 +50,22 @@ const ProductInfo = ({
       {/* Title */}
       <h1 style={styles.title}>{product.name}</h1>
 
+      {/* Deal Badge */}
+      {product.has_deal && product.deal_badge && (
+        <div style={{
+          display: 'inline-block',
+          backgroundColor: product.deal_badge.color || '#ef4444',
+          color: 'white',
+          fontSize: '14px',
+          fontWeight: '700',
+          padding: '6px 16px',
+          borderRadius: '20px',
+          marginBottom: '12px'
+        }}>
+          {product.deal_badge.text}
+        </div>
+      )}
+
       {/* Rating */}
       <div style={styles.rating}>
         <div style={styles.stars}>
@@ -68,19 +84,54 @@ const ProductInfo = ({
 
       {/* Price */}
       <div style={styles.priceSection}>
-        <span style={styles.price}>
-          {formatPrice(currentPrice * (typeof quantity === 'number' ? quantity : 1))}
-        </span>
-        {quantity > 1 && (
-          <span style={{ fontSize: '16px', color: '#64748b', fontWeight: '500' }}>
-            ({formatPrice(currentPrice)} / adet)
-          </span>
-        )}
-        {product.price_range && quantity === 1 && (
-          <span style={styles.priceRange}>
-            {formatPrice(product.price_range.min)} - {formatPrice(product.price_range.max)}
-          </span>
-        )}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {/* Original price if deal exists */}
+          {product.has_deal && product.original_price && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <span style={{
+                fontSize: '20px',
+                color: '#94a3b8',
+                textDecoration: 'line-through',
+                fontWeight: '500'
+              }}>
+                {formatPrice(product.original_price * (typeof quantity === 'number' ? quantity : 1))}
+              </span>
+              {product.discount_percentage && (
+                <span style={{
+                  backgroundColor: '#ef4444',
+                  color: 'white',
+                  fontSize: '14px',
+                  fontWeight: '700',
+                  padding: '4px 12px',
+                  borderRadius: '12px'
+                }}>
+                  %{Math.round(product.discount_percentage)} İNDİRİM
+                </span>
+              )}
+            </div>
+          )}
+          
+          {/* Current/Deal price */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            <span style={{
+              ...styles.price,
+              color: product.has_deal ? '#ef4444' : '#059669'
+            }}>
+              {formatPrice(currentPrice * (typeof quantity === 'number' ? quantity : 1))}
+            </span>
+            {quantity > 1 && (
+              <span style={{ fontSize: '16px', color: '#64748b', fontWeight: '500' }}>
+                ({formatPrice(currentPrice)} / adet)
+              </span>
+            )}
+          </div>
+
+          {product.price_range && quantity === 1 && !product.has_deal && (
+            <span style={styles.priceRange}>
+              {formatPrice(product.price_range.min)} - {formatPrice(product.price_range.max)}
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Short Description */}

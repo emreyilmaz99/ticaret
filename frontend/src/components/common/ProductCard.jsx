@@ -174,7 +174,18 @@ const ProductCard = ({ product, setQuickViewProduct, isCompared, onToggleCompare
 
   return (
     <div style={styles.card} onClick={() => navigate(`/product/${product.slug || product.id}`)}>
-      {product.discount && (
+      {/* Deal Badge - API'den gelen indirim bilgisi */}
+      {product.has_deal && product.deal_badge && (
+        <div style={{
+          ...styles.discountBadge,
+          backgroundColor: product.deal_badge.color || '#ef4444'
+        }}>
+          {product.deal_badge.text || `%${Math.round(product.discount_percentage)} İndirim`}
+        </div>
+      )}
+      
+      {/* Eski discount alanı (geriye dönük uyumluluk için) */}
+      {!product.has_deal && product.discount && (
         <div style={styles.discountBadge}>%{product.discount} İndirim</div>
       )}
       
@@ -221,8 +232,25 @@ const ProductCard = ({ product, setQuickViewProduct, isCompared, onToggleCompare
           <span style={{ color: '#94a3b8' }}>({product.reviews || product.reviews_count || 0})</span>
         </div>
         <div style={styles.priceRow}>
-          <div style={styles.price}>
-            {new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(product.price)}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            {/* Indirimli fiyat varsa orijinal fiyatı göster (üstü çizili) */}
+            {product.has_deal && product.original_price && (
+              <div style={{
+                fontSize: isMobile ? '11px' : '13px',
+                color: '#94a3b8',
+                textDecoration: 'line-through',
+                fontWeight: '500'
+              }}>
+                {new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(product.original_price)}
+              </div>
+            )}
+            {/* Güncel fiyat (indirimli veya normal) */}
+            <div style={{
+              ...styles.price,
+              color: product.has_deal ? '#ef4444' : '#059669'
+            }}>
+              {new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(product.price)}
+            </div>
           </div>
           <div style={styles.actions}>
             <button 

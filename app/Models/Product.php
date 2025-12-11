@@ -83,6 +83,36 @@ class Product extends Model
         return $this->belongsTo(Admin::class, 'rejected_by');
     }
 
+    /**
+     * Get active featured deal for this product
+     * Returns only current (active + within date range) featured deal
+     */
+    public function activeFeaturedDeal()
+    {
+        return $this->hasOne(FeaturedDeal::class, 'product_id')
+            ->where('is_active', true)
+            ->where(function($query) {
+                $now = now();
+                $query->where(function($q) use ($now) {
+                    $q->whereNull('starts_at')
+                      ->orWhere('starts_at', '<=', $now);
+                })
+                ->where(function($q) use ($now) {
+                    $q->whereNull('ends_at')
+                      ->orWhere('ends_at', '>', $now);
+                });
+            })
+            ->orderBy('sort_order');
+    }
+
+    /**
+     * Get all featured deals (including inactive/expired)
+     */
+    public function featuredDeals()
+    {
+        return $this->hasMany(FeaturedDeal::class, 'product_id');
+    }
+
     protected static function booted()
     {
         static::creating(function ($model) {

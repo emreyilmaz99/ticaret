@@ -60,6 +60,24 @@ const defaultStyles = {
     cursor: 'pointer',
     marginTop: '4px',
   },
+  dealBadge: {
+    display: 'inline-block',
+    fontSize: '10px',
+    fontWeight: '700',
+    padding: '2px 6px',
+    borderRadius: '4px',
+    marginTop: '4px',
+  },
+  originalPrice: {
+    fontSize: '12px',
+    color: '#94a3b8',
+    textDecoration: 'line-through',
+    marginRight: '8px',
+  },
+  discountedPrice: {
+    fontWeight: '700',
+    color: '#ef4444',
+  },
   priceText: {
     fontWeight: '500',
     color: '#475569',
@@ -157,6 +175,15 @@ const CartItem = ({
               {item.variant.title || item.variant.sku}
             </p>
           )}
+          {item.has_deal && item.deal_badge && (
+            <span style={{
+              ...styles.dealBadge,
+              backgroundColor: item.deal_badge.color || '#ef4444',
+              color: 'white'
+            }}>
+              {item.deal_badge.text}
+            </span>
+          )}
           <button 
             onClick={onRemove}
             style={styles.removeBtn}
@@ -175,9 +202,19 @@ const CartItem = ({
           alignItems: 'center', 
           width: '100%'
         }}>
-          <span style={{ fontWeight: '700', color: '#059669' }}>
-            {item.unit_price?.toLocaleString('tr-TR')} TL
-          </span>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            {item.has_deal && item.original_price && (
+              <span style={styles.originalPrice}>
+                {item.original_price?.toLocaleString('tr-TR')} TL
+              </span>
+            )}
+            <span style={{
+              fontWeight: '700',
+              color: item.has_deal ? '#ef4444' : '#059669'
+            }}>
+              {item.unit_price?.toLocaleString('tr-TR')} TL
+            </span>
+          </div>
           <QuantityControl 
             quantity={item.quantity}
             onDecrease={handleDecrease}
@@ -191,10 +228,23 @@ const CartItem = ({
       {/* Desktop Kolonlar */}
       <div style={{
         textAlign: 'center', 
-        display: isMobile ? 'none' : 'block', 
+        display: isMobile ? 'none' : 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: '4px',
         ...styles.priceText
       }}>
-        {item.unit_price?.toLocaleString('tr-TR')} TL
+        {item.has_deal && item.original_price && (
+          <span style={styles.originalPrice}>
+            {item.original_price?.toLocaleString('tr-TR')} TL
+          </span>
+        )}
+        <span style={{
+          fontWeight: item.has_deal ? '700' : '500',
+          color: item.has_deal ? '#ef4444' : '#475569'
+        }}>
+          {item.unit_price?.toLocaleString('tr-TR')} TL
+        </span>
       </div>
 
       <div style={{ display: isMobile ? 'none' : 'flex', justifyContent: 'center' }}>
