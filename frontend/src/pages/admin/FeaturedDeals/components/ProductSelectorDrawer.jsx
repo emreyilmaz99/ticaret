@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { FaTimes, FaSearch, FaCheck } from 'react-icons/fa';
 import axiosInstance from '../../../../lib/axios';
 
+const BACKEND_URL = 'http://127.0.0.1:8000';
+
 export default function ProductSelectorDrawer({ isOpen, onClose, onSelect }) {
   const [allProducts, setAllProducts] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -229,7 +231,7 @@ export default function ProductSelectorDrawer({ isOpen, onClose, onSelect }) {
                     }}>
                       {product.photos && product.photos[0] ? (
                         <img
-                          src={product.photos[0].url}
+                          src={product.photos[0].url.startsWith('http') ? product.photos[0].url : `${BACKEND_URL}${product.photos[0].url}`}
                           alt={product.name}
                           style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                         />

@@ -4,7 +4,9 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useToast } from '../../../components/common/Toast';
 import { useAuth } from '../../../context/AuthContext';
+import { useCart } from '../../../context/CartContext';
 import { getProducts, getCategories } from '../../../api/publicApi';
+import axios from '../../../lib/axios';
 
 /**
  * Custom hook for Home page state and logic
@@ -13,6 +15,7 @@ export const useHome = () => {
   const [searchParams] = useSearchParams();
   const { showToast } = useToast();
   const { user } = useAuth();
+  const { fetchCart } = useCart();
   const navigate = useNavigate();
   
   // Responsive state
@@ -89,15 +92,38 @@ export const useHome = () => {
   });
 
   // Add to cart handler
-  const addToCart = useCallback((product) => {
+  const addToCart = useCallback(async (product) => {
     if (!user) {
       showToast('Sepete eklemek için lütfen giriş yapın.', 'warning');
       navigate('/login');
       return;
     }
-    showToast(`${product.name} sepete eklendi!`, 'success');
-    if (quickViewProduct) setQuickViewProduct(null);
-  }, [user, showToast, navigate, quickViewProduct]);
+
+    try {
+      const payload = {
+        product_id: product.product_id || product.id,
+        variant_id: product.variant_id || null,
+        quantity: product.quantity || 1,
+      };
+
+      console.log('Adding to cart:', payload);
+
+      const response = await axios.post('/v1/cart/items', payload);
+
+      if (response.data.success) {
+        showToast(`${product.name} sepete eklendi!`, 'success');
+        // Sepet state'ini güncelle - bu sayede badge otomatik güncellenecek
+        await fetchCart();
+        if (quickViewProduct) setQuickViewProduct(null);
+      } else {
+        showToast(response.data.message || 'Sepete eklenirken bir hata oluştu.', 'error');
+      }
+    } catch (error) {
+      console.error('Add to cart error:', error);
+      const errorMessage = error.response?.data?.message || 'Sepete eklenirken bir hata oluştu.';
+      showToast(errorMessage, 'error');
+    }
+  }, [user, showToast, navigate, quickViewProduct, fetchCart]);
 
   // Toggle favorite handler
   const toggleFavorite = useCallback((e, productId) => {

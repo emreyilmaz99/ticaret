@@ -59,7 +59,7 @@ const MobileMenu = ({ isOpen, onClose, user, onLogout }) => {
             <FaHome /> Ana Sayfa
           </Link>
           
-          <Link to="/categories" style={getItemStyle('/categories')} onClick={onClose}>
+          <Link to="/products" style={getItemStyle('/products')} onClick={onClose}>
             <FaList /> Kategoriler
           </Link>
 

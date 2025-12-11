@@ -14,7 +14,7 @@ const BottomNav = ({ cartItemCount, favoriteCount }) => {
 
   const navItems = [
     { path: '/', icon: <FaHome />, label: 'Ana Sayfa' },
-    { path: '/categories', icon: <FaList />, label: 'Kategoriler' },
+    { path: '/products', icon: <FaList />, label: 'Kategoriler' },
     { 
       path: '/cart', 
       icon: <FaShoppingBag />, 

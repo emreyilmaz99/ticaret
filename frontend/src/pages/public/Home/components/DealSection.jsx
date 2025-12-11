@@ -1,6 +1,6 @@
 // src/pages/public/Home/components/DealSection.jsx
 import React, { useState, useEffect, useCallback } from 'react';
-import { FaShoppingCart, FaClock, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
+import { FaShoppingCart, FaClock, FaChevronLeft, FaChevronRight, FaEye } from 'react-icons/fa';
 import axios from 'axios';
 
 const BACKEND_URL = 'http://127.0.0.1:8000';
@@ -99,13 +99,26 @@ const DealSection = ({ addToCart, styles, isMobile }) => {
       console.error('Conversion tracking failed:', error);
     }
 
-    addToCart({
-      id: currentDeal.variant_id || currentDeal.product_id,
-      product_id: currentDeal.product_id,
-      variant_id: currentDeal.variant_id,
+    // Prepare cart item data
+    const cartItem = {
+      product_id: currentDeal.product_id || currentDeal.product?.id,
+      variant_id: currentDeal.variant_id || currentDeal.variant?.id || null,
+      quantity: 1,
       name: currentDeal.product?.name,
       price: parseFloat(currentDeal.deal_price),
-    });
+      image: currentDeal.product?.image || currentDeal.product?.images?.[0],
+      variant: currentDeal.variant
+    };
+
+    console.log('Current Deal:', currentDeal);
+    console.log('Prepared cart item:', cartItem);
+    
+    if (!cartItem.product_id) {
+      console.error('Product ID is missing!', currentDeal);
+      return;
+    }
+    
+    addToCart(cartItem);
   };
 
   // Format time
@@ -306,6 +319,20 @@ const DealSection = ({ addToCart, styles, isMobile }) => {
           >
             <FaShoppingCart /> Sepete Ekle
           </button>
+          
+          <a 
+            href={`/product/${currentDeal.product?.slug || currentDeal.product_id}`}
+            onClick={handleClick}
+            style={{ 
+              ...styles.heroBtn, 
+              backgroundColor: 'rgba(255,255,255,0.2)', 
+              color: 'white',
+              textDecoration: 'none',
+              width: isMobile ? '100%' : 'auto' 
+            }}
+          >
+            <FaEye /> İncele
+          </a>
           
           {/* Countdown Timer */}
           {currentDeal.ends_at && (
