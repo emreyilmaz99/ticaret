@@ -41,10 +41,10 @@ export const getRelatedProducts = async (slug, limit = 4) => {
 };
 
 /**
- * Get all categories
+ * Get all categories (root level only)
  */
 export const getCategories = async () => {
-  const response = await axios.get('/v1/categories');
+  const response = await axios.get('/v1/categories?root_only=1');
   return response.data;
 };
 

@@ -17,6 +17,9 @@ const FilterBar = ({
   setSortOrder,
   styles 
 }) => {
+  // Debug: Kategorileri konsola yazdır
+  console.log('FilterBar Categories:', categories);
+  
   return (
     <div style={styles.filterBar}>
       <div style={styles.filterGroup}>

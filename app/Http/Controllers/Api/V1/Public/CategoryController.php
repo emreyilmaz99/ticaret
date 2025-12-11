@@ -21,7 +21,7 @@ class CategoryController extends Controller
             ->select(['id', 'parent_id', 'name', 'slug', 'icon', 'image', 'description']);
 
         // Sadece ana kategoriler
-        if ($request->filled('root_only') && $request->root_only === 'true') {
+        if ($request->filled('root_only') && ($request->root_only === 'true' || $request->root_only == '1')) {
             $query->whereNull('parent_id');
         }
 

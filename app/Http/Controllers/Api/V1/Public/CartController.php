@@ -41,8 +41,13 @@ class CartController extends Controller
         $validated = $request->validate([
             'product_id' => 'required|string|exists:products,id',
             'variant_id' => 'nullable|integer|exists:product_variants,id',
-            'quantity' => 'integer|min:1|max:99',
+            'quantity' => 'nullable|integer|min:1|max:99',
         ]);
+        
+        // Set default quantity if not provided
+        if (!isset($validated['quantity'])) {
+            $validated['quantity'] = 1;
+        }
 
         $user = $this->getAuthUser($request);
         $sessionId = $request->header('X-Cart-Session');

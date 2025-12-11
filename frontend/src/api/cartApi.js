@@ -31,7 +31,8 @@ const cartAxios = () => {
  * Sepeti getir
  */
 export const getCart = async () => {
-  const response = await axios.get('/v1/cart', cartAxios());
+  const config = cartAxios();
+  const response = await axios.get('v1/cart', config);
   return response.data;
 };
 
@@ -39,11 +40,20 @@ export const getCart = async () => {
  * Sepete ürün ekle
  */
 export const addToCart = async (productId, variantId = null, quantity = 1) => {
-  const response = await axios.post('/v1/cart/items', {
-    product_id: productId,
-    variant_id: variantId,
-    quantity,
-  }, cartAxios());
+  const payload = {
+    product_id: String(productId), // Ensure string (UUID)
+    quantity: parseInt(quantity),
+  };
+  
+  // Only add variant_id if it's provided
+  if (variantId !== null && variantId !== undefined) {
+    payload.variant_id = parseInt(variantId);
+  }
+  
+  console.log('Adding to cart with payload:', payload);
+  
+  const config = cartAxios();
+  const response = await axios.post('v1/cart/items', payload, config);
   return response.data;
 };
 
