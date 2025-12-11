@@ -1,5 +1,4 @@
 // src/pages/user/UserOrders/useUserOrders.js
-import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { 
   FiPackage, 
@@ -11,15 +10,12 @@ import {
 import { getUserOrders } from '../../../features/checkout/api/checkoutApi';
 
 export const useUserOrders = () => {
-  const [currentPage, setCurrentPage] = useState(1);
-
   const { data, isLoading, error } = useQuery({
-    queryKey: ['userOrders', currentPage],
-    queryFn: () => getUserOrders({ page: currentPage, per_page: 10 }),
+    queryKey: ['userOrders'],
+    queryFn: () => getUserOrders({ page: 1, per_page: 100 }), // Tüm siparişleri çek
   });
 
   const orders = data?.data?.orders || [];
-  const pagination = data?.data?.pagination;
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat('tr-TR', {
@@ -117,22 +113,13 @@ export const useUserOrders = () => {
     return configs[status] || configs.pending;
   };
 
-  const handlePageChange = (newPage) => {
-    if (newPage >= 1 && newPage <= (pagination?.last_page || 1)) {
-      setCurrentPage(newPage);
-    }
-  };
-
   return {
     orders,
-    pagination,
-    currentPage,
     isLoading,
     error,
     formatPrice,
     formatDate,
     getStatusConfig,
-    getPaymentStatusConfig,
-    handlePageChange
+    getPaymentStatusConfig
   };
 };

@@ -11,19 +11,29 @@ import { getOrder } from '../../../features/checkout/api/checkoutApi';
 const UserOrders = () => {
   // STATE: Hangi siparişin detayının gösterileceğini tutar. Null ise detay kapalıdır.
   const [expandedOrderNumber, setExpandedOrderNumber] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ordersPerPage = 3; // Sayfa başına 3 sipariş
 
   const {
     orders,
-    pagination,
-    currentPage,
     isLoading,
     error,
     formatPrice,
     formatDate,
     getStatusConfig,
-    getPaymentStatusConfig,
-    handlePageChange
+    getPaymentStatusConfig
   } = useUserOrders();
+
+  // Frontend Pagination Hesaplaması
+  const totalPages = Math.ceil(orders.length / ordersPerPage);
+  const indexOfLastOrder = currentPage * ordersPerPage;
+  const indexOfFirstOrder = indexOfLastOrder - ordersPerPage;
+  const currentOrders = orders.slice(indexOfFirstOrder, indexOfLastOrder);
+
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   // Detay toggle fonksiyonu
   const handleToggleDetail = (orderNumber) => {
@@ -66,12 +76,12 @@ const UserOrders = () => {
   return (
     <div style={styles.container}>
       <OrdersHeader 
-        totalOrders={pagination?.total || orders.length} 
+        totalOrders={orders.length} 
         styles={styles} 
       />
 
       <div style={styles.ordersList}>
-        {orders.map((order) => (
+        {currentOrders.map((order) => (
           <React.Fragment key={order.id}>
             <OrderCard
               order={order}
@@ -112,32 +122,115 @@ const UserOrders = () => {
       </div>
 
       {/* Pagination */}
-      {pagination && pagination.last_page > 1 && (
-        <div style={styles.pagination}>
+      {totalPages > 1 && (
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          gap: '8px',
+          marginTop: '32px',
+          padding: '20px 0'
+        }}>
           <button
             onClick={() => handlePageChange(currentPage - 1)}
             disabled={currentPage === 1}
             style={{
-              ...styles.pageButton,
-              opacity: currentPage === 1 ? 0.5 : 1,
-              cursor: currentPage === 1 ? 'not-allowed' : 'pointer'
+              padding: '10px 16px',
+              backgroundColor: currentPage === 1 ? '#f3f4f6' : '#ffffff',
+              border: '1px solid #e5e7eb',
+              borderRadius: '8px',
+              fontSize: '14px',
+              fontWeight: '500',
+              color: currentPage === 1 ? '#9ca3af' : '#374151',
+              cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+              transition: 'all 0.2s',
+              opacity: currentPage === 1 ? 0.6 : 1
+            }}
+            onMouseEnter={(e) => {
+              if (currentPage !== 1) {
+                e.target.style.backgroundColor = '#f9fafb';
+                e.target.style.borderColor = '#d1d5db';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (currentPage !== 1) {
+                e.target.style.backgroundColor = '#ffffff';
+                e.target.style.borderColor = '#e5e7eb';
+              }
             }}
           >
-            Önceki
+            ← Önceki
           </button>
-          <span style={styles.pageInfo}>
-            {currentPage} / {pagination.last_page}
-          </span>
+          
+          {/* Sayfa Numaraları */}
+          {[...Array(totalPages)].map((_, index) => {
+            const pageNumber = index + 1;
+            return (
+              <button
+                key={pageNumber}
+                onClick={() => handlePageChange(pageNumber)}
+                style={{
+                  width: '40px',
+                  height: '40px',
+                  backgroundColor: currentPage === pageNumber ? '#059669' : '#ffffff',
+                  border: '1px solid',
+                  borderColor: currentPage === pageNumber ? '#059669' : '#e5e7eb',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  color: currentPage === pageNumber ? '#ffffff' : '#374151',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => {
+                  if (currentPage !== pageNumber) {
+                    e.target.style.backgroundColor = '#f0fdf4';
+                    e.target.style.borderColor = '#059669';
+                    e.target.style.color = '#059669';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (currentPage !== pageNumber) {
+                    e.target.style.backgroundColor = '#ffffff';
+                    e.target.style.borderColor = '#e5e7eb';
+                    e.target.style.color = '#374151';
+                  }
+                }}
+              >
+                {pageNumber}
+              </button>
+            );
+          })}
+          
           <button
             onClick={() => handlePageChange(currentPage + 1)}
-            disabled={currentPage === pagination.last_page}
+            disabled={currentPage === totalPages}
             style={{
-              ...styles.pageButton,
-              opacity: currentPage === pagination.last_page ? 0.5 : 1,
-              cursor: currentPage === pagination.last_page ? 'not-allowed' : 'pointer'
+              padding: '10px 16px',
+              backgroundColor: currentPage === totalPages ? '#f3f4f6' : '#ffffff',
+              border: '1px solid #e5e7eb',
+              borderRadius: '8px',
+              fontSize: '14px',
+              fontWeight: '500',
+              color: currentPage === totalPages ? '#9ca3af' : '#374151',
+              cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+              transition: 'all 0.2s',
+              opacity: currentPage === totalPages ? 0.6 : 1
+            }}
+            onMouseEnter={(e) => {
+              if (currentPage !== totalPages) {
+                e.target.style.backgroundColor = '#f9fafb';
+                e.target.style.borderColor = '#d1d5db';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (currentPage !== totalPages) {
+                e.target.style.backgroundColor = '#ffffff';
+                e.target.style.borderColor = '#e5e7eb';
+              }
             }}
           >
-            Sonraki
+            Sonraki →
           </button>
         </div>
       )}
