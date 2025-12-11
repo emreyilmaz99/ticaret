@@ -45,15 +45,16 @@ class CheckoutController extends Controller
             ], 400);
         }
 
-        // Adresleri al
+        // Adresleri al (soft-deleted adresleri hariç tut)
         $shippingAddress = UserAddress::where('user_id', $user->id)
             ->where('id', $request->shipping_address_id)
+            ->whereNull('deleted_at')
             ->first();
         
         if (!$shippingAddress) {
             return response()->json([
                 'success' => false,
-                'message' => 'Teslimat adresi bulunamadı',
+                'message' => 'Teslimat adresi bulunamadı veya silinmiş',
             ], 404);
         }
 
@@ -61,7 +62,15 @@ class CheckoutController extends Controller
         if ($request->billing_address_id) {
             $billingAddress = UserAddress::where('user_id', $user->id)
                 ->where('id', $request->billing_address_id)
+                ->whereNull('deleted_at')
                 ->first();
+                
+            if (!$billingAddress) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Fatura adresi bulunamadı veya silinmiş',
+                ], 404);
+            }
         }
 
         // Sepetten sipariş oluştur

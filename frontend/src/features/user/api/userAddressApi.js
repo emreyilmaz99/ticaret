@@ -47,3 +47,11 @@ export const setDefaultUserAddress = async (id) => {
   const response = await axios.put(`/v1/user/addresses/${id}/default`);
   return response.data;
 };
+
+/**
+ * Restore a soft-deleted address
+ */
+export const restoreUserAddress = async (id) => {
+  const response = await axios.post(`/v1/user/addresses/${id}/restore`);
+  return response.data;
+};

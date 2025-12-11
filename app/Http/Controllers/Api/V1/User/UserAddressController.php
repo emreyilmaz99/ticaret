@@ -153,4 +153,39 @@ class UserAddressController extends Controller
             ],
         ]);
     }
+
+    /**
+     * Restore a soft-deleted address.
+     */
+    public function restore(Request $request, $id): JsonResponse
+    {
+        $address = UserAddress::withTrashed()
+            ->where('id', $id)
+            ->where('user_id', $request->user()->id)
+            ->first();
+
+        if (!$address) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Adres bulunamadı.',
+            ], 404);
+        }
+
+        if (!$address->trashed()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Bu adres zaten aktif.',
+            ], 400);
+        }
+
+        $address->restore();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Adres başarıyla geri yüklendi.',
+            'data' => [
+                'address' => $address->fresh(),
+            ],
+        ]);
+    }
 }
