@@ -16,20 +16,45 @@ export const getStyles = (isMobile = false) => ({
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: '24px',
+    marginBottom: '32px',
     flexWrap: 'wrap',
-    gap: '16px'
+    gap: '16px',
+    background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
+    padding: isMobile ? '20px 24px' : '28px 32px',
+    borderRadius: '16px',
+    border: '1px solid #e2e8f0'
   },
   title: {
-    fontSize: isMobile ? '20px' : '24px',
-    fontWeight: '700',
+    fontSize: '26px',
+    fontWeight: '800',
     color: '#0f172a',
     margin: 0,
+    letterSpacing: '-0.02em'
   },
   subtitle: {
     color: '#64748b',
-    marginTop: '4px',
+    marginTop: '6px',
+    fontSize: '15px',
+    fontWeight: '400'
+  },
+  headerActions: {
+    display: 'flex',
+    gap: '12px',
+  },
+  exportBtn: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '10px 16px',
+    backgroundColor: 'rgb(255, 255, 255)',
+    border: '1px solid rgb(229, 231, 235)',
+    borderRadius: '10px',
+    color: 'rgb(17, 24, 39)',
     fontSize: '14px',
+    fontWeight: '600',
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+    boxShadow: 'rgba(0, 0, 0, 0.05) 0px 1px 2px 0px',
   },
   
   // Search & Filter

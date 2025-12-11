@@ -1,39 +1,105 @@
 import React from 'react';
+import { FaStore, FaPlus, FaFileExcel, FaPrint } from 'react-icons/fa';
 import ActiveVendorList from '../../features/vendor/components/ActiveVendorList';
-import { FaPlus } from 'react-icons/fa';
 
 const ActiveVendorsPage = () => {
+  const handleDownloadExcel = () => {
+    alert('Excel indirme özelliği yakında eklenecek');
+  };
+
+  const handlePrint = () => {
+    alert('Yazdırma özelliği yakında eklenecek');
+  };
+
   return (
-    <div>
-      {/* SAYFA BAŞLIĞI VE AKSİYON BUTONU */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
+    <div style={styles.container}>
+      {/* Header - Siparişler sayfasındaki gibi */}
+      <div style={styles.header}>
         <div>
-          <h1 style={{ fontSize: '24px', fontWeight: '700', color: 'var(--text-main)' }}>Satıcılar</h1>
-          <p style={{ color: 'var(--text-muted)', marginTop: '4px' }}>Platformdaki aktif mağazaları buradan yönetebilirsiniz.</p>
+          <h1 style={styles.title}>Satıcılar</h1>
+          <p style={styles.subtitle}>Platformdaki aktif mağazaları buradan yönetebilirsiniz.</p>
         </div>
-        
-        {/* Yeni satıcı ekleme butonu opsiyonel, belki admin direkt ekleyebilir */}
-        <button style={{
-          backgroundColor: 'var(--primary)',
-          color: 'white',
-          border: 'none',
-          padding: '12px 24px',
-          borderRadius: 'var(--radius)',
-          fontWeight: '600',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          cursor: 'pointer',
-          boxShadow: '0 4px 6px -1px rgba(79, 70, 229, 0.2)'
-        }}>
-          <FaPlus /> Yeni Satıcı Ekle
-        </button>
+        <div style={styles.headerActions}>
+          <button style={styles.exportBtn} onClick={handlePrint}>
+            <FaPrint /> Rapor Yazdır
+          </button>
+          <button style={styles.exportBtn} onClick={handleDownloadExcel}>
+            <FaFileExcel /> Excel İndir
+          </button>
+          <button style={styles.addBtn}>
+            <FaPlus /> Yeni Satıcı Ekle
+          </button>
+        </div>
       </div>
 
-      {/* LİSTE BİLEŞENİ */}
       <ActiveVendorList />
     </div>
   );
+};
+
+const styles = {
+  container: {
+    padding: '32px',
+    backgroundColor: '#F3F4F6',
+    minHeight: '100vh',
+  },
+  header: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '32px',
+    background: 'linear-gradient(135deg, rgb(248, 250, 252) 0%, rgb(241, 245, 249) 100%)',
+    padding: '28px 32px',
+    borderRadius: '16px',
+    border: '1px solid rgb(226, 232, 240)',
+  },
+  title: {
+    fontSize: '26px',
+    fontWeight: '800',
+    color: 'rgb(15, 23, 42)',
+    letterSpacing: '-0.02em',
+    margin: 0,
+  },
+  subtitle: {
+    fontSize: '15px',
+    color: 'rgb(100, 116, 139)',
+    marginTop: '6px',
+    margin: '6px 0 0 0',
+  },
+  headerActions: {
+    display: 'flex',
+    gap: '12px',
+  },
+  exportBtn: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '10px 16px',
+    backgroundColor: 'rgb(255, 255, 255)',
+    border: '1px solid rgb(229, 231, 235)',
+    borderRadius: '10px',
+    color: 'rgb(17, 24, 39)',
+    fontSize: '14px',
+    fontWeight: '600',
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+    boxShadow: 'rgba(0, 0, 0, 0.05) 0px 1px 2px 0px',
+  },
+  addBtn: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '10px 16px',
+    backgroundColor: '#059669',
+    border: 'none',
+    borderRadius: '10px',
+    color: '#fff',
+    fontSize: '14px',
+    fontWeight: '600',
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+    boxShadow: '0 4px 12px rgba(5, 150, 105, 0.25)',
+  },
 };
 
 export default ActiveVendorsPage;

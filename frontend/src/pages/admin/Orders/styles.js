@@ -38,16 +38,21 @@ export const getStyles = () => ({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: '32px',
+    background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
+    padding: '28px 32px',
+    borderRadius: '16px',
+    border: '1px solid #e2e8f0'
   },
   title: {
-    fontSize: '28px',
+    fontSize: '26px',
     fontWeight: '800',
-    color: COLORS.textMain,
-    letterSpacing: '-0.5px',
+    color: '#0f172a',
+    letterSpacing: '-0.02em',
   },
   subtitle: {
-    fontSize: '14px',
-    color: COLORS.textMuted,
+    fontSize: '15px',
+    color: '#64748b',
+    marginTop: '6px',
   },
   headerActions: {
     display: 'flex',

@@ -1,5 +1,6 @@
 // src/pages/admin/Applications/FullApplications/index.jsx
 import React from 'react';
+import { FaFileExcel, FaPrint } from 'react-icons/fa';
 import useFullApplications from '../useFullApplications';
 import { styles } from '../styles';
 import {
@@ -56,16 +57,32 @@ const FullApplicationsPage = () => {
   // Detail modal açık mı kontrolü
   const isDetailModalOpen = selectedVendor && !rejectModalOpen && !approveModalOpen;
 
+  const handleDownloadExcel = () => {
+    alert('Excel indirme özelliği yakında eklenecek');
+  };
+
+  const handlePrint = () => {
+    alert('Yazdırma özelliği yakında eklenecek');
+  };
+
   return (
     <div style={styles.container}>
-      {/* Header */}
+      {/* Header - Siparişler sayfasındaki gibi */}
       <div style={styles.header}>
         <div>
-          <h1 style={styles.title}>🏪 Aktivasyon Bekleyen Satıcılar</h1>
+          <h1 style={styles.title}>Aktivasyon Bekleyen Satıcılar</h1>
           <p style={styles.subtitle}>
             Tam başvurularını tamamlayan satıcıları inceleyin ve onaylayın.<br />
             Onaylanan satıcılar iyzico'ya kaydedilecek ve aktifleştirilecek.
           </p>
+        </div>
+        <div style={styles.headerActions}>
+          <button style={styles.exportBtn} onClick={handlePrint}>
+            <FaPrint /> Rapor Yazdır
+          </button>
+          <button style={styles.exportBtn} onClick={handleDownloadExcel}>
+            <FaFileExcel /> Excel İndir
+          </button>
         </div>
       </div>
 

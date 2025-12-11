@@ -7,14 +7,37 @@ import axios from '../../../lib/axios';
 export const getStyles = (isMobile = false) => ({
   // Container
   container: { 
-    padding: isMobile ? '16px' : '24px', 
-    fontFamily: "'Inter', sans-serif" 
+    padding: isMobile ? '16px' : '32px', 
+    fontFamily: "'Inter', sans-serif",
+    backgroundColor: '#F3F4F6',
+    minHeight: '100vh',
   },
   
-  // Header
-  header: { marginBottom: '32px' },
-  title: { fontSize: isMobile ? '20px' : '24px', fontWeight: '700', color: '#0f172a' },
-  subtitle: { color: '#64748b', marginTop: '4px' },
+  // Header - Siparişler sayfasındaki gibi
+  header: { 
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '32px',
+    background: 'linear-gradient(135deg, rgb(248, 250, 252) 0%, rgb(241, 245, 249) 100%)',
+    padding: isMobile ? '20px 24px' : '28px 32px',
+    borderRadius: '16px',
+    border: '1px solid rgb(226, 232, 240)',
+    flexWrap: 'wrap',
+    gap: '24px'
+  },
+  title: { 
+    fontSize: '26px', 
+    fontWeight: '800', 
+    color: 'rgb(15, 23, 42)',
+    letterSpacing: '-0.02em',
+    margin: 0
+  },
+  subtitle: { 
+    color: 'rgb(100, 116, 139)', 
+    fontSize: '15px',
+    margin: '6px 0 0 0',
+  },
 
   // Stats
   statsRow: { 

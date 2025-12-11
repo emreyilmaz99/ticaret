@@ -9,8 +9,8 @@ const CategoryStats = ({ stats, styles }) => {
   const statItems = [
     {
       icon: FaLayerGroup,
-      iconColor: '#7c3aed',
-      bgColor: '#f3e8ff',
+      iconColor: '#059669',
+      bgColor: '#d1fae5',
       value: stats.total || 0,
       label: 'Toplam Kategori'
     },

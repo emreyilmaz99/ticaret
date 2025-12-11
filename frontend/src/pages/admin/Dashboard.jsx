@@ -8,7 +8,14 @@ import { PendingApprovals } from '../../features/admin/components/PendingApprova
 
 const Dashboard = () => {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+    <div style={{ 
+      display: 'flex', 
+      flexDirection: 'column', 
+      gap: '24px',
+      padding: '32px',
+      backgroundColor: '#F3F4F6',
+      minHeight: '100vh',
+    }}>
       {/* 1. İstatistik Kartları */}
       <DashboardStats />
       

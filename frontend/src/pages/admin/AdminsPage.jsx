@@ -1,13 +1,16 @@
 import React from 'react';
+import { FaUserShield } from 'react-icons/fa';
 import AdminList from '../../features/admin/components/AdminList';
+import PageHeader from '../../components/admin/PageHeader';
 
 const AdminsPage = () => {
   return (
-    <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
-      <div style={{ marginBottom: '32px' }}>
-        <h1 style={{ fontSize: '28px', fontWeight: '700', color: 'var(--text-main)', marginBottom: '8px' }}>Yöneticiler</h1>
-        <p style={{ color: 'var(--text-muted)' }}>Sistem yöneticilerini ve yetkilerini buradan yönetebilirsiniz.</p>
-      </div>
+    <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+      <PageHeader
+        icon={FaUserShield}
+        title="Yöneticiler"
+        subtitle="Sistem yöneticilerini ve yetkilerini buradan yönetebilirsiniz."
+      />
       
       <AdminList />
     </div>
