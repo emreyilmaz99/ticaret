@@ -41,7 +41,7 @@ export const useUserAddresses = () => {
   const createMutation = useMutation({
     mutationFn: createUserAddress,
     onSuccess: () => {
-      qc.invalidateQueries(['user', 'addresses']);
+      qc.invalidateQueries({ queryKey: ['user', 'addresses'] });
       toast.success('Başarılı', 'Adres eklendi.');
       resetForm();
     },
@@ -54,7 +54,7 @@ export const useUserAddresses = () => {
   const updateMutation = useMutation({
     mutationFn: ({ id, data }) => updateUserAddress(id, data),
     onSuccess: () => {
-      qc.invalidateQueries(['user', 'addresses']);
+      qc.invalidateQueries({ queryKey: ['user', 'addresses'] });
       toast.success('Başarılı', 'Adres güncellendi.');
       resetForm();
     },
@@ -67,7 +67,7 @@ export const useUserAddresses = () => {
   const deleteMutation = useMutation({
     mutationFn: deleteUserAddress,
     onSuccess: () => {
-      qc.invalidateQueries(['user', 'addresses']);
+      qc.invalidateQueries({ queryKey: ['user', 'addresses'] });
       toast.success('Başarılı', 'Adres silindi.');
     },
     onError: (err) => {
@@ -75,15 +75,45 @@ export const useUserAddresses = () => {
     }
   });
 
-  // Set default mutation
+  // Set default mutation with optimistic update
   const setDefaultMutation = useMutation({
     mutationFn: setDefaultUserAddress,
+    onMutate: async (newDefaultId) => {
+      // Cancel any outgoing refetches
+      await qc.cancelQueries({ queryKey: ['user', 'addresses'] });
+
+      // Snapshot the previous value
+      const previousAddresses = qc.getQueryData(['user', 'addresses']);
+
+      // Optimistically update to the new value
+      qc.setQueryData(['user', 'addresses'], (old) => {
+        if (!old?.data?.addresses) return old;
+        return {
+          ...old,
+          data: {
+            ...old.data,
+            addresses: old.data.addresses.map(addr => ({
+              ...addr,
+              is_default: addr.id === newDefaultId
+            }))
+          }
+        };
+      });
+
+      // Return a context object with the snapshotted value
+      return { previousAddresses };
+    },
     onSuccess: () => {
-      qc.invalidateQueries(['user', 'addresses']);
       toast.success('Başarılı', 'Varsayılan adres güncellendi.');
     },
-    onError: (err) => {
+    onError: (err, newDefaultId, context) => {
+      // If the mutation fails, use the context returned from onMutate to roll back
+      qc.setQueryData(['user', 'addresses'], context.previousAddresses);
       toast.error('Hata', err.response?.data?.message || 'İşlem başarısız.');
+    },
+    onSettled: () => {
+      // Always refetch after error or success
+      qc.invalidateQueries({ queryKey: ['user', 'addresses'] });
     }
   });
 

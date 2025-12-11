@@ -1,6 +1,6 @@
 // src/pages/user/UserAddresses/index.jsx
-import React from 'react';
-import { FaMapMarkerAlt, FaPlus } from 'react-icons/fa';
+import React, { useState } from 'react';
+import { FaMapMarkerAlt, FaPlus, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import { useUserAddresses } from './useUserAddresses';
 import { getStyles } from './styles';
 import { AddressCard } from './components/AddressCard';
@@ -23,6 +23,9 @@ const UserAddresses = () => {
     setDefaultMutation
   } = useUserAddresses();
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 4;
+
   const styles = getStyles(isMobile);
 
   const handleAddClick = () => {
@@ -30,6 +33,7 @@ const UserAddresses = () => {
       label: 'Ev',
       full_name: '',
       phone: '',
+      identity_number: '',
       country: 'Türkiye',
       city: '',
       district: '',
@@ -47,6 +51,16 @@ const UserAddresses = () => {
 
   const handleSetDefault = (id) => {
     setDefaultMutation.mutate(id);
+  };
+
+  // Pagination Logic
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentAddresses = addresses.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(addresses.length / itemsPerPage);
+
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
   };
 
   if (isLoading) {
@@ -73,11 +87,11 @@ const UserAddresses = () => {
 
       {showForm ? (
         <AddressForm 
-          formData={form}
-          setFormData={setForm}
+          form={form}
+          setForm={setForm}
           onSubmit={handleSubmit}
           onCancel={resetForm}
-          isEditing={!!editingId}
+          editingId={editingId}
           styles={styles}
         />
       ) : (
@@ -94,18 +108,62 @@ const UserAddresses = () => {
               </button>
             </div>
           ) : (
-            <div style={styles.grid}>
-              {addresses.map(address => (
-                <AddressCard
-                  key={address.id}
-                  address={address}
-                  onEdit={editAddress}
-                  onDelete={handleDelete}
-                  onSetDefault={handleSetDefault}
-                  styles={styles}
-                />
-              ))}
-            </div>
+            <>
+              <div style={styles.grid}>
+                {currentAddresses.map(address => (
+                  <AddressCard
+                    key={address.id}
+                    address={address}
+                    onEdit={editAddress}
+                    onDelete={handleDelete}
+                    onSetDefault={handleSetDefault}
+                    styles={styles}
+                  />
+                ))}
+              </div>
+
+              {/* Pagination Controls */}
+              {totalPages > 1 && (
+                <div style={styles.pagination}>
+                  <button 
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    style={{
+                      ...styles.pageBtn,
+                      opacity: currentPage === 1 ? 0.5 : 1,
+                      cursor: currentPage === 1 ? 'not-allowed' : 'pointer'
+                    }}
+                  >
+                    <FaChevronLeft size={12} />
+                  </button>
+                  
+                  {[...Array(totalPages)].map((_, index) => (
+                    <button
+                      key={index + 1}
+                      onClick={() => handlePageChange(index + 1)}
+                      style={{
+                        ...styles.pageBtn,
+                        ...(currentPage === index + 1 ? styles.activePageBtn : {})
+                      }}
+                    >
+                      {index + 1}
+                    </button>
+                  ))}
+
+                  <button 
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    style={{
+                      ...styles.pageBtn,
+                      opacity: currentPage === totalPages ? 0.5 : 1,
+                      cursor: currentPage === totalPages ? 'not-allowed' : 'pointer'
+                    }}
+                  >
+                    <FaChevronRight size={12} />
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </>
       )}

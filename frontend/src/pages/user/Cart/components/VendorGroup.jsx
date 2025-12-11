@@ -77,7 +77,7 @@ const VendorGroup = ({
       fontWeight: '600',
     },
     freeShipping: {
-      backgroundColor: '#dcfce7',
+      backgroundColor: '#f8fafc',
       color: '#16a34a',
     },
     paidShipping: {

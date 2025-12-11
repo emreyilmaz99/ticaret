@@ -15,7 +15,7 @@ export const getStyles = (isMobile) => ({
     fontFamily: '"Plus Jakarta Sans", "Inter", sans-serif',
     minHeight: '100vh',
     boxSizing: 'border-box',
-    backgroundColor: 'var(--bg-body)', // Global tema rengi
+    backgroundColor: '#ffffff',
   },
 
   // --- HEADER ---

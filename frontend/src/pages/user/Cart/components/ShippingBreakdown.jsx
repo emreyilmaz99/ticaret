@@ -67,10 +67,10 @@ const ShippingBreakdown = ({ shippingBreakdown, totalShipping, styles }) => {
 const VendorShippingCard = ({ vendor }) => (
   <div style={{
     padding: '10px 12px',
-    backgroundColor: vendor.is_free ? '#f0fdf4' : '#f8fafc',
+    backgroundColor: '#f8fafc',
     borderRadius: '8px',
     marginBottom: '8px',
-    border: vendor.is_free ? '1px solid #bbf7d0' : '1px solid #e2e8f0'
+    border: '1px solid #e2e8f0'
   }}>
     <div style={{
       display: 'flex', 

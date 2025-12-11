@@ -59,11 +59,11 @@ const Invoice = () => {
   return (
     <>
       <style>{`
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 40px; color: #333; line-height: 1.6; }
-        .container { max-width: 800px; margin: 0 auto; border: 1px solid #eee; padding: 40px; box-shadow: 0 0 10px rgba(0,0,0,0.05); }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 40px; color: #333; line-height: 1.6; background-color: #FFFFFF; }
+        .container { max-width: 800px; margin: 0 auto; border: 1px solid #eee; padding: 40px; box-shadow: 0 0 10px rgba(0,0,0,0.05); background-color: #FFFFFF; }
         
-        .header { display: flex; justify-content: space-between; border-bottom: 2px solid #059669; padding-bottom: 20px; margin-bottom: 30px; }
-        .brand { font-size: 28px; font-weight: 800; color: #059669; letter-spacing: -1px; }
+        .header { display: flex; justify-content: space-between; border-bottom: 2px solid #1F2937; padding-bottom: 20px; margin-bottom: 30px; }
+        .brand { font-size: 28px; font-weight: 800; color: #1F2937; letter-spacing: -1px; }
         .invoice-meta { text-align: right; }
         .invoice-meta h3 { margin: 0 0 5px 0; color: #111827; }
         .meta-item { font-size: 14px; color: #6B7280; }
@@ -84,13 +84,13 @@ const Invoice = () => {
         .totals-area { display: flex; justify-content: flex-end; margin-top: 30px; }
         .totals-table { width: 300px; }
         .totals-row { display: flex; justify-content: space-between; padding: 8px 0; font-size: 14px; color: #6B7280; }
-        .grand-total { display: flex; justify-content: space-between; padding-top: 15px; margin-top: 10px; border-top: 2px solid #E5E7EB; font-size: 18px; font-weight: 800; color: #059669; }
+        .grand-total { display: flex; justify-content: space-between; padding-top: 15px; margin-top: 10px; border-top: 2px solid #E5E7EB; font-size: 18px; font-weight: 800; color: #1F2937; }
 
         .footer { margin-top: 60px; text-align: center; font-size: 12px; color: #9CA3AF; border-top: 1px solid #E5E7EB; padding-top: 20px; }
         
         @media print {
-          body { padding: 0; }
-          .container { border: none; box-shadow: none; }
+          body { padding: 0; background-color: #FFFFFF; }
+          .container { border: none; box-shadow: none; background-color: #FFFFFF; }
         }
       `}</style>
 

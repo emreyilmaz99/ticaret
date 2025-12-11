@@ -140,7 +140,7 @@ const DeliveryAddressSection = ({
                       style={{
                         ...styles.card,
                         borderColor: isSelected ? '#059669' : '#e2e8f0',
-                        backgroundColor: isSelected ? '#f0fdf4' : 'white',
+                        backgroundColor: 'white',
                       }}
                       onClick={() => selectAddress(address)}
                     >
@@ -215,7 +215,7 @@ const styles = {
     width: '36px',
     height: '36px',
     borderRadius: '10px',
-    backgroundColor: '#ecfdf5',
+    backgroundColor: '#f8fafc',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',

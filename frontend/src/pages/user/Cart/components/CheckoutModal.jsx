@@ -112,7 +112,7 @@ const CheckoutModal = ({
       width: '40px',
       height: '40px',
       borderRadius: '12px',
-      backgroundColor: '#ecfdf5',
+      backgroundColor: '#f8fafc',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -146,9 +146,9 @@ const CheckoutModal = ({
     },
     addressCard: {
       padding: '16px',
-      border: '2px solid #059669',
+      border: '1px solid #e2e8f0',
       borderRadius: '12px',
-      backgroundColor: '#f0fdf4',
+      backgroundColor: 'white',
     },
     addressLabel: {
       display: 'flex',
