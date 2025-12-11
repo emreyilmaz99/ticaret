@@ -72,14 +72,6 @@ const Home = () => {
       {/* Hero Section */}
       <HeroSection styles={styles} isMobile={isMobile} />
 
-      {/* Popular Categories */}
-      <CategoryCircles 
-        categories={categories}
-        selectedCategory={selectedCategory}
-        setSelectedCategory={handleCategoryChange}
-        styles={styles}
-      />
-
       {/* Stats Section */}
       <StatsSection styles={styles} />
 
