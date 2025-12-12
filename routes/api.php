@@ -161,6 +161,16 @@ Route::prefix('v1/admin')->group(function () {
         Route::post('reviews/bulk-reject', [AdminReviewController::class, 'bulkReject']);
         Route::post('reviews/{id}/approve', [AdminReviewController::class, 'approve']);
         Route::post('reviews/{id}/reject', [AdminReviewController::class, 'reject']);
+
+        // banned words management
+        Route::get('banned-words', [\App\Http\Controllers\Api\V1\Admin\AdminBannedWordController::class, 'index']);
+        Route::get('banned-words/stats', [\App\Http\Controllers\Api\V1\Admin\AdminBannedWordController::class, 'stats']);
+        Route::post('banned-words', [\App\Http\Controllers\Api\V1\Admin\AdminBannedWordController::class, 'store']);
+        Route::post('banned-words/bulk', [\App\Http\Controllers\Api\V1\Admin\AdminBannedWordController::class, 'bulkStore']);
+        Route::put('banned-words/{id}', [\App\Http\Controllers\Api\V1\Admin\AdminBannedWordController::class, 'update']);
+        Route::delete('banned-words/{id}', [\App\Http\Controllers\Api\V1\Admin\AdminBannedWordController::class, 'destroy']);
+        Route::delete('banned-words/bulk', [\App\Http\Controllers\Api\V1\Admin\AdminBannedWordController::class, 'bulkDestroy']);
+
         Route::post('featured-deals', [AdminFeaturedDealController::class, 'store']);
         Route::get('featured-deals/{deal}', [AdminFeaturedDealController::class, 'show']);
         Route::put('featured-deals/{deal}', [AdminFeaturedDealController::class, 'update']);
@@ -284,6 +294,7 @@ Route::get('v1/products/{slug}/related', [PublicProductController::class, 'relat
 // product reviews (public)
 Route::get('v1/products/{productId}/reviews', [ProductReviewController::class, 'index']);
 Route::get('v1/products/{productId}/review-summary', [ProductReviewController::class, 'summary']);
+Route::post('v1/reviews/{reviewId}/helpful', [ProductReviewController::class, 'voteHelpful']);
 
 // featured deals (public)
 Route::get('v1/featured-deals', [FeaturedDealController::class, 'index']);

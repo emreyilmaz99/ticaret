@@ -16,9 +16,12 @@ class AdminReviewController extends Controller
      */
     public function index(Request $request)
     {
-        $query = ProductReview::with(['user', 'product', 'media', 'response.vendor'])
+        $query = ProductReview::with(['user', 'product.vendor', 'media', 'response.vendor'])
             ->when($request->has('status'), function ($q) use ($request) {
                 $q->where('status', $request->input('status'));
+            })
+            ->when($request->has('rating'), function ($q) use ($request) {
+                $q->where('rating', $request->input('rating'));
             })
             ->when($request->has('search'), function ($q) use ($request) {
                 $search = $request->input('search');

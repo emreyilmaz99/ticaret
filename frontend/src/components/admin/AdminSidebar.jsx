@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { 
   FaHome, FaBox, FaUsers, FaSignOutAlt, FaStore, 
-  FaUserShield, FaPercentage, FaLeaf, FaLayerGroup, FaShoppingBag, FaReceipt, FaStar
+  FaUserShield, FaPercentage, FaLeaf, FaLayerGroup, FaShoppingBag, FaReceipt, FaStar, FaCommentAlt
 } from 'react-icons/fa';
 
 const AdminSidebar = () => {
@@ -35,6 +35,7 @@ const AdminSidebar = () => {
       { path: '/admin/categories', icon: FaLayerGroup, label: 'Kategoriler' },
       { path: '/admin/products', icon: FaBox, label: 'Ürünler' },
       { path: '/admin/featured-deals', icon: FaStar, label: 'Öne Çıkan Ürünler' },
+      { path: '/admin/reviews', icon: FaCommentAlt, label: 'Değerlendirmeler' },
       { path: '/admin/users', icon: FaUsers, label: 'Kullanıcılar' },
       { path: '/admin/admins', icon: FaUserShield, label: 'Yöneticiler' },
     ],

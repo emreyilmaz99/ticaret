@@ -6,6 +6,7 @@ import { useUserProfile } from './useUserProfile';
 import { Sidebar, ProfileTab, SecurityTab } from './components';
 import UserAddresses from '../UserAddresses';
 import UserOrders from '../UserOrders';
+import UserReviews from '../UserReviews';
 
 const UserProfile = () => {
   const {
@@ -67,6 +68,8 @@ const UserProfile = () => {
         );
       case 'orders':
         return <UserOrders />;
+      case 'reviews':
+        return <UserReviews />;
       default:
         return null;
     }

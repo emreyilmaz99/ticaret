@@ -48,6 +48,7 @@ import CategoriesPage from './pages/admin/Categories';
 // YENİ EKLENEN: Admin Siparişler Sayfası
 import AdminOrders from './pages/admin/Orders';
 import FeaturedDealsPage from './pages/admin/FeaturedDeals'; 
+import ReviewsPage from './pages/admin/Reviews';
 
 // 3. Satıcı Sayfaları
 import VendorLogin from './pages/vendor/VendorLogin';
@@ -136,6 +137,9 @@ function App() {
                   
                   {/* YENİ EKLENEN ROTA: ÖNE ÇIKAN ÜRÜNLER */}
                   <Route path="/admin/featured-deals" element={<FeaturedDealsPage />} />
+                  
+                  {/* YENİ EKLENEN ROTA: DEĞERLENDİRME YÖNETİMİ */}
+                  <Route path="/admin/reviews" element={<ReviewsPage />} />
                   
                 </Route>
 

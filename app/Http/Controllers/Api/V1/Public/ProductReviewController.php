@@ -76,4 +76,33 @@ class ProductReviewController extends Controller
             'data' => $summary,
         ]);
     }
+
+    /**
+     * POST /api/v1/reviews/{reviewId}/helpful
+     * Vote a review as helpful or not helpful
+     */
+    public function voteHelpful(Request $request, string $reviewId)
+    {
+        $request->validate([
+            'is_helpful' => 'required|boolean',
+        ]);
+
+        $review = ProductReview::findOrFail($reviewId);
+        $isHelpful = $request->boolean('is_helpful');
+
+        if ($isHelpful) {
+            $review->increment('helpful_count');
+        } else {
+            $review->increment('unhelpful_count');
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Oyunuz kaydedildi.',
+            'data' => [
+                'helpful_count' => $review->helpful_count,
+                'unhelpful_count' => $review->unhelpful_count,
+            ],
+        ]);
+    }
 }

@@ -1,7 +1,7 @@
 // src/pages/user/UserProfile/components/Sidebar.jsx
 import React from 'react';
 import { 
-  FaUserCircle, FaMapMarkerAlt, FaShieldAlt, FaBoxOpen, FaSignOutAlt 
+  FaUserCircle, FaMapMarkerAlt, FaShieldAlt, FaBoxOpen, FaSignOutAlt, FaStar 
 } from 'react-icons/fa';
 
 export const Sidebar = ({ activeTab, setActiveTab, onLogout, styles }) => {
@@ -10,6 +10,7 @@ export const Sidebar = ({ activeTab, setActiveTab, onLogout, styles }) => {
     { id: 'addresses', label: 'Adreslerim', icon: FaMapMarkerAlt },
     { id: 'security', label: 'Güvenlik & Şifre', icon: FaShieldAlt },
     { id: 'orders', label: 'Siparişlerim', icon: FaBoxOpen },
+    { id: 'reviews', label: 'Değerlendirmelerim', icon: FaStar },
   ];
 
   return (

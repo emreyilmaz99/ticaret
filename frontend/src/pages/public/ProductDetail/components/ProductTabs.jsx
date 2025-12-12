@@ -2,6 +2,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { FaTag } from 'react-icons/fa';
+import ReviewsSection from './ReviewsSection';
 
 /**
  * Product tabs for description, specs, and reviews
@@ -94,10 +95,11 @@ const ProductTabs = ({
 
         {/* Reviews Tab */}
         {activeTab === 'reviews' && (
-          <div style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>
-            <p>Henüz değerlendirme yapılmamış.</p>
-            <p style={{ fontSize: '14px', marginTop: '8px' }}>İlk değerlendiren siz olun!</p>
-          </div>
+          <ReviewsSection 
+            productId={product.id} 
+            productName={product.name}
+            styles={styles}
+          />
         )}
       </div>
     </div>
