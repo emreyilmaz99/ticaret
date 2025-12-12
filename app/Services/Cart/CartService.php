@@ -8,24 +8,27 @@ use App\Services\BaseService;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\User;
-use App\Models\VendorCoupon;
-use App\Models\VendorShippingSetting;
 use App\Repositories\Interfaces\CartRepositoryInterface;
 use App\Repositories\Interfaces\CartItemRepositoryInterface;
-use App\Repositories\Interfaces\ProductRepositoryInterface;
 use Illuminate\Support\Str;
 
 class CartService extends BaseService
 {
     protected CartRepositoryInterface $cartRepo;
     protected CartItemRepositoryInterface $cartItemRepo;
+    protected CartResponseFormatter $formatter;
+    protected CartCouponManager $couponManager;
 
     public function __construct(
         CartRepositoryInterface $cartRepo,
-        CartItemRepositoryInterface $cartItemRepo
+        CartItemRepositoryInterface $cartItemRepo,
+        CartResponseFormatter $formatter,
+        CartCouponManager $couponManager
     ) {
         $this->cartRepo = $cartRepo;
         $this->cartItemRepo = $cartItemRepo;
+        $this->formatter = $formatter;
+        $this->couponManager = $couponManager;
     }
 
     /**
@@ -35,9 +38,7 @@ class CartService extends BaseService
     {
         try {
             $cart = $this->resolveCart($user, $sessionId);
-            $formattedCart = $this->formatCartResponse($cart);
-            
-            return $this->successResponse($formattedCart);
+            return $this->successResponse($this->formatter->format($cart));
         } catch (\Exception $e) {
             return $this->handleException($e, 'Sepet alınamadı');
         }
@@ -125,7 +126,7 @@ class CartService extends BaseService
             $cart = $this->cartRepo->getWithItems($cart);
             
             return $this->successResponse(
-                $this->formatCartResponse($cart),
+                $this->formatter->format($cart),
                 'Ürün sepete eklendi'
             );
         } catch (\Exception $e) {
@@ -161,7 +162,7 @@ class CartService extends BaseService
             $cart = $this->cartRepo->getWithItems($cart);
 
             return $this->successResponse(
-                $this->formatCartResponse($cart),
+                $this->formatter->format($cart),
                 'Miktar güncellendi'
             );
         } catch (\Exception $e) {
@@ -186,7 +187,7 @@ class CartService extends BaseService
             $cart = $this->cartRepo->getWithItems($cart);
 
             return $this->successResponse(
-                $this->formatCartResponse($cart),
+                $this->formatter->format($cart),
                 'Ürün sepetten kaldırıldı'
             );
         } catch (\Exception $e) {
@@ -205,7 +206,7 @@ class CartService extends BaseService
             $this->cartRepo->updateCoupon($cart, null, 0);
 
             return $this->successResponse(
-                $this->formatCartResponse($cart),
+                $this->formatter->format($cart),
                 'Sepet temizlendi'
             );
         } catch (\Exception $e) {
@@ -220,46 +221,7 @@ class CartService extends BaseService
     {
         try {
             $cart = $this->resolveCart($user, $sessionId);
-            $cart->load('items.product');
-
-            $code = strtoupper($code);
-            
-            // Kupon ara
-            $coupon = VendorCoupon::where('code', $code)
-                ->where('is_active', true)
-                ->first();
-
-            if (!$coupon) {
-                return $this->errorResponse('Geçersiz kupon kodu', 400);
-            }
-
-            // Kuponun satıcısının ürünlerini sepette bul ve satıcı alt toplamı hesapla
-            $vendorItems = $cart->items->filter(fn($item) => $item->product->vendor_id === $coupon->vendor_id);
-            
-            if ($vendorItems->isEmpty()) {
-                return $this->errorResponse('Bu kupon sepetinizdeki ürünler için geçerli değil', 400);
-            }
-
-            $vendorSubtotal = $vendorItems->sum(fn($item) => $item->unit_price * $item->quantity);
-
-            // Kupon geçerlilik kontrolü (vendor subtotal ile)
-            $userId = $user ? $user->id : null;
-            $validation = $coupon->isValidForUser($userId, $vendorSubtotal);
-            
-            if (!$validation['valid']) {
-                return $this->errorResponse($validation['message'], 400);
-            }
-
-            // Calculate discount (sadece satıcının alt toplamını geçemez)
-            $discount = $coupon->calculateDiscount($vendorSubtotal);
-            
-            $this->cartRepo->updateCoupon($cart, $code, $discount);
-            $cart = $this->cartRepo->getWithItems($cart);
-
-            return $this->successResponse(
-                $this->formatCartResponse($cart),
-                "{$code} kuponu uygulandı! {$discount} TL indirim kazandınız."
-            );
+            return $this->couponManager->applyCoupon($cart, $code, $user);
         } catch (\Exception $e) {
             return $this->handleException($e, 'Kupon uygulanamadı');
         }
@@ -276,7 +238,7 @@ class CartService extends BaseService
             $cart = $this->cartRepo->getWithItems($cart);
 
             return $this->successResponse(
-                $this->formatCartResponse($cart),
+                $this->formatter->format($cart),
                 'Kupon kaldırıldı'
             );
         } catch (\Exception $e) {
@@ -293,7 +255,7 @@ class CartService extends BaseService
             if (!$sessionId) {
                 $cart = $this->cartRepo->getOrCreateForUser($user->id);
                 return $this->successResponse(
-                    $this->formatCartResponse($cart),
+                    $this->formatter->format($cart),
                     'Aktarılacak sepet yok'
                 );
             }
@@ -302,7 +264,7 @@ class CartService extends BaseService
             $cart = $cart ? $this->cartRepo->getWithItems($cart) : null;
 
             return $this->successResponse(
-                $this->formatCartResponse($cart),
+                $this->formatter->format($cart),
                 'Sepet aktarıldı'
             );
         } catch (\Exception $e) {
@@ -336,252 +298,5 @@ class CartService extends BaseService
         }
 
         return $this->cartRepo->getOrCreateForSession($sessionId);
-    }
-
-    /**
-     * Format cart response with vendor grouping
-     */
-    protected function formatCartResponse(?Cart $cart): array
-    {
-        if (!$cart) {
-            return [
-                'items' => [],
-                'vendor_groups' => [],
-                'totals' => [
-                    'subtotal' => 0,
-                    'discount' => 0,
-                    'shipping' => 0,
-                    'total' => 0,
-                    'item_count' => 0,
-                ],
-                'coupon' => null,
-                'session_id' => null,
-            ];
-        }
-
-        $cart->load(['items.product.photos', 'items.product.vendor', 'items.variant']);
-
-        // Ürünleri vendor'a göre grupla
-        $vendorGroups = [];
-        $allItems = [];
-
-        foreach ($cart->items as $item) {
-            $vendorId = $item->product?->vendor_id;
-            $vendor = $item->product?->vendor;
-            
-            if (!$vendorId || !$vendor) continue;
-
-            // Vendor grup oluştur
-            if (!isset($vendorGroups[$vendorId])) {
-                $vendorGroups[$vendorId] = [
-                    'vendor_id' => $vendorId,
-                    'vendor_name' => $vendor->company_name ?? $vendor->name,
-                    'vendor_slug' => $vendor->slug,
-                    'items' => [],
-                    'subtotal' => 0,
-                    'shipping' => [
-                        'cost' => 0,
-                        'is_free' => false,
-                        'free_threshold' => 0,
-                        'remaining_for_free' => null,
-                    ],
-                    'estimated_delivery' => $this->calculateEstimatedDelivery(),
-                ];
-            }
-
-            // Item formatla
-            $formattedItem = $this->formatCartItem($item);
-            $vendorGroups[$vendorId]['items'][] = $formattedItem;
-            $vendorGroups[$vendorId]['subtotal'] += (float) $item->line_total;
-            
-            $allItems[] = $formattedItem;
-        }
-
-        // Her vendor için kargo hesapla
-        $totalShipping = 0;
-        $shippingBreakdown = [];
-        
-        foreach ($vendorGroups as $vendorId => &$group) {
-            $shippingSettings = VendorShippingSetting::getSettingsForVendor($vendorId);
-            
-            $shippingCost = $shippingSettings->calculateShippingCost($group['subtotal']);
-            $remainingForFree = $shippingSettings->getRemainingForFreeShipping($group['subtotal']);
-            
-            $group['shipping'] = [
-                'cost' => $shippingCost,
-                'is_free' => $shippingCost == 0,
-                'free_threshold' => (float) $shippingSettings->free_shipping_threshold,
-                'remaining_for_free' => $remainingForFree,
-            ];
-            
-            // Shipping breakdown için ekle
-            $shippingBreakdown[] = [
-                'vendor_id' => $vendorId,
-                'vendor_name' => $group['vendor_name'],
-                'shipping_cost' => $shippingCost,
-                'is_free' => $shippingCost == 0,
-                'remaining_for_free' => $remainingForFree,
-            ];
-            
-            $totalShipping += $shippingCost;
-        }
-        unset($group);
-
-        // Toplam hesapla
-        $subtotal = array_sum(array_column($vendorGroups, 'subtotal'));
-        $discount = (float) ($cart->discount_amount ?? 0);
-        $total = $subtotal - $discount + $totalShipping;
-
-        // Featured deal indirimlerini hesapla
-        $dealDiscount = 0;
-        foreach ($allItems as $item) {
-            if ($item['has_deal'] && isset($item['original_price'])) {
-                $savingsPerItem = ($item['original_price'] - $item['unit_price']) * $item['quantity'];
-                $dealDiscount += $savingsPerItem;
-            }
-        }
-
-        return [
-            'items' => $allItems,
-            'vendor_groups' => array_values($vendorGroups),
-            'totals' => [
-                'subtotal' => round($subtotal, 2),
-                'discount' => round($discount, 2),
-                'deal_discount' => round($dealDiscount, 2),
-                'shipping' => round($totalShipping, 2),
-                'shipping_breakdown' => $shippingBreakdown,
-                'total' => round(max(0, $total), 2),
-                'item_count' => count($allItems),
-            ],
-            'coupon' => $cart->coupon_code ? [
-                'code' => $cart->coupon_code,
-                'discount' => $discount,
-            ] : null,
-            'session_id' => $cart->session_id,
-        ];
-    }
-
-    /**
-     * Format individual cart item
-     */
-    protected function formatCartItem($item): array
-    {
-        $mainPhoto = $item->product?->photos?->sortBy('sort_order')->first();
-        
-        // Resim URL'sini düzgün şekilde oluştur
-        $imageUrl = null;
-        if ($mainPhoto) {
-            if ($mainPhoto->path) {
-                $imageUrl = url('storage/' . $mainPhoto->path);
-            } elseif ($mainPhoto->url) {
-                if (filter_var($mainPhoto->url, FILTER_VALIDATE_URL)) {
-                    $imageUrl = $mainPhoto->url;
-                } else {
-                    $imageUrl = url(ltrim($mainPhoto->url, '/'));
-                }
-            }
-        }
-
-        // Get active featured deal for this product
-        $featuredDeal = $item->product?->activeFeaturedDeal;
-        $currentPrice = null;
-        $originalPrice = null;
-        $hasDeal = false;
-        $dealBadge = null;
-        $discountPercentage = null;
-        $priceNeedsUpdate = false;
-
-        // Determine correct price based on current deal status
-        if ($featuredDeal) {
-            // Deal is active - use deal price
-            $currentPrice = (float) $featuredDeal->deal_price;
-            $originalPrice = (float) $featuredDeal->original_price;
-            $hasDeal = true;
-            $discountPercentage = $featuredDeal->discount_percentage;
-            $dealBadge = [
-                'text' => $featuredDeal->badge_text,
-                'color' => $featuredDeal->badge_color,
-            ];
-            
-            // Check if cart item price needs update
-            if ((float) $item->unit_price !== $currentPrice) {
-                $priceNeedsUpdate = true;
-            }
-        } else {
-            // No active deal - use variant or product price
-            if ($item->variant) {
-                $currentPrice = (float) $item->variant->price;
-            } else {
-                $currentPrice = (float) $item->product->variants()->first()?->price ?? 0;
-            }
-            
-            // Check if cart item price needs update (deal might have ended)
-            if ((float) $item->unit_price !== $currentPrice) {
-                $priceNeedsUpdate = true;
-            }
-        }
-
-        // Update cart item price if needed
-        if ($priceNeedsUpdate) {
-            $item->update([
-                'unit_price' => $currentPrice,
-                'line_total' => $currentPrice * $item->quantity,
-            ]);
-        }
-
-        return [
-            'id' => $item->id,
-            'product_id' => $item->product_id,
-            'variant_id' => $item->variant_id,
-            'quantity' => $item->quantity,
-            'unit_price' => $currentPrice,
-            'original_price' => $originalPrice,
-            'discount_percentage' => $discountPercentage,
-            'has_deal' => $hasDeal,
-            'deal_badge' => $dealBadge,
-            'line_total' => $currentPrice * $item->quantity,
-            'vendor_id' => $item->product?->vendor_id,
-            'product' => [
-                'id' => $item->product?->id,
-                'name' => $item->product?->name,
-                'slug' => $item->product?->slug,
-                'image' => $imageUrl,
-            ],
-            'variant' => $item->variant ? [
-                'id' => $item->variant->id,
-                'title' => $item->variant->title,
-                'sku' => $item->variant->sku,
-                'stock' => $item->variant->stock,
-            ] : null,
-        ];
-    }
-
-    /**
-     * Tahmini teslimat tarihini hesapla
-     */
-    protected function calculateEstimatedDelivery(): string
-    {
-        // Basit hesaplama: 3-5 iş günü
-        $now = now();
-        $deliveryDate = $now->copy();
-        
-        // Hafta sonu kontrolü ve 3-5 iş günü ekle
-        $businessDays = rand(3, 5);
-        while ($businessDays > 0) {
-            $deliveryDate->addDay();
-            // Hafta içi mi kontrol et (1=Pazartesi, 7=Pazar)
-            if ($deliveryDate->dayOfWeekIso <= 5) {
-                $businessDays--;
-            }
-        }
-        
-        // Türkçe tarih formatı
-        $days = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar'];
-        $months = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
-        
-        $dayName = $days[$deliveryDate->dayOfWeekIso - 1];
-        $monthName = $months[$deliveryDate->month - 1];
-        
-        return "Tahmini {$deliveryDate->day} {$monthName} {$dayName} kapında";
     }
 }

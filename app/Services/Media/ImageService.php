@@ -4,10 +4,18 @@ namespace App\Services\Media;
 
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
-use Intervention\Image\Facades\Image;
+use Intervention\Image\ImageManager;
+use Intervention\Image\Drivers\Gd\Driver;
 
 class ImageService
 {
+    protected ImageManager $imageManager;
+
+    public function __construct()
+    {
+        // Initialize ImageManager with GD driver
+        $this->imageManager = new ImageManager(new Driver());
+    }
     /**
      * Upload and process review photos
      * Max 5 photos, resize to 1200px width, 85% quality
@@ -49,22 +57,19 @@ class ImageService
         $filename = uniqid() . '_' . time() . '.jpg';
         $fullPath = $directory . '/' . $filename;
 
-        // Process image with Intervention Image
-        $image = Image::make($photo->getRealPath());
+        // Process image with Intervention Image 3.x
+        $image = $this->imageManager->read($photo->getRealPath());
 
         // Resize if width > 1200px, maintain aspect ratio
         if ($image->width() > 1200) {
-            $image->resize(1200, null, function ($constraint) {
-                $constraint->aspectRatio();
-                $constraint->upsize();
-            });
+            $image->scaleDown(width: 1200);
         }
 
         // Convert to JPEG with 85% quality
-        $image->encode('jpg', 85);
+        $encoded = $image->toJpeg(quality: 85);
 
         // Store to public disk
-        Storage::disk('public')->put($fullPath, $image->stream());
+        Storage::disk('public')->put($fullPath, (string) $encoded);
 
         return $fullPath;
     }
