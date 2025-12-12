@@ -75,6 +75,32 @@ class OrderItem extends Model
         return $this->belongsTo(ProductVariant::class, 'variant_id');
     }
 
+    /**
+     * Get review for this order item (including soft deleted)
+     */
+    public function review()
+    {
+        return $this->hasOne(ProductReview::class, 'order_item_id')->withTrashed();
+    }
+
+    // ==================== YORUM YÖNETİMİ ====================
+
+    /**
+     * Check if this item can be reviewed
+     */
+    public function getCanBeReviewedAttribute(): bool
+    {
+        return $this->order->canBeReviewed() && !$this->isReviewed();
+    }
+
+    /**
+     * Check if this item has been reviewed
+     */
+    public function isReviewed(): bool
+    {
+        return $this->review()->withTrashed()->exists();
+    }
+
     // ==================== DURUM YÖNETİMİ ====================
 
     public function updateStatus(string $newStatus): bool

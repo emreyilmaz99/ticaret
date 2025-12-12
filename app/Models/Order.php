@@ -136,30 +136,57 @@ class Order extends Model
         return $this->belongsTo(VendorCoupon::class, 'coupon_id');
     }
 
+    // ==================== YORUM YÖNETİMİ ====================
+
+    /**
+     * Check if order can be reviewed
+     * Only delivered orders can be reviewed
+     */
+    public function canBeReviewed(): bool
+    {
+        return $this->status === self::STATUS_DELIVERED;
+    }
+
+    /**
+     * Get items that can be reviewed (delivered + not yet reviewed)
+     */
+    public function getReviewableItems()
+    {
+        if (!$this->canBeReviewed()) {
+            return collect([]);
+        }
+
+        return $this->items()
+            ->with(['product', 'variant'])
+            ->whereDoesntHave('review', function ($query) {
+                $query->withTrashed();
+            })
+            ->get();
+    }
+
     // ==================== DURUM YÖNETİMİ ====================
 
     /**
      * Durumu güncelle ve geçmişe kaydet
+     * Note: Status history is now automatically created by OrderObserver
      */
     public function updateStatus(string $newStatus, ?string $note = null, ?string $changedByType = null, ?int $changedById = null): bool
     {
-        $oldStatus = $this->status;
-        
-        if ($oldStatus === $newStatus) {
+        if ($this->status === $newStatus) {
             return false;
         }
 
-        $this->status = $newStatus;
-        $this->save();
+        // Store metadata for observer if provided
+        if ($note || $changedByType || $changedById) {
+            $this->statusChangeMetadata = [
+                'note' => $note,
+                'changed_by_type' => $changedByType,
+                'changed_by_id' => $changedById,
+            ];
+        }
 
-        // Geçmişe kaydet
-        $this->statusHistory()->create([
-            'old_status' => $oldStatus,
-            'new_status' => $newStatus,
-            'note' => $note,
-            'changed_by_type' => $changedByType,
-            'changed_by_id' => $changedById,
-        ]);
+        $this->status = $newStatus;
+        $this->save(); // Observer will automatically create status history
 
         return true;
     }

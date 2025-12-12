@@ -113,6 +113,83 @@ class Product extends Model
         return $this->hasMany(FeaturedDeal::class, 'product_id');
     }
 
+    /**
+     * Get all reviews (including pending/rejected)
+     */
+    public function reviews()
+    {
+        return $this->hasMany(ProductReview::class, 'product_id');
+    }
+
+    /**
+     * Get only approved reviews
+     */
+    public function approvedReviews()
+    {
+        return $this->hasMany(ProductReview::class, 'product_id')
+            ->where('status', 'approved');
+    }
+
+    /**
+     * Get average rating (cached for 10 minutes)
+     */
+    public function getAverageRatingAttribute()
+    {
+        return \Illuminate\Support\Facades\Cache::remember(
+            "product:{$this->id}:avg_rating",
+            600,
+            fn() => round($this->approvedReviews()->avg('rating') ?? 0, 1)
+        );
+    }
+
+    /**
+     * Get review count (cached for 10 minutes)
+     */
+    public function getReviewCountAttribute()
+    {
+        return \Illuminate\Support\Facades\Cache::remember(
+            "product:{$this->id}:review_count",
+            600,
+            fn() => $this->approvedReviews()->count()
+        );
+    }
+
+    /**
+     * Get rating breakdown (cached for 10 minutes)
+     * Returns ['1' => count, '2' => count, ...]
+     */
+    public function ratingBreakdown()
+    {
+        return \Illuminate\Support\Facades\Cache::remember(
+            "product:{$this->id}:rating_breakdown",
+            600,
+            function () {
+                $breakdown = [];
+                $reviews = $this->approvedReviews()->get();
+                
+                for ($i = 1; $i <= 5; $i++) {
+                    $breakdown[$i] = $reviews->where('rating', $i)->count();
+                }
+                
+                return $breakdown;
+            }
+        );
+    }
+
+    /**
+     * Check if a user has reviewed this product
+     */
+    public function hasUserReviewed(?User $user)
+    {
+        if (!$user) {
+            return false;
+        }
+
+        return $this->reviews()
+            ->where('user_id', $user->id)
+            ->exists();
+    }
+
     protected static function booted()
     {
         static::creating(function ($model) {

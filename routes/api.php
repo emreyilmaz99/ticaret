@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\V1\Admin\ProductController as AdminProductControlle
 use App\Http\Controllers\Api\V1\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controllers\Api\V1\Admin\TaxClassController as AdminTaxClassController;
 use App\Http\Controllers\Api\V1\Admin\AdminFeaturedDealController;
+use App\Http\Controllers\Api\V1\Admin\AdminReviewController;
 
 // Vendor controllers
 use App\Http\Controllers\Api\V1\Vendor\VendorAuthController;
@@ -24,11 +25,13 @@ use App\Http\Controllers\Api\V1\Vendor\ProfileController as VendorProfileControl
 use App\Http\Controllers\Api\V1\Vendor\AddressController as VendorAddressController;
 use App\Http\Controllers\Api\V1\Vendor\BankAccountController as VendorBankAccountController;
 use App\Http\Controllers\Api\V1\Vendor\PayoutController as SelfVendorPayoutController;
+use App\Http\Controllers\Api\V1\Vendor\VendorReviewController;
 
 // User controllers
 use App\Http\Controllers\Api\V1\User\UserAuthController;
 use App\Http\Controllers\Api\V1\User\UserProfileController;
 use App\Http\Controllers\Api\V1\User\UserAddressController;
+use App\Http\Controllers\Api\V1\User\UserReviewController;
 
 // Public controllers
 use App\Http\Controllers\Api\V1\Public\VendorController as PublicVendorController;
@@ -37,6 +40,7 @@ use App\Http\Controllers\Api\V1\Admin\VendorApplicationController as AdminVendor
 use App\Http\Controllers\Api\V1\Public\ProductController as PublicProductController;
 use App\Http\Controllers\Api\V1\Public\TaxClassController as PublicTaxClassController;
 use App\Http\Controllers\Api\V1\Public\FeaturedDealController;
+use App\Http\Controllers\Api\V1\Public\ProductReviewController;
 
 // Checkout controller
 use App\Http\Controllers\Api\V1\User\CheckoutController;
@@ -148,6 +152,15 @@ Route::prefix('v1/admin')->group(function () {
         // featured deals management
         Route::get('featured-deals', [AdminFeaturedDealController::class, 'index']);
         Route::get('featured-deals/create', [AdminFeaturedDealController::class, 'create']);
+
+        // review management
+        Route::get('reviews', [AdminReviewController::class, 'index']);
+        Route::get('reviews/stats', [AdminReviewController::class, 'stats']);
+        Route::get('reviews/trashed', [AdminReviewController::class, 'trashed']);
+        Route::post('reviews/bulk-approve', [AdminReviewController::class, 'bulkApprove']);
+        Route::post('reviews/bulk-reject', [AdminReviewController::class, 'bulkReject']);
+        Route::post('reviews/{id}/approve', [AdminReviewController::class, 'approve']);
+        Route::post('reviews/{id}/reject', [AdminReviewController::class, 'reject']);
         Route::post('featured-deals', [AdminFeaturedDealController::class, 'store']);
         Route::get('featured-deals/{deal}', [AdminFeaturedDealController::class, 'show']);
         Route::put('featured-deals/{deal}', [AdminFeaturedDealController::class, 'update']);
@@ -230,6 +243,12 @@ Route::prefix('v1/vendor')->group(function () {
         Route::put('campaigns/{campaign}', [\App\Http\Controllers\Api\V1\Vendor\CampaignController::class, 'update']);
         Route::delete('campaigns/{campaign}', [\App\Http\Controllers\Api\V1\Vendor\CampaignController::class, 'destroy']);
         Route::put('campaigns/{campaign}/toggle', [\App\Http\Controllers\Api\V1\Vendor\CampaignController::class, 'toggle']);
+
+        // vendor review responses
+        Route::get('products/{productId}/reviews', [VendorReviewController::class, 'index']);
+        Route::post('reviews/{reviewId}/response', [VendorReviewController::class, 'storeResponse']);
+        Route::delete('review-responses/{responseId}', [VendorReviewController::class, 'destroyResponse']);
+        Route::get('review-stats', [VendorReviewController::class, 'stats']);
     });
 });
 
@@ -258,6 +277,10 @@ Route::get('v1/products/categories', [PublicProductController::class, 'categorie
 Route::get('v1/products/featured', [PublicProductController::class, 'featured']);
 Route::get('v1/products/{slug}', [PublicProductController::class, 'show']);
 Route::get('v1/products/{slug}/related', [PublicProductController::class, 'related']);
+
+// product reviews (public)
+Route::get('v1/products/{productId}/reviews', [ProductReviewController::class, 'index']);
+Route::get('v1/products/{productId}/review-summary', [ProductReviewController::class, 'summary']);
 
 // featured deals (public)
 Route::get('v1/featured-deals', [FeaturedDealController::class, 'index']);
@@ -321,6 +344,13 @@ Route::prefix('v1/user')->group(function () {
         Route::get('orders', [OrderController::class, 'index']);
         Route::get('orders/{orderNumber}', [OrderController::class, 'show']);
         Route::post('orders/{orderNumber}/cancel', [OrderController::class, 'cancel']);
+
+        // Reviews - user can create, view, and delete their reviews
+        Route::get('reviewable-orders', [UserReviewController::class, 'reviewableOrders']);
+        Route::post('orders/{orderId}/items/{orderItemId}/review', [UserReviewController::class, 'store'])
+            ->middleware('throttle:10,1'); // Rate limit: 10 reviews per minute
+        Route::get('reviews', [UserReviewController::class, 'index']);
+        Route::delete('reviews/{reviewId}', [UserReviewController::class, 'destroy']);
     });
 });
 

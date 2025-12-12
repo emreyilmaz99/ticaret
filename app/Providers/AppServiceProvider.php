@@ -53,5 +53,13 @@ class AppServiceProvider extends ServiceProvider
         $router->aliasMiddleware('role', \Spatie\Permission\Middleware\RoleMiddleware::class);
         $router->aliasMiddleware('permission', \Spatie\Permission\Middleware\PermissionMiddleware::class);
         $router->aliasMiddleware('role_or_permission', \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class);
+
+        // Register observers for automatic event handling
+        \App\Models\Order::observe(\App\Observers\OrderObserver::class);
+        \App\Models\Product::observe(\App\Observers\ProductObserver::class);
+        \App\Models\Vendor::observe(\App\Observers\VendorObserver::class);
+        \App\Models\Cart::observe(\App\Observers\CartObserver::class);
+        \App\Models\ProductReview::observe(\App\Observers\ProductReviewObserver::class);
+        \App\Models\BannedWord::observe(\App\Observers\BannedWordObserver::class);
     }
 }
