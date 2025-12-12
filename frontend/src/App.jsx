@@ -20,6 +20,7 @@ import AdminPrivateRoute from './components/admin/AdminPrivateRoute';
 import Home from './pages/public/Home';
 import CategoryProducts from './pages/public/CategoryProducts';
 import ProductDetail from './pages/public/ProductDetail';
+import VendorStore from './pages/public/VendorStore'; // Satıcı Mağaza Sayfası
 import { Login, Register } from './pages/public/Auth'; // Modüler Auth
 import Favorites from './pages/user/Favorites'; // Favorilerim Sayfası
 import Cart from './pages/user/Cart'; // Sepet Sayfası
@@ -94,6 +95,7 @@ function App() {
                 <Route path="/register" element={<Register />} />
                 <Route path="/products" element={<CategoryProducts />} />
                 <Route path="/product/:slug" element={<ProductDetail />} />
+                <Route path="/store/:slug" element={<VendorStore />} />
                 <Route path="/favorites" element={<Favorites />} />
                 <Route path="/cart" element={<Cart />} />
                 <Route path="/odeme/basarili" element={<PaymentSuccess />} />

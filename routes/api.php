@@ -252,8 +252,11 @@ Route::prefix('v1/vendor')->group(function () {
     });
 });
 
-// Public vendor profile by slug (public)
+// Public vendor store routes (public)
 Route::get('v1/vendors/{slug}', [PublicVendorController::class, 'show']);
+Route::get('v1/vendors/{slug}/products', [PublicVendorController::class, 'products']);
+Route::get('v1/vendors/{slug}/categories', [PublicVendorController::class, 'categories']);
+Route::get('v1/vendors/{slug}/reviews', [PublicVendorController::class, 'reviews']);
 
 // Public vendor application submission (only pre-application)
 Route::post('v1/vendor-applications', [PublicVendorApplicationController::class, 'store']);

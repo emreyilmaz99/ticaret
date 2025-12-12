@@ -102,45 +102,47 @@ const ProductCard = ({ product, setQuickViewProduct, isCompared, onToggleCompare
       display: 'flex',
       justifyContent: 'space-between',
       alignItems: 'center',
-      flexWrap: isMobile ? 'wrap' : 'nowrap',
-      gap: isMobile ? '8px' : '0',
+      gap: '8px',
     },
     price: {
-      fontSize: isMobile ? '14px' : '18px',
+      fontSize: isMobile ? '14px' : '16px',
       fontWeight: '700',
       color: '#059669',
     },
     actions: {
       display: 'flex',
-      gap: isMobile ? '4px' : '8px',
+      gap: '6px',
+      flexShrink: 0,
     },
     addToCartBtn: {
-      width: isMobile ? '30px' : '36px',
-      height: isMobile ? '30px' : '36px',
-      borderRadius: '50%',
-      backgroundColor: '#ecfdf5',
-      color: '#059669',
-      border: 'none',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      cursor: 'pointer',
-      transition: 'background-color 0.2s',
-    },
-    buyNowBtn: {
-      height: isMobile ? '30px' : '36px',
-      padding: isMobile ? '0 8px' : '0 12px',
-      borderRadius: isMobile ? '15px' : '18px',
+      width: isMobile ? '28px' : '32px',
+      height: isMobile ? '28px' : '32px',
+      borderRadius: '8px',
       backgroundColor: '#059669',
       color: 'white',
       border: 'none',
       display: 'flex',
       alignItems: 'center',
-      gap: isMobile ? '4px' : '6px',
-      fontSize: isMobile ? '10px' : '12px',
+      justifyContent: 'center',
+      cursor: 'pointer',
+      transition: 'all 0.2s',
+      flexShrink: 0,
+    },
+    buyNowBtn: {
+      height: isMobile ? '28px' : '32px',
+      padding: isMobile ? '0 8px' : '0 10px',
+      borderRadius: '8px',
+      backgroundColor: '#f0fdf4',
+      color: '#059669',
+      border: '1px solid #d1fae5',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '4px',
+      fontSize: isMobile ? '10px' : '11px',
       fontWeight: '700',
       cursor: 'pointer',
-      transition: 'background-color 0.2s',
+      transition: 'all 0.2s',
+      whiteSpace: 'nowrap',
     },
     discountBadge: {
       position: 'absolute',
@@ -232,24 +234,28 @@ const ProductCard = ({ product, setQuickViewProduct, isCompared, onToggleCompare
           <span style={{ color: '#94a3b8' }}>({product.reviews || product.reviews_count || 0})</span>
         </div>
         <div style={styles.priceRow}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1, minWidth: 0 }}>
             {/* Indirimli fiyat varsa orijinal fiyatı göster (üstü çizili) */}
             {product.has_deal && product.original_price && (
               <div style={{
-                fontSize: isMobile ? '11px' : '13px',
+                fontSize: isMobile ? '11px' : '12px',
                 color: '#94a3b8',
                 textDecoration: 'line-through',
                 fontWeight: '500'
               }}>
-                {new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(product.original_price)}
+                {new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(product.original_price)} TL
               </div>
             )}
             {/* Güncel fiyat (indirimli veya normal) */}
-            <div style={{
-              ...styles.price,
-              color: product.has_deal ? '#ef4444' : '#059669'
-            }}>
-              {new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(product.price)}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+              <div style={{
+                ...styles.price,
+                color: product.has_deal ? '#ef4444' : '#059669',
+                lineHeight: '1'
+              }}>
+                {new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(product.price)}
+              </div>
+              <div style={{ fontSize: isMobile ? '9px' : '10px', fontWeight: '600', color: '#94a3b8' }}>TL</div>
             </div>
           </div>
           <div style={styles.actions}>
