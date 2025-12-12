@@ -201,7 +201,7 @@ export const styles = {
 };
 
 // --- YARDIMCILAR ---
-export const resolveImage = (product) => product?.image || 'https://via.placeholder.com/400x400?text=Urun';
+export const resolveImage = (product) => product?.image || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="400"%3E%3Crect fill="%23f1f5f9" width="400" height="400"/%3E%3Ctext fill="%2394a3b8" font-family="Arial" font-size="18" x="50%25" y="50%25" text-anchor="middle" dy=".3em"%3EÜrün Görseli%3C/text%3E%3C/svg%3E';
 export const formatPrice = (price) => new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(price || 0);
 
 // --- HATA ÖNLEYİCİ EXPORT ---

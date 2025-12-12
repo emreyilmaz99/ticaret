@@ -84,12 +84,13 @@ const ReviewModal = ({
                 src={
                   product.product_image 
                     ? `${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/storage/${product.product_image}`
-                    : 'https://via.placeholder.com/200x200?text=No+Image'
+                    : 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200"%3E%3Crect fill="%23f1f5f9" width="200" height="200"/%3E%3Ctext fill="%2394a3b8" font-family="Arial" font-size="14" x="50%25" y="50%25" text-anchor="middle" dy=".3em"%3EGörsel Yok%3C/text%3E%3C/svg%3E'
                 }
                 alt={product.product_name}
                 style={styles.productPreviewImage}
                 onError={(e) => { 
-                  e.target.src = 'https://via.placeholder.com/200x200?text=No+Image'; 
+                  e.target.onerror = null;
+                  e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200"%3E%3Crect fill="%23f1f5f9" width="200" height="200"/%3E%3Ctext fill="%2394a3b8" font-family="Arial" font-size="14" x="50%25" y="50%25" text-anchor="middle" dy=".3em"%3EGörsel Yok%3C/text%3E%3C/svg%3E'; 
                 }}
               />
               <div style={styles.productPreviewInfo}>

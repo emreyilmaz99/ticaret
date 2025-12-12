@@ -262,7 +262,7 @@ const OrderDetailContent = ({ order, formatPrice, formatDate }) => {
                 src={item.image}
                 alt={item.name}
                 style={{ width: '80px', height: '80px', objectFit: 'contain', borderRadius: '8px' }}
-                onError={(e) => { e.target.src = 'https://via.placeholder.com/80'; }}
+                onError={(e) => { e.target.onerror = null; e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="80" height="80"%3E%3Crect fill="%23f1f5f9" width="80" height="80"/%3E%3Ctext fill="%2394a3b8" font-family="Arial" font-size="10" x="50%25" y="50%25" text-anchor="middle" dy=".3em"%3EGörsel%3C/text%3E%3C/svg%3E'; }}
               />
               <div style={{ flex: 1 }}>
                 <p style={{ fontSize: '14px', fontWeight: '600', color: '#111827', marginBottom: '4px' }}>

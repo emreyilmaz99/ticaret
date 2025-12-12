@@ -6,7 +6,7 @@ const PendingReviewCard = ({ item, orderNumber, orderId, onReview, styles }) => 
   // Build image URL from backend path
   const imageUrl = item.product_image 
     ? `${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/storage/${item.product_image}`
-    : 'https://via.placeholder.com/200x200?text=No+Image';
+    : 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200"%3E%3Crect fill="%23f1f5f9" width="200" height="200"/%3E%3Ctext fill="%2394a3b8" font-family="Arial" font-size="14" x="50%25" y="50%25" text-anchor="middle" dy=".3em"%3EGörsel Yok%3C/text%3E%3C/svg%3E';
 
   return (
     <div style={styles.pendingCard}>
@@ -15,7 +15,8 @@ const PendingReviewCard = ({ item, orderNumber, orderId, onReview, styles }) => 
         alt={item.product_name}
         style={styles.pendingProductImage}
         onError={(e) => { 
-          e.target.src = 'https://via.placeholder.com/200x200?text=No+Image';
+          e.target.onerror = null;
+          e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200"%3E%3Crect fill="%23f1f5f9" width="200" height="200"/%3E%3Ctext fill="%2394a3b8" font-family="Arial" font-size="14" x="50%25" y="50%25" text-anchor="middle" dy=".3em"%3EGörsel Yok%3C/text%3E%3C/svg%3E';
         }}
       />
       

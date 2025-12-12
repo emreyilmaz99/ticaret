@@ -42,11 +42,11 @@ const ReviewCard = ({ review, onDelete, getStatusConfig, styles }) => {
             src={
               review.product?.photos?.[0]?.path
                 ? `${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/storage/${review.product.photos[0].path}`
-                : 'https://via.placeholder.com/200x200?text=No+Image'
+                : 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200"%3E%3Crect fill="%23f1f5f9" width="200" height="200"/%3E%3Ctext fill="%2394a3b8" font-family="Arial" font-size="14" x="50%25" y="50%25" text-anchor="middle" dy=".3em"%3EGörsel Yok%3C/text%3E%3C/svg%3E'
             }
             alt={review.product?.name}
             style={styles.reviewProductImage}
-            onError={(e) => { e.target.src = 'https://via.placeholder.com/200x200?text=No+Image'; }}
+            onError={(e) => { e.target.onerror = null; e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200"%3E%3Crect fill="%23f1f5f9" width="200" height="200"/%3E%3Ctext fill="%2394a3b8" font-family="Arial" font-size="14" x="50%25" y="50%25" text-anchor="middle" dy=".3em"%3EGörsel Yok%3C/text%3E%3C/svg%3E'; }}
           />
           <div style={styles.reviewProductInfo}>
             <div style={styles.reviewProductName}>
@@ -92,7 +92,7 @@ const ReviewCard = ({ review, onDelete, getStatusConfig, styles }) => {
               ? (mediaUrl.startsWith('http') 
                   ? mediaUrl 
                   : `${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/storage/${mediaUrl}`)
-              : 'https://via.placeholder.com/200x200?text=No+Image';
+              : 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200"%3E%3Crect fill="%23f1f5f9" width="200" height="200"/%3E%3Ctext fill="%2394a3b8" font-family="Arial" font-size="14" x="50%25" y="50%25" text-anchor="middle" dy=".3em"%3EGörsel Yok%3C/text%3E%3C/svg%3E';
             
             return (
               <div key={index} style={styles.reviewMediaItem}>
@@ -104,7 +104,8 @@ const ReviewCard = ({ review, onDelete, getStatusConfig, styles }) => {
                     alt="" 
                     style={styles.reviewMediaImage}
                     onError={(e) => { 
-                      e.target.src = 'https://via.placeholder.com/200x200?text=Image+Error';
+                      e.target.onerror = null;
+                      e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200"%3E%3Crect fill="%23f1f5f9" width="200" height="200"/%3E%3Ctext fill="%2394a3b8" font-family="Arial" font-size="14" x="50%25" y="50%25" text-anchor="middle" dy=".3em"%3EGörsel Hatası%3C/text%3E%3C/svg%3E';
                     }}
                   />
                 )}
