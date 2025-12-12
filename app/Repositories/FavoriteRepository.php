@@ -21,9 +21,10 @@ class FavoriteRepository extends EloquentBaseRepository implements FavoriteRepos
         return $this->model
             ->with(['product' => function ($query) {
                 $query->with([
-                    'photos' => fn($q) => $q->orderBy('id')->limit(1),
+                    'photos' => fn($q) => $q->orderBy('sort_order')->limit(1),
                     'variants' => fn($q) => $q->orderBy('id')->limit(1),
-                    'vendor:id,name,slug'
+                    'vendor:id,name,slug',
+                    'activeFeaturedDeal'
                 ]);
             }])
             ->where('user_id', $userId)

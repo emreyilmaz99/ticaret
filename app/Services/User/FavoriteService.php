@@ -6,10 +6,15 @@ use App\Core\ServiceResponse;
 use App\Models\Product;
 use App\Repositories\Interfaces\FavoriteRepositoryInterface;
 use App\Services\BaseService;
+use App\Traits\FormatsProductData;
+use Illuminate\Support\Facades\Cache;
 
 class FavoriteService extends BaseService
 {
+    use FormatsProductData;
+    
     protected FavoriteRepositoryInterface $favoriteRepo;
+    protected const CACHE_TTL = 3600; // 1 hour
 
     public function __construct(FavoriteRepositoryInterface $favoriteRepo)
     {
@@ -53,16 +58,17 @@ class FavoriteService extends BaseService
                 return $this->errorResponse('Bu ürün zaten favorilerinizde', 400);
             }
 
-            // Validate product
-            $product = Product::where('id', $productId)
-                ->where('status', 'active')
-                ->first();
+            // Validate product using trait method
+            $product = $this->validateActiveProduct($productId);
 
             if (!$product) {
                 return $this->errorResponse('Ürün bulunamadı', 404);
             }
 
             $this->favoriteRepo->addFavorite($userId, $productId);
+            
+            // Clear cache
+            $this->clearUserCache($userId);
 
             return $this->successResponse(
                 ['is_favorite' => true],
@@ -84,6 +90,9 @@ class FavoriteService extends BaseService
             if (!$deleted) {
                 return $this->errorResponse('Ürün favorilerde bulunamadı', 404);
             }
+            
+            // Clear cache
+            $this->clearUserCache($userId);
 
             return $this->successResponse(
                 ['is_favorite' => false],
@@ -104,22 +113,22 @@ class FavoriteService extends BaseService
 
             if ($favorite) {
                 $this->favoriteRepo->removeFavorite($userId, $productId);
+                $this->clearUserCache($userId);
                 return $this->successResponse(
                     ['is_favorite' => false],
                     'Ürün favorilerden kaldırıldı'
                 );
             }
 
-            // Validate product
-            $product = Product::where('id', $productId)
-                ->where('status', 'active')
-                ->first();
+            // Validate product using trait method
+            $product = $this->validateActiveProduct($productId);
 
             if (!$product) {
                 return $this->errorResponse('Ürün bulunamadı', 404);
             }
 
             $this->favoriteRepo->addFavorite($userId, $productId);
+            $this->clearUserCache($userId);
 
             return $this->successResponse(
                 ['is_favorite' => true],
@@ -156,6 +165,7 @@ class FavoriteService extends BaseService
     {
         try {
             $this->favoriteRepo->clearForUser($userId);
+            $this->clearUserCache($userId);
 
             return $this->successResponse(null, 'Tüm favoriler temizlendi');
         } catch (\Exception $e) {
@@ -164,12 +174,16 @@ class FavoriteService extends BaseService
     }
 
     /**
-     * Get favorites count
+     * Get favorites count (cached)
      */
     public function getCount(int $userId): ServiceResponse
     {
         try {
-            $count = $this->favoriteRepo->countForUser($userId);
+            $count = Cache::remember(
+                $this->getCountCacheKey($userId),
+                self::CACHE_TTL,
+                fn() => $this->favoriteRepo->countForUser($userId)
+            );
 
             return $this->successResponse(['count' => $count]);
         } catch (\Exception $e) {
@@ -187,25 +201,14 @@ class FavoriteService extends BaseService
             return null;
         }
 
-        $mainPhoto = $product->photos->first();
+        $mainPhoto = $product->photos->sortBy('sort_order')->first();
         $firstVariant = $product->variants->first();
         
-        // Resim URL'sini düzgün şekilde oluştur
-        $imageUrl = null;
-        if ($mainPhoto) {
-            // Önce path'i kontrol et, çünkü url zaten /storage/... formatında olabilir
-            if ($mainPhoto->path) {
-                $imageUrl = url('storage/' . $mainPhoto->path);
-            } elseif ($mainPhoto->url) {
-                // URL tam bir URL mi kontrol et
-                if (filter_var($mainPhoto->url, FILTER_VALIDATE_URL)) {
-                    $imageUrl = $mainPhoto->url;
-                } else {
-                    // Göreceli URL ise tam URL'e çevir
-                    $imageUrl = url(ltrim($mainPhoto->url, '/'));
-                }
-            }
-        }
+        // Use trait method for image URL
+        $imageUrl = $this->formatImageUrl($mainPhoto);
+        
+        // Get price info including featured deals
+        $priceInfo = $this->getProductPriceInfo($product, $firstVariant);
 
         return [
             'id' => $favorite->id,
@@ -215,10 +218,13 @@ class FavoriteService extends BaseService
                 'name' => $product->name,
                 'slug' => $product->slug,
                 'image' => $imageUrl,
-                'price' => $firstVariant?->price ?? 0,
-                'compare_price' => $firstVariant?->compare_price,
+                'price' => $priceInfo['current_price'],
+                'original_price' => $priceInfo['original_price'],
+                'discount_percentage' => $priceInfo['discount_percentage'],
+                'has_deal' => $priceInfo['has_deal'],
+                'deal_badge' => $priceInfo['deal_badge'],
                 'stock' => $firstVariant?->stock ?? 0,
-                'in_stock' => ($firstVariant?->stock ?? 0) > 0,
+                'in_stock' => $this->isProductInStock($product),
                 'vendor' => $product->vendor ? [
                     'id' => $product->vendor->id,
                     'name' => $product->vendor->name,
@@ -226,5 +232,21 @@ class FavoriteService extends BaseService
                 ] : null,
             ],
         ];
+    }
+    
+    /**
+     * Get cache key for favorite count
+     */
+    protected function getCountCacheKey(int $userId): string
+    {
+        return "user:{$userId}:favorites:count";
+    }
+    
+    /**
+     * Clear all cache for a user
+     */
+    protected function clearUserCache(int $userId): void
+    {
+        Cache::forget($this->getCountCacheKey($userId));
     }
 }
