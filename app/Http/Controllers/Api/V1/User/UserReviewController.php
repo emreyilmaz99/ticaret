@@ -86,7 +86,7 @@ class UserReviewController extends Controller
         
         $reviews = $user->reviews()
             ->withTrashed()
-            ->with(['product', 'media', 'response.vendor'])
+            ->with(['product.photos', 'media', 'response.vendor'])
             ->latest()
             ->paginate(10);
 

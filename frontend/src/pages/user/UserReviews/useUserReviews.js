@@ -44,6 +44,9 @@ export const useUserReviews = () => {
       const response = await api.get('/v1/user/reviews');
       return response.data;
     },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
   });
 
   // Fetch reviewable orders (pending reviews)
@@ -56,6 +59,9 @@ export const useUserReviews = () => {
       const response = await api.get('/v1/user/reviewable-orders');
       return response.data;
     },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
   });
 
   const reviews = reviewsData?.data?.data || [];
@@ -94,7 +100,7 @@ export const useUserReviews = () => {
       });
 
       const response = await api.post(
-        `/v1/orders/${orderId}/items/${orderItemId}/review`,
+        `/v1/user/orders/${orderId}/items/${orderItemId}/review`,
         formData,
         { headers: { 'Content-Type': 'multipart/form-data' } }
       );
@@ -107,7 +113,14 @@ export const useUserReviews = () => {
       closeReviewModal();
     },
     onError: (error) => {
-      toast.error(error.response?.data?.message || 'Değerlendirme gönderilemedi');
+      console.error('Review submission error:', error.response?.data);
+      const errorMsg = error.response?.data?.message || 'Değerlendirme gönderilemedi';
+      const errors = error.response?.data?.errors;
+      if (errors) {
+        Object.values(errors).flat().forEach(msg => toast.error(msg));
+      } else {
+        toast.error(errorMsg);
+      }
     },
   });
 
@@ -179,15 +192,15 @@ export const useUserReviews = () => {
     // Validate file types and sizes
     const validFiles = filesToAdd.filter(file => {
       const isImage = file.type.startsWith('image/');
-      const isVideo = file.type.startsWith('video/');
-      const maxSize = isVideo ? 50 * 1024 * 1024 : 10 * 1024 * 1024; // 50MB video, 10MB image
+      const maxSize = 5 * 1024 * 1024; // 5MB for images
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
       
-      if (!isImage && !isVideo) {
-        toast.error(`${file.name}: Sadece resim ve video dosyaları yüklenebilir`);
+      if (!isImage || !allowedTypes.includes(file.type)) {
+        toast.error(`${file.name}: Sadece JPEG, JPG, PNG ve WebP formatında resim yüklenebilir`);
         return false;
       }
       if (file.size > maxSize) {
-        toast.error(`${file.name}: Dosya boyutu çok büyük`);
+        toast.error(`${file.name}: Dosya boyutu en fazla 5MB olabilir`);
         return false;
       }
       return true;
@@ -196,7 +209,7 @@ export const useUserReviews = () => {
     // Create previews
     const newPreviews = validFiles.map(file => ({
       url: URL.createObjectURL(file),
-      type: file.type.startsWith('video/') ? 'video' : 'image',
+      type: 'image',
       name: file.name,
     }));
 

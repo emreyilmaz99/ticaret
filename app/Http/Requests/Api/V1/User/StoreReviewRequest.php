@@ -23,11 +23,11 @@ class StoreReviewRequest extends FormRequest
     {
         return [
             'rating' => ['required', 'integer', 'between:1,5'],
-            'title' => ['required', 'string', 'min:3', 'max:100'],
+            'title' => ['nullable', 'string', 'min:3', 'max:100'],
             'comment' => ['required', 'string', 'min:10', 'max:1000'],
             'is_anonymous' => ['boolean'],
             'photos' => ['nullable', 'array', 'max:5'],
-            'photos.*' => ['image', 'mimes:jpeg,png,jpg', 'max:5120'],
+            'photos.*' => ['image', 'mimes:jpeg,png,jpg,webp', 'max:5120'],
         ];
     }
 

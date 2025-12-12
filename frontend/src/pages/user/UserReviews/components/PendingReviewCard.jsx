@@ -3,13 +3,20 @@ import React from 'react';
 import { FaPen } from 'react-icons/fa';
 
 const PendingReviewCard = ({ item, orderNumber, orderId, onReview, styles }) => {
+  // Build image URL from backend path
+  const imageUrl = item.product_image 
+    ? `${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/storage/${item.product_image}`
+    : 'https://via.placeholder.com/200x200?text=No+Image';
+
   return (
     <div style={styles.pendingCard}>
       <img
-        src={item.product_image || '/placeholder.png'}
+        src={imageUrl}
         alt={item.product_name}
         style={styles.pendingProductImage}
-        onError={(e) => { e.target.src = '/placeholder.png'; }}
+        onError={(e) => { 
+          e.target.src = 'https://via.placeholder.com/200x200?text=No+Image';
+        }}
       />
       
       <div style={styles.pendingProductInfo}>

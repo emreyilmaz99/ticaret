@@ -81,10 +81,16 @@ const ReviewModal = ({
           {product && (
             <div style={styles.productPreview}>
               <img
-                src={product.product_image || '/placeholder.png'}
+                src={
+                  product.product_image 
+                    ? `${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/storage/${product.product_image}`
+                    : 'https://via.placeholder.com/200x200?text=No+Image'
+                }
                 alt={product.product_name}
                 style={styles.productPreviewImage}
-                onError={(e) => { e.target.src = '/placeholder.png'; }}
+                onError={(e) => { 
+                  e.target.src = 'https://via.placeholder.com/200x200?text=No+Image'; 
+                }}
               />
               <div style={styles.productPreviewInfo}>
                 <div style={styles.productPreviewName}>{product.product_name}</div>
@@ -179,7 +185,7 @@ const ReviewModal = ({
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/*,video/*"
+                accept="image/jpeg,image/jpg,image/png,image/webp"
                 multiple
                 onChange={handleFileUpload}
                 style={{ display: 'none' }}

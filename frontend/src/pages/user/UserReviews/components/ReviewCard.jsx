@@ -39,10 +39,14 @@ const ReviewCard = ({ review, onDelete, getStatusConfig, styles }) => {
       <div style={styles.reviewCardHeader}>
         <div style={styles.reviewProductSection}>
           <img
-            src={review.product?.photos?.[0]?.path || '/placeholder.png'}
+            src={
+              review.product?.photos?.[0]?.path
+                ? `${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/storage/${review.product.photos[0].path}`
+                : 'https://via.placeholder.com/200x200?text=No+Image'
+            }
             alt={review.product?.name}
             style={styles.reviewProductImage}
-            onError={(e) => { e.target.src = '/placeholder.png'; }}
+            onError={(e) => { e.target.src = 'https://via.placeholder.com/200x200?text=No+Image'; }}
           />
           <div style={styles.reviewProductInfo}>
             <div style={styles.reviewProductName}>
@@ -82,20 +86,31 @@ const ReviewCard = ({ review, onDelete, getStatusConfig, styles }) => {
       {/* Media */}
       {review.media && review.media.length > 0 && (
         <div style={styles.reviewMediaGrid}>
-          {review.media.slice(0, 4).map((media, index) => (
-            <div key={index} style={styles.reviewMediaItem}>
-              {media.type === 'video' ? (
-                <video src={media.url || media.path} style={styles.reviewMediaVideo} />
-              ) : (
-                <img 
-                  src={media.url || media.path} 
-                  alt="" 
-                  style={styles.reviewMediaImage}
-                  onError={(e) => { e.target.style.display = 'none'; }}
-                />
-              )}
-            </div>
-          ))}
+          {review.media.slice(0, 4).map((media, index) => {
+            const mediaUrl = media.url || media.path;
+            const fullUrl = mediaUrl
+              ? (mediaUrl.startsWith('http') 
+                  ? mediaUrl 
+                  : `${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/storage/${mediaUrl}`)
+              : 'https://via.placeholder.com/200x200?text=No+Image';
+            
+            return (
+              <div key={index} style={styles.reviewMediaItem}>
+                {media.type === 'video' ? (
+                  <video src={fullUrl} style={styles.reviewMediaVideo} />
+                ) : (
+                  <img 
+                    src={fullUrl}
+                    alt="" 
+                    style={styles.reviewMediaImage}
+                    onError={(e) => { 
+                      e.target.src = 'https://via.placeholder.com/200x200?text=Image+Error';
+                    }}
+                  />
+                )}
+              </div>
+            );
+          })}
           {review.media.length > 4 && (
             <div style={{
               ...styles.reviewMediaItem,
