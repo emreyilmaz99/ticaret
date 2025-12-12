@@ -37,32 +37,37 @@ export const styles = {
   container: { 
     padding: '24px', 
     fontFamily: "'Inter', sans-serif", 
-    color: '#1e293b',
-    maxWidth: '1200px',
-    margin: '0 auto'
+    color: '#1e293b'
   },
   
   // --- Header ---
   header: { 
     display: 'flex',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: '24px'
+    alignItems: 'flex-start',
+    marginBottom: '24px',
+    background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
+    padding: '28px 32px',
+    borderRadius: '16px',
+    border: '1px solid #e2e8f0',
+    flexWrap: 'wrap',
+    gap: '16px',
   },
   headerLeft: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '4px'
+    gap: '6px'
   },
   title: { 
-    fontSize: '24px', 
-    fontWeight: '700', 
+    fontSize: '26px', 
+    fontWeight: '800', 
     color: '#0f172a',
+    letterSpacing: '-0.02em',
     margin: 0
   },
   subtitle: { 
     color: '#64748b', 
-    fontSize: '14px', 
+    fontSize: '15px', 
     margin: 0
   },
   saveButton: {

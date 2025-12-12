@@ -4,31 +4,40 @@ export const getStyles = () => ({
   container: {
     fontFamily: "'Inter', sans-serif",
     color: '#1e293b',
-    maxWidth: '1000px',
-    padding: '0'
+    padding: '24px'
   },
 
   // Header
   header: {
-    marginBottom: '32px'
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: '24px',
+    background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
+    padding: '28px 32px',
+    borderRadius: '16px',
+    border: '1px solid #e2e8f0',
+    flexWrap: 'wrap',
+    gap: '16px'
   },
   title: {
-    fontSize: '24px',
+    fontSize: '26px',
     fontWeight: '800',
     color: '#0f172a',
-    letterSpacing: '-0.5px',
+    letterSpacing: '-0.02em',
     display: 'flex',
     alignItems: 'center',
     gap: '12px',
     margin: 0
   },
   titleIcon: {
-    color: '#14532d'
+    color: '#059669',
+    fontSize: '28px'
   },
   subtitle: {
     color: '#64748b',
-    fontSize: '14px',
-    marginTop: '4px'
+    fontSize: '15px',
+    margin: '6px 0 0 0'
   },
 
   // Info Card

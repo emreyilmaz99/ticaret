@@ -63,6 +63,7 @@ import VendorFinance from './pages/vendor/VendorFinance';
 import VendorSettings from './pages/vendor/Settings';
 import VendorShipping from './pages/vendor/Shipping';
 import VendorPromotions from './pages/vendor/Promotions';
+import VendorReviews from './pages/vendor/Reviews';
 import VendorLayout from './components/layouts/VendorLayout';
 import VendorCategories from './pages/vendor/Categories';
 
@@ -160,6 +161,7 @@ function App() {
                  <Route path="products" element={<VendorProducts />} />
                  <Route path="categories" element={<VendorCategories />} />
                  <Route path="orders" element={<VendorOrders />} />
+                 <Route path="reviews" element={<VendorReviews />} />
                  <Route path="finance" element={<VendorFinance />} />
                  <Route path="shipping" element={<VendorShipping />} />
                  <Route path="promotions" element={<VendorPromotions />} />

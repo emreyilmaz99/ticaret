@@ -255,6 +255,7 @@ Route::prefix('v1/vendor')->group(function () {
         Route::put('campaigns/{campaign}/toggle', [\App\Http\Controllers\Api\V1\Vendor\CampaignController::class, 'toggle']);
 
         // vendor review responses
+        Route::get('reviews', [VendorReviewController::class, 'allReviews']);
         Route::get('products/{productId}/reviews', [VendorReviewController::class, 'index']);
         Route::post('reviews/{reviewId}/response', [VendorReviewController::class, 'storeResponse']);
         Route::delete('review-responses/{responseId}', [VendorReviewController::class, 'destroyResponse']);

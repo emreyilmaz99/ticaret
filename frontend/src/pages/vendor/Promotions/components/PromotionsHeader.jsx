@@ -7,12 +7,14 @@ const PromotionsHeader = () => {
   return (
     <>
       <div style={styles.header}>
-        <h1 style={styles.title}>
-          <FaGift style={styles.titleIcon} /> Promosyonlar
-        </h1>
-        <p style={styles.subtitle}>
-          Kupon kodları ve kampanyalar oluşturarak müşterilerinize özel indirimler sunun.
-        </p>
+        <div>
+          <h1 style={styles.title}>
+            <FaGift style={styles.titleIcon} /> Promosyonlar
+          </h1>
+          <p style={styles.subtitle}>
+            Kupon kodları ve kampanyalar oluşturarak müşterilerinize özel indirimler sunun
+          </p>
+        </div>
       </div>
 
       <div style={styles.infoCard}>

@@ -51,24 +51,32 @@ export const getStatusStyle = (status) => {
 export const getStyles = () => ({
   container: {
     fontFamily: "'Inter', sans-serif",
-    color: '#1e293b'
+    color: '#1e293b',
+    padding: '24px'
   },
   header: {
-    marginBottom: '32px',
     display: 'flex',
     justifyContent: 'space-between',
-    alignItems: 'center'
+    alignItems: 'flex-start',
+    marginBottom: '24px',
+    background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
+    padding: '28px 32px',
+    borderRadius: '16px',
+    border: '1px solid #e2e8f0',
+    flexWrap: 'wrap',
+    gap: '16px'
   },
   title: {
-    fontSize: '28px',
+    fontSize: '26px',
     fontWeight: '800',
     color: '#0f172a',
-    letterSpacing: '-0.5px',
-    marginBottom: '8px'
+    letterSpacing: '-0.02em',
+    margin: 0
   },
   subtitle: {
     color: '#64748b',
-    fontSize: '14px'
+    fontSize: '15px',
+    margin: '6px 0 0 0'
   },
   headerActions: {
     display: 'flex',

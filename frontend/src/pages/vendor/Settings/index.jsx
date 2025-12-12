@@ -59,8 +59,10 @@ const VendorSettingsPage = () => {
 
       {/* Header */}
       <div style={styles.header}>
-        <h1 style={styles.title}>Mağaza Ayarları</h1>
-        <p style={styles.subtitle}>Mağaza profilinizi ve görünümünüzü özelleştirin.</p>
+        <div>
+          <h1 style={styles.title}>Mağaza Ayarları</h1>
+          <p style={styles.subtitle}>Mağaza profilinizi ve görünümünüzü özelleştirin</p>
+        </div>
       </div>
 
       {/* Tabs */}

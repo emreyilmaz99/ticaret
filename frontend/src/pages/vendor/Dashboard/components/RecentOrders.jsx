@@ -1,15 +1,25 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { styles, getStatusStyle } from '../styles';
 
 /**
  * Recent orders table
  */
 const RecentOrders = ({ orders }) => {
+  const navigate = useNavigate();
+
+  const handleViewAllOrders = () => {
+    navigate('/vendor/orders');
+  };
+
   return (
     <div style={styles.tableCard}>
       <div style={styles.tableHeader}>
         <h3 style={styles.cardTitle}>Son Siparişler</h3>
-        <button style={styles.tableViewAll}>
+        <button 
+          style={{ ...styles.tableViewAll, cursor: 'pointer' }}
+          onClick={handleViewAllOrders}
+        >
           Tümünü Gör
         </button>
       </div>

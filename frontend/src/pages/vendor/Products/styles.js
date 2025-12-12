@@ -11,30 +11,37 @@ export const styles = {
   pageHeader: { 
     display: 'flex', 
     justifyContent: 'space-between', 
-    alignItems: 'center', 
-    marginBottom: '24px' 
+    alignItems: 'flex-start', 
+    marginBottom: '24px',
+    background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
+    padding: '28px 32px',
+    borderRadius: '16px',
+    border: '1px solid #e2e8f0',
+    flexWrap: 'wrap',
+    gap: '16px',
   },
   headerLeft: { 
     display: 'flex', 
-    alignItems: 'center', 
+    alignItems: 'flex-start', 
     gap: '16px' 
   },
   headerIcon: { 
-    fontSize: '24px', 
-    color: '#059669' 
+    fontSize: '28px', 
+    color: '#059669',
+    marginTop: '4px'
   },
   title: { 
-    fontSize: '24px', 
+    fontSize: '26px', 
     fontWeight: '800', 
     color: '#0f172a', 
-    letterSpacing: '-0.5px',
+    letterSpacing: '-0.02em',
     margin: 0
   },
   subtitle: { 
     color: '#64748b', 
-    fontSize: '14px', 
-    marginTop: '4px',
-    margin: 0
+    fontSize: '15px', 
+    marginTop: '6px',
+    margin: '6px 0 0 0'
   },
   addButton: { 
     backgroundColor: '#059669', 
@@ -971,6 +978,54 @@ export const styles = {
       status === 'inactive' ? '#64748b' : 
       status === 'banned' ? '#991b1b' : '#475569'
   }),
+
+  // --- Pagination Section ---
+  pagination: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '16px',
+    marginTop: '32px',
+    padding: '16px 0',
+    borderTop: '1px solid #e2e8f0'
+  },
+  paginationInfo: {
+    fontSize: '14px',
+    color: '#64748b',
+    fontWeight: '500'
+  },
+  paginationButtons: {
+    display: 'flex',
+    gap: '8px',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  paginationBtn: {
+    padding: '8px 12px',
+    border: '1px solid #e2e8f0',
+    borderRadius: '8px',
+    backgroundColor: '#fff',
+    color: '#475569',
+    cursor: 'pointer',
+    fontSize: '14px',
+    fontWeight: '500',
+    transition: 'all 0.2s',
+    minWidth: '40px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  paginationBtnActive: {
+    backgroundColor: '#059669',
+    color: '#fff',
+    borderColor: '#059669',
+    fontWeight: '600'
+  },
+  paginationBtnDisabled: {
+    opacity: 0.5,
+    cursor: 'not-allowed',
+    pointerEvents: 'none'
+  },
 };
 
 export const getStatusLabel = (status) => {

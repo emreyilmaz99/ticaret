@@ -11,9 +11,22 @@ const VendorFinance = () => {
 
   return (
     <div style={{ fontFamily: "'Inter', sans-serif", color: '#1e293b' }}>
-      <div style={{ marginBottom: '32px' }}>
-        <h1 style={{ fontSize: '24px', fontWeight: '800', color: '#0f172a', letterSpacing: '-0.5px' }}>Finansal Durum</h1>
-        <p style={{ color: '#64748b', fontSize: '14px', marginTop: '4px' }}>Kazançlarınızı ve ödeme geçmişinizi buradan takip edin.</p>
+      <div style={{ 
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+        marginBottom: '24px',
+        background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
+        padding: '28px 32px',
+        borderRadius: '16px',
+        border: '1px solid #e2e8f0',
+        flexWrap: 'wrap',
+        gap: '16px',
+      }}>
+        <div>
+          <h1 style={{ fontSize: '26px', fontWeight: '800', color: '#0f172a', letterSpacing: '-0.02em', margin: 0 }}>Finans & Ödemeler</h1>
+          <p style={{ color: '#64748b', fontSize: '15px', margin: '6px 0 0 0' }}>Kazançlarınızı ve ödeme geçmişinizi buradan takip edin</p>
+        </div>
       </div>
 
       {/* Wallet Cards */}

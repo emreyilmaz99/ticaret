@@ -42,6 +42,74 @@ class VendorReviewController extends Controller
     }
 
     /**
+     * GET /api/v1/vendor/reviews
+     * List all reviews for vendor's products
+     */
+    public function allReviews(Request $request)
+    {
+        $vendor = $request->user();
+        $productIds = $vendor->products()->pluck('id');
+
+        $query = ProductReview::whereIn('product_id', $productIds)
+            ->approved()
+            ->with(['user', 'product', 'media', 'response']);
+
+        // Filter by response status
+        if ($request->has('has_response')) {
+            if ($request->boolean('has_response')) {
+                $query->has('response');
+            } else {
+                $query->doesntHave('response');
+            }
+        }
+
+        // Filter by rating
+        if ($request->has('rating')) {
+            $query->where('rating', $request->integer('rating'));
+        }
+
+        // Filter by product
+        if ($request->has('product_id')) {
+            $query->where('product_id', $request->input('product_id'));
+        }
+
+        // Search
+        if ($request->has('search')) {
+            $search = $request->input('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                  ->orWhere('comment', 'like', "%{$search}%")
+                  ->orWhereHas('user', function ($uq) use ($search) {
+                      $uq->where('name', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        // Sort
+        $sortBy = $request->input('sort_by', 'recent');
+        switch ($sortBy) {
+            case 'oldest':
+                $query->oldest();
+                break;
+            case 'highest':
+                $query->orderBy('rating', 'desc');
+                break;
+            case 'lowest':
+                $query->orderBy('rating', 'asc');
+                break;
+            default:
+                $query->latest();
+        }
+
+        $reviews = $query->paginate($request->integer('per_page', 20));
+
+        return response()->json([
+            'success' => true,
+            'data' => $reviews,
+        ]);
+    }
+
+    /**
      * POST /api/v1/vendor/reviews/{reviewId}/response
      * Create a response to a review
      */
@@ -95,16 +163,28 @@ class VendorReviewController extends Controller
 
         $productIds = $vendor->products()->pluck('id');
 
-        $stats = [
-            'total_reviews' => ProductReview::whereIn('product_id', $productIds)
+        $reviews = ProductReview::whereIn('product_id', $productIds)->approved();
+        $totalReviews = $reviews->count();
+        $avgRating = round($reviews->avg('rating') ?? 0, 1);
+
+        // Rating breakdown
+        $ratingBreakdown = [];
+        for ($i = 1; $i <= 5; $i++) {
+            $ratingBreakdown[$i] = ProductReview::whereIn('product_id', $productIds)
                 ->approved()
-                ->count(),
-            'average_rating' => round(
-                ProductReview::whereIn('product_id', $productIds)
-                    ->approved()
-                    ->avg('rating') ?? 0,
-                1
-            ),
+                ->where('rating', $i)
+                ->count();
+        }
+
+        // Reviews with media
+        $withMedia = ProductReview::whereIn('product_id', $productIds)
+            ->approved()
+            ->has('media')
+            ->count();
+
+        $stats = [
+            'total_reviews' => $totalReviews,
+            'average_rating' => $avgRating,
             'pending_responses' => ProductReview::whereIn('product_id', $productIds)
                 ->approved()
                 ->doesntHave('response')
@@ -112,6 +192,8 @@ class VendorReviewController extends Controller
             'responded' => ReviewResponse::whereHas('review', function ($query) use ($productIds) {
                 $query->whereIn('product_id', $productIds);
             })->count(),
+            'rating_breakdown' => $ratingBreakdown,
+            'with_media' => $withMedia,
         ];
 
         return response()->json([

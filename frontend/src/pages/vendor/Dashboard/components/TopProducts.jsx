@@ -1,10 +1,17 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { styles } from '../styles';
 
 /**
  * Top selling products widget
  */
 const TopProducts = ({ products }) => {
+  const navigate = useNavigate();
+
+  const handleViewAllProducts = () => {
+    navigate('/vendor/products');
+  };
+
   return (
     <div style={{ ...styles.card, display: 'flex', flexDirection: 'column' }}>
       <h3 style={styles.cardTitle}>Çok Satanlar</h3>
@@ -31,7 +38,10 @@ const TopProducts = ({ products }) => {
             </div>
           </div>
         ))}
-        <button style={styles.viewAllButton}>
+        <button 
+          style={{ ...styles.viewAllButton, cursor: 'pointer' }}
+          onClick={handleViewAllProducts}
+        >
           Tümünü Gör
         </button>
       </div>
