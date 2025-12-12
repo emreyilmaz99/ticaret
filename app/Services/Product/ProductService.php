@@ -50,62 +50,20 @@ class ProductService extends BaseService
     {
         try {
             return DB::transaction(function () use ($vendor, $data) {
-                // Ensure vendor ownership
-                $data['vendor_id'] = $vendor->id;
-                $data['status'] = $data['status'] ?? 'pending';
-
-                // Sanitize category_id
-                if (array_key_exists('category_id', $data)) {
-                    $data['category_id'] = $this->sanitizeCategoryId($data['category_id']);
-                }
-
-                // Extract relations
-                $tags = $data['tags'] ?? null;
-                $variants = $data['variants'] ?? null;
-                $images = $data['images'] ?? null;
-                unset($data['tags'], $data['variants'], $data['images']);
-
-                // Capture default variant data for simple products
-                $defaultVariantData = [
-                    'price' => $data['price'] ?? null,
-                    'stock' => $data['stock'] ?? null,
-                    'sku' => $data['sku'] ?? null,
-                    'weight' => $data['weight'] ?? null,
-                    'length' => $data['length'] ?? null,
-                    'width' => $data['width'] ?? null,
-                    'height' => $data['height'] ?? null,
-                    'unit_id' => $data['unit_id'] ?? null,
-                ];
+                $productType = $data['type'] ?? 'simple';
                 
-                // Remove variant-specific fields from product data
-                unset($data['price'], $data['stock'], $data['weight'], $data['length'], $data['width'], $data['height'], $data['unit_id']);
-
-                // Generate unique slug
-                $data['slug'] = $this->generateUniqueSlug(
-                    $data['name'] ?? 'product', 
-                    $data['slug'] ?? null
-                );
+                // Prepare product data
+                $data = $this->prepareProductData($vendor, $data);
+                
+                // Extract relations and variant data
+                $relations = $this->extractRelationData($data);
+                $variantData = $this->extractDefaultVariantData($data);
 
                 // Create product
                 $product = $this->repo->create($data);
 
-                // Sync tags
-                if ($tags) {
-                    $this->syncProductTags($product, $tags);
-                }
-
-                // Create variants
-                if (!empty($variants) && is_array($variants)) {
-                    $this->createVariants($product->id, $variants);
-                } elseif (($data['type'] ?? 'simple') === 'simple') {
-                    // Create default variant for simple product
-                    $this->createDefaultVariant($product->id, $defaultVariantData);
-                }
-
-                // Handle image uploads
-                if (!empty($images) && is_array($images)) {
-                    $this->handleImageUploads($product->id, $images, $product->name);
-                }
+                // Process relations
+                $this->processProductRelations($product, $relations, $variantData, $productType);
 
                 return $product->refresh();
             });
@@ -125,29 +83,8 @@ class ProductService extends BaseService
                 // Prevent changing vendor_id
                 unset($data['vendor_id']);
 
-                // Handle image uploads
-                if (isset($data['images']) && is_array($data['images'])) {
-                    $this->handleImageUploads($product->id, $data['images'], $product->name);
-                    unset($data['images']);
-                }
-
-                // Handle tags
-                if (isset($data['tags'])) {
-                    $this->syncProductTags($product, $data['tags']);
-                    unset($data['tags']);
-                }
-
-                // Handle simple product variant updates
-                if ($product->type === 'simple') {
-                    $this->updateSimpleProductVariant($product, $data);
-                    unset($data['price'], $data['stock'], $data['sku'], $data['unit_id']);
-                }
-
-                // Handle variable product variants
-                if (isset($data['variants']) && is_array($data['variants'])) {
-                    $this->updateVariants($product, $data['variants']);
-                    unset($data['variants']);
-                }
+                // Process all relations
+                $this->processUpdateRelations($product, $data);
 
                 // Update product via repository
                 $updated = $this->repo->update($product->id, $data);
@@ -166,34 +103,166 @@ class ProductService extends BaseService
 
     public function deleteForVendor(Vendor $vendor, Product $product): void
     {
-        try {
-            // Verify ownership
-            $this->validateVendorOwnership($product, $vendor);
-            
-            $this->repo->delete($product->id);
-        } catch (\Exception $e) {
-            Log::error('Ürün silme hatası: ' . $e->getMessage());
-            throw $e;
-        }
+        $this->executeWithVendorValidation(
+            $vendor,
+            $product,
+            fn() => $this->repo->delete($product->id),
+            'Ürün silme hatası'
+        );
     }
 
     public function deletePhotoForVendor(Vendor $vendor, Product $product, int $photoId): void
     {
-        try {
-            // Verify ownership
-            $this->validateVendorOwnership($product, $vendor);
-            
-            // Delete photo
-            $this->photoRepo->delete($photoId);
-        } catch (\Exception $e) {
-            Log::error('Fotoğraf silme hatası: ' . $e->getMessage());
-            throw $e;
-        }
+        $this->executeWithVendorValidation(
+            $vendor,
+            $product,
+            fn() => $this->photoRepo->delete($photoId),
+            'Fotoğraf silme hatası'
+        );
     }
 
     public function findForVendor(Vendor $vendor, $productId): ?Product
     {
         return $this->repo->findForVendor($vendor->id, $productId);
+    }
+
+    // ==================== Helper Methods ====================
+
+    /**
+     * Prepare product data with vendor and category sanitization
+     */
+    protected function prepareProductData(Vendor $vendor, array $data): array
+    {
+        $data['vendor_id'] = $vendor->id;
+        $data['status'] = $data['status'] ?? 'pending';
+
+        if (array_key_exists('category_id', $data)) {
+            $data['category_id'] = $this->sanitizeCategoryId($data['category_id']);
+        }
+
+        $data['slug'] = $this->generateUniqueSlug(
+            $data['name'] ?? 'product',
+            $data['slug'] ?? null
+        );
+
+        return $data;
+    }
+
+    /**
+     * Extract relation data from product data array
+     */
+    protected function extractRelationData(array &$data): array
+    {
+        $relations = [
+            'tags' => $data['tags'] ?? null,
+            'variants' => $data['variants'] ?? null,
+            'images' => $data['images'] ?? null,
+        ];
+
+        unset($data['tags'], $data['variants'], $data['images']);
+
+        return $relations;
+    }
+
+    /**
+     * Extract default variant data for simple products
+     */
+    protected function extractDefaultVariantData(array &$data): array
+    {
+        $variantData = [
+            'price' => $data['price'] ?? null,
+            'stock' => $data['stock'] ?? null,
+            'sku' => $data['sku'] ?? null,
+            'weight' => $data['weight'] ?? null,
+            'length' => $data['length'] ?? null,
+            'width' => $data['width'] ?? null,
+            'height' => $data['height'] ?? null,
+            'unit_id' => $data['unit_id'] ?? null,
+        ];
+
+        unset(
+            $data['price'],
+            $data['stock'],
+            $data['sku'],
+            $data['weight'],
+            $data['length'],
+            $data['width'],
+            $data['height'],
+            $data['unit_id']
+        );
+
+        return $variantData;
+    }
+
+    /**
+     * Process product relations (tags, variants, images)
+     */
+    protected function processProductRelations(Product $product, array $relations, array $variantData, string $productType): void
+    {
+        // Sync tags
+        if ($relations['tags']) {
+            $this->syncProductTags($product, $relations['tags']);
+        }
+
+        // Create variants
+        if (!empty($relations['variants']) && is_array($relations['variants'])) {
+            $this->createVariants($product->id, $relations['variants']);
+        } elseif ($productType === 'simple') {
+            $this->createDefaultVariant($product->id, $variantData);
+        }
+
+        // Handle image uploads
+        if (!empty($relations['images']) && is_array($relations['images'])) {
+            $this->handleImageUploads($product->id, $relations['images'], $product->name);
+        }
+    }
+
+    /**
+     * Process product update relations (images, tags, variants)
+     */
+    protected function processUpdateRelations(Product $product, array &$data): void
+    {
+        // Handle image uploads
+        if (isset($data['images']) && is_array($data['images'])) {
+            $this->handleImageUploads($product->id, $data['images'], $product->name);
+            unset($data['images']);
+        }
+
+        // Handle tags
+        if (isset($data['tags'])) {
+            $this->syncProductTags($product, $data['tags']);
+            unset($data['tags']);
+        }
+
+        // Handle simple product variant updates
+        if ($product->type === 'simple') {
+            $this->updateSimpleProductVariant($product, $data);
+            unset($data['price'], $data['stock'], $data['sku'], $data['unit_id']);
+        }
+
+        // Handle variable product variants
+        if (isset($data['variants']) && is_array($data['variants'])) {
+            $this->updateVariants($product, $data['variants']);
+            unset($data['variants']);
+        }
+    }
+
+    /**
+     * Execute action with vendor validation and error handling
+     */
+    protected function executeWithVendorValidation(
+        Vendor $vendor,
+        Product $product,
+        callable $action,
+        string $errorMessage
+    ) {
+        try {
+            $this->validateVendorOwnership($product, $vendor);
+            return $action();
+        } catch (\Exception $e) {
+            Log::error($errorMessage . ': ' . $e->getMessage());
+            throw $e;
+        }
     }
 
     // ==================== Product Settings ====================
