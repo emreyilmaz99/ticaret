@@ -218,8 +218,8 @@ class PublicProductService extends BaseService
             'images' => $product->photos->sortBy('sort_order')->map(fn($p) => $this->formatImageUrl($p))->filter()->values(),
             'is_featured' => $product->is_featured,
             'variants_count' => $product->variants->count(),
-            'rating' => $product->rating_avg ?? 0,
-            'reviews_count' => $product->reviews_count ?? 0,
+            'rating_avg' => $product->average_rating ?? 0,
+            'review_count' => $product->review_count ?? 0,
             'created_at' => $product->created_at,
         ];
     }
@@ -295,8 +295,8 @@ class PublicProductService extends BaseService
             'specifications' => $specifications,
             'settings' => $productSettings,
             'is_featured' => $product->is_featured,
-            'rating' => $product->rating_avg ?? 0,
-            'reviews_count' => $product->reviews_count ?? 0,
+            'rating_avg' => $product->average_rating ?? 0,
+            'review_count' => $product->review_count ?? 0,
             'created_at' => $product->created_at,
         ];
     }
@@ -479,8 +479,8 @@ class PublicProductService extends BaseService
                 'color' => $featuredDeal->badge_color,
             ] : null,
             'image' => $this->formatImageUrl($mainPhoto),
-            'rating' => $product->rating_avg ?? 0,
-            'reviews_count' => $product->reviews_count ?? 0,
+            'rating_avg' => $product->average_rating ?? 0,
+            'review_count' => $product->review_count ?? 0,
         ];
     }
 

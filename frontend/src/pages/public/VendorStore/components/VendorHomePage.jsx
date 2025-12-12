@@ -205,21 +205,37 @@ const ProductCard = ({ product, onAddToCart, showDiscount }) => {
   const mainImage = product.image || '/placeholder-product.png';
   const categoryName = product.category?.name || '';
 
-  // 5 yıldız gösterimi
+  // 5 yıldız gösterimi - sayısal değer ile
   const renderStars = (rating) => {
     const stars = [];
-    const fullStars = Math.floor(rating || 0);
+    const ratingValue = parseFloat(rating || 0);
+    
     for (let i = 0; i < 5; i++) {
+      const isFilled = i < Math.floor(ratingValue);
+      
       stars.push(
         <FaStar 
           key={i} 
           style={{ 
-            color: i < fullStars ? '#f59e0b' : '#e2e8f0',
+            color: isFilled ? '#f59e0b' : '#e2e8f0',
             fontSize: '12px'
           }} 
         />
       );
     }
+    
+    // Yıldızların yanına sayısal değeri ekle
+    stars.push(
+      <span key="rating-value" style={{ 
+        color: '#1e293b', 
+        marginLeft: '4px', 
+        fontSize: '13px',
+        fontWeight: '600'
+      }}>
+        {ratingValue.toFixed(1)}
+      </span>
+    );
+    
     return stars;
   };
 

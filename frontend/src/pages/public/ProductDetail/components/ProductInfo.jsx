@@ -69,16 +69,20 @@ const ProductInfo = ({
       {/* Rating */}
       <div style={styles.rating}>
         <div style={styles.stars}>
-          {[...Array(5)].map((_, i) => (
-            <FaStar 
-              key={i} 
-              size={16} 
-              color={i < Math.floor(product.rating || 0) ? '#f59e0b' : '#e2e8f0'} 
-            />
-          ))}
+          {[...Array(5)].map((_, i) => {
+            const rating = parseFloat(product.rating_avg || product.rating || 0);
+            const isFilled = i < Math.floor(rating);
+            return (
+              <FaStar 
+                key={i} 
+                size={16} 
+                color={isFilled ? '#f59e0b' : '#e2e8f0'} 
+              />
+            );
+          })}
         </div>
         <span style={styles.reviewsText}>
-          {(product.rating || 0).toFixed(1)} ({product.reviews_count || 0} değerlendirme)
+          {parseFloat(product.rating_avg || product.rating || 0).toFixed(1)} ({product.review_count || product.reviews_count || 0} değerlendirme)
         </span>
       </div>
 

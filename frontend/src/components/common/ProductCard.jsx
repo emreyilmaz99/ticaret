@@ -1,19 +1,36 @@
+// src/components/common/ProductCard.jsx
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { FaStar, FaShoppingCart, FaHeart, FaRegHeart, FaEye, FaBolt, FaExchangeAlt } from 'react-icons/fa';
+import { useNavigate, Link } from 'react-router-dom';
+import { 
+  FaHeart, 
+  FaRegHeart, 
+  FaShoppingCart, 
+  FaEye, 
+  FaExchangeAlt,
+  FaStar,
+  FaBolt
+} from 'react-icons/fa';
 import { useFavorites } from '../../context/FavoritesContext';
-import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from './Toast';
 
-const ProductCard = ({ product, setQuickViewProduct, isCompared, onToggleCompare }) => {
+export const ProductCard = ({
+  product,
+  viewMode = 'grid', // 'grid' veya 'list'
+  isInCompareList = false,
+  onToggleCompare,
+  onAddToCart,
+  onQuickView,
+  styles: propStyles
+}) => {
   const { isFavorite, addToFavorites, removeFromFavorites } = useFavorites();
-  const { addToCart } = useCart();
   const { user } = useAuth();
-  const toast = useToast();
+  const { showToast } = useToast();
   const navigate = useNavigate();
-  const isFav = isFavorite(product.id);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const isFav = isFavorite(product.id);
+
+  const productUrl = `/product/${product.slug || product.id}`;
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 768);
@@ -22,257 +39,272 @@ const ProductCard = ({ product, setQuickViewProduct, isCompared, onToggleCompare
   }, []);
 
   const handleToggleFavorite = (e) => {
+    e.preventDefault();
     e.stopPropagation();
-    if (isFav) {
-      removeFromFavorites(product.id);
-    } else {
-      addToFavorites(product);
-    }
+    if (isFav) removeFromFavorites(product.id);
+    else addToFavorites(product);
   };
 
   const handleAddToCart = (e) => {
+    e.preventDefault();
     e.stopPropagation();
     if (!user) {
-      toast.warning('Giriş Yapmalısınız', 'Sepete ürün eklemek için lütfen giriş yapın veya kayıt olun.');
+      showToast('Sepete ürün eklemek için lütfen giriş yapın.', 'warning');
       navigate('/register');
       return;
     }
-    addToCart(product);
+    if (onAddToCart) onAddToCart(product);
   };
 
   const handleBuyNow = (e) => {
+    e.preventDefault();
     e.stopPropagation();
     if (!user) {
-      toast.warning('Giriş Yapmalısınız', 'Satın alma işlemi için lütfen giriş yapın veya kayıt olun.');
+      showToast('Satın alma işlemi için lütfen giriş yapın.', 'warning');
       navigate('/register');
       return;
     }
-    addToCart(product);
+    if (onAddToCart) onAddToCart(product);
     navigate('/cart');
   };
 
-  const styles = {
+  const handleQuickView = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (onQuickView) onQuickView(product);
+    else navigate(productUrl);
+  };
+
+  const handleToggleCompare = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (onToggleCompare) onToggleCompare(product);
+  };
+
+  // --- KATEGORİ İSMİNİ GÜVENLİ ALMA ---
+  const getCategoryName = () => {
+    if (product.vendor_name) return product.vendor_name;
+    if (product.category && typeof product.category === 'object') {
+      return product.category.name || 'GENEL';
+    }
+    return product.category || 'GENEL';
+  };
+
+  // --- STİLLER ---
+  const cardStyles = propStyles || {
     card: {
       backgroundColor: 'white',
-      borderRadius: isMobile ? '16px' : '32px',
+      borderRadius: isMobile ? '16px' : '24px',
       overflow: 'hidden',
-      border: 'none',
-      boxShadow: '0 20px 40px -10px rgba(0, 0, 0, 0.07)',
+      border: '1px solid #f1f5f9',
+      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
       transition: 'transform 0.3s ease, box-shadow 0.3s ease',
       position: 'relative',
       cursor: 'pointer',
+      display: 'block',
+      textDecoration: 'none',
+      color: 'inherit',
+      ...(viewMode === 'list' && !isMobile ? { display: 'flex', flexDirection: 'row', maxHeight: '240px' } : {}),
     },
     cardImage: {
-      width: '100%',
-      aspectRatio: '1/1',
-      objectFit: 'cover',
-      backgroundColor: '#f8fafc',
-      margin: isMobile ? '8px' : '12px',
-      width: isMobile ? 'calc(100% - 16px)' : 'calc(100% - 24px)',
-      borderRadius: isMobile ? '12px' : '24px',
+      width: viewMode === 'list' && !isMobile ? '220px' : '100%',
+      aspectRatio: viewMode === 'list' && !isMobile ? 'auto' : '1/1',
+      height: viewMode === 'list' && !isMobile ? '100%' : 'auto',
+      objectFit: 'contain',
+      backgroundColor: 'white',
+      padding: '16px',
+      flexShrink: 0,
     },
     cardBody: {
-      padding: isMobile ? '0 12px 12px 12px' : '0 24px 24px 24px',
+      padding: viewMode === 'list' && !isMobile ? '24px' : '16px',
+      flex: viewMode === 'list' && !isMobile ? 1 : 'initial',
+      display: 'flex',
+      flexDirection: 'column',
+      justifyContent: 'space-between',
+      height: viewMode === 'list' && !isMobile ? '100%' : 'auto',
     },
     cardCategory: {
-      fontSize: isMobile ? '10px' : '12px',
-      color: '#64748b',
+      fontSize: '11px',
+      color: '#059669',
       textTransform: 'uppercase',
-      fontWeight: '600',
-      marginBottom: '4px',
+      fontWeight: '700',
+      marginBottom: '6px',
+      letterSpacing: '0.5px',
     },
     cardTitle: {
-      fontSize: isMobile ? '13px' : '15px',
+      fontSize: isMobile ? '14px' : '15px',
       fontWeight: '600',
       color: '#1e293b',
       marginBottom: '8px',
       lineHeight: '1.4',
-      height: isMobile ? '36px' : '42px',
+      height: '42px',
       overflow: 'hidden',
+      display: '-webkit-box',
+      WebkitLineClamp: 2,
+      WebkitBoxOrient: 'vertical',
     },
     rating: {
       display: 'flex',
       alignItems: 'center',
       gap: '4px',
-      fontSize: isMobile ? '10px' : '12px',
+      fontSize: '12px',
       color: '#f59e0b',
-      marginBottom: isMobile ? '8px' : '12px',
+      marginBottom: '12px',
     },
     priceRow: {
       display: 'flex',
       justifyContent: 'space-between',
-      alignItems: 'center',
-      gap: '8px',
+      alignItems: 'flex-end',
+      marginTop: 'auto',
+      gap: '16px',
+      paddingTop: '8px',
     },
-    price: {
-      fontSize: isMobile ? '14px' : '16px',
-      fontWeight: '700',
-      color: '#059669',
-    },
-    actions: {
-      display: 'flex',
-      gap: '6px',
-      flexShrink: 0,
-    },
+    priceGroup: { display: 'flex', flexDirection: 'column', flex: 1, paddingRight: '8px' },
+    price: { fontSize: isMobile ? '16px' : '18px', fontWeight: '800', color: '#1e293b' },
+    oldPrice: { fontSize: '12px', color: '#94a3b8', textDecoration: 'line-through', marginBottom: '2px' },
+    actions: { display: 'flex', gap: '8px', alignItems: 'center', flexShrink: 0, marginRight: '0' },
     addToCartBtn: {
-      width: isMobile ? '28px' : '32px',
-      height: isMobile ? '28px' : '32px',
-      borderRadius: '8px',
-      backgroundColor: '#059669',
-      color: 'white',
-      border: 'none',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      cursor: 'pointer',
-      transition: 'all 0.2s',
-      flexShrink: 0,
+      width: '36px', height: '36px', borderRadius: '10px', backgroundColor: '#059669', color: 'white',
+      border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+      transition: 'all 0.2s', boxShadow: '0 4px 6px -1px rgba(5, 150, 105, 0.3)',
     },
     buyNowBtn: {
-      height: isMobile ? '28px' : '32px',
-      padding: isMobile ? '0 8px' : '0 10px',
-      borderRadius: '8px',
-      backgroundColor: '#f0fdf4',
-      color: '#059669',
-      border: '1px solid #d1fae5',
-      display: 'flex',
-      alignItems: 'center',
-      gap: '4px',
-      fontSize: isMobile ? '10px' : '11px',
-      fontWeight: '700',
-      cursor: 'pointer',
-      transition: 'all 0.2s',
-      whiteSpace: 'nowrap',
+      height: '36px', padding: '0 16px', borderRadius: '10px', backgroundColor: '#f0fdf4',
+      color: '#059669', border: '1px solid #d1fae5', display: 'flex', alignItems: 'center', gap: '6px',
+      fontSize: '12px', fontWeight: '700', cursor: 'pointer', transition: 'all 0.2s',
     },
     discountBadge: {
-      position: 'absolute',
-      top: isMobile ? '8px' : '12px',
-      left: isMobile ? '8px' : '12px',
-      backgroundColor: '#ef4444',
-      color: 'white',
-      fontSize: isMobile ? '10px' : '12px',
-      fontWeight: '700',
-      padding: isMobile ? '2px 6px' : '4px 8px',
-      borderRadius: '6px',
+      position: 'absolute', top: '12px', left: '12px', backgroundColor: '#dc2626', color: 'white',
+      fontSize: '11px', fontWeight: '700', padding: '4px 8px', borderRadius: '6px', zIndex: 3,
+      boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+    },
+    actionOverlay: {
+      position: 'absolute', top: '12px', right: '12px', display: 'flex', flexDirection: 'column', gap: '8px', zIndex: 10,
     },
     cardActionBtn: {
-      width: isMobile ? '28px' : '32px',
-      height: isMobile ? '28px' : '32px',
-      borderRadius: '50%',
-      backgroundColor: 'white',
-      border: 'none',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      cursor: 'pointer',
-      color: '#64748b',
-      transition: 'all 0.2s',
-      position: 'absolute',
-      right: isMobile ? '8px' : '12px',
-      zIndex: 2,
-      boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+      width: '32px', height: '32px', borderRadius: '50%', backgroundColor: 'white', border: '1px solid #e2e8f0',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#64748b',
+      transition: 'all 0.2s', boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
     },
   };
 
   return (
-    <div style={styles.card} onClick={() => navigate(`/product/${product.slug || product.id}`)}>
-      {/* Deal Badge - API'den gelen indirim bilgisi */}
+    <div
+      style={cardStyles.card}
+      onMouseEnter={(e) => {
+        if (!isMobile) {
+          e.currentTarget.style.transform = 'translateY(-5px)';
+          e.currentTarget.style.boxShadow = '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)';
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (!isMobile) {
+          e.currentTarget.style.transform = 'translateY(0)';
+          e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.05)';
+        }
+      }}
+    >
+      {/* Featured Deal Badge - API'den gelen kampanya bilgisi */}
       {product.has_deal && product.deal_badge && (
         <div style={{
-          ...styles.discountBadge,
-          backgroundColor: product.deal_badge.color || '#ef4444'
+          ...cardStyles.discountBadge,
+          backgroundColor: product.deal_badge.color || '#000000'
         }}>
           {product.deal_badge.text || `%${Math.round(product.discount_percentage)} İndirim`}
         </div>
       )}
       
-      {/* Eski discount alanı (geriye dönük uyumluluk için) */}
-      {!product.has_deal && product.discount && (
-        <div style={styles.discountBadge}>%{product.discount} İndirim</div>
+      {/* Eski discount alanı (geriye dönük uyumluluk) */}
+      {!product.has_deal && product.discount_percent > 0 && (
+        <div style={cardStyles.discountBadge}>%{product.discount_percent} İndirim</div>
       )}
       
-      {/* Action Buttons */}
-      <button 
-        style={{ ...styles.cardActionBtn, top: isMobile ? '8px' : '12px' }} 
-        onClick={handleToggleFavorite}
-        title={isFav ? "Favorilerden Çıkar" : "Favorilere Ekle"}
-      >
-        {isFav ? <FaHeart color="#ef4444" size={isMobile ? 12 : 14} /> : <FaRegHeart size={isMobile ? 12 : 14} />}
-      </button>
-      <button 
-        style={{ ...styles.cardActionBtn, top: isMobile ? '40px' : '52px' }} 
-        onClick={(e) => { e.stopPropagation(); setQuickViewProduct(product); }}
-        title="Hızlı Bakış"
-      >
-        <FaEye size={isMobile ? 12 : 14} />
-      </button>
-
-      {onToggleCompare && (
-        <button 
-          style={{ 
-            ...styles.cardActionBtn, 
-            top: isMobile ? '72px' : '92px',
-            backgroundColor: isCompared ? '#059669' : 'white',
-            color: isCompared ? 'white' : '#64748b'
-          }} 
-          onClick={(e) => { e.stopPropagation(); onToggleCompare(product); }}
-          title={isCompared ? "Karşılaştırmadan Çıkar" : "Karşılaştır"}
-        >
-          <FaExchangeAlt size={isMobile ? 12 : 14} />
+      <div style={cardStyles.actionOverlay}>
+        <button style={cardStyles.cardActionBtn} onClick={handleToggleFavorite} title="Favori">
+          {isFav ? <FaHeart color="#ef4444" size={14} /> : <FaRegHeart size={14} />}
         </button>
-      )}
+        <button style={cardStyles.cardActionBtn} onClick={handleQuickView} title="Hızlı Bakış">
+          <FaEye size={14} />
+        </button>
+        {onToggleCompare && (
+          <button 
+            style={{ 
+              ...cardStyles.cardActionBtn,
+              backgroundColor: isInCompareList ? '#059669' : 'white',
+              color: isInCompareList ? 'white' : '#64748b',
+              borderColor: isInCompareList ? '#059669' : '#e2e8f0'
+            }} 
+            onClick={handleToggleCompare} title="Karşılaştır"
+          >
+            <FaExchangeAlt size={14} />
+          </button>
+        )}
+      </div>
 
-      <img src={product.image} alt={product.name} style={styles.cardImage} />
-      <div style={styles.cardBody}>
-        <div style={styles.cardCategory}>
-          {typeof product.category === 'object' ? product.category?.name : product.category}
+      <Link to={productUrl} style={{ textDecoration: 'none', color: 'inherit' }}>
+        <img
+          src={product.image || 'https://via.placeholder.com/300?text=Urun'}
+          alt={product.name}
+          style={cardStyles.cardImage}
+        />
+      </Link>
+
+      <div style={cardStyles.cardBody}>
+        <div>
+          {/* GÜVENLİ KATEGORİ GÖSTERİMİ */}
+          <div style={cardStyles.cardCategory}>{getCategoryName()}</div>
+          
+          <Link to={productUrl} style={{ textDecoration: 'none', color: 'inherit' }}>
+            <h3 style={cardStyles.cardTitle}>{product.name}</h3>
+          </Link>
+
+          <div style={cardStyles.rating}>
+            {[...Array(5)].map((_, i) => {
+              const rating = parseFloat(product.rating || product.rating_avg || 0);
+              const isFilled = i < Math.floor(rating);
+              
+              return (
+                <FaStar 
+                  key={i} 
+                  color={isFilled ? '#f59e0b' : '#e2e8f0'} 
+                  size={12}
+                />
+              );
+            })}
+            <span style={{ color: '#1e293b', marginLeft: '4px', fontSize: '13px', fontWeight: '600' }}>
+              {parseFloat(product.rating || product.rating_avg || 0).toFixed(1)}
+            </span>
+            <span style={{ color: '#94a3b8', marginLeft: '4px', fontSize: '12px' }}>
+              ({product.review_count || product.reviews_count || 0})
+            </span>
+          </div>
         </div>
-        <h3 style={styles.cardTitle}>{product.name}</h3>
-        <div style={styles.rating}>
-          <FaStar size={isMobile ? 10 : 12} />
-          <span>{product.rating || 0}</span>
-          <span style={{ color: '#94a3b8' }}>({product.reviews || product.reviews_count || 0})</span>
-        </div>
-        <div style={styles.priceRow}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1, minWidth: 0 }}>
-            {/* Indirimli fiyat varsa orijinal fiyatı göster (üstü çizili) */}
+
+        <div style={cardStyles.priceRow}>
+          <div style={cardStyles.priceGroup}>
+            {/* Featured deal'den gelen orijinal fiyat (üstü çizili) */}
             {product.has_deal && product.original_price && (
-              <div style={{
-                fontSize: isMobile ? '11px' : '12px',
-                color: '#94a3b8',
-                textDecoration: 'line-through',
-                fontWeight: '500'
-              }}>
-                {new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(product.original_price)} TL
-              </div>
+              <span style={cardStyles.oldPrice}>{parseFloat(product.original_price).toLocaleString('tr-TR', { minimumFractionDigits: 2 })} TL</span>
             )}
-            {/* Güncel fiyat (indirimli veya normal) */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-              <div style={{
-                ...styles.price,
-                color: product.has_deal ? '#ef4444' : '#059669',
-                lineHeight: '1'
-              }}>
-                {new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(product.price)}
-              </div>
-              <div style={{ fontSize: isMobile ? '9px' : '10px', fontWeight: '600', color: '#94a3b8' }}>TL</div>
+            {/* Eski discount alanı için geriye dönük destek */}
+            {!product.has_deal && product.discount_percent > 0 && product.compare_at_price && (
+              <span style={cardStyles.oldPrice}>{parseFloat(product.compare_at_price).toLocaleString('tr-TR', { minimumFractionDigits: 2 })} TL</span>
+            )}
+            <div style={{
+              ...cardStyles.price,
+              color: product.has_deal ? '#ef4444' : '#1e293b'
+            }}>
+              {parseFloat(product.price || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2 })} TL
             </div>
           </div>
-          <div style={styles.actions}>
-            <button 
-              style={styles.addToCartBtn} 
-              title="Sepete Ekle"
-              onClick={handleAddToCart}
-            >
-              <FaShoppingCart size={isMobile ? 12 : 14} />
+          
+          <div style={cardStyles.actions}>
+            <button style={cardStyles.buyNowBtn} onClick={handleBuyNow} title="Hemen Satın Al">
+              <FaBolt size={12} />
+              <span style={{display: isMobile ? 'none' : 'inline'}}>Hemen Al</span>
             </button>
-            <button 
-              style={styles.buyNowBtn} 
-              title="Hemen Al"
-              onClick={handleBuyNow}
-            >
-              <FaBolt size={isMobile ? 10 : 12} />
-              <span>AL</span>
+            <button style={cardStyles.addToCartBtn} onClick={handleAddToCart} title="Sepete Ekle">
+              <FaShoppingCart size={14} />
             </button>
           </div>
         </div>

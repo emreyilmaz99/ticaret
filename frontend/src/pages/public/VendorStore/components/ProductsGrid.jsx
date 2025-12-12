@@ -1,6 +1,6 @@
 // src/pages/public/VendorStore/components/ProductsGrid.jsx
 import React from 'react';
-import ProductCard from './ProductCard';
+import { ProductCard } from '../../../../components/common/ProductCard';
 import { FaSpinner } from 'react-icons/fa';
 
 const ProductsGrid = ({ 
@@ -38,13 +38,17 @@ const ProductsGrid = ({
         ...styles.grid,
         gridTemplateColumns: isMobile 
           ? 'repeat(2, 1fr)' 
-          : 'repeat(auto-fill, minmax(220px, 1fr))',
+          : 'repeat(auto-fill, minmax(280px, 1fr))',
       }}>
         {products.map(product => (
           <ProductCard
             key={product.id}
             product={product}
+            viewMode="grid"
             onAddToCart={onAddToCart}
+            onQuickView={null}
+            isInCompareList={false}
+            onToggleCompare={null}
           />
         ))}
       </div>

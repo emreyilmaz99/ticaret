@@ -151,7 +151,12 @@ export const useVendorStore = () => {
   const reviewSummary = reviewsData?.summary || {
     average_rating: 0,
     total_reviews: 0,
-    distribution: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 }
+    rating_distribution: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 }
+  };
+  // Map rating_distribution to distribution for component compatibility
+  const formattedReviewSummary = {
+    ...reviewSummary,
+    distribution: reviewSummary.rating_distribution || { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 }
   };
 
   // Intersection Observer for infinite scroll
@@ -214,7 +219,7 @@ export const useVendorStore = () => {
     // Reviews
     reviews,
     reviewsLoading,
-    reviewSummary,
+    reviewSummary: formattedReviewSummary,
     reviewsSortBy,
     setReviewsSortBy,
     selectedRating,

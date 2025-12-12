@@ -21,22 +21,20 @@ class PublicVendorController extends Controller
             ->where('status', 'active')
             ->firstOrFail();
 
+        // Calculate review stats from all vendor's products
+        $allReviews = \App\Models\ProductReview::whereIn(
+            'product_id',
+            $vendor->products()->where('status', 'active')->pluck('id')
+        )->where('status', 'approved')->get();
+
+        $averageRating = round($allReviews->avg('rating') ?? 0, 1);
+        $totalReviews = $allReviews->count();
+
         // Calculate stats
         $stats = [
             'total_products' => $vendor->products()->where('status', 'active')->count(),
-            'total_reviews' => $vendor->products()
-                ->withCount(['reviews' => function ($query) {
-                    $query->where('status', 'approved');
-                }])
-                ->get()
-                ->sum('reviews_count'),
-            'average_rating' => round($vendor->products()
-                ->with(['reviews' => function ($query) {
-                    $query->where('status', 'approved');
-                }])
-                ->get()
-                ->flatMap->reviews
-                ->avg('rating') ?? 0, 1),
+            'total_reviews' => $totalReviews,
+            'average_rating' => $averageRating,
             'followers' => 0, // TODO: Implement followers if needed
         ];
 
@@ -45,13 +43,17 @@ class PublicVendorController extends Controller
             'data' => [
                 'vendor' => [
                     'id' => $vendor->id,
-                    'business_name' => $vendor->business_name,
+                    'name' => $vendor->name,
+                    'company_name' => $vendor->company_name,
+                    'business_name' => $vendor->business_name ?? $vendor->company_name,
                     'slug' => $vendor->slug,
                     'description' => $vendor->description,
                     'logo' => $vendor->logo ? url('/storage/' . $vendor->logo) : null,
                     'banner' => $vendor->banner ? url('/storage/' . $vendor->banner) : null,
                     'city' => $vendor->city,
                     'district' => $vendor->district,
+                    'rating_avg' => $averageRating,
+                    'review_count' => $totalReviews,
                     'created_at' => $vendor->created_at->format('Y-m-d'),
                 ],
                 'stats' => $stats,
@@ -162,8 +164,8 @@ class PublicVendorController extends Controller
                 'stock' => $totalStock,
                 'in_stock' => $totalStock > 0,
                 'image' => $this->formatImageUrl($mainPhoto),
-                'rating' => $product->rating_avg ?? 0,
-                'reviews_count' => $product->reviews_count ?? 0,
+                'rating_avg' => $product->average_rating ?? 0,
+                'review_count' => $product->review_count ?? 0,
                 'category' => $product->category ? [
                     'id' => $product->category->id,
                     'name' => $product->category->name,
