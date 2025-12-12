@@ -59,7 +59,7 @@ export const getStyles = () => ({
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     marginBottom: '24px',
-    background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
+    background: 'linear-gradient(135deg, #059669 0%, #3b82f6 100%)',
     padding: '28px 32px',
     borderRadius: '16px',
     border: '1px solid #e2e8f0',
@@ -69,14 +69,15 @@ export const getStyles = () => ({
   title: {
     fontSize: '26px',
     fontWeight: '800',
-    color: '#0f172a',
+    color: '#ffffff',
     letterSpacing: '-0.02em',
     margin: 0
   },
   subtitle: {
-    color: '#64748b',
+    color: '#ffffff',
     fontSize: '15px',
-    margin: '6px 0 0 0'
+    margin: '6px 0 0 0',
+    opacity: 0.9
   },
   headerActions: {
     display: 'flex',

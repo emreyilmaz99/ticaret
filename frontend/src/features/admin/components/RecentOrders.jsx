@@ -1,5 +1,6 @@
 import React from 'react';
 import { FaShoppingBag, FaUser, FaClock } from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom';
 
 const MOCK_ORDERS = [
   { id: '#SIP-1024', customer: 'Ahmet Yılmaz', amount: '₺1,250.00', status: 'completed', date: '2 dk önce' },
@@ -10,6 +11,12 @@ const MOCK_ORDERS = [
 ];
 
 export const RecentOrders = () => {
+  const navigate = useNavigate();
+
+  const handleViewAll = () => {
+    navigate('/admin/orders');
+  };
+
   const getStatusStyle = (status) => {
     const styles = {
       completed: { bg: '#dcfce7', color: '#166534', label: 'Tamamlandı' },
@@ -31,14 +38,17 @@ export const RecentOrders = () => {
     }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
         <h3 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--text-main)' }}>Son Siparişler</h3>
-        <button style={{ 
-          background: 'none', 
-          border: 'none', 
-          color: 'var(--primary)', 
-          fontWeight: '600', 
-          cursor: 'pointer',
-          fontSize: '14px'
-        }}>
+        <button 
+          onClick={handleViewAll}
+          style={{ 
+            background: 'none', 
+            border: 'none', 
+            color: 'var(--primary)', 
+            fontWeight: '600', 
+            cursor: 'pointer',
+            fontSize: '14px'
+          }}
+        >
           Tümünü Gör
         </button>
       </div>

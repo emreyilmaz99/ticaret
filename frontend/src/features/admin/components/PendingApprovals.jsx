@@ -1,5 +1,6 @@
 import React from 'react';
 import { FaCheck, FaTimes } from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom';
 
 const MOCK_PENDING_VENDORS = [
   { id: 1, name: 'Moda Dünyası', owner: 'Selin Kara', date: '27 Kas 2025' },
@@ -8,6 +9,12 @@ const MOCK_PENDING_VENDORS = [
 ];
 
 export const PendingApprovals = () => {
+  const navigate = useNavigate();
+
+  const handleViewAll = () => {
+    navigate('/admin/vendors');
+  };
+
   return (
     <div style={{ 
       backgroundColor: 'var(--bg-card)', 
@@ -81,19 +88,22 @@ export const PendingApprovals = () => {
         ))}
       </div>
       
-      <button style={{ 
-        width: '100%', 
-        marginTop: '16px', 
-        padding: '12px', 
-        backgroundColor: 'white', 
-        border: '1px solid #e2e8f0', 
-        borderRadius: '6px', 
-        color: 'var(--text-muted)', 
-        fontSize: '13px', 
-        fontWeight: '600',
-        cursor: 'pointer',
-        transition: 'all 0.2s'
-      }}>
+      <button 
+        onClick={handleViewAll}
+        style={{ 
+          width: '100%', 
+          marginTop: '16px', 
+          padding: '12px', 
+          backgroundColor: 'white', 
+          border: '1px solid #e2e8f0', 
+          borderRadius: '6px', 
+          color: 'var(--text-muted)', 
+          fontSize: '13px', 
+          fontWeight: '600',
+          cursor: 'pointer',
+          transition: 'all 0.2s'
+        }}
+      >
         Tüm Başvuruları Gör
       </button>
     </div>
