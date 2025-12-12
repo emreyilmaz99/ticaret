@@ -3,13 +3,26 @@
 namespace App\Services\Vendor;
 
 use App\Services\BaseService;
+use App\Services\OrderFinancialCalculator;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Vendor;
+use App\Traits\FormatsOrderData;
+use App\Traits\FormatsProductData;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 
 class VendorOrderService extends BaseService
 {
+    use FormatsOrderData, FormatsProductData;
+    
+    protected OrderFinancialCalculator $financialCalculator;
+    protected const STATS_CACHE_TTL = 900; // 15 minutes
+    
+    public function __construct(OrderFinancialCalculator $financialCalculator)
+    {
+        $this->financialCalculator = $financialCalculator;
+    }
     /**
      * Get vendor's orders with filtering and pagination
      */
@@ -75,7 +88,7 @@ class VendorOrderService extends BaseService
                         'name' => $order->user->name ?? 'Misafir',
                         'email' => $order->user->email ?? '',
                         'phone' => $order->shipping_address['phone'] ?? '',
-                        'avatar' => "https://ui-avatars.com/api/?name=" . urlencode($order->user->name ?? 'User') . "&background=random"
+                        'avatar' => $this->getCustomerAvatar($order->user->name ?? 'User')
                     ],
                     'vendor' => [
                         'name' => $vendor->company_name ?? 'Satıcı',
@@ -99,10 +112,8 @@ class VendorOrderService extends BaseService
                     'status' => $firstItem->status,
                     'items' => $items->count(),
                     'products' => $items->map(function ($item) use ($totalBeforeDiscount, $couponDiscount) {
-                        $imageUrl = 'https://via.placeholder.com/200';
-                        if ($item->product && $item->product->photos && $item->product->photos->isNotEmpty()) {
-                            $imageUrl = $item->product->photos->first()->url;
-                        }
+                        $mainPhoto = $item->product?->photos?->sortBy('sort_order')->first();
+                        $imageUrl = $this->formatImageUrl($mainPhoto) ?? 'https://via.placeholder.com/200';
 
                         return [
                             'id' => $item->product_id,
@@ -112,7 +123,7 @@ class VendorOrderService extends BaseService
                             'price' => (float) $item->unit_price,
                             'qty' => $item->quantity,
                             'image' => $imageUrl,
-                            'financials' => $this->calculateFinancials($item, $totalBeforeDiscount, $couponDiscount)
+                            'financials' => $this->financialCalculator->calculate($item, $totalBeforeDiscount, $couponDiscount)
                         ];
                     })->values()->toArray()
                 ];
@@ -128,14 +139,29 @@ class VendorOrderService extends BaseService
     }
 
     /**
-     * Get order statistics for vendor
+     * Get order statistics for vendor (cached)
      */
     public function getVendorOrderStats(int $vendorId)
     {
         try {
-            $totalOrders = OrderItem::where('vendor_id', $vendorId)
-                ->distinct('order_id')
-                ->count('order_id');
+            $cacheKey = "vendor:{$vendorId}:order_stats";
+            
+            return Cache::remember($cacheKey, self::STATS_CACHE_TTL, function () use ($vendorId) {
+                return $this->calculateVendorOrderStats($vendorId);
+            });
+        } catch (\Exception $e) {
+            return $this->handleException($e, 'İstatistikler getirilemedi');
+        }
+    }
+    
+    /**
+     * Calculate vendor order statistics
+     */
+    protected function calculateVendorOrderStats(int $vendorId)
+    {
+        $totalOrders = OrderItem::where('vendor_id', $vendorId)
+            ->distinct('order_id')
+            ->count('order_id');
 
             $pendingOrders = OrderItem::where('vendor_id', $vendorId)
                 ->where('status', OrderItem::STATUS_PENDING)
@@ -199,9 +225,7 @@ class VendorOrderService extends BaseService
                     ],
                 ]
             ]);
-        } catch (\Exception $e) {
-            return $this->handleException($e, 'İstatistikler getirilemedi');
-        }
+
     }
 
     /**
@@ -227,6 +251,9 @@ class VendorOrderService extends BaseService
             }
 
             $this->syncOrderStatus($orderId);
+            
+            // Clear stats cache
+            Cache::forget("vendor:{$vendorId}:order_stats");
 
             DB::commit();
 
@@ -296,82 +323,4 @@ class VendorOrderService extends BaseService
         return in_array($newStatus, $allowedTransitions[$currentStatus] ?? []);
     }
 
-    /**
-     * Format address for display
-     */
-    private function formatAddress(?array $address): string
-    {
-        if (!$address) return 'Adres bilgisi yok';
-
-        $parts = array_filter([
-            $address['address'] ?? '',
-            $address['district'] ?? '',
-            $address['city'] ?? '',
-            $address['country'] ?? 'Türkiye',
-        ]);
-
-        return implode(', ', $parts);
-    }
-
-    /**
-     * Get payment method label
-     */
-    private function getPaymentMethodLabel(Order $order): string
-    {
-        if (!empty($order->card_association)) {
-            return 'Kredi Kartı';
-        }
-
-        return 'Havale/EFT';
-    }
-
-    /**
-     * Calculate financial breakdown for an order item with coupon discount
-     * 
-     * Formula:
-     * - Original price = order_item.line_total
-     * - Coupon discount proportion = (item_price / total_price) * total_coupon_discount
-     * - Price after coupon = original_price - coupon_proportion
-     * - Price without tax = price_after_coupon / (1 + tax_rate/100)
-     * - Tax amount = price_after_coupon - price_without_tax
-     * - Commission = price_without_tax * (commission_rate/100)
-     * - Vendor earning = price_without_tax - commission
-     */
-    private function calculateFinancials(OrderItem $orderItem, float $totalBeforeDiscount = 0, float $totalCouponDiscount = 0): array
-    {
-        $originalPrice = (float) $orderItem->line_total; // Original price including tax
-        $taxRate = (float) ($orderItem->product?->taxClass?->rate ?? 0);
-        $commissionRate = (float) ($orderItem->product?->vendor?->commissionPlan?->rate ?? 0);
-        
-        // Calculate this item's share of the coupon discount
-        $itemCouponDiscount = 0;
-        if ($totalBeforeDiscount > 0 && $totalCouponDiscount > 0) {
-            $itemCouponDiscount = ($originalPrice / $totalBeforeDiscount) * $totalCouponDiscount;
-        }
-        
-        // Price after coupon discount
-        $priceAfterCoupon = $originalPrice - $itemCouponDiscount;
-        
-        // Calculate price without tax
-        $priceWithoutTax = $priceAfterCoupon / (1 + ($taxRate / 100));
-        
-        // Calculate tax amount
-        $taxAmount = $priceAfterCoupon - $priceWithoutTax;
-        
-        // Calculate commission (based on price without tax)
-        $commissionAmount = $priceWithoutTax * ($commissionRate / 100);
-        
-        // Calculate vendor earning
-        $vendorEarning = $priceWithoutTax - $commissionAmount;
-        
-        return [
-            'price_with_tax' => round($priceAfterCoupon, 2),
-            'price_without_tax' => round($priceWithoutTax, 2),
-            'tax_rate' => $taxRate,
-            'tax_amount' => round($taxAmount, 2),
-            'commission_rate' => $commissionRate,
-            'commission_amount' => round($commissionAmount, 2),
-            'vendor_earning' => round($vendorEarning, 2),
-        ];
-    }
 }

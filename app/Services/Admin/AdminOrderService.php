@@ -3,13 +3,44 @@
 namespace App\Services\Admin;
 
 use App\Services\BaseService;
+use App\Services\OrderFinancialCalculator;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\OrderNote;
+use App\Traits\FormatsOrderData;
+use App\Traits\FormatsProductData;
 use Illuminate\Support\Facades\DB;
 
 class AdminOrderService extends BaseService
 {
+    use FormatsOrderData, FormatsProductData;
+    
+    protected OrderFinancialCalculator $financialCalculator;
+    
+    public function __construct(OrderFinancialCalculator $financialCalculator)
+    {
+        $this->financialCalculator = $financialCalculator;
+    }
+    
+    /**
+     * Override payment method label to include card types
+     */
+    protected function getPaymentMethodLabel(Order $order): string
+    {
+        if (!empty($order->card_type)) {
+            $cardTypes = [
+                'CREDIT_CARD' => 'Kredi Kartı',
+                'DEBIT_CARD' => 'Banka Kartı',
+            ];
+            return $cardTypes[$order->card_type] ?? 'Kart';
+        }
+        
+        if (!empty($order->card_association)) {
+            return 'Kredi Kartı';
+        }
+
+        return 'Havale/EFT';
+    }
     /**
      * Get all orders with filtering and pagination
      */
@@ -109,7 +140,7 @@ class AdminOrderService extends BaseService
                         'name' => $order->user->name ?? 'Misafir',
                         'email' => $order->user->email ?? '',
                         'phone' => $order->shipping_address['phone'] ?? '',
-                        'avatar' => "https://ui-avatars.com/api/?name=" . urlencode($order->user->name ?? 'User') . "&background=random"
+                        'avatar' => $this->getCustomerAvatar($order->user->name ?? 'User')
                     ],
                     'vendors' => $vendors,
                     'shippingAddress' => $this->formatAddress($order->shipping_address),
@@ -139,10 +170,8 @@ class AdminOrderService extends BaseService
                         ];
                     })->toArray(),
                     'products' => $order->items->map(function ($item) use ($totalBeforeDiscount, $couponDiscount) {
-                        $imageUrl = 'https://via.placeholder.com/200';
-                        if ($item->product && $item->product->photos && $item->product->photos->isNotEmpty()) {
-                            $imageUrl = $item->product->photos->first()->url;
-                        }
+                        $mainPhoto = $item->product?->photos?->sortBy('sort_order')->first();
+                        $imageUrl = $this->formatImageUrl($mainPhoto) ?? 'https://via.placeholder.com/200';
 
                         return [
                             'id' => $item->product_id,
@@ -153,7 +182,7 @@ class AdminOrderService extends BaseService
                             'qty' => $item->quantity,
                             'image' => $imageUrl,
                             'vendor' => $item->product?->vendor?->company_name ?? 'Bilinmeyen',
-                            'financials' => $this->calculateFinancials($item, $totalBeforeDiscount, $couponDiscount)
+                            'financials' => $this->financialCalculator->calculate($item, $totalBeforeDiscount, $couponDiscount)
                         ];
                     })->values()->toArray()
                 ];
@@ -284,87 +313,6 @@ class AdminOrderService extends BaseService
             DB::rollBack();
             return $this->handleException($e, 'Sipariş iptal edilemedi');
         }
-    }
-
-    /**
-     * Format address for display
-     */
-    protected function formatAddress(?array $address): string
-    {
-        if (!$address) {
-            return 'Adres bilgisi yok';
-        }
-
-        $parts = array_filter([
-            $address['address'] ?? null,
-            $address['district'] ?? null,
-            $address['city'] ?? null,
-        ]);
-
-        return implode(', ', $parts);
-    }
-
-    /**
-     * Get payment method label
-     */
-    protected function getPaymentMethodLabel(Order $order): string
-    {
-        $cardTypes = [
-            'CREDIT_CARD' => 'Kredi Kartı',
-            'DEBIT_CARD' => 'Banka Kartı',
-        ];
-
-        return $cardTypes[$order->card_type] ?? 'Kart';
-    }
-
-    /**
-     * Calculate financial breakdown for an order item with coupon discount
-     * 
-     * Formula:
-     * - Original price = order_item.line_total
-     * - Coupon discount proportion = (item_price / total_price) * total_coupon_discount
-     * - Price after coupon = original_price - coupon_proportion
-     * - Price without tax = price_after_coupon / (1 + tax_rate/100)
-     * - Tax amount = price_after_coupon - price_without_tax
-     * - Commission = price_without_tax * (commission_rate/100)
-     * - Vendor earning = price_without_tax - commission
-     */
-    private function calculateFinancials(\App\Models\OrderItem $orderItem, float $totalBeforeDiscount = 0, float $totalCouponDiscount = 0): array
-    {
-        $originalPrice = (float) $orderItem->line_total; // Original price including tax
-        $taxRate = (float) ($orderItem->product?->taxClass?->rate ?? 0);
-        $commissionRate = (float) ($orderItem->product?->vendor?->commissionPlan?->rate ?? 0);
-        
-        // Calculate this item's share of the coupon discount
-        $itemCouponDiscount = 0;
-        if ($totalBeforeDiscount > 0 && $totalCouponDiscount > 0) {
-            $itemCouponDiscount = ($originalPrice / $totalBeforeDiscount) * $totalCouponDiscount;
-        }
-        
-        // Price after coupon discount
-        $priceAfterCoupon = $originalPrice - $itemCouponDiscount;
-        
-        // Calculate price without tax
-        $priceWithoutTax = $priceAfterCoupon / (1 + ($taxRate / 100));
-        
-        // Calculate tax amount
-        $taxAmount = $priceAfterCoupon - $priceWithoutTax;
-        
-        // Calculate commission (based on price without tax)
-        $commissionAmount = $priceWithoutTax * ($commissionRate / 100);
-        
-        // Vendor earning
-        $vendorEarning = $priceWithoutTax - $commissionAmount;
-        
-        return [
-            'price_with_tax' => round($priceAfterCoupon, 2),
-            'price_without_tax' => round($priceWithoutTax, 2),
-            'tax_rate' => $taxRate,
-            'tax_amount' => round($taxAmount, 2),
-            'commission_rate' => $commissionRate,
-            'commission_amount' => round($commissionAmount, 2),
-            'vendor_earning' => round($vendorEarning, 2),
-        ];
     }
 
     /**
