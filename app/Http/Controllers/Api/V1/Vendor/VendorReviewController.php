@@ -8,6 +8,7 @@ use App\Models\ProductReview;
 use App\Models\ReviewResponse;
 use App\Services\Review\VendorReviewResponseService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class VendorReviewController extends Controller
 {
@@ -50,9 +51,15 @@ class VendorReviewController extends Controller
         $vendor = $request->user();
         $productIds = $vendor->products()->pluck('id');
 
+        Log::info('Vendor Reviews Debug', [
+            'vendor_id' => $vendor->id,
+            'product_ids' => $productIds->toArray(),
+            'product_count' => $productIds->count(),
+        ]);
+
         $query = ProductReview::whereIn('product_id', $productIds)
-            ->approved()
-            ->with(['user', 'product', 'media', 'response']);
+            ->where('status', 'approved')
+            ->with(['user', 'product.photos', 'media', 'response']);
 
         // Filter by response status
         if ($request->has('has_response')) {
@@ -103,6 +110,11 @@ class VendorReviewController extends Controller
 
         $reviews = $query->paginate($request->integer('per_page', 20));
 
+        Log::info('Vendor Reviews Result', [
+            'total_reviews' => $reviews->total(),
+            'current_page' => $reviews->currentPage(),
+        ]);
+
         return response()->json([
             'success' => true,
             'data' => $reviews,
@@ -117,11 +129,23 @@ class VendorReviewController extends Controller
     {
         $vendor = $request->user();
 
+        Log::info('Store Response Request', [
+            'vendor_id' => $vendor->id,
+            'review_id' => $reviewId,
+            'request_data' => $request->all(),
+            'response_text' => $request->input('response_text'),
+        ]);
+
         $result = $this->responseService->createResponse(
             $vendor,
             $reviewId,
             $request->input('response_text')
         );
+
+        Log::info('Store Response Result', [
+            'success' => $result->isSuccess(),
+            'message' => $result->getMessage(),
+        ]);
 
         return response()->json([
             'success' => $result->isSuccess(),

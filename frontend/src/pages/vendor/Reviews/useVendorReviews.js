@@ -52,7 +52,12 @@ export const useVendorReviews = () => {
     refetch: refetchReviews,
   } = useQuery({
     queryKey: ['vendorReviews', buildQueryParams()],
-    queryFn: () => vendorReviewService.getAllReviews(buildQueryParams()),
+    queryFn: async () => {
+      const response = await vendorReviewService.getAllReviews(buildQueryParams());
+      console.log('Vendor Reviews API Response:', response);
+      console.log('Response data:', response.data);
+      return response;
+    },
     staleTime: 30000,
     keepPreviousData: true, // Keep previous data while fetching new data
   });
@@ -66,8 +71,8 @@ export const useVendorReviews = () => {
 
   // Store Response Mutation
   const storeResponseMutation = useMutation({
-    mutationFn: ({ reviewId, comment }) => 
-      vendorReviewService.storeResponse(reviewId, { comment }),
+    mutationFn: ({ reviewId, response_text }) => 
+      vendorReviewService.storeResponse(reviewId, { response_text }),
     onSuccess: () => {
       toast.success('Yanıtınız başarıyla gönderildi');
       queryClient.invalidateQueries(['vendorReviews']);
@@ -117,7 +122,7 @@ export const useVendorReviews = () => {
       toast.error('Lütfen bir yanıt yazın');
       return;
     }
-    storeResponseMutation.mutate({ reviewId, comment: replyText.trim() });
+    storeResponseMutation.mutate({ reviewId, response_text: replyText.trim() });
   }, [replyText, storeResponseMutation]);
 
   const handleDeleteResponse = useCallback((responseId) => {
@@ -135,7 +140,10 @@ export const useVendorReviews = () => {
   }, []);
 
   // Computed values
-  const reviews = reviewsData?.data?.data || [];
+  const reviews = Array.isArray(reviewsData?.data?.data) 
+    ? reviewsData.data.data 
+    : [];
+  
   const pagination = {
     currentPage: reviewsData?.data?.current_page || 1,
     totalPages: reviewsData?.data?.last_page || 1,

@@ -64,10 +64,11 @@ const VendorReviewsPage = () => {
     );
   };
 
-  const getMediaUrl = (path) => {
-    if (!path) return '';
-    if (path.startsWith('http')) return path;
-    return `${import.meta.env.VITE_API_URL?.replace('/api', '')}/storage/${path}`;
+  const getMediaUrl = (pathOrUrl) => {
+    if (!pathOrUrl) return '/placeholder.jpg';
+    if (pathOrUrl.startsWith('http')) return pathOrUrl;
+    const baseUrl = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://127.0.0.1:8000';
+    return `${baseUrl}/storage/${pathOrUrl}`;
   };
 
   if (reviewsLoading) {
@@ -218,7 +219,7 @@ const VendorReviewsPage = () => {
       </div>
 
       {/* Reviews List */}
-      {reviews.length === 0 ? (
+      {!reviews || reviews.length === 0 ? (
         <div style={styles.emptyStateContainer}>
           <div style={styles.emptyState}>
             <FaCommentDots style={styles.emptyIcon} />
@@ -230,7 +231,7 @@ const VendorReviewsPage = () => {
         </div>
       ) : (
         <div style={styles.reviewsList}>
-          {reviews.map((review) => (
+          {Array.isArray(reviews) && reviews.map((review) => (
             <div key={review.id} style={styles.reviewCard}>
               {/* Review Header */}
               <div style={styles.reviewHeader}>
@@ -264,19 +265,22 @@ const VendorReviewsPage = () => {
               </div>
 
               {/* Product Info */}
-              <div style={styles.reviewProduct}>
-                <img
-                  src={getMediaUrl(review.product?.main_photo) || '/placeholder.jpg'}
-                  alt={review.product?.name}
-                  style={styles.reviewProductImage}
-                />
-                <div style={styles.reviewProductInfo}>
-                  <div style={styles.reviewProductName}>{review.product?.name}</div>
-                  <div style={styles.reviewProductMeta}>
-                    <FaStore size={10} /> Ürün ID: {review.product_id}
+              {review.product && (
+                <div style={styles.reviewProduct}>
+                  <img
+                    src={review.product.image || review.product.main_photo || '/placeholder.jpg'}
+                    alt={review.product?.name || 'Ürün'}
+                    style={styles.reviewProductImage}
+                    onError={(e) => { e.target.src = '/placeholder.jpg'; }}
+                  />
+                  <div style={styles.reviewProductInfo}>
+                    <div style={styles.reviewProductName}>{review.product?.name}</div>
+                    <div style={styles.reviewProductMeta}>
+                      <FaStore size={10} /> Ürün ID: {review.product_id}
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
 
               {/* Review Content */}
               <div style={styles.reviewContent}>
@@ -293,7 +297,7 @@ const VendorReviewsPage = () => {
                     <div
                       key={idx}
                       style={styles.reviewMediaItem}
-                      onClick={() => handleOpenLightbox(getMediaUrl(media.path || media.url))}
+                      onClick={() => handleOpenLightbox(media.url || getMediaUrl(media.path))}
                     >
                       {(media.type === 'video' || media.media_type === 'video') ? (
                         <div style={{ position: 'relative', width: '100%', height: '100%', backgroundColor: '#1f2937', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -301,7 +305,7 @@ const VendorReviewsPage = () => {
                         </div>
                       ) : (
                         <img
-                          src={getMediaUrl(media.path || media.url)}
+                          src={media.url || getMediaUrl(media.path)}
                           alt={`Review media ${idx + 1}`}
                           style={styles.reviewMediaImage}
                         />

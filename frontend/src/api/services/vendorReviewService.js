@@ -7,20 +7,20 @@ export const vendorReviewService = {
   getAllReviews: async (params = {}) => {
     const queryString = new URLSearchParams(params).toString();
     const response = await axios.get(`/v1/vendor/reviews?${queryString}`);
-    return response;
+    return response.data;
   },
 
   // Get reviews for a specific product
   getProductReviews: async (productId, params = {}) => {
     const queryString = new URLSearchParams(params).toString();
     const response = await axios.get(`/v1/vendor/products/${productId}/reviews?${queryString}`);
-    return response;
+    return response.data;
   },
 
   // Get review stats
   getStats: async () => {
     const response = await axios.get('/v1/vendor/review-stats');
-    return response;
+    return response.data;
   },
 
   // Store a response to a review

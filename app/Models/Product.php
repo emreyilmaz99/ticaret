@@ -28,6 +28,29 @@ class Product extends Model
         // Removed: 'settings' => 'array', 'metadata' => 'array'
     ];
 
+    protected $appends = [
+        'image',
+    ];
+
+    /**
+     * Get main product image URL
+     */
+    public function getImageAttribute(): ?string
+    {
+        // Use already loaded photos relation if available
+        if ($this->relationLoaded('photos')) {
+            $mainPhoto = $this->photos->sortBy('sort_order')->first();
+        } else {
+            $mainPhoto = $this->photos()->orderBy('sort_order')->first();
+        }
+        
+        if ($mainPhoto) {
+            // Return file_path accessor which handles URL generation
+            return $mainPhoto->file_path;
+        }
+        return null;
+    }
+
     public function vendor()
     {
         return $this->belongsTo(Vendor::class);

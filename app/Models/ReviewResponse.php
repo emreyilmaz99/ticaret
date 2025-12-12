@@ -17,6 +17,16 @@ class ReviewResponse extends Model
         'response_text',
     ];
 
+    protected $appends = ['response'];
+
+    /**
+     * Accessor for response field (alias for response_text)
+     */
+    public function getResponseAttribute(): ?string
+    {
+        return $this->response_text;
+    }
+
     /**
      * Relationships
      */
