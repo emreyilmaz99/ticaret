@@ -45,13 +45,11 @@ const AdminSidebar = () => {
   const getLinkStyle = (path, isHovered) => {
     const isActive = location.pathname === path;
     return {
-      color: isActive ? 'white' : isHovered ? '#a7f3d0' : '#94a3b8',
+      color: isActive ? 'white' : '#94a3b8',
       backgroundColor: isActive 
         ? 'linear-gradient(135deg, #059669 0%, #047857 100%)' 
-        : isHovered 
-          ? 'rgba(16, 185, 129, 0.1)' 
-          : 'transparent',
-      background: isActive ? 'linear-gradient(135deg, #059669 0%, #047857 100%)' : isHovered ? 'rgba(16, 185, 129, 0.1)' : 'transparent',
+        : 'transparent',
+      background: isActive ? 'linear-gradient(135deg, #059669 0%, #047857 100%)' : 'transparent',
       textDecoration: 'none',
       display: 'flex',
       alignItems: 'center',
@@ -64,7 +62,7 @@ const AdminSidebar = () => {
       position: 'relative',
       overflow: 'hidden',
       boxShadow: isActive ? '0 4px 12px rgba(5, 150, 105, 0.3)' : 'none',
-      transform: isHovered && !isActive ? 'translateX(4px)' : 'translateX(0)',
+      transform: 'translateX(0)',
     };
   };
 
@@ -86,21 +84,15 @@ const AdminSidebar = () => {
   };
 
   const MenuItem = ({ item }) => {
-    const isHovered = hoveredItem === item.path;
     const Icon = item.icon;
     
     return (
       <Link 
         to={item.path} 
-        style={getLinkStyle(item.path, isHovered)}
-        onMouseEnter={() => setHoveredItem(item.path)}
-        onMouseLeave={() => setHoveredItem(null)}
+        style={getLinkStyle(item.path, false)}
       >
         {getActiveIndicator(item.path)}
-        <Icon size={18} style={{ 
-          transition: 'transform 0.2s ease',
-          transform: isHovered ? 'scale(1.1)' : 'scale(1)'
-        }} />
+        <Icon size={18} />
         <span>{item.label}</span>
         {location.pathname === item.path && (
           <div style={{

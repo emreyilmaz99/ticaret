@@ -5,11 +5,11 @@ import PageHeader from '../../components/admin/PageHeader';
 
 const AdminsPage = () => {
   return (
-    <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+    <div style={{ padding: '32px', backgroundColor: '#F3F4F6', minHeight: '100vh' }}>
       <PageHeader
         icon={FaUserShield}
-        title="Yöneticiler"
-        subtitle="Sistem yöneticilerini ve yetkilerini buradan yönetebilirsiniz."
+        title="Kullanıcılar"
+        subtitle="Sistemdeki kayıtlı kullanıcıları görüntüleyin ve yönetin."
       />
       
       <AdminList />

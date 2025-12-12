@@ -59,14 +59,13 @@ export const DashboardStats = () => {
     <div>
       {/* ÜST BİLGİ KARTI */}
       <div style={{ 
-        backgroundColor: 'var(--primary)', 
-        color: 'white',
+        backgroundColor: '#ffffff', 
+        color: '#0f172a',
         padding: '28px 32px', 
         borderRadius: '16px', 
         marginBottom: '32px',
-        backgroundImage: 'linear-gradient(135deg, var(--primary) 0%, #4338ca 100%)',
-        boxShadow: '0 10px 15px -3px rgba(79, 70, 229, 0.3)',
-        border: '1px solid rgba(255, 255, 255, 0.1)',
+        boxShadow: 'none',
+        border: '1px solid #e2e8f0',
       }}>
         <h1 style={{ 
           fontSize: '26px', 
@@ -74,13 +73,14 @@ export const DashboardStats = () => {
           marginBottom: '6px',
           letterSpacing: '-0.02em',
           margin: 0,
+          color: '#0f172a',
         }}>
           Hoş Geldin, {admin?.name} 👋
         </h1>
         <p style={{ 
-          opacity: 0.9, 
           fontSize: '15px',
           margin: '6px 0 0 0',
+          color: '#64748b',
         }}>
           Bugün mağazanda neler olup bittiğine bir göz atalım.
         </p>
