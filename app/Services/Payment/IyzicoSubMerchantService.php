@@ -222,17 +222,17 @@ class IyzicoSubMerchantService extends BaseService
     protected function buildCreateRequest(Vendor $vendor): CreateSubMerchantRequest
     {
         $request = new CreateSubMerchantRequest();
-        $request->setLocale(Locale::TR);
-        $request->setConversationId($this->utility->generateConversationId());
+        
+        // Set common fields
+        $this->setCommonRequestFields($request, $vendor);
+        
+        // Set create-specific fields
         $request->setSubMerchantExternalId((string) $vendor->id);
         $request->setSubMerchantType($this->getSubMerchantType($vendor->merchant_type));
         $request->setAddress($this->getVendorAddress($vendor));
-        $request->setEmail($vendor->email);
-        $request->setGsmNumber($this->utility->formatPhoneNumber($vendor->phone));
-        $request->setName($vendor->company_name ?? $vendor->name);
         $request->setIban($this->getVendorIban($vendor));
-        $request->setCurrency(Currency::TL);
 
+        // Set merchant type specific fields
         $this->setMerchantTypeFields($request, $vendor);
 
         return $request;
@@ -244,24 +244,22 @@ class IyzicoSubMerchantService extends BaseService
     protected function buildUpdateRequest(Vendor $vendor): UpdateSubMerchantRequest
     {
         $request = new UpdateSubMerchantRequest();
-        $request->setLocale(Locale::TR);
-        $request->setConversationId($this->utility->generateConversationId());
+        
+        // Set common fields
+        $this->setCommonRequestFields($request, $vendor);
+        
+        // Set update-specific fields
         $request->setSubMerchantKey($vendor->iyzico_submerchant_key);
         
         if ($address = $this->getVendorAddress($vendor)) {
             $request->setAddress($address);
         }
         
-        $request->setEmail($vendor->email);
-        $request->setGsmNumber($this->utility->formatPhoneNumber($vendor->phone));
-        $request->setName($vendor->company_name ?? $vendor->name);
-        
         if ($iban = $this->getVendorIban($vendor)) {
             $request->setIban($iban);
         }
-        
-        $request->setCurrency(Currency::TL);
 
+        // Set merchant type specific fields
         $this->setMerchantTypeFieldsForUpdate($request, $vendor);
 
         return $request;
@@ -272,34 +270,12 @@ class IyzicoSubMerchantService extends BaseService
      */
     protected function setMerchantTypeFields(CreateSubMerchantRequest $request, Vendor $vendor): void
     {
-        switch ($vendor->merchant_type) {
-            case 'personal':
-                if (empty($vendor->identity_number)) {
-                    throw new \Exception('TC Kimlik numarası gereklidir');
-                }
-                $request->setIdentityNumber($vendor->identity_number);
-                $request->setContactName($vendor->contact_name ?? '');
-                $request->setContactSurname($vendor->contact_surname ?? '');
-                break;
-
-            case 'private_company':
-                if (empty($vendor->identity_number) || empty($vendor->tax_office) || empty($vendor->legal_company_title)) {
-                    throw new \Exception('TC Kimlik, vergi dairesi ve yasal şirket ünvanı gereklidir');
-                }
-                $request->setIdentityNumber($vendor->identity_number);
-                $request->setTaxOffice($vendor->tax_office);
-                $request->setLegalCompanyTitle($vendor->legal_company_title);
-                break;
-
-            case 'limited_company':
-                if (empty($vendor->tax_id) || empty($vendor->tax_office) || empty($vendor->legal_company_title)) {
-                    throw new \Exception('Vergi numarası, vergi dairesi ve yasal şirket ünvanı gereklidir');
-                }
-                $request->setTaxNumber($vendor->tax_id);
-                $request->setTaxOffice($vendor->tax_office);
-                $request->setLegalCompanyTitle($vendor->legal_company_title);
-                break;
-        }
+        match ($vendor->merchant_type) {
+            'personal' => $this->setPersonalFields($request, $vendor),
+            'private_company' => $this->setPrivateCompanyFields($request, $vendor),
+            'limited_company' => $this->setLimitedCompanyFields($request, $vendor),
+            default => null,
+        };
     }
 
     /**
@@ -307,19 +283,12 @@ class IyzicoSubMerchantService extends BaseService
      */
     protected function setMerchantTypeFieldsForUpdate(UpdateSubMerchantRequest $request, Vendor $vendor): void
     {
-        if ($vendor->merchant_type === 'personal') {
-            if ($vendor->identity_number) $request->setIdentityNumber($vendor->identity_number);
-            if ($vendor->contact_name) $request->setContactName($vendor->contact_name);
-            if ($vendor->contact_surname) $request->setContactSurname($vendor->contact_surname);
-        } elseif ($vendor->merchant_type === 'private_company') {
-            if ($vendor->identity_number) $request->setIdentityNumber($vendor->identity_number);
-            if ($vendor->tax_office) $request->setTaxOffice($vendor->tax_office);
-            if ($vendor->legal_company_title) $request->setLegalCompanyTitle($vendor->legal_company_title);
-        } elseif ($vendor->merchant_type === 'limited_company') {
-            if ($vendor->tax_id) $request->setTaxNumber($vendor->tax_id);
-            if ($vendor->tax_office) $request->setTaxOffice($vendor->tax_office);
-            if ($vendor->legal_company_title) $request->setLegalCompanyTitle($vendor->legal_company_title);
-        }
+        match ($vendor->merchant_type) {
+            'personal' => $this->setPersonalFieldsForUpdate($request, $vendor),
+            'private_company' => $this->setPrivateCompanyFieldsForUpdate($request, $vendor),
+            'limited_company' => $this->setLimitedCompanyFieldsForUpdate($request, $vendor),
+            default => null,
+        };
     }
 
     /**
@@ -349,6 +318,132 @@ class IyzicoSubMerchantService extends BaseService
         }
 
         return $bankAccount?->iban;
+    }
+
+    // ==================== Helper Methods ====================
+
+    /**
+     * Set common fields for both create and update requests
+     */
+    protected function setCommonRequestFields($request, Vendor $vendor): void
+    {
+        $request->setLocale(Locale::TR);
+        $request->setConversationId($this->utility->generateConversationId());
+        $request->setEmail($vendor->email);
+        $request->setGsmNumber($this->utility->formatPhoneNumber($vendor->phone));
+        $request->setName($vendor->company_name ?? $vendor->name);
+        $request->setCurrency(Currency::TL);
+    }
+
+    /**
+     * Validate personal merchant type fields
+     */
+    protected function validatePersonalFields(Vendor $vendor): void
+    {
+        if (empty($vendor->identity_number)) {
+            throw new \Exception('TC Kimlik numarası gereklidir');
+        }
+    }
+
+    /**
+     * Validate private company merchant type fields
+     */
+    protected function validatePrivateCompanyFields(Vendor $vendor): void
+    {
+        if (empty($vendor->identity_number) || empty($vendor->tax_office) || empty($vendor->legal_company_title)) {
+            throw new \Exception('TC Kimlik, vergi dairesi ve yasal şirket ünvanı gereklidir');
+        }
+    }
+
+    /**
+     * Validate limited company merchant type fields
+     */
+    protected function validateLimitedCompanyFields(Vendor $vendor): void
+    {
+        if (empty($vendor->tax_id) || empty($vendor->tax_office) || empty($vendor->legal_company_title)) {
+            throw new \Exception('Vergi numarası, vergi dairesi ve yasal şirket ünvanı gereklidir');
+        }
+    }
+
+    /**
+     * Set personal merchant type fields for create
+     */
+    protected function setPersonalFields(CreateSubMerchantRequest $request, Vendor $vendor): void
+    {
+        $this->validatePersonalFields($vendor);
+        $request->setIdentityNumber($vendor->identity_number);
+        $request->setContactName($vendor->contact_name ?? '');
+        $request->setContactSurname($vendor->contact_surname ?? '');
+    }
+
+    /**
+     * Set private company merchant type fields for create
+     */
+    protected function setPrivateCompanyFields(CreateSubMerchantRequest $request, Vendor $vendor): void
+    {
+        $this->validatePrivateCompanyFields($vendor);
+        $request->setIdentityNumber($vendor->identity_number);
+        $request->setTaxOffice($vendor->tax_office);
+        $request->setLegalCompanyTitle($vendor->legal_company_title);
+    }
+
+    /**
+     * Set limited company merchant type fields for create
+     */
+    protected function setLimitedCompanyFields(CreateSubMerchantRequest $request, Vendor $vendor): void
+    {
+        $this->validateLimitedCompanyFields($vendor);
+        $request->setTaxNumber($vendor->tax_id);
+        $request->setTaxOffice($vendor->tax_office);
+        $request->setLegalCompanyTitle($vendor->legal_company_title);
+    }
+
+    /**
+     * Set personal merchant type fields for update
+     */
+    protected function setPersonalFieldsForUpdate(UpdateSubMerchantRequest $request, Vendor $vendor): void
+    {
+        if ($vendor->identity_number) {
+            $request->setIdentityNumber($vendor->identity_number);
+        }
+        if ($vendor->contact_name) {
+            $request->setContactName($vendor->contact_name);
+        }
+        if ($vendor->contact_surname) {
+            $request->setContactSurname($vendor->contact_surname);
+        }
+    }
+
+    /**
+     * Set private company merchant type fields for update
+     */
+    protected function setPrivateCompanyFieldsForUpdate(UpdateSubMerchantRequest $request, Vendor $vendor): void
+    {
+        if ($vendor->identity_number) {
+            $request->setIdentityNumber($vendor->identity_number);
+        }
+        if ($vendor->tax_office) {
+            $request->setTaxOffice($vendor->tax_office);
+        }
+        if ($vendor->legal_company_title) {
+            $request->setLegalCompanyTitle($vendor->legal_company_title);
+        }
+    }
+
+    /**
+     * Set limited company merchant type fields for update
+     */
+    protected function setLimitedCompanyFieldsForUpdate(UpdateSubMerchantRequest $request, Vendor $vendor): void
+    {
+        if ($vendor->tax_id) {
+            $request->setTaxNumber($vendor->tax_id);
+        }
+        if ($vendor->tax_office) {
+            $request->setTaxOffice($vendor->tax_office);
+        }
+        if ($vendor->legal_company_title) {
+            $request->setLegalCompanyTitle($vendor->legal_company_title);
+        }
     }
 
     /**
