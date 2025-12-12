@@ -29,67 +29,18 @@ class PublicProductService extends BaseService
                 ->where('status', 'active')
                 ->whereHas('vendor', fn($q) => $q->where('status', 'active'));
 
-            // Category filter
-            if ($request->filled('category_id')) {
-                $categoryId = $request->category_id;
-                $categoryIds = Category::where('id', $categoryId)
-                    ->orWhere('parent_id', $categoryId)
-                    ->pluck('id');
-                $query->whereIn('category_id', $categoryIds);
-            }
-
-            if ($request->filled('category_slug')) {
-                $category = Category::where('slug', $request->category_slug)->first();
-                if ($category) {
-                    $categoryIds = Category::where('id', $category->id)
-                        ->orWhere('parent_id', $category->id)
-                        ->pluck('id');
-                    $query->whereIn('category_id', $categoryIds);
-                }
-            }
-
-            // Price filter
-            if ($request->filled('min_price')) {
-                $query->whereHas('variants', fn($q) => $q->where('price', '>=', $request->min_price));
-            }
-            if ($request->filled('max_price')) {
-                $query->whereHas('variants', fn($q) => $q->where('price', '<=', $request->max_price));
-            }
+            // Apply filters
+            $this->applyCategoryFilter($query, $request);
+            $this->applyPriceFilter($query, $request);
+            $this->applySearchFilter($query, $request);
 
             // Featured filter
             if ($request->boolean('is_featured')) {
                 $query->where('is_featured', true);
             }
 
-            // Search
-            if ($request->filled('search')) {
-                $search = $request->search;
-                $query->where(function($q) use ($search) {
-                    $q->where('name', 'like', "%{$search}%")
-                      ->orWhere('short_description', 'like', "%{$search}%");
-                });
-            }
-
-            // Sorting
-            $sortBy = $request->get('sort_by', 'created_at');
-            $sortOrder = $request->get('sort_order', 'desc');
-
-            switch ($sortBy) {
-                case 'price_asc':
-                    $query->orderByRaw('(SELECT MIN(price) FROM product_variants WHERE product_variants.product_id = products.id) ASC');
-                    break;
-                case 'price_desc':
-                    $query->orderByRaw('(SELECT MIN(price) FROM product_variants WHERE product_variants.product_id = products.id) DESC');
-                    break;
-                case 'name':
-                    $query->orderBy('name', $sortOrder);
-                    break;
-                case 'featured':
-                    $query->orderBy('is_featured', 'desc')->orderBy('created_at', 'desc');
-                    break;
-                default:
-                    $query->orderBy('created_at', 'desc');
-            }
+            // Apply sorting
+            $this->applySorting($query, $request);
 
             $perPage = min($request->get('per_page', self::DEFAULT_PER_PAGE), self::MAX_PER_PAGE);
             $products = $query->paginate($perPage);
@@ -174,27 +125,7 @@ class PublicProductService extends BaseService
                 ->limit($limit)
                 ->get();
 
-            $transformed = $relatedProducts->map(function ($p) {
-                $mainPhoto = $p->photos->sortBy('sort_order')->first();
-                $featuredDeal = $p->activeFeaturedDeal;
-                $minPrice = $p->variants->min('price');
-                $displayPrice = $featuredDeal ? $featuredDeal->deal_price : $minPrice;
-                $originalPrice = $featuredDeal ? $featuredDeal->original_price : null;
-
-                return [
-                    'id' => $p->id,
-                    'name' => $p->name,
-                    'slug' => $p->slug,
-                    'category' => $p->category?->name,
-                    'price' => $displayPrice,
-                    'original_price' => $originalPrice,
-                    'has_deal' => $featuredDeal !== null,
-                    'discount_percentage' => $featuredDeal?->discount_percentage,
-                    'image' => $this->formatImageUrl($mainPhoto),
-                    'rating' => $p->rating_avg ?? 0,
-                    'reviews_count' => $p->reviews_count ?? 0,
-                ];
-            });
+            $transformed = $relatedProducts->map(fn($p) => $this->transformProductForCard($p));
 
             return $this->successResponse([
                 'products' => $transformed,
@@ -223,30 +154,9 @@ class PublicProductService extends BaseService
                     ->get();
 
                 return $products->map(function ($product) {
-                    $mainPhoto = $product->photos->sortBy('sort_order')->first();
-                    $featuredDeal = $product->activeFeaturedDeal;
-                    $minPrice = $product->variants->min('price');
-                    $displayPrice = $featuredDeal ? $featuredDeal->deal_price : $minPrice;
-                    $originalPrice = $featuredDeal ? $featuredDeal->original_price : null;
-
-                    return [
-                        'id' => $product->id,
-                        'name' => $product->name,
-                        'slug' => $product->slug,
-                        'category' => $product->category?->name,
-                        'price' => $displayPrice,
-                        'original_price' => $originalPrice,
-                        'has_deal' => $featuredDeal !== null,
-                        'discount_percentage' => $featuredDeal?->discount_percentage,
-                        'deal_badge' => $featuredDeal ? [
-                            'text' => $featuredDeal->badge_text,
-                            'color' => $featuredDeal->badge_color,
-                        ] : null,
-                        'image' => $this->formatImageUrl($mainPhoto),
-                        'is_featured' => true,
-                        'rating' => $product->rating_avg ?? 0,
-                        'reviews_count' => $product->reviews_count ?? 0,
-                    ];
+                    $cardData = $this->transformProductForCard($product);
+                    $cardData['is_featured'] = true;
+                    return $cardData;
                 });
             });
 
@@ -329,34 +239,10 @@ class PublicProductService extends BaseService
         $displayPrice = $featuredDeal ? $featuredDeal->deal_price : $minPrice;
         $originalPrice = $featuredDeal ? $featuredDeal->original_price : null;
 
-        // Build breadcrumb
-        $breadcrumb = [];
-        if ($product->category) {
-            if ($product->category->parent) {
-                $breadcrumb[] = [
-                    'name' => $product->category->parent->name,
-                    'slug' => $product->category->parent->slug,
-                ];
-            }
-            $breadcrumb[] = [
-                'name' => $product->category->name,
-                'slug' => $product->category->slug,
-            ];
-        }
-
-        // Parse metadata into key-value pairs for specs
-        $specifications = [];
-        foreach ($product->productMetadata as $meta) {
-            $specifications[$meta->meta_key] = $meta->meta_value;
-        }
-
-        // Parse product settings
-        $productSettings = [];
-        foreach ($product->settings as $setting) {
-            $productSettings[$setting->setting_key] = $setting->setting_value;
-        }
-
-        // Get vendor info
+        // Use helper methods
+        $breadcrumb = $this->buildBreadcrumb($product->category);
+        $specifications = $this->parseMetadataToArray($product->productMetadata);
+        $productSettings = $this->parseSettingsToArray($product->settings);
         $vendorData = $this->buildVendorData($product);
 
         return [
@@ -445,8 +331,8 @@ class PublicProductService extends BaseService
         
         // Get vendor description from metadata
         if ($vendor->metadata) {
-            $descMeta = $vendor->metadata->where('meta_key', 'description')->first();
-            $vendorDescription = $descMeta ? $descMeta->meta_value : null;
+            $metadataArray = $this->parseMetadataToArray($vendor->metadata);
+            $vendorDescription = $metadataArray['description'] ?? null;
         }
 
         return [
@@ -487,6 +373,162 @@ class PublicProductService extends BaseService
             ] : null,
             'attributes' => $variant->variantMetadata->pluck('meta_value', 'meta_key')->toArray(),
         ];
+    }
+
+    // ==================== Helper Methods ====================
+
+    /**
+     * Apply category filter to query
+     */
+    protected function applyCategoryFilter($query, Request $request): void
+    {
+        if ($request->filled('category_id')) {
+            $categoryId = $request->category_id;
+            $categoryIds = Category::where('id', $categoryId)
+                ->orWhere('parent_id', $categoryId)
+                ->pluck('id');
+            $query->whereIn('category_id', $categoryIds);
+        }
+
+        if ($request->filled('category_slug')) {
+            $category = Category::where('slug', $request->category_slug)->first();
+            if ($category) {
+                $categoryIds = Category::where('id', $category->id)
+                    ->orWhere('parent_id', $category->id)
+                    ->pluck('id');
+                $query->whereIn('category_id', $categoryIds);
+            }
+        }
+    }
+
+    /**
+     * Apply price filter to query
+     */
+    protected function applyPriceFilter($query, Request $request): void
+    {
+        if ($request->filled('min_price')) {
+            $query->whereHas('variants', fn($q) => $q->where('price', '>=', $request->min_price));
+        }
+        if ($request->filled('max_price')) {
+            $query->whereHas('variants', fn($q) => $q->where('price', '<=', $request->max_price));
+        }
+    }
+
+    /**
+     * Apply search filter to query
+     */
+    protected function applySearchFilter($query, Request $request): void
+    {
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('short_description', 'like', "%{$search}%");
+            });
+        }
+    }
+
+    /**
+     * Apply sorting to query
+     */
+    protected function applySorting($query, Request $request): void
+    {
+        $sortBy = $request->get('sort_by', 'created_at');
+        $sortOrder = $request->get('sort_order', 'desc');
+
+        switch ($sortBy) {
+            case 'price_asc':
+                $query->orderByRaw('(SELECT MIN(price) FROM product_variants WHERE product_variants.product_id = products.id) ASC');
+                break;
+            case 'price_desc':
+                $query->orderByRaw('(SELECT MIN(price) FROM product_variants WHERE product_variants.product_id = products.id) DESC');
+                break;
+            case 'name':
+                $query->orderBy('name', $sortOrder);
+                break;
+            case 'featured':
+                $query->orderBy('is_featured', 'desc')->orderBy('created_at', 'desc');
+                break;
+            default:
+                $query->orderBy('created_at', 'desc');
+        }
+    }
+
+    /**
+     * Transform product for card view (list/featured/related)
+     */
+    protected function transformProductForCard(Product $product): array
+    {
+        $mainPhoto = $product->photos->sortBy('sort_order')->first();
+        $featuredDeal = $product->activeFeaturedDeal;
+        $minPrice = $product->variants->min('price');
+        $displayPrice = $featuredDeal ? $featuredDeal->deal_price : $minPrice;
+        $originalPrice = $featuredDeal ? $featuredDeal->original_price : null;
+
+        return [
+            'id' => $product->id,
+            'name' => $product->name,
+            'slug' => $product->slug,
+            'category' => $product->category?->name,
+            'price' => $displayPrice,
+            'original_price' => $originalPrice,
+            'has_deal' => $featuredDeal !== null,
+            'discount_percentage' => $featuredDeal?->discount_percentage,
+            'deal_badge' => $featuredDeal ? [
+                'text' => $featuredDeal->badge_text,
+                'color' => $featuredDeal->badge_color,
+            ] : null,
+            'image' => $this->formatImageUrl($mainPhoto),
+            'rating' => $product->rating_avg ?? 0,
+            'reviews_count' => $product->reviews_count ?? 0,
+        ];
+    }
+
+    /**
+     * Build breadcrumb for product
+     */
+    protected function buildBreadcrumb($category): array
+    {
+        $breadcrumb = [];
+        
+        if ($category) {
+            if ($category->parent) {
+                $breadcrumb[] = [
+                    'name' => $category->parent->name,
+                    'slug' => $category->parent->slug,
+                ];
+            }
+            $breadcrumb[] = [
+                'name' => $category->name,
+                'slug' => $category->slug,
+            ];
+        }
+        
+        return $breadcrumb;
+    }
+
+    /**
+     * Parse metadata collection to key-value array
+     */
+    protected function parseMetadataToArray($metadata): array
+    {
+        $result = [];
+        foreach ($metadata as $meta) {
+            $result[$meta->meta_key] = $meta->meta_value;
+        }
+        return $result;
+    }
+
+    /**
+     * Parse settings collection to key-value array
+     */
+    protected function parseSettingsToArray($settings): array
+    {
+        $result = [];
+        foreach ($settings as $setting) {
+            $result[$setting->setting_key] = $setting->setting_value;
+        }
+        return $result;
     }
 
     /**
