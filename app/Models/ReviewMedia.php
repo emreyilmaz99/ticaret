@@ -23,6 +23,10 @@ class ReviewMedia extends Model
         'sort_order' => 'integer',
     ];
 
+    protected $appends = [
+        'url',
+    ];
+
     /**
      * Relationship
      */

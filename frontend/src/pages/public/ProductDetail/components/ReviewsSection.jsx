@@ -129,6 +129,15 @@ const ReviewsSection = ({ productId, productName, styles: parentStyles }) => {
   const summary = summaryData?.data || { total_reviews: 0, average_rating: 0, rating_breakdown: {} };
   const canReview = canReviewData?.canReview || false;
 
+  // Debug logging
+  React.useEffect(() => {
+    if (reviewsData) {
+      console.log('Reviews API Response:', reviewsData);
+      console.log('Extracted reviews:', reviews);
+      console.log('Reviews count:', reviews.length);
+    }
+  }, [reviewsData, reviews]);
+
   // Calculate rating percentages
   const ratingPercentages = useMemo(() => {
     const total = summary.total_reviews || 1;
@@ -741,17 +750,17 @@ const ReviewsSection = ({ productId, productName, styles: parentStyles }) => {
       {/* Summary Section */}
       <div style={styles.summarySection}>
         <div style={styles.averageRating}>
-          <div style={styles.averageNumber}>{summary.average_rating || '0.0'}</div>
+          <div style={styles.averageNumber}>{parseFloat(summary.average_rating || 0).toFixed(1)}</div>
           <div style={styles.averageStars}>
             {[1, 2, 3, 4, 5].map((star) => (
               <FaStar
                 key={star}
                 size={18}
-                color={star <= Math.round(summary.average_rating) ? '#f59e0b' : '#e5e7eb'}
+                color={star <= Math.floor(summary.average_rating || 0) ? '#f59e0b' : '#e5e7eb'}
               />
             ))}
           </div>
-          <div style={styles.totalReviews}>{summary.total_reviews} değerlendirme</div>
+          <div style={styles.totalReviews}>{summary.total_reviews || 0} değerlendirme</div>
         </div>
 
         <div style={styles.ratingBars}>
@@ -1036,6 +1045,9 @@ const ReviewsSection = ({ productId, productName, styles: parentStyles }) => {
                       color={star <= review.rating ? '#f59e0b' : '#e5e7eb'}
                     />
                   ))}
+                  <span style={{ marginLeft: '6px', fontSize: '13px', fontWeight: '600', color: '#1e293b' }}>
+                    {review.rating.toFixed(1)}
+                  </span>
                 </div>
               </div>
 

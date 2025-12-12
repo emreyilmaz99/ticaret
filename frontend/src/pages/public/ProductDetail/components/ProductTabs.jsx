@@ -35,7 +35,7 @@ const ProductTabs = ({
           style={styles.tab(activeTab === 'reviews')}
           onClick={() => setActiveTab('reviews')}
         >
-          Değerlendirmeler ({product.reviews_count || 0})
+          Değerlendirmeler ({product.review_count || product.reviews_count || 0})
         </button>
       </div>
 

@@ -169,7 +169,7 @@ class ReviewService extends BaseService
     /**
      * Get product reviews with filters
      */
-    public function getProductReviews(int $productId, array $filters = []): ServiceResponse
+    public function getProductReviews(string|int $productId, array $filters = []): ServiceResponse
     {
         try {
             $query = ProductReview::with(['user', 'media', 'response.vendor'])
@@ -177,19 +177,20 @@ class ReviewService extends BaseService
                 ->approved();
 
             // Filter by rating
-            if (isset($filters['rating'])) {
+            if (isset($filters['rating']) && $filters['rating'] > 0) {
                 $query->where('rating', $filters['rating']);
             }
 
             // Sort
-            $sort = $filters['sort'] ?? 'recent';
+            $sort = $filters['sort_by'] ?? $filters['sort'] ?? 'recent';
             if ($sort === 'rating') {
                 $query->orderBy('rating', 'desc');
             } else {
                 $query->orderBy('created_at', 'desc');
             }
 
-            $reviews = $query->paginate(20);
+            $perPage = $filters['per_page'] ?? 20;
+            $reviews = $query->paginate($perPage);
 
             return $this->successResponse($reviews);
 
