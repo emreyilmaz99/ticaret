@@ -101,6 +101,11 @@ class Vendor extends Authenticatable
         return $this->belongsTo(CommissionPlan::class);
     }
 
+    public function products()
+    {
+        return $this->hasMany(Product::class);
+    }
+
     public function addresses()
     {
         return $this->hasMany(\App\Models\VendorAddress::class);

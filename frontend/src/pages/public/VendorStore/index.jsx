@@ -106,7 +106,7 @@ const VendorStore = () => {
                 isMobile={isMobile}
                 showMobileFilters={showMobileFilters}
                 onCloseMobile={() => setShowMobileFilters(false)}
-                availableCategories={availableCategories}
+                categories={categories}
                 selectedCategory={selectedCategory}
                 setSelectedCategory={setSelectedCategory}
                 priceRange={priceRange}

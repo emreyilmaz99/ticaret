@@ -34,7 +34,7 @@ use App\Http\Controllers\Api\V1\User\UserAddressController;
 use App\Http\Controllers\Api\V1\User\UserReviewController;
 
 // Public controllers
-use App\Http\Controllers\Api\V1\Public\VendorController as PublicVendorController;
+use App\Http\Controllers\Api\V1\Public\PublicVendorController;
 use App\Http\Controllers\Api\V1\Public\VendorApplicationController as PublicVendorApplicationController;
 use App\Http\Controllers\Api\V1\Admin\VendorApplicationController as AdminVendorApplicationController;
 use App\Http\Controllers\Api\V1\Public\ProductController as PublicProductController;

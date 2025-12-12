@@ -6,7 +6,7 @@ const FilterSidebar = ({
   isMobile,
   showMobileFilters,
   onCloseMobile,
-  availableCategories = [],
+  categories = [],
   selectedCategory,
   setSelectedCategory,
   priceRange,
@@ -60,7 +60,7 @@ const FilterSidebar = ({
               setLocalPriceMax={setLocalPriceMax}
               selectedCategory={selectedCategory}
               setSelectedCategory={setSelectedCategory}
-              availableCategories={availableCategories}
+              categories={categories}
               styles={styles}
             />
           </div>
@@ -87,7 +87,7 @@ const FilterSidebar = ({
           setLocalPriceMax={setLocalPriceMax}
           selectedCategory={selectedCategory}
           setSelectedCategory={setSelectedCategory}
-          availableCategories={availableCategories}
+          categories={categories}
           styles={styles}
         />
       </aside>
@@ -109,7 +109,7 @@ const FilterContent = ({
   setLocalPriceMax,
   selectedCategory,
   setSelectedCategory,
-  availableCategories,
+  categories,
   styles
 }) => {
   return (
@@ -153,11 +153,11 @@ const FilterContent = ({
             />
             <span style={styles.categoryLabel}>Tüm Ürünler</span>
           </label>
-          {availableCategories.length === 0 ? (
+          {categories.length === 0 ? (
             <div style={{ padding: '12px', color: '#9CA3AF', fontSize: '14px' }}>
               Kategoriler yükleniyor...
             </div>
-          ) : availableCategories.map(category => (
+          ) : categories.map(category => (
             <label key={category.id} style={styles.categoryItem}>
               <input
                 type="radio"

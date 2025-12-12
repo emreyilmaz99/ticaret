@@ -116,6 +116,9 @@ export const useVendorStore = () => {
       if (debouncedPriceRange.min) params.append('min_price', debouncedPriceRange.min);
       if (debouncedPriceRange.max) params.append('max_price', debouncedPriceRange.max);
       
+      // For deals tab, only show discounted products
+      if (activeTab === 'deals') params.append('has_discount', '1');
+      
       const response = await api.get(`/v1/vendors/${slug}/products?${params}`);
       return response.data;
     },

@@ -31,11 +31,12 @@ const ProductCard = ({ product, onAddToCart }) => {
   }, []);
 
   const getImageUrl = () => {
-    if (product.image) return product.image;
-    if (product.photos && product.photos.length > 0) {
-      const photo = product.photos[0];
-      return photo.url || (photo.path?.startsWith('http') ? photo.path : `http://127.0.0.1:8000/storage/${photo.path}`);
+    // Backend returns full URL with /storage/ path
+    if (product.image) {
+      return product.image;
     }
+    
+    // Fallback to placeholder
     return 'https://via.placeholder.com/300x300?text=Ürün';
   };
 
@@ -82,10 +83,9 @@ const ProductCard = ({ product, onAddToCart }) => {
     }).format(price || 0);
   };
 
-  const hasDiscount = product.compare_at_price && product.compare_at_price > product.price;
-  const discountPercentage = hasDiscount 
-    ? Math.round((1 - product.price / product.compare_at_price) * 100)
-    : 0;
+  // Use backend-provided discount info
+  const hasDiscount = product.has_deal && product.original_price;
+  const discountPercentage = product.discount_percentage || 0;
 
   // Kategori ismini güvenli alma
   const getCategoryName = () => {
@@ -268,8 +268,13 @@ const ProductCard = ({ product, onAddToCart }) => {
       }}
     >
       {/* Discount Badge */}
-      {hasDiscount && (
-        <div style={cardStyles.discountBadge}>%{discountPercentage} İndirim</div>
+      {hasDiscount && product.deal_badge && (
+        <div style={{
+          ...cardStyles.discountBadge,
+          backgroundColor: product.deal_badge.color || '#dc2626'
+        }}>
+          {product.deal_badge.text || `%${discountPercentage} İndirim`}
+        </div>
       )}
       
       {/* Action Overlay */}
@@ -308,8 +313,8 @@ const ProductCard = ({ product, onAddToCart }) => {
 
         <div style={cardStyles.priceRow}>
           <div style={cardStyles.priceGroup}>
-            {hasDiscount && (
-              <span style={cardStyles.oldPrice}>{formatPrice(product.compare_at_price)} TL</span>
+            {hasDiscount && product.original_price && (
+              <span style={cardStyles.oldPrice}>{formatPrice(product.original_price)} TL</span>
             )}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
               <div style={{

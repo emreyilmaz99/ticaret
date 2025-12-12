@@ -23,8 +23,8 @@ import {
 const VendorHomePage = ({ vendor, stats, products, onAddToCart, isMobile, setActiveTab }) => {
   // En çok satan ürünler (ilk 4)
   const featuredProducts = products?.slice(0, 4) || [];
-  // İndirimli ürünler
-  const discountedProducts = products?.filter(p => p.compare_at_price > p.price)?.slice(0, 4) || [];
+  // İndirimli ürünler - backend'den gelen has_deal ve original_price kontrolü
+  const discountedProducts = products?.filter(p => p.has_deal && p.original_price)?.slice(0, 4) || [];
 
   return (
     <div style={styles.container}>
@@ -197,12 +197,12 @@ const VendorHomePage = ({ vendor, stats, products, onAddToCart, isMobile, setAct
 const ProductCard = ({ product, onAddToCart, showDiscount }) => {
   const [isFavorite, setIsFavorite] = React.useState(false);
   const price = parseFloat(product.price || 0);
-  const compareAtPrice = parseFloat(product.compare_at_price || 0);
-  const discount = compareAtPrice > price
-    ? Math.round((1 - price / compareAtPrice) * 100)
-    : 0;
+  // Use backend-provided discount info
+  const hasDiscount = product.has_deal && product.original_price;
+  const discount = product.discount_percentage || 0;
 
-  const mainImage = product.photos?.[0]?.url || product.thumbnail || '/placeholder-product.png';
+  // Backend returns full URL in 'image' field
+  const mainImage = product.image || '/placeholder-product.png';
   const categoryName = product.category?.name || '';
 
   // 5 yıldız gösterimi
@@ -239,7 +239,7 @@ const ProductCard = ({ product, onAddToCart, showDiscount }) => {
       </div>
 
       {/* İndirim Rozeti */}
-      {showDiscount && discount > 0 && (
+      {showDiscount && hasDiscount && discount > 0 && (
         <div style={styles.discountBadge}>%{discount}</div>
       )}
 
@@ -276,6 +276,11 @@ const ProductCard = ({ product, onAddToCart, showDiscount }) => {
         {/* Fiyat & Butonlar */}
         <div style={styles.productPriceRow}>
           <div style={styles.priceWrapper}>
+            {hasDiscount && product.original_price && (
+              <span style={styles.oldPrice}>
+                {parseFloat(product.original_price).toLocaleString('tr-TR', { minimumFractionDigits: 2 })} TL
+              </span>
+            )}
             <span style={styles.productPrice}>
               {price.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
             </span>
@@ -566,6 +571,12 @@ const styles = {
     gap: '2px',
     flex: '1',
     minWidth: 0,
+  },
+  oldPrice: {
+    fontSize: '12px',
+    fontWeight: '500',
+    color: '#94a3b8',
+    textDecoration: 'line-through',
   },
   productPrice: {
     fontSize: '16px',
