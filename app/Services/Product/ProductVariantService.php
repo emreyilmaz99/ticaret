@@ -151,26 +151,7 @@ class ProductVariantService extends BaseService
      */
     public function incrementStock(int $variantId, int $amount): ProductVariant
     {
-        $this->validateStockAmount($amount, self::MAX_STOCK_AMOUNT);
-        
-        $variant = $this->validateVariant($variantId);
-        $newStock = $this->calculateNewStock($variant->stock, $amount, 'increment');
-        
-        $this->validateStockAmount($newStock, self::MAX_STOCK_AMOUNT);
-
-        $updatedVariant = $this->variantRepo->update($variantId, ['stock' => $newStock]);
-
-        // Clear variants cache
-        Cache::forget($this->getVariantsCacheKey($variant->product_id));
-
-        Log::info('Stock incremented', [
-            'variant_id' => $variantId,
-            'amount' => $amount,
-            'old_stock' => $variant->stock,
-            'new_stock' => $newStock
-        ]);
-
-        return $updatedVariant;
+        return $this->updateStockOperation($variantId, $amount, 'increment');
     }
 
     /**
@@ -178,19 +159,75 @@ class ProductVariantService extends BaseService
      */
     public function decrementStock(int $variantId, int $amount): ProductVariant
     {
+        return $this->updateStockOperation($variantId, $amount, 'decrement');
+    }
+
+    // ==================== Helper Methods ====================
+
+    /**
+     * Delete variants that are not in the keep list
+     */
+    protected function deleteRemovedVariants($existing, array $keepIds): int
+    {
+        $deletedCount = 0;
+        foreach ($existing as $variant) {
+            if (!in_array($variant->id, $keepIds)) {
+                $this->variantRepo->delete($variant->id);
+                $deletedCount++;
+            }
+        }
+        return $deletedCount;
+    }
+
+    /**
+     * Process variant updates and creations
+     */
+    protected function processVariantUpdates(int $productId, array $variants): array
+    {
+        $createdCount = 0;
+        $updatedCount = 0;
+        
+        foreach ($variants as $variantData) {
+            if (isset($variantData['id'])) {
+                // Update existing
+                $this->variantRepo->update($variantData['id'], $variantData);
+                $updatedCount++;
+            } else {
+                // Create new
+                $this->createVariant($productId, $variantData);
+                $createdCount++;
+            }
+        }
+        
+        return ['created' => $createdCount, 'updated' => $updatedCount];
+    }
+
+    /**
+     * Update stock with operation (increment/decrement)
+     */
+    protected function updateStockOperation(int $variantId, int $amount, string $operation): ProductVariant
+    {
         $this->validateStockAmount($amount, self::MAX_STOCK_AMOUNT);
-        
         $variant = $this->validateVariant($variantId);
-        $this->validateSufficientStock($variant, $amount);
         
-        $newStock = $this->calculateNewStock($variant->stock, $amount, 'decrement');
+        // Decrement-specific validation
+        if ($operation === 'decrement') {
+            $this->validateSufficientStock($variant, $amount);
+        }
+        
+        $newStock = $this->calculateNewStock($variant->stock, $amount, $operation);
+        
+        // Increment-specific validation
+        if ($operation === 'increment') {
+            $this->validateStockAmount($newStock, self::MAX_STOCK_AMOUNT);
+        }
 
         $updatedVariant = $this->variantRepo->update($variantId, ['stock' => $newStock]);
 
         // Clear variants cache
         Cache::forget($this->getVariantsCacheKey($variant->product_id));
 
-        Log::info('Stock decremented', [
+        Log::info('Stock ' . $operation . 'ed', [
             'variant_id' => $variantId,
             'amount' => $amount,
             'old_stock' => $variant->stock,
@@ -211,35 +248,18 @@ class ProductVariantService extends BaseService
                 
                 // Delete variants not in the list
                 $existing = $this->variantRepo->listByProduct($productId);
-                $deletedCount = 0;
-                foreach ($existing as $variant) {
-                    if (!in_array($variant->id, $keepIds)) {
-                        $this->variantRepo->delete($variant->id);
-                        $deletedCount++;
-                    }
-                }
+                $deletedCount = $this->deleteRemovedVariants($existing, $keepIds);
 
-                $createdCount = 0;
-                $updatedCount = 0;
-                foreach ($variants as $variantData) {
-                    if (isset($variantData['id'])) {
-                        // Update existing
-                        $this->variantRepo->update($variantData['id'], $variantData);
-                        $updatedCount++;
-                    } else {
-                        // Create new
-                        $this->createVariant($productId, $variantData);
-                        $createdCount++;
-                    }
-                }
+                // Process updates and creations
+                $stats = $this->processVariantUpdates($productId, $variants);
 
                 // Clear variants cache
                 Cache::forget($this->getVariantsCacheKey($productId));
 
                 Log::info('Variants synced', [
                     'product_id' => $productId,
-                    'created' => $createdCount,
-                    'updated' => $updatedCount,
+                    'created' => $stats['created'],
+                    'updated' => $stats['updated'],
                     'deleted' => $deletedCount
                 ]);
             });
