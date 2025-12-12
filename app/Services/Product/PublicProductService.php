@@ -6,10 +6,19 @@ use App\Core\ServiceResponse;
 use App\Models\Category;
 use App\Models\Product;
 use App\Services\BaseService;
+use App\Traits\FormatsProductData;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class PublicProductService extends BaseService
 {
+    use FormatsProductData;
+    
+    protected const LOW_STOCK_THRESHOLD = 5;
+    protected const DEFAULT_PER_PAGE = 12;
+    protected const MAX_PER_PAGE = 50;
+    protected const FEATURED_CACHE_TTL = 900; // 15 minutes
+    protected const CATEGORIES_CACHE_TTL = 3600; // 1 hour
     /**
      * Get public product listing with filters
      */
@@ -82,7 +91,7 @@ class PublicProductService extends BaseService
                     $query->orderBy('created_at', 'desc');
             }
 
-            $perPage = min($request->get('per_page', 12), 50);
+            $perPage = min($request->get('per_page', self::DEFAULT_PER_PAGE), self::MAX_PER_PAGE);
             $products = $query->paginate($perPage);
 
             $transformedProducts = $products->getCollection()->map(function ($product) {
@@ -153,7 +162,7 @@ class PublicProductService extends BaseService
             
             $limit = min($limit, 12);
 
-            $relatedProducts = Product::with(['variants', 'photos', 'category'])
+            $relatedProducts = Product::with(['variants', 'photos', 'category', 'activeFeaturedDeal'])
                 ->where('status', 'active')
                 ->where('id', '!=', $product->id)
                 ->where(function($q) use ($product) {
@@ -166,17 +175,24 @@ class PublicProductService extends BaseService
                 ->get();
 
             $transformed = $relatedProducts->map(function ($p) {
-                $minPrice = $p->variants->min('price');
                 $mainPhoto = $p->photos->sortBy('sort_order')->first();
+                $featuredDeal = $p->activeFeaturedDeal;
+                $minPrice = $p->variants->min('price');
+                $displayPrice = $featuredDeal ? $featuredDeal->deal_price : $minPrice;
+                $originalPrice = $featuredDeal ? $featuredDeal->original_price : null;
 
                 return [
                     'id' => $p->id,
                     'name' => $p->name,
                     'slug' => $p->slug,
                     'category' => $p->category?->name,
-                    'price' => $minPrice,
-                    'image' => $mainPhoto ? (filter_var($mainPhoto->url, FILTER_VALIDATE_URL) ? $mainPhoto->url : url($mainPhoto->url ?? 'storage/' . $mainPhoto->path)) : null,
-                    'rating' => 4.5,
+                    'price' => $displayPrice,
+                    'original_price' => $originalPrice,
+                    'has_deal' => $featuredDeal !== null,
+                    'discount_percentage' => $featuredDeal?->discount_percentage,
+                    'image' => $this->formatImageUrl($mainPhoto),
+                    'rating' => $p->rating_avg ?? 0,
+                    'reviews_count' => $p->reviews_count ?? 0,
                 ];
             });
 
@@ -189,36 +205,49 @@ class PublicProductService extends BaseService
     }
 
     /**
-     * Get featured products
+     * Get featured products (cached)
      */
     public function getFeaturedProducts(int $limit = 8): ServiceResponse
     {
         try {
             $limit = min($limit, 20);
+            $cacheKey = "featured_products:{$limit}";
 
-            $products = Product::with(['variants', 'photos', 'category'])
-                ->where('status', 'active')
-                ->where('is_featured', true)
-                ->whereHas('vendor', fn($q) => $q->where('status', 'active'))
-                ->orderBy('created_at', 'desc')
-                ->limit($limit)
-                ->get();
+            $transformedProducts = Cache::remember($cacheKey, self::FEATURED_CACHE_TTL, function () use ($limit) {
+                $products = Product::with(['variants', 'photos', 'category', 'activeFeaturedDeal'])
+                    ->where('status', 'active')
+                    ->where('is_featured', true)
+                    ->whereHas('vendor', fn($q) => $q->where('status', 'active'))
+                    ->orderBy('created_at', 'desc')
+                    ->limit($limit)
+                    ->get();
 
-            $transformedProducts = $products->map(function ($product) {
-                $minPrice = $product->variants->min('price');
-                $mainPhoto = $product->photos->sortBy('sort_order')->first();
+                return $products->map(function ($product) {
+                    $mainPhoto = $product->photos->sortBy('sort_order')->first();
+                    $featuredDeal = $product->activeFeaturedDeal;
+                    $minPrice = $product->variants->min('price');
+                    $displayPrice = $featuredDeal ? $featuredDeal->deal_price : $minPrice;
+                    $originalPrice = $featuredDeal ? $featuredDeal->original_price : null;
 
-                return [
-                    'id' => $product->id,
-                    'name' => $product->name,
-                    'slug' => $product->slug,
-                    'category' => $product->category?->name,
-                    'price' => $minPrice,
-                    'image' => $mainPhoto ? (filter_var($mainPhoto->url, FILTER_VALIDATE_URL) ? $mainPhoto->url : url($mainPhoto->url ?? 'storage/' . $mainPhoto->path)) : null,
-                    'is_featured' => true,
-                    'rating' => 4.5,
-                    'reviews_count' => 0,
-                ];
+                    return [
+                        'id' => $product->id,
+                        'name' => $product->name,
+                        'slug' => $product->slug,
+                        'category' => $product->category?->name,
+                        'price' => $displayPrice,
+                        'original_price' => $originalPrice,
+                        'has_deal' => $featuredDeal !== null,
+                        'discount_percentage' => $featuredDeal?->discount_percentage,
+                        'deal_badge' => $featuredDeal ? [
+                            'text' => $featuredDeal->badge_text,
+                            'color' => $featuredDeal->badge_color,
+                        ] : null,
+                        'image' => $this->formatImageUrl($mainPhoto),
+                        'is_featured' => true,
+                        'rating' => $product->rating_avg ?? 0,
+                        'reviews_count' => $product->reviews_count ?? 0,
+                    ];
+                });
             });
 
             return $this->successResponse([
@@ -275,12 +304,12 @@ class PublicProductService extends BaseService
             ] : null,
             'stock' => $totalStock,
             'in_stock' => $totalStock > 0,
-            'image' => $mainPhoto ? (filter_var($mainPhoto->url, FILTER_VALIDATE_URL) ? $mainPhoto->url : url($mainPhoto->url ?? 'storage/' . $mainPhoto->path)) : null,
-            'images' => $product->photos->sortBy('sort_order')->map(fn($p) => filter_var($p->url, FILTER_VALIDATE_URL) ? $p->url : url($p->url ?? 'storage/' . $p->path))->values(),
+            'image' => $this->formatImageUrl($mainPhoto),
+            'images' => $product->photos->sortBy('sort_order')->map(fn($p) => $this->formatImageUrl($p))->filter()->values(),
             'is_featured' => $product->is_featured,
             'variants_count' => $product->variants->count(),
-            'rating' => 4.5, // TODO: Implement ratings
-            'reviews_count' => 0, // TODO: Implement reviews
+            'rating' => $product->rating_avg ?? 0,
+            'reviews_count' => $product->reviews_count ?? 0,
             'created_at' => $product->created_at,
         ];
     }
@@ -293,8 +322,7 @@ class PublicProductService extends BaseService
         $minPrice = $product->variants->min('price');
         $maxPrice = $product->variants->max('price');
         $totalStock = $product->variants->sum('stock');
-        $lowStockThreshold = 5;
-        $showLowStockWarning = $totalStock > 0 && $totalStock <= $lowStockThreshold;
+        $showLowStockWarning = $totalStock > 0 && $totalStock <= self::LOW_STOCK_THRESHOLD;
 
         // Get active featured deal (eager loaded)
         $featuredDeal = $product->activeFeaturedDeal;
@@ -367,12 +395,12 @@ class PublicProductService extends BaseService
             'stock' => $totalStock,
             'in_stock' => $totalStock > 0,
             'low_stock_warning' => $showLowStockWarning,
-            'variants' => $product->variants->map(fn($v) => $this->transformVariant($v, $lowStockThreshold)),
+            'variants' => $product->variants->map(fn($v) => $this->transformVariant($v)),
             'images' => $product->photos->sortBy('sort_order')->map(fn($p) => [
                 'id' => $p->id,
-                'url' => filter_var($p->url, FILTER_VALIDATE_URL) ? $p->url : url($p->url ?? 'storage/' . $p->path),
+                'url' => $this->formatImageUrl($p),
                 'alt' => $p->alt,
-            ])->values(),
+            ])->filter(fn($img) => $img['url'] !== null)->values(),
             'tags' => $product->tags->map(fn($t) => [
                 'id' => $t->id,
                 'name' => $t->name,
@@ -381,8 +409,8 @@ class PublicProductService extends BaseService
             'specifications' => $specifications,
             'settings' => $productSettings,
             'is_featured' => $product->is_featured,
-            'rating' => 4.5,
-            'reviews_count' => 0,
+            'rating' => $product->rating_avg ?? 0,
+            'reviews_count' => $product->reviews_count ?? 0,
             'created_at' => $product->created_at,
         ];
     }
@@ -404,10 +432,10 @@ class PublicProductService extends BaseService
         // Get vendor media
         if ($vendor->media) {
             $logoMedia = $vendor->media->where('type', 'logo')->first();
-            $vendorLogo = $logoMedia ? (filter_var($logoMedia->url, FILTER_VALIDATE_URL) ? $logoMedia->url : url($logoMedia->url ?? 'storage/' . $logoMedia->path)) : null;
+            $vendorLogo = $this->formatImageUrl($logoMedia);
             
             $bannerMedia = $vendor->media->where('type', 'banner')->first();
-            $vendorBanner = $bannerMedia ? (filter_var($bannerMedia->url, FILTER_VALIDATE_URL) ? $bannerMedia->url : url($bannerMedia->url ?? 'storage/' . $bannerMedia->path)) : null;
+            $vendorBanner = $this->formatImageUrl($bannerMedia);
         }
         
         // Get vendor product count
@@ -439,7 +467,7 @@ class PublicProductService extends BaseService
     /**
      * Transform variant for response
      */
-    protected function transformVariant($variant, int $lowStockThreshold = 5): array
+    protected function transformVariant($variant): array
     {
         return [
             'id' => $variant->id,
@@ -448,7 +476,7 @@ class PublicProductService extends BaseService
             'price' => $variant->price,
             'stock' => $variant->stock,
             'in_stock' => $variant->stock > 0,
-            'low_stock' => $variant->stock > 0 && $variant->stock <= $lowStockThreshold,
+            'low_stock' => $variant->stock > 0 && $variant->stock <= self::LOW_STOCK_THRESHOLD,
             'unit' => $variant->unit ? $variant->unit->symbol : null,
             'unit_name' => $variant->unit ? $variant->unit->name : null,
             'weight' => $variant->weight,
@@ -462,33 +490,31 @@ class PublicProductService extends BaseService
     }
 
     /**
-     * Get main categories (parent_id = null) with product counts
+     * Get main categories (parent_id = null) with product counts (cached)
      */
     public function getMainCategories(): ServiceResponse
     {
         try {
-            $categories = Category::whereNull('parent_id')
-                ->where('is_active', true)
-                ->orderBy('sort_order')
-                ->orderBy('name')
-                ->get()
-                ->map(function ($category) {
-                    // Doğrudan kategoriye bağlı ürünler
-                    $directCount = $category->directProducts()->count();
-                    
-                    // Alt kategorilere bağlı ürünler
-                    $childrenCount = 0;
-                    foreach ($category->children as $child) {
-                        $childrenCount += $child->directProducts()->count();
-                    }
-                    
-                    return [
-                        'id' => $category->id,
-                        'name' => $category->name,
-                        'slug' => $category->slug,
-                        'count' => $directCount + $childrenCount,
-                    ];
-                });
+            $categories = Cache::remember('main_categories_with_counts', self::CATEGORIES_CACHE_TTL, function () {
+                return Category::whereNull('parent_id')
+                    ->where('is_active', true)
+                    ->with(['children' => fn($q) => $q->withCount('directProducts')])
+                    ->withCount('directProducts')
+                    ->orderBy('sort_order')
+                    ->orderBy('name')
+                    ->get()
+                    ->map(function ($category) {
+                        $directCount = $category->direct_products_count ?? 0;
+                        $childrenCount = $category->children->sum('direct_products_count') ?? 0;
+                        
+                        return [
+                            'id' => $category->id,
+                            'name' => $category->name,
+                            'slug' => $category->slug,
+                            'count' => $directCount + $childrenCount,
+                        ];
+                    });
+            });
 
             return $this->successResponse(['categories' => $categories]);
         } catch (\Exception $e) {
