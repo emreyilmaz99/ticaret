@@ -126,10 +126,8 @@ const ProductGrid = ({
             ...product,
             reviews: product.reviews_count || 0,
           }} 
-          favorites={favorites}
-          toggleFavorite={toggleFavorite}
-          setQuickViewProduct={setQuickViewProduct}
-          addToCart={addToCart}
+          onAddToCart={addToCart}
+          onQuickView={setQuickViewProduct}
         />
       ))}
     </div>

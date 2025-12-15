@@ -11,8 +11,10 @@ export const SortBar = ({
   productCount = 0, 
   viewMode, 
   setViewMode, 
-  sortOption, 
-  setSortOption 
+  sortBy, 
+  setSortBy,
+  isMobile,
+  onOpenMobileFilter
 }) => {
   return (
     <div style={styles.toolbar}>
@@ -29,13 +31,18 @@ export const SortBar = ({
         <div style={styles.sortWrapper}>
           <select 
             style={styles.sortSelect} 
-            value={sortOption} 
-            onChange={(e) => setSortOption && setSortOption(e.target.value)}
+            value={sortBy || 'featured'} 
+            onChange={(e) => {
+              console.log('Sort değişti:', e.target.value);
+              if (setSortBy) {
+                setSortBy(e.target.value);
+              }
+            }}
           >
-            <option value="featured">Öne Çıkanlar</option>
-            <option value="priceAsc">En Düşük Fiyat</option>
-            <option value="priceDesc">En Yüksek Fiyat</option>
             <option value="newest">En Yeniler</option>
+            <option value="featured">Öne Çıkanlar</option>
+            <option value="price_asc">En Düşük Fiyat</option>
+            <option value="price_desc">En Yüksek Fiyat</option>
           </select>
           <FaChevronDown style={styles.sortIcon} />
         </div>
@@ -44,14 +51,24 @@ export const SortBar = ({
         <div style={styles.viewToggle}>
           <button 
             style={viewMode === 'grid' ? styles.viewBtnActive : styles.viewBtn} 
-            onClick={() => setViewMode && setViewMode('grid')}
+            onClick={() => {
+              console.log('Grid görünüm seçildi');
+              if (setViewMode) {
+                setViewMode('grid');
+              }
+            }}
             title="Izgara Görünüm"
           >
             <FaThLarge size={16} />
           </button>
           <button 
             style={viewMode === 'list' ? styles.viewBtnActive : styles.viewBtn} 
-            onClick={() => setViewMode && setViewMode('list')}
+            onClick={() => {
+              console.log('List görünüm seçildi');
+              if (setViewMode) {
+                setViewMode('list');
+              }
+            }}
             title="Liste Görünüm"
           >
             <FaList size={16} />

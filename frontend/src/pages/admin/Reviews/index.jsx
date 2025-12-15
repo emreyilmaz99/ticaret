@@ -12,9 +12,11 @@ import ReviewDetailModal from './ReviewDetailModal';
 import RejectReviewModal from './RejectReviewModal';
 import BannedWordsTab from './BannedWordsTab';
 import { getStyles } from './styles';
+import { useToast } from '../../../components/common/Toast';
 
 const ReviewsPage = () => {
   const styles = getStyles();
+  const toast = useToast();
   const [activeTab, setActiveTab] = useState('reviews'); // 'reviews' or 'banned-words'
 
   const {
@@ -60,7 +62,7 @@ const ReviewsPage = () => {
   // Excel indirme
   const handleDownloadExcel = () => {
     if (reviews.length === 0) {
-      alert("İndirilecek veri bulunamadı.");
+      toast.error('İndirilecek veri bulunamadı');
       return;
     }
     const headers = ["ID", "Kullanici", "Urun", "Satici", "Puan", "Yorum", "Durum", "Tarih"];
@@ -83,12 +85,13 @@ const ReviewsPage = () => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    toast.success(`${reviews.length} yorum Excel dosyası olarak indirildi`);
   };
 
   // Yazdırma
   const handlePrint = () => {
     if (reviews.length === 0) {
-      alert("Yazdırılacak veri yok.");
+      toast.error('Yazdırılacak veri yok');
       return;
     }
     const printWindow = window.open('', '_blank', 'width=900,height=600');
@@ -101,6 +104,7 @@ const ReviewsPage = () => {
     `;
     printWindow.document.write(printContent);
     printWindow.document.close();
+    toast.success('Yazdırma penceresi açıldı');
   };
 
   const getStatusBadge = (status) => {
@@ -428,7 +432,7 @@ const ReviewsPage = () => {
           </div>
         </>
       ) : (
-        <BannedWordsTab />
+        <BannedWordsTab styles={styles} />
       )}
 
       {/* Review Detail Modal */}

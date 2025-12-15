@@ -1,10 +1,12 @@
 // src/pages/public/CategoryProducts/useCategoryProducts.js
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useInfiniteQuery, useQuery, useMutation } from '@tanstack/react-query';
 import { useCart } from '../../../context/CartContext';
 import { useToast } from '../../../components/common/Toast';
+import { useAuth } from '../../../context/AuthContext';
 import { getProducts, getMainCategories } from '../../../api/publicApi';
+import { toggleFavorite as toggleFavoriteApi, getFavorites } from '../../../api/favoriteApi';
 import { CATEGORY_BANNERS } from './styles';
 
 /**
@@ -30,9 +32,14 @@ export const useCategoryProducts = () => {
   // Comparison State
   const [compareList, setCompareList] = useState([]);
   const [isCompareModalOpen, setIsCompareModalOpen] = useState(false);
+  
+  // Favorites State
+  const [favorites, setFavorites] = useState([]);
 
   const { addToCart } = useCart();
   const { showToast } = useToast();
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const loadMoreRef = useRef();
 
   // Handle resize
@@ -41,6 +48,24 @@ export const useCategoryProducts = () => {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  // Fetch user favorites on mount (if logged in)
+  useEffect(() => {
+    const fetchUserFavorites = async () => {
+      if (user) {
+        try {
+          const response = await getFavorites();
+          if (response.success && response.data?.favorites) {
+            const favoriteIds = response.data.favorites.map(fav => Number(fav.product_id || fav.id));
+            setFavorites(favoriteIds);
+          }
+        } catch (error) {
+          console.error('Error fetching favorites:', error);
+        }
+      }
+    };
+    fetchUserFavorites();
+  }, [user]);
 
   // Get current banner
   const currentBanner = CATEGORY_BANNERS[categoryId] || CATEGORY_BANNERS['default'];
@@ -69,13 +94,24 @@ export const useCategoryProducts = () => {
     isFetchingNextPage,
     isLoading
   } = useInfiniteQuery({
-    queryKey: ['products', categoryId, subcategoryName, sortBy, selectedCategories, priceRange],
+    queryKey: ['products', categoryId, subcategoryName, sortBy, selectedCategories, priceRange, searchQuery],
     queryFn: ({ pageParam = 1 }) => {
       const params = {
-        sort_by: sortBy,
         per_page: 12,
         page: pageParam
       };
+      
+      // Sıralama parametresi
+      console.log('Aktif sortBy:', sortBy);
+      if (sortBy && sortBy !== 'featured') {
+        params.sort_by = sortBy;
+      }
+      
+      // Arama parametresi
+      if (searchQuery && searchQuery.trim() !== '') {
+        params.search = searchQuery.trim();
+        console.log('Arama yapılıyor:', searchQuery);
+      }
       
       // Kategori filtresi: önce kullanıcı seçimi, sonra URL parametresi
       const selectedCategoryId = selectedCategories.length > 0 ? selectedCategories[0] : categoryId;
@@ -95,16 +131,26 @@ export const useCategoryProducts = () => {
         params.max_price = priceRange.max;
       }
       
+      console.log('API parametreleri:', params);
       return getProducts(params);
     },
     getNextPageParam: (lastPage, allPages) => {
+      console.log('lastPage:', lastPage);
+      console.log('allPages:', allPages);
       const currentPage = lastPage.meta?.current_page || allPages.length;
       const lastPageNum = lastPage.meta?.last_page || 5; 
       return currentPage < lastPageNum ? currentPage + 1 : undefined;
     }
   });
 
-  const products = data?.pages.flatMap(page => page.data || []) || [];
+  // Parse products from API response
+  const products = data?.pages.flatMap(page => {
+    console.log('Page data:', page);
+    return page.data || [];
+  }) || [];
+  
+  console.log('Total products:', products.length);
+  console.log('Products:', products);
 
   // Intersection Observer for infinite scroll
   useEffect(() => {
@@ -164,6 +210,40 @@ export const useCategoryProducts = () => {
     }
   }, []);
 
+  // Mutation for toggling favorite
+  const toggleFavoriteMutation = useMutation({
+    mutationFn: toggleFavoriteApi,
+    onSuccess: (data) => {
+      if (data.success) {
+        const productId = Number(data.data.product_id);
+        // API yanıtından favorilere eklenip eklenmediğini öğren
+        if (data.data.is_favorite) {
+          setFavorites(prev => [...prev, productId]);
+          showToast('Ürün favorilere eklendi!', 'success');
+        } else {
+          setFavorites(prev => prev.filter(id => Number(id) !== productId));
+          showToast('Ürün favorilerden çıkarıldı.', 'info');
+        }
+      }
+    },
+    onError: (error) => {
+      console.error('Favorite toggle error:', error);
+      showToast(error.response?.data?.message || 'Favorilere eklenirken bir hata oluştu.', 'error');
+    }
+  });
+
+  const toggleFavorite = useCallback((e, productId) => {
+    e.stopPropagation();
+    e.preventDefault();
+    if (!user) {
+      showToast('Favorilere eklemek için lütfen giriş yapın.', 'warning');
+      navigate('/login');
+      return;
+    }
+    // API çağrısı yap
+    toggleFavoriteMutation.mutate(productId);
+  }, [user, showToast, navigate, toggleFavoriteMutation]);
+
   return {
     // URL params
     categoryId,
@@ -180,6 +260,7 @@ export const useCategoryProducts = () => {
     showMobileFilters,
     compareList,
     isCompareModalOpen,
+    favorites,
 
     // Data
     products,
@@ -206,5 +287,6 @@ export const useCategoryProducts = () => {
     handleAddToCart,
     toggleCompare,
     toggleCategory,
+    toggleFavorite,
   };
 };

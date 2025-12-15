@@ -2,9 +2,11 @@
 import { useState, useCallback, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../../services/api';
+import { useToast } from '../../../components/common/Toast';
 
 export const useReviewsPage = () => {
   const queryClient = useQueryClient();
+  const toast = useToast();
 
   // Filters
   const [searchTerm, setSearchTerm] = useState('');
@@ -55,6 +57,10 @@ export const useReviewsPage = () => {
     onSuccess: () => {
       queryClient.invalidateQueries(['adminReviews']);
       queryClient.invalidateQueries(['adminReviewStats']);
+      toast.success('Yorum başarıyla onaylandı');
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || 'Yorum onaylanamadı');
     },
   });
 
@@ -69,6 +75,10 @@ export const useReviewsPage = () => {
     onSuccess: () => {
       queryClient.invalidateQueries(['adminReviews']);
       queryClient.invalidateQueries(['adminReviewStats']);
+      toast.success('Yorum reddedildi');
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || 'Yorum reddedilemedi');
     },
   });
 
@@ -80,10 +90,14 @@ export const useReviewsPage = () => {
       });
       return response.data;
     },
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries(['adminReviews']);
       queryClient.invalidateQueries(['adminReviewStats']);
       setSelectedReviews([]);
+      toast.success(`${variables.length} yorum başarıyla onaylandı`);
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || 'Yorumlar onaylanamadı');
     },
   });
 
@@ -96,10 +110,14 @@ export const useReviewsPage = () => {
       });
       return response.data;
     },
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries(['adminReviews']);
       queryClient.invalidateQueries(['adminReviewStats']);
       setSelectedReviews([]);
+      toast.success(`${variables.reviewIds.length} yorum reddedildi`);
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || 'Yorumlar reddedilemedi');
     },
   });
 
@@ -141,7 +159,7 @@ export const useReviewsPage = () => {
 
   const handleRejectSubmit = useCallback(async () => {
     if (!rejectionReason.trim()) {
-      alert('Lütfen ret nedeni girin.');
+      toast.warning('Lütfen ret nedeni girin');
       return;
     }
 
@@ -153,7 +171,7 @@ export const useReviewsPage = () => {
 
     setRejectModal({ isOpen: false, reviewId: null, isBulk: false });
     setRejectionReason('');
-  }, [rejectModal, rejectionReason, handleReject, handleBulkReject]);
+  }, [rejectModal, rejectionReason, handleReject, handleBulkReject, toast]);
 
   return {
     // Data

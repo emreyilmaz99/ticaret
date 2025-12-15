@@ -80,12 +80,19 @@ const QuickViewModal = ({ product, onClose, addToCart, toggleFavorite, favorites
               </div>
             </div>
 
-            <div style={{ fontSize: '32px', fontWeight: '800', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '16px' }}>
-              {new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(product.price)}
-              {product.discount && (
-                <span style={{ fontSize: '18px', color: '#94a3b8', textDecoration: 'line-through', fontWeight: '500' }}>
-                  {new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(product.price * 1.2)}
-                </span>
+            <div style={{ fontSize: '32px', fontWeight: '800', color: '#0f172a', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                {new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(product.price * quantity)}
+                {product.discount && (
+                  <span style={{ fontSize: '18px', color: '#94a3b8', textDecoration: 'line-through', fontWeight: '500' }}>
+                    {new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(product.price * 1.2 * quantity)}
+                  </span>
+                )}
+              </div>
+              {quantity > 1 && (
+                <div style={{ fontSize: '14px', color: '#6b7280', fontWeight: '500' }}>
+                  Birim Fiyat: {new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(product.price)}
+                </div>
               )}
             </div>
 
@@ -144,7 +151,19 @@ const QuickViewModal = ({ product, onClose, addToCart, toggleFavorite, favorites
                 style={{
                   width: '100%', padding: '12px', backgroundColor: 'transparent', border: 'none',
                   color: '#059669', fontWeight: '600', fontSize: '14px', cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px'
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                  transition: 'all 0.2s',
+                  borderRadius: '8px'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = '#047857';
+                  e.currentTarget.style.backgroundColor = '#f0fdf4';
+                  e.currentTarget.style.gap = '10px';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = '#059669';
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                  e.currentTarget.style.gap = '6px';
                 }}
               >
                 Ürün Detaylarına Git <FaArrowRight size={12} />

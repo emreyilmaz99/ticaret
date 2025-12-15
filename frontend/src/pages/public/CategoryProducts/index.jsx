@@ -24,6 +24,7 @@ const CategoryProducts = () => {
     showMobileFilters,
     compareList,
     isCompareModalOpen,
+    favorites,
     products,
     isLoading,
     isFetchingNextPage,
@@ -41,9 +42,23 @@ const CategoryProducts = () => {
     handleAddToCart,
     toggleCompare,
     toggleCategory,
+    toggleFavorite,
   } = useCategoryProducts();
 
   const styles = getStyles(isMobile);
+
+  // Add pulse animation for loading state
+  React.useEffect(() => {
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+      }
+    `;
+    document.head.appendChild(style);
+    return () => document.head.removeChild(style);
+  }, []);
 
   return (
     <div style={styles.container}>
@@ -111,6 +126,8 @@ const CategoryProducts = () => {
           product={quickViewProduct}
           onClose={() => setQuickViewProduct(null)}
           onAddToCart={handleAddToCart}
+          favorites={favorites}
+          toggleFavorite={toggleFavorite}
           styles={styles}
         />
       )}

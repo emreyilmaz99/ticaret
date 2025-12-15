@@ -1,0 +1,1665 @@
+// src/pages/admin/Reviews/BannedWordsTab.jsx
+import React, { useState, useMemo } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import api from '../../../services/api';
+import {
+  FaPlus, FaTrash, FaSearch, FaBan, FaRegSadTear,
+  FaCheck, FaTimes, FaExclamationTriangle, FaCode,
+  FaFileExport, FaFileImport, FaFlask, FaEdit,
+  FaFilter, FaSortAlphaDown, FaSortAlphaUp, FaClock,
+  FaChartLine, FaDownload, FaUpload, FaCopy, FaHistory,
+  FaFileExcel, FaShieldAlt, FaEye, FaEyeSlash
+} from 'react-icons/fa';
+import { toast } from 'react-hot-toast';
+
+const BannedWordsTab = ({ styles }) => {
+  const queryClient = useQueryClient();
+  
+  // Local state
+  const [newWord, setNewWord] = useState('');
+  const [isRegex, setIsRegex] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedWords, setSelectedWords] = useState([]);
+  const [showBulkAdd, setShowBulkAdd] = useState(false);
+  const [bulkWords, setBulkWords] = useState('');
+  const [deleteConfirmId, setDeleteConfirmId] = useState(null);
+  
+  // Advanced features state
+  const [showTestModal, setShowTestModal] = useState(false);
+  const [testText, setTestText] = useState('');
+  const [testResult, setTestResult] = useState(null);
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importFile, setImportFile] = useState(null);
+  const [sortOrder, setSortOrder] = useState('newest'); // newest, oldest, alpha-asc, alpha-desc
+  const [filterType, setFilterType] = useState('all'); // all, regex, simple
+  const [showEditModal, setShowEditModal] = useState(null);
+  const [editWord, setEditWord] = useState('');
+  const [editIsRegex, setEditIsRegex] = useState(false);
+  const [viewMode, setViewMode] = useState('grid'); // grid, list, compact
+
+  // Fetch banned words
+  const { 
+    data: bannedWordsData, 
+    isLoading, 
+    error 
+  } = useQuery({
+    queryKey: ['admin-banned-words'],
+    queryFn: async () => {
+      const response = await api.get('/admin/banned-words');
+      return response.data;
+    },
+  });
+
+  // Fetch stats
+  const { data: statsData } = useQuery({
+    queryKey: ['admin-banned-words-stats'],
+    queryFn: async () => {
+      const response = await api.get('/admin/banned-words/stats');
+      return response.data;
+    },
+  });
+
+  // Add word mutation
+  const addWordMutation = useMutation({
+    mutationFn: async ({ word, is_regex }) => {
+      const response = await api.post('/admin/banned-words', { word, is_regex });
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['admin-banned-words']);
+      queryClient.invalidateQueries(['admin-banned-words-stats']);
+      setNewWord('');
+      setIsRegex(false);
+      toast.success('Yasaklı kelime eklendi');
+    },
+    onError: (err) => {
+      toast.error(err.response?.data?.message || 'Kelime eklenirken hata oluştu');
+    },
+  });
+
+  // Bulk add mutation
+  const bulkAddMutation = useMutation({
+    mutationFn: async (words) => {
+      const response = await api.post('/admin/banned-words/bulk', { words });
+      return response.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries(['admin-banned-words']);
+      queryClient.invalidateQueries(['admin-banned-words-stats']);
+      setBulkWords('');
+      setShowBulkAdd(false);
+      toast.success(`${data.added} kelime eklendi${data.skipped > 0 ? `, ${data.skipped} atlandı` : ''}`);
+    },
+    onError: (err) => {
+      toast.error(err.response?.data?.message || 'Toplu ekleme başarısız');
+    },
+  });
+
+  // Delete word mutation
+  const deleteWordMutation = useMutation({
+    mutationFn: async (id) => {
+      await api.delete(`/admin/banned-words/${id}`);
+      return id;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['admin-banned-words']);
+      queryClient.invalidateQueries(['admin-banned-words-stats']);
+      setDeleteConfirmId(null);
+      toast.success('Yasaklı kelime silindi');
+    },
+    onError: (err) => {
+      toast.error(err.response?.data?.message || 'Silme işlemi başarısız');
+    },
+  });
+
+  // Bulk delete mutation
+  const bulkDeleteMutation = useMutation({
+    mutationFn: async (ids) => {
+      await api.post('/admin/banned-words/bulk-delete', { ids });
+      return ids;
+    },
+    onSuccess: (ids) => {
+      queryClient.invalidateQueries(['admin-banned-words']);
+      queryClient.invalidateQueries(['admin-banned-words-stats']);
+      setSelectedWords([]);
+      toast.success(`${ids.length} kelime silindi`);
+    },
+    onError: (err) => {
+      toast.error(err.response?.data?.message || 'Toplu silme başarısız');
+    },
+  });
+
+  // Update word mutation
+  const updateWordMutation = useMutation({
+    mutationFn: async ({ id, word, is_regex }) => {
+      const response = await api.put(`/admin/banned-words/${id}`, { word, is_regex });
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['admin-banned-words']);
+      setShowEditModal(null);
+      toast.success('Kelime güncellendi');
+    },
+    onError: (err) => {
+      toast.error(err.response?.data?.message || 'Güncelleme başarısız');
+    },
+  });
+
+  // Test words mutation
+  const testWordsMutation = useMutation({
+    mutationFn: async (text) => {
+      const response = await api.post('/admin/banned-words/test', { text });
+      return response.data;
+    },
+    onSuccess: (data) => {
+      setTestResult(data);
+    },
+    onError: (err) => {
+      toast.error(err.response?.data?.message || 'Test başarısız');
+    },
+  });
+
+  // Filter and sort words
+  const filteredWords = useMemo(() => {
+    if (!bannedWordsData?.data) return [];
+    
+    let words = [...bannedWordsData.data];
+    
+    // Filter by type
+    if (filterType === 'regex') {
+      words = words.filter(w => w.is_regex);
+    } else if (filterType === 'simple') {
+      words = words.filter(w => !w.is_regex);
+    }
+    
+    // Filter by search
+    if (searchQuery.trim()) {
+      words = words.filter(word => 
+        word.word.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+    
+    // Sort
+    switch (sortOrder) {
+      case 'oldest':
+        words.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+        break;
+      case 'newest':
+        words.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        break;
+      case 'alpha-asc':
+        words.sort((a, b) => a.word.localeCompare(b.word, 'tr'));
+        break;
+      case 'alpha-desc':
+        words.sort((a, b) => b.word.localeCompare(a.word, 'tr'));
+        break;
+      default:
+        break;
+    }
+    
+    return words;
+  }, [bannedWordsData, searchQuery, filterType, sortOrder]);
+
+  // Handle add word
+  const handleAddWord = (e) => {
+    e.preventDefault();
+    if (!newWord.trim()) return;
+    addWordMutation.mutate({ word: newWord.trim(), is_regex: isRegex });
+  };
+
+  // Handle bulk add
+  const handleBulkAdd = () => {
+    const words = bulkWords
+      .split('\n')
+      .map(w => w.trim())
+      .filter(w => w.length > 0)
+      .map(w => ({ word: w, is_regex: false }));
+    
+    if (words.length === 0) {
+      toast.error('En az bir kelime giriniz');
+      return;
+    }
+    
+    bulkAddMutation.mutate(words);
+  };
+
+  // Handle select all
+  const handleSelectAll = () => {
+    if (selectedWords.length === filteredWords.length) {
+      setSelectedWords([]);
+    } else {
+      setSelectedWords(filteredWords.map(w => w.id));
+    }
+  };
+
+  // Handle toggle selection
+  const toggleWordSelection = (id) => {
+    setSelectedWords(prev => 
+      prev.includes(id) 
+        ? prev.filter(wId => wId !== id)
+        : [...prev, id]
+    );
+  };
+
+  // Handle test
+  const handleTest = () => {
+    if (!testText.trim()) {
+      toast.error('Lütfen test edilecek metin giriniz');
+      return;
+    }
+    testWordsMutation.mutate(testText);
+  };
+
+  // Handle export to Excel/CSV
+  const handleExport = (format = 'csv') => {
+    if (!bannedWordsData?.data || bannedWordsData.data.length === 0) {
+      toast.error('Dışa aktarılacak kelime bulunamadı');
+      return;
+    }
+    
+    const words = bannedWordsData.data;
+    
+    if (format === 'csv') {
+      const csv = ['Kelime,Regex,Eklenme Tarihi'];
+      words.forEach(w => {
+        csv.push(`"${w.word}",${w.is_regex ? 'Evet' : 'Hayır'},${new Date(w.created_at).toLocaleDateString('tr-TR')}`);
+      });
+      
+      const blob = new Blob([csv.join('\n')], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `yasakli-kelimeler-${new Date().toISOString().split('T')[0]}.csv`;
+      link.click();
+      toast.success('CSV olarak dışa aktarıldı');
+    } else if (format === 'json') {
+      const json = JSON.stringify(words, null, 2);
+      const blob = new Blob([json], { type: 'application/json' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `yasakli-kelimeler-${new Date().toISOString().split('T')[0]}.json`;
+      link.click();
+      toast.success('JSON olarak dışa aktarıldı');
+    } else if (format === 'txt') {
+      const txt = words.map(w => w.word).join('\n');
+      const blob = new Blob([txt], { type: 'text/plain;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `yasakli-kelimeler-${new Date().toISOString().split('T')[0]}.txt`;
+      link.click();
+      toast.success('TXT olarak dışa aktarıldı');
+    }
+  };
+
+  // Handle import
+  const handleImport = async () => {
+    if (!importFile) {
+      toast.error('Lütfen dosya seçiniz');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const content = e.target.result;
+      let words = [];
+      
+      if (importFile.name.endsWith('.json')) {
+        try {
+          const data = JSON.parse(content);
+          words = Array.isArray(data) 
+            ? data.map(w => ({ word: w.word || w, is_regex: w.is_regex || false }))
+            : [];
+        } catch {
+          toast.error('Geçersiz JSON dosyası');
+          return;
+        }
+      } else {
+        // CSV or TXT
+        words = content.split('\n')
+          .map(line => line.trim())
+          .filter(line => line && !line.startsWith('Kelime'))
+          .map(line => {
+            const parts = line.split(',');
+            return { 
+              word: parts[0]?.replace(/"/g, '').trim(), 
+              is_regex: parts[1]?.toLowerCase().includes('evet') || false 
+            };
+          })
+          .filter(w => w.word);
+      }
+      
+      if (words.length === 0) {
+        toast.error('Dosyada geçerli kelime bulunamadı');
+        return;
+      }
+      
+      bulkAddMutation.mutate(words);
+      setShowImportModal(false);
+      setImportFile(null);
+    };
+    
+    reader.readAsText(importFile);
+  };
+
+  // Handle copy to clipboard
+  const handleCopyAll = () => {
+    const words = filteredWords.map(w => w.word).join('\n');
+    navigator.clipboard.writeText(words);
+    toast.success(`${filteredWords.length} kelime panoya kopyalandı`);
+  };
+
+  // Handle edit
+  const handleOpenEdit = (word) => {
+    setEditWord(word.word);
+    setEditIsRegex(word.is_regex);
+    setShowEditModal(word);
+  };
+
+  const handleSaveEdit = () => {
+    if (!editWord.trim()) {
+      toast.error('Kelime boş olamaz');
+      return;
+    }
+    updateWordMutation.mutate({ 
+      id: showEditModal.id, 
+      word: editWord.trim(), 
+      is_regex: editIsRegex 
+    });
+  };
+
+  const stats = statsData?.data;
+
+  // Inline styles for enhanced UI
+  const enhancedStyles = {
+    pageContainer: {
+      backgroundColor: '#f8fafc',
+      minHeight: '100vh',
+      padding: '0',
+    },
+    headerSection: {
+      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      borderRadius: '20px',
+      padding: '32px',
+      marginBottom: '24px',
+      color: '#fff',
+      position: 'relative',
+      overflow: 'hidden',
+    },
+    headerPattern: {
+      position: 'absolute',
+      top: 0,
+      right: 0,
+      bottom: 0,
+      left: 0,
+      backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+      opacity: 0.5,
+    },
+    headerContent: {
+      position: 'relative',
+      zIndex: 1,
+    },
+    headerTitle: {
+      fontSize: '28px',
+      fontWeight: '800',
+      marginBottom: '8px',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '12px',
+    },
+    headerSubtitle: {
+      fontSize: '15px',
+      opacity: 0.9,
+      marginBottom: '24px',
+    },
+    headerActions: {
+      display: 'flex',
+      gap: '12px',
+      flexWrap: 'wrap',
+    },
+    headerBtn: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '8px',
+      padding: '12px 20px',
+      backgroundColor: 'rgba(255,255,255,0.2)',
+      backdropFilter: 'blur(10px)',
+      border: '1px solid rgba(255,255,255,0.3)',
+      borderRadius: '12px',
+      color: '#fff',
+      fontSize: '14px',
+      fontWeight: '600',
+      cursor: 'pointer',
+      transition: 'all 0.2s',
+    },
+    statsGrid: {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+      gap: '20px',
+      marginBottom: '24px',
+    },
+    statCard: {
+      backgroundColor: '#fff',
+      borderRadius: '16px',
+      padding: '24px',
+      border: '1px solid #e5e7eb',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '16px',
+      transition: 'all 0.2s',
+      cursor: 'default',
+    },
+    statIcon: {
+      width: '56px',
+      height: '56px',
+      borderRadius: '14px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontSize: '24px',
+    },
+    statInfo: {
+      flex: 1,
+    },
+    statValue: {
+      fontSize: '32px',
+      fontWeight: '800',
+      color: '#0f172a',
+      lineHeight: 1,
+    },
+    statLabel: {
+      fontSize: '14px',
+      color: '#64748b',
+      marginTop: '4px',
+      fontWeight: '500',
+    },
+    mainContent: {
+      display: 'grid',
+      gridTemplateColumns: '1fr 340px',
+      gap: '24px',
+    },
+    leftColumn: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '20px',
+    },
+    rightColumn: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '20px',
+    },
+    card: {
+      backgroundColor: '#fff',
+      borderRadius: '16px',
+      border: '1px solid #e5e7eb',
+      overflow: 'hidden',
+    },
+    cardHeader: {
+      padding: '20px 24px',
+      borderBottom: '1px solid #e5e7eb',
+      backgroundColor: '#f8fafc',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    cardTitle: {
+      fontSize: '16px',
+      fontWeight: '700',
+      color: '#0f172a',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '10px',
+      margin: 0,
+    },
+    cardBody: {
+      padding: '24px',
+    },
+    toolbarRow: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: '16px',
+      flexWrap: 'wrap',
+    },
+    toolbarGroup: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '12px',
+    },
+    searchInputWrapper: {
+      position: 'relative',
+      width: '280px',
+    },
+    searchIcon: {
+      position: 'absolute',
+      left: '14px',
+      top: '50%',
+      transform: 'translateY(-50%)',
+      color: '#9ca3af',
+      fontSize: '14px',
+    },
+    searchInput: {
+      width: '100%',
+      padding: '12px 14px 12px 42px',
+      border: '1px solid #e5e7eb',
+      borderRadius: '10px',
+      fontSize: '14px',
+      outline: 'none',
+      transition: 'border-color 0.2s',
+    },
+    filterSelect: {
+      padding: '12px 16px',
+      border: '1px solid #e5e7eb',
+      borderRadius: '10px',
+      fontSize: '14px',
+      color: '#374151',
+      backgroundColor: '#fff',
+      cursor: 'pointer',
+      outline: 'none',
+    },
+    sortBtn: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '6px',
+      padding: '12px 16px',
+      border: '1px solid #e5e7eb',
+      borderRadius: '10px',
+      fontSize: '14px',
+      color: '#374151',
+      backgroundColor: '#fff',
+      cursor: 'pointer',
+      transition: 'all 0.2s',
+    },
+    viewModeBtn: {
+      padding: '10px 12px',
+      border: '1px solid #e5e7eb',
+      backgroundColor: '#fff',
+      borderRadius: '8px',
+      cursor: 'pointer',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      color: '#6b7280',
+      transition: 'all 0.2s',
+    },
+    viewModeBtnActive: {
+      backgroundColor: '#4f46e5',
+      borderColor: '#4f46e5',
+      color: '#fff',
+    },
+    addSection: {
+      padding: '24px',
+    },
+    addForm: {
+      display: 'flex',
+      gap: '12px',
+      flexWrap: 'wrap',
+    },
+    addInput: {
+      flex: 1,
+      minWidth: '200px',
+      padding: '14px 18px',
+      border: '2px solid #e5e7eb',
+      borderRadius: '12px',
+      fontSize: '14px',
+      outline: 'none',
+      transition: 'border-color 0.2s',
+    },
+    addBtn: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '8px',
+      padding: '14px 24px',
+      background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+      color: '#fff',
+      border: 'none',
+      borderRadius: '12px',
+      fontSize: '14px',
+      fontWeight: '600',
+      cursor: 'pointer',
+      transition: 'all 0.2s',
+    },
+    regexToggle: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '8px',
+      padding: '14px 18px',
+      backgroundColor: '#f3f4f6',
+      borderRadius: '12px',
+      fontSize: '14px',
+      fontWeight: '500',
+      color: '#374151',
+      cursor: 'pointer',
+      border: '2px solid transparent',
+      transition: 'all 0.2s',
+    },
+    regexToggleActive: {
+      backgroundColor: '#eef2ff',
+      borderColor: '#6366f1',
+      color: '#4f46e5',
+    },
+    bulkAddBtn: {
+      padding: '14px 20px',
+      backgroundColor: '#fff',
+      border: '2px solid #e5e7eb',
+      borderRadius: '12px',
+      fontSize: '14px',
+      fontWeight: '600',
+      color: '#374151',
+      cursor: 'pointer',
+    },
+    wordsContainer: {
+      padding: '16px 24px 24px',
+    },
+    wordsGrid: {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+      gap: '14px',
+    },
+    wordsList: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '8px',
+    },
+    wordsCompact: {
+      display: 'flex',
+      flexWrap: 'wrap',
+      gap: '8px',
+    },
+    wordCard: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '12px',
+      padding: '16px 18px',
+      backgroundColor: '#fff',
+      border: '2px solid #e5e7eb',
+      borderRadius: '12px',
+      transition: 'all 0.2s',
+      cursor: 'pointer',
+    },
+    wordCardSelected: {
+      borderColor: '#6366f1',
+      backgroundColor: '#eef2ff',
+    },
+    wordCardContent: {
+      flex: 1,
+      minWidth: 0,
+    },
+    wordText: {
+      fontSize: '14px',
+      fontWeight: '600',
+      color: '#0f172a',
+      wordBreak: 'break-word',
+    },
+    wordMeta: {
+      fontSize: '12px',
+      color: '#9ca3af',
+      marginTop: '4px',
+    },
+    regexBadge: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '4px',
+      padding: '4px 8px',
+      backgroundColor: '#8b5cf6',
+      color: '#fff',
+      borderRadius: '6px',
+      fontSize: '10px',
+      fontWeight: '600',
+      marginLeft: '8px',
+    },
+    wordActions: {
+      display: 'flex',
+      gap: '6px',
+    },
+    wordActionBtn: {
+      width: '32px',
+      height: '32px',
+      borderRadius: '8px',
+      border: 'none',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      cursor: 'pointer',
+      transition: 'all 0.2s',
+      fontSize: '12px',
+    },
+    compactWord: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '6px',
+      padding: '8px 12px',
+      backgroundColor: '#fef2f2',
+      border: '1px solid #fecaca',
+      borderRadius: '8px',
+      fontSize: '13px',
+      fontWeight: '500',
+      color: '#991b1b',
+    },
+    selectAllRow: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      padding: '12px 16px',
+      backgroundColor: '#f8fafc',
+      borderRadius: '10px',
+      marginBottom: '16px',
+    },
+    checkbox: {
+      width: '18px',
+      height: '18px',
+      cursor: 'pointer',
+    },
+    bulkActions: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '12px',
+    },
+    bulkDeleteBtn: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '8px',
+      padding: '10px 16px',
+      backgroundColor: '#ef4444',
+      color: '#fff',
+      border: 'none',
+      borderRadius: '10px',
+      fontSize: '13px',
+      fontWeight: '600',
+      cursor: 'pointer',
+    },
+    testSection: {
+      padding: '20px',
+    },
+    testTextarea: {
+      width: '100%',
+      padding: '16px',
+      border: '2px solid #e5e7eb',
+      borderRadius: '12px',
+      fontSize: '14px',
+      resize: 'vertical',
+      minHeight: '120px',
+      outline: 'none',
+      fontFamily: 'inherit',
+      boxSizing: 'border-box',
+      marginBottom: '16px',
+    },
+    testBtn: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '8px',
+      padding: '12px 20px',
+      background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+      color: '#fff',
+      border: 'none',
+      borderRadius: '10px',
+      fontSize: '14px',
+      fontWeight: '600',
+      cursor: 'pointer',
+      width: '100%',
+      justifyContent: 'center',
+    },
+    testResult: {
+      marginTop: '16px',
+      padding: '16px',
+      borderRadius: '12px',
+    },
+    testResultSuccess: {
+      backgroundColor: '#d1fae5',
+      border: '1px solid #6ee7b7',
+    },
+    testResultDanger: {
+      backgroundColor: '#fee2e2',
+      border: '1px solid #fca5a5',
+    },
+    quickActions: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '8px',
+    },
+    quickActionBtn: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '10px',
+      padding: '14px 18px',
+      backgroundColor: '#fff',
+      border: '1px solid #e5e7eb',
+      borderRadius: '12px',
+      fontSize: '14px',
+      fontWeight: '500',
+      color: '#374151',
+      cursor: 'pointer',
+      transition: 'all 0.2s',
+      textAlign: 'left',
+    },
+    modal: {
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0,0,0,0.5)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 1000,
+      backdropFilter: 'blur(4px)',
+    },
+    modalContent: {
+      backgroundColor: '#fff',
+      borderRadius: '20px',
+      width: '100%',
+      maxWidth: '500px',
+      maxHeight: '90vh',
+      overflow: 'auto',
+      boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
+    },
+    modalHeader: {
+      padding: '24px',
+      borderBottom: '1px solid #e5e7eb',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    modalTitle: {
+      fontSize: '18px',
+      fontWeight: '700',
+      color: '#0f172a',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '10px',
+    },
+    modalCloseBtn: {
+      width: '36px',
+      height: '36px',
+      borderRadius: '10px',
+      border: 'none',
+      backgroundColor: '#f3f4f6',
+      cursor: 'pointer',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      color: '#6b7280',
+    },
+    modalBody: {
+      padding: '24px',
+    },
+    modalFooter: {
+      padding: '16px 24px',
+      borderTop: '1px solid #e5e7eb',
+      display: 'flex',
+      justifyContent: 'flex-end',
+      gap: '12px',
+    },
+    cancelBtn: {
+      padding: '12px 24px',
+      backgroundColor: '#f3f4f6',
+      border: 'none',
+      borderRadius: '10px',
+      fontSize: '14px',
+      fontWeight: '600',
+      color: '#374151',
+      cursor: 'pointer',
+    },
+    saveBtn: {
+      padding: '12px 24px',
+      background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+      border: 'none',
+      borderRadius: '10px',
+      fontSize: '14px',
+      fontWeight: '600',
+      color: '#fff',
+      cursor: 'pointer',
+    },
+    fileInput: {
+      width: '100%',
+      padding: '40px 20px',
+      border: '2px dashed #e5e7eb',
+      borderRadius: '12px',
+      textAlign: 'center',
+      cursor: 'pointer',
+      backgroundColor: '#f9fafb',
+    },
+    emptyState: {
+      textAlign: 'center',
+      padding: '60px 20px',
+    },
+    emptyIcon: {
+      fontSize: '64px',
+      color: '#d1d5db',
+      marginBottom: '16px',
+    },
+    emptyTitle: {
+      fontSize: '18px',
+      fontWeight: '600',
+      color: '#374151',
+      marginBottom: '8px',
+    },
+    emptySubtitle: {
+      fontSize: '14px',
+      color: '#9ca3af',
+    },
+    spinner: {
+      width: '40px',
+      height: '40px',
+      border: '4px solid #e5e7eb',
+      borderTopColor: '#6366f1',
+      borderRadius: '50%',
+      animation: 'spin 1s linear infinite',
+      margin: '0 auto 16px',
+    },
+    loadingText: {
+      fontSize: '14px',
+      color: '#6b7280',
+    },
+    bulkAddTextarea: {
+      width: '100%',
+      padding: '14px',
+      border: '2px solid #e5e7eb',
+      borderRadius: '12px',
+      fontSize: '14px',
+      resize: 'vertical',
+      minHeight: '150px',
+      outline: 'none',
+      fontFamily: 'inherit',
+      boxSizing: 'border-box',
+    },
+  };
+
+  return (
+    <div style={enhancedStyles.pageContainer}>
+      {/* Header Section */}
+      <div style={enhancedStyles.headerSection}>
+        <div style={enhancedStyles.headerPattern}></div>
+        <div style={enhancedStyles.headerContent}>
+          <h1 style={enhancedStyles.headerTitle}>
+            <FaShieldAlt /> Yasaklı Kelimeler Yönetimi
+          </h1>
+          <p style={enhancedStyles.headerSubtitle}>
+            Kullanıcı yorumlarında otomatik olarak tespit edilecek yasaklı kelimeleri yönetin.
+            Regex kalıpları ile gelişmiş eşleştirme yapabilirsiniz.
+          </p>
+          <div style={enhancedStyles.headerActions}>
+            <button 
+              style={enhancedStyles.headerBtn} 
+              onClick={() => setShowTestModal(true)}
+            >
+              <FaFlask /> Metin Test Et
+            </button>
+            <button 
+              style={enhancedStyles.headerBtn}
+              onClick={() => setShowImportModal(true)}
+            >
+              <FaFileImport /> İçe Aktar
+            </button>
+            <button 
+              style={enhancedStyles.headerBtn}
+              onClick={() => handleExport('csv')}
+            >
+              <FaFileExport /> Dışa Aktar
+            </button>
+            <button 
+              style={enhancedStyles.headerBtn}
+              onClick={handleCopyAll}
+            >
+              <FaCopy /> Tümünü Kopyala
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Stats Grid */}
+      <div style={enhancedStyles.statsGrid}>
+        <div style={enhancedStyles.statCard}>
+          <div style={{ ...enhancedStyles.statIcon, backgroundColor: '#eef2ff', color: '#6366f1' }}>
+            <FaBan />
+          </div>
+          <div style={enhancedStyles.statInfo}>
+            <div style={enhancedStyles.statValue}>{stats?.total || bannedWordsData?.data?.length || 0}</div>
+            <div style={enhancedStyles.statLabel}>Toplam Kelime</div>
+          </div>
+        </div>
+        <div style={enhancedStyles.statCard}>
+          <div style={{ ...enhancedStyles.statIcon, backgroundColor: '#f3e8ff', color: '#8b5cf6' }}>
+            <FaCode />
+          </div>
+          <div style={enhancedStyles.statInfo}>
+            <div style={enhancedStyles.statValue}>{stats?.regex || bannedWordsData?.data?.filter(w => w.is_regex).length || 0}</div>
+            <div style={enhancedStyles.statLabel}>Regex Kalıpları</div>
+          </div>
+        </div>
+        <div style={enhancedStyles.statCard}>
+          <div style={{ ...enhancedStyles.statIcon, backgroundColor: '#dcfce7', color: '#22c55e' }}>
+            <FaCheck />
+          </div>
+          <div style={enhancedStyles.statInfo}>
+            <div style={enhancedStyles.statValue}>{stats?.simple || bannedWordsData?.data?.filter(w => !w.is_regex).length || 0}</div>
+            <div style={enhancedStyles.statLabel}>Basit Kelimeler</div>
+          </div>
+        </div>
+        <div style={enhancedStyles.statCard}>
+          <div style={{ ...enhancedStyles.statIcon, backgroundColor: '#fef3c7', color: '#f59e0b' }}>
+            <FaChartLine />
+          </div>
+          <div style={enhancedStyles.statInfo}>
+            <div style={enhancedStyles.statValue}>{selectedWords.length}</div>
+            <div style={enhancedStyles.statLabel}>Seçili Kelime</div>
+          </div>
+        </div>
+      </div>
+
+      <div style={enhancedStyles.mainContent}>
+        {/* Left Column - Words List */}
+        <div style={enhancedStyles.leftColumn}>
+          {/* Add Word Card */}
+          <div style={enhancedStyles.card}>
+            <div style={enhancedStyles.cardHeader}>
+              <h3 style={enhancedStyles.cardTitle}>
+                <FaPlus style={{ color: '#10b981' }} /> Yeni Kelime Ekle
+              </h3>
+            </div>
+            <div style={enhancedStyles.addSection}>
+              <form onSubmit={handleAddWord} style={enhancedStyles.addForm}>
+                <input
+                  type="text"
+                  value={newWord}
+                  onChange={(e) => setNewWord(e.target.value)}
+                  placeholder="Yasaklanacak kelime veya regex kalıbı..."
+                  style={enhancedStyles.addInput}
+                />
+                <label 
+                  style={{
+                    ...enhancedStyles.regexToggle,
+                    ...(isRegex ? enhancedStyles.regexToggleActive : {})
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={isRegex}
+                    onChange={(e) => setIsRegex(e.target.checked)}
+                    style={{ display: 'none' }}
+                  />
+                  <FaCode /> Regex
+                </label>
+                <button 
+                  type="submit" 
+                  style={enhancedStyles.addBtn}
+                  disabled={addWordMutation.isPending || !newWord.trim()}
+                >
+                  <FaPlus /> Ekle
+                </button>
+                <button 
+                  type="button" 
+                  style={enhancedStyles.bulkAddBtn}
+                  onClick={() => setShowBulkAdd(!showBulkAdd)}
+                >
+                  Toplu Ekle
+                </button>
+              </form>
+
+              {/* Bulk Add Section */}
+              {showBulkAdd && (
+                <div style={{ marginTop: '20px' }}>
+                  <p style={{ fontSize: '13px', color: '#6b7280', marginBottom: '12px' }}>
+                    Her satıra bir kelime yazın (maksimum 500 kelime):
+                  </p>
+                  <textarea
+                    value={bulkWords}
+                    onChange={(e) => setBulkWords(e.target.value)}
+                    placeholder="kelime1&#10;kelime2&#10;kelime3&#10;..."
+                    style={enhancedStyles.bulkAddTextarea}
+                    rows={8}
+                  />
+                  <div style={{ display: 'flex', gap: '12px', marginTop: '16px' }}>
+                    <button 
+                      style={enhancedStyles.addBtn}
+                      onClick={handleBulkAdd}
+                      disabled={bulkAddMutation.isPending}
+                    >
+                      {bulkAddMutation.isPending ? 'Ekleniyor...' : `${bulkWords.split('\n').filter(w => w.trim()).length} Kelime Ekle`}
+                    </button>
+                    <button 
+                      style={enhancedStyles.cancelBtn}
+                      onClick={() => {
+                        setShowBulkAdd(false);
+                        setBulkWords('');
+                      }}
+                    >
+                      İptal
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Words List Card */}
+          <div style={enhancedStyles.card}>
+            <div style={enhancedStyles.cardHeader}>
+              <h3 style={enhancedStyles.cardTitle}>
+                <FaBan style={{ color: '#ef4444' }} /> Kelime Listesi ({filteredWords.length})
+              </h3>
+            </div>
+            
+            {/* Toolbar */}
+            <div style={{ padding: '16px 24px', borderBottom: '1px solid #e5e7eb' }}>
+              <div style={enhancedStyles.toolbarRow}>
+                <div style={enhancedStyles.toolbarGroup}>
+                  <div style={enhancedStyles.searchInputWrapper}>
+                    <FaSearch style={enhancedStyles.searchIcon} />
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Kelime ara..."
+                      style={enhancedStyles.searchInput}
+                    />
+                  </div>
+                  <select
+                    value={filterType}
+                    onChange={(e) => setFilterType(e.target.value)}
+                    style={enhancedStyles.filterSelect}
+                  >
+                    <option value="all">Tümü</option>
+                    <option value="simple">Basit Kelimeler</option>
+                    <option value="regex">Regex Kalıpları</option>
+                  </select>
+                  <select
+                    value={sortOrder}
+                    onChange={(e) => setSortOrder(e.target.value)}
+                    style={enhancedStyles.filterSelect}
+                  >
+                    <option value="newest">En Yeni</option>
+                    <option value="oldest">En Eski</option>
+                    <option value="alpha-asc">A-Z</option>
+                    <option value="alpha-desc">Z-A</option>
+                  </select>
+                </div>
+                <div style={enhancedStyles.toolbarGroup}>
+                  <button
+                    style={{
+                      ...enhancedStyles.viewModeBtn,
+                      ...(viewMode === 'grid' ? enhancedStyles.viewModeBtnActive : {})
+                    }}
+                    onClick={() => setViewMode('grid')}
+                    title="Grid Görünümü"
+                  >
+                    <FaFilter />
+                  </button>
+                  <button
+                    style={{
+                      ...enhancedStyles.viewModeBtn,
+                      ...(viewMode === 'list' ? enhancedStyles.viewModeBtnActive : {})
+                    }}
+                    onClick={() => setViewMode('list')}
+                    title="Liste Görünümü"
+                  >
+                    <FaSortAlphaDown />
+                  </button>
+                  <button
+                    style={{
+                      ...enhancedStyles.viewModeBtn,
+                      ...(viewMode === 'compact' ? enhancedStyles.viewModeBtnActive : {})
+                    }}
+                    onClick={() => setViewMode('compact')}
+                    title="Kompakt Görünüm"
+                  >
+                    <FaEye />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div style={enhancedStyles.wordsContainer}>
+              {/* Select All & Bulk Actions */}
+              {filteredWords.length > 0 && (
+                <div style={enhancedStyles.selectAllRow}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={selectedWords.length === filteredWords.length && filteredWords.length > 0}
+                      onChange={handleSelectAll}
+                      style={enhancedStyles.checkbox}
+                    />
+                    <span style={{ fontSize: '14px', fontWeight: '500', color: '#374151' }}>
+                      Tümünü Seç ({filteredWords.length} kelime)
+                    </span>
+                  </label>
+                  {selectedWords.length > 0 && (
+                    <div style={enhancedStyles.bulkActions}>
+                      <span style={{ fontSize: '14px', color: '#6b7280' }}>
+                        {selectedWords.length} seçili
+                      </span>
+                      <button
+                        style={enhancedStyles.bulkDeleteBtn}
+                        onClick={() => bulkDeleteMutation.mutate(selectedWords)}
+                        disabled={bulkDeleteMutation.isPending}
+                      >
+                        <FaTrash /> Seçilenleri Sil
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Words Display */}
+              {isLoading ? (
+                <div style={enhancedStyles.emptyState}>
+                  <div style={enhancedStyles.spinner}></div>
+                  <p style={enhancedStyles.loadingText}>Kelimeler yükleniyor...</p>
+                </div>
+              ) : error ? (
+                <div style={enhancedStyles.emptyState}>
+                  <FaExclamationTriangle style={{ ...enhancedStyles.emptyIcon, color: '#ef4444' }} />
+                  <p style={enhancedStyles.emptyTitle}>Bir hata oluştu</p>
+                  <p style={enhancedStyles.emptySubtitle}>Veriler yüklenirken bir sorun oluştu</p>
+                </div>
+              ) : filteredWords.length === 0 ? (
+                <div style={enhancedStyles.emptyState}>
+                  <FaRegSadTear style={enhancedStyles.emptyIcon} />
+                  <p style={enhancedStyles.emptyTitle}>
+                    {searchQuery ? 'Arama sonucu bulunamadı' : 'Henüz kelime eklenmemiş'}
+                  </p>
+                  <p style={enhancedStyles.emptySubtitle}>
+                    {searchQuery ? 'Farklı bir arama terimi deneyin' : 'Yukarıdan yeni kelime ekleyebilirsiniz'}
+                  </p>
+                </div>
+              ) : viewMode === 'compact' ? (
+                <div style={enhancedStyles.wordsCompact}>
+                  {filteredWords.map((word) => (
+                    <div 
+                      key={word.id} 
+                      style={{
+                        ...enhancedStyles.compactWord,
+                        backgroundColor: selectedWords.includes(word.id) ? '#eef2ff' : '#fef2f2',
+                        borderColor: selectedWords.includes(word.id) ? '#6366f1' : '#fecaca',
+                      }}
+                      onClick={() => toggleWordSelection(word.id)}
+                    >
+                      {word.word}
+                      {word.is_regex && <FaCode size={10} style={{ color: '#8b5cf6' }} />}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div style={viewMode === 'grid' ? enhancedStyles.wordsGrid : enhancedStyles.wordsList}>
+                  {filteredWords.map((word) => (
+                    <div 
+                      key={word.id} 
+                      style={{
+                        ...enhancedStyles.wordCard,
+                        ...(selectedWords.includes(word.id) ? enhancedStyles.wordCardSelected : {})
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedWords.includes(word.id)}
+                        onChange={() => toggleWordSelection(word.id)}
+                        style={enhancedStyles.checkbox}
+                      />
+                      <div style={enhancedStyles.wordCardContent}>
+                        <div style={{ display: 'flex', alignItems: 'center' }}>
+                          <span style={enhancedStyles.wordText}>{word.word}</span>
+                          {word.is_regex && (
+                            <span style={enhancedStyles.regexBadge}>
+                              <FaCode size={8} /> REGEX
+                            </span>
+                          )}
+                        </div>
+                        {word.created_at && (
+                          <div style={enhancedStyles.wordMeta}>
+                            <FaClock size={10} style={{ marginRight: '4px' }} />
+                            {new Date(word.created_at).toLocaleDateString('tr-TR')}
+                          </div>
+                        )}
+                      </div>
+                      <div style={enhancedStyles.wordActions}>
+                        <button
+                          style={{ 
+                            ...enhancedStyles.wordActionBtn, 
+                            backgroundColor: '#eef2ff', 
+                            color: '#6366f1' 
+                          }}
+                          onClick={() => handleOpenEdit(word)}
+                          title="Düzenle"
+                        >
+                          <FaEdit />
+                        </button>
+                        {deleteConfirmId === word.id ? (
+                          <>
+                            <button
+                              style={{ 
+                                ...enhancedStyles.wordActionBtn, 
+                                backgroundColor: '#dcfce7', 
+                                color: '#22c55e' 
+                              }}
+                              onClick={() => deleteWordMutation.mutate(word.id)}
+                              disabled={deleteWordMutation.isPending}
+                              title="Onayla"
+                            >
+                              <FaCheck />
+                            </button>
+                            <button
+                              style={{ 
+                                ...enhancedStyles.wordActionBtn, 
+                                backgroundColor: '#f3f4f6', 
+                                color: '#6b7280' 
+                              }}
+                              onClick={() => setDeleteConfirmId(null)}
+                              title="İptal"
+                            >
+                              <FaTimes />
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            style={{ 
+                              ...enhancedStyles.wordActionBtn, 
+                              backgroundColor: '#fee2e2', 
+                              color: '#ef4444' 
+                            }}
+                            onClick={() => setDeleteConfirmId(word.id)}
+                            title="Sil"
+                          >
+                            <FaTrash />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column - Actions & Test */}
+        <div style={enhancedStyles.rightColumn}>
+          {/* Test Card */}
+          <div style={enhancedStyles.card}>
+            <div style={enhancedStyles.cardHeader}>
+              <h3 style={enhancedStyles.cardTitle}>
+                <FaFlask style={{ color: '#8b5cf6' }} /> Metin Test Aracı
+              </h3>
+            </div>
+            <div style={enhancedStyles.testSection}>
+              <textarea
+                value={testText}
+                onChange={(e) => setTestText(e.target.value)}
+                placeholder="Test etmek istediğiniz metni buraya yazın..."
+                style={enhancedStyles.testTextarea}
+              />
+              <button
+                style={enhancedStyles.testBtn}
+                onClick={handleTest}
+                disabled={testWordsMutation.isPending}
+              >
+                <FaFlask /> {testWordsMutation.isPending ? 'Test Ediliyor...' : 'Metni Test Et'}
+              </button>
+              {testResult && (
+                <div style={{
+                  ...enhancedStyles.testResult,
+                  ...(testResult.data?.banned ? enhancedStyles.testResultDanger : enhancedStyles.testResultSuccess)
+                }}>
+                  {testResult.data?.banned ? (
+                    <>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                        <FaExclamationTriangle style={{ color: '#ef4444' }} />
+                        <strong style={{ color: '#991b1b' }}>Yasaklı Kelime Tespit Edildi!</strong>
+                      </div>
+                      <p style={{ fontSize: '13px', color: '#991b1b', margin: 0 }}>
+                        Bulunan kelimeler: {testResult.data?.words?.join(', ')}
+                      </p>
+                    </>
+                  ) : (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <FaCheck style={{ color: '#22c55e' }} />
+                      <strong style={{ color: '#166534' }}>Metin temiz, yasaklı kelime bulunamadı</strong>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Quick Actions Card */}
+          <div style={enhancedStyles.card}>
+            <div style={enhancedStyles.cardHeader}>
+              <h3 style={enhancedStyles.cardTitle}>
+                <FaClock style={{ color: '#f59e0b' }} /> Hızlı İşlemler
+              </h3>
+            </div>
+            <div style={{ padding: '20px' }}>
+              <div style={enhancedStyles.quickActions}>
+                <button 
+                  style={enhancedStyles.quickActionBtn}
+                  onClick={() => handleExport('csv')}
+                >
+                  <FaDownload style={{ color: '#10b981' }} /> CSV Olarak İndir
+                </button>
+                <button 
+                  style={enhancedStyles.quickActionBtn}
+                  onClick={() => handleExport('json')}
+                >
+                  <FaFileExcel style={{ color: '#6366f1' }} /> JSON Olarak İndir
+                </button>
+                <button 
+                  style={enhancedStyles.quickActionBtn}
+                  onClick={() => handleExport('txt')}
+                >
+                  <FaFileExport style={{ color: '#8b5cf6' }} /> TXT Olarak İndir
+                </button>
+                <button 
+                  style={enhancedStyles.quickActionBtn}
+                  onClick={() => setShowImportModal(true)}
+                >
+                  <FaUpload style={{ color: '#f59e0b' }} /> Dosyadan İçe Aktar
+                </button>
+                <button 
+                  style={enhancedStyles.quickActionBtn}
+                  onClick={handleCopyAll}
+                >
+                  <FaCopy style={{ color: '#ec4899' }} /> Tüm Kelimeleri Kopyala
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Info Card */}
+          <div style={{ ...enhancedStyles.card, backgroundColor: '#fefce8', borderColor: '#fde047' }}>
+            <div style={{ padding: '20px' }}>
+              <h4 style={{ fontSize: '14px', fontWeight: '700', color: '#854d0e', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <FaExclamationTriangle /> Regex Kullanımı
+              </h4>
+              <ul style={{ margin: 0, padding: '0 0 0 16px', fontSize: '13px', color: '#a16207', lineHeight: 1.7 }}>
+                <li><code style={{ backgroundColor: '#fef9c3', padding: '2px 6px', borderRadius: '4px' }}>k[uü]f[uü]r</code> - küfür kelimesinin varyasyonları</li>
+                <li><code style={{ backgroundColor: '#fef9c3', padding: '2px 6px', borderRadius: '4px' }}>.*spam.*</code> - içinde spam geçen her metin</li>
+                <li><code style={{ backgroundColor: '#fef9c3', padding: '2px 6px', borderRadius: '4px' }}>\b(kelime1|kelime2)\b</code> - tam eşleşme</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Test Modal */}
+      {showTestModal && (
+        <div style={enhancedStyles.modal} onClick={() => setShowTestModal(false)}>
+          <div style={enhancedStyles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <div style={enhancedStyles.modalHeader}>
+              <h3 style={enhancedStyles.modalTitle}>
+                <FaFlask style={{ color: '#8b5cf6' }} /> Metin Test Aracı
+              </h3>
+              <button style={enhancedStyles.modalCloseBtn} onClick={() => setShowTestModal(false)}>
+                <FaTimes />
+              </button>
+            </div>
+            <div style={enhancedStyles.modalBody}>
+              <p style={{ fontSize: '14px', color: '#6b7280', marginBottom: '16px' }}>
+                Bir metni yasaklı kelimelere karşı test edin. Metin yasaklı kelime içeriyorsa 
+                hangi kelimelerin eşleştiğini göreceksiniz.
+              </p>
+              <textarea
+                value={testText}
+                onChange={(e) => setTestText(e.target.value)}
+                placeholder="Test etmek istediğiniz metni buraya yazın..."
+                style={enhancedStyles.testTextarea}
+              />
+              {testResult && (
+                <div style={{
+                  ...enhancedStyles.testResult,
+                  ...(testResult.data?.banned ? enhancedStyles.testResultDanger : enhancedStyles.testResultSuccess)
+                }}>
+                  {testResult.data?.banned ? (
+                    <>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                        <FaExclamationTriangle style={{ color: '#ef4444' }} />
+                        <strong style={{ color: '#991b1b' }}>Yasaklı Kelime Tespit Edildi!</strong>
+                      </div>
+                      <p style={{ fontSize: '13px', color: '#991b1b', margin: 0 }}>
+                        Bulunan kelimeler: {testResult.data?.words?.join(', ')}
+                      </p>
+                    </>
+                  ) : (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <FaCheck style={{ color: '#22c55e' }} />
+                      <strong style={{ color: '#166534' }}>Metin temiz, yasaklı kelime bulunamadı</strong>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+            <div style={enhancedStyles.modalFooter}>
+              <button style={enhancedStyles.cancelBtn} onClick={() => setShowTestModal(false)}>
+                Kapat
+              </button>
+              <button
+                style={enhancedStyles.testBtn}
+                onClick={handleTest}
+                disabled={testWordsMutation.isPending || !testText.trim()}
+              >
+                <FaFlask /> {testWordsMutation.isPending ? 'Test Ediliyor...' : 'Test Et'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Import Modal */}
+      {showImportModal && (
+        <div style={enhancedStyles.modal} onClick={() => setShowImportModal(false)}>
+          <div style={enhancedStyles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <div style={enhancedStyles.modalHeader}>
+              <h3 style={enhancedStyles.modalTitle}>
+                <FaFileImport style={{ color: '#f59e0b' }} /> Dosyadan İçe Aktar
+              </h3>
+              <button style={enhancedStyles.modalCloseBtn} onClick={() => setShowImportModal(false)}>
+                <FaTimes />
+              </button>
+            </div>
+            <div style={enhancedStyles.modalBody}>
+              <p style={{ fontSize: '14px', color: '#6b7280', marginBottom: '16px' }}>
+                CSV, JSON veya TXT dosyasından yasaklı kelimeleri içe aktarın. Her satırda bir kelime olmalıdır.
+              </p>
+              <label style={enhancedStyles.fileInput}>
+                <input
+                  type="file"
+                  accept=".csv,.json,.txt"
+                  onChange={(e) => setImportFile(e.target.files[0])}
+                  style={{ display: 'none' }}
+                />
+                <FaUpload style={{ fontSize: '32px', color: '#9ca3af', marginBottom: '12px' }} />
+                <p style={{ fontSize: '14px', color: '#374151', margin: 0 }}>
+                  {importFile ? importFile.name : 'Dosya seçmek için tıklayın'}
+                </p>
+                <p style={{ fontSize: '12px', color: '#9ca3af', marginTop: '4px' }}>
+                  Desteklenen formatlar: CSV, JSON, TXT
+                </p>
+              </label>
+            </div>
+            <div style={enhancedStyles.modalFooter}>
+              <button style={enhancedStyles.cancelBtn} onClick={() => {
+                setShowImportModal(false);
+                setImportFile(null);
+              }}>
+                İptal
+              </button>
+              <button
+                style={enhancedStyles.saveBtn}
+                onClick={handleImport}
+                disabled={!importFile || bulkAddMutation.isPending}
+              >
+                <FaUpload /> {bulkAddMutation.isPending ? 'İçe Aktarılıyor...' : 'İçe Aktar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Modal */}
+      {showEditModal && (
+        <div style={enhancedStyles.modal} onClick={() => setShowEditModal(null)}>
+          <div style={enhancedStyles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <div style={enhancedStyles.modalHeader}>
+              <h3 style={enhancedStyles.modalTitle}>
+                <FaEdit style={{ color: '#6366f1' }} /> Kelime Düzenle
+              </h3>
+              <button style={enhancedStyles.modalCloseBtn} onClick={() => setShowEditModal(null)}>
+                <FaTimes />
+              </button>
+            </div>
+            <div style={enhancedStyles.modalBody}>
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+                  Kelime
+                </label>
+                <input
+                  type="text"
+                  value={editWord}
+                  onChange={(e) => setEditWord(e.target.value)}
+                  style={enhancedStyles.addInput}
+                />
+              </div>
+              <label 
+                style={{
+                  ...enhancedStyles.regexToggle,
+                  ...(editIsRegex ? enhancedStyles.regexToggleActive : {}),
+                  width: 'fit-content'
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={editIsRegex}
+                  onChange={(e) => setEditIsRegex(e.target.checked)}
+                  style={{ display: 'none' }}
+                />
+                <FaCode /> Regex Olarak Kullan
+              </label>
+            </div>
+            <div style={enhancedStyles.modalFooter}>
+              <button style={enhancedStyles.cancelBtn} onClick={() => setShowEditModal(null)}>
+                İptal
+              </button>
+              <button
+                style={enhancedStyles.saveBtn}
+                onClick={handleSaveEdit}
+                disabled={updateWordMutation.isPending || !editWord.trim()}
+              >
+                <FaCheck /> {updateWordMutation.isPending ? 'Kaydediliyor...' : 'Kaydet'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* CSS for spinner animation */}
+      <style>
+        {`
+          @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+          }
+        `}
+      </style>
+    </div>
+  );
+};
+
+export default BannedWordsTab;

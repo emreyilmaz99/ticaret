@@ -167,6 +167,8 @@ Route::prefix('v1/admin')->group(function () {
         Route::get('banned-words/stats', [\App\Http\Controllers\Api\V1\Admin\AdminBannedWordController::class, 'stats']);
         Route::post('banned-words', [\App\Http\Controllers\Api\V1\Admin\AdminBannedWordController::class, 'store']);
         Route::post('banned-words/bulk', [\App\Http\Controllers\Api\V1\Admin\AdminBannedWordController::class, 'bulkStore']);
+        Route::post('banned-words/test', [\App\Http\Controllers\Api\V1\Admin\AdminBannedWordController::class, 'test']);
+        Route::post('banned-words/bulk-delete', [\App\Http\Controllers\Api\V1\Admin\AdminBannedWordController::class, 'bulkDestroy']);
         Route::put('banned-words/{id}', [\App\Http\Controllers\Api\V1\Admin\AdminBannedWordController::class, 'update']);
         Route::delete('banned-words/{id}', [\App\Http\Controllers\Api\V1\Admin\AdminBannedWordController::class, 'destroy']);
         Route::delete('banned-words/bulk', [\App\Http\Controllers\Api\V1\Admin\AdminBannedWordController::class, 'bulkDestroy']);

@@ -17,7 +17,7 @@ const slides = [
     id: 2,
     title: "Elektronikte\nDev İndirimler",
     subtitle: "Akıllı telefonlardan laptoplara, en yeni teknoloji ürünlerinde kaçırılmayacak fırsatlar.",
-    primaryBtn: { text: "İncele", link: "/electronics", icon: <FaShoppingCart /> },
+    primaryBtn: { text: "İncele", link: "/products?category=elektronik", icon: <FaShoppingCart /> },
     secondaryBtn: null,
     bgColor: "linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)",
     emoji: "📱"
@@ -26,7 +26,7 @@ const slides = [
     id: 3,
     title: "Eviniz İçin\nEn İyisi",
     subtitle: "Mobilyadan dekorasyona, evinizin havasını değiştirecek şık ve modern tasarımlar.",
-    primaryBtn: { text: "Keşfet", link: "/home", icon: <FaShoppingCart /> },
+    primaryBtn: { text: "Keşfet", link: "/products?category=ev-yasam", icon: <FaShoppingCart /> },
     secondaryBtn: null,
     bgColor: "linear-gradient(135deg, #d97706 0%, #b45309 100%)",
     emoji: "🏠"

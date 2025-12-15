@@ -184,4 +184,49 @@ class AdminBannedWordController extends Controller
             'data' => $stats,
         ]);
     }
+
+    /**
+     * POST /api/v1/admin/banned-words/test
+     * Test text against banned words
+     */
+    public function test(Request $request)
+    {
+        $validated = $request->validate([
+            'text' => 'required|string|max:5000',
+        ], [
+            'text.required' => 'Test edilecek metin zorunludur.',
+            'text.max' => 'Metin en fazla 5000 karakter olabilir.',
+        ]);
+
+        $text = $validated['text'];
+        $normalizedText = mb_strtolower($text, 'UTF-8');
+        $foundWords = [];
+
+        $bannedWords = BannedWord::all();
+
+        foreach ($bannedWords as $bannedWord) {
+            if ($bannedWord->is_regex) {
+                // Regex pattern matching
+                $pattern = $bannedWord->pattern ?: '/' . preg_quote($bannedWord->word, '/') . '/iu';
+                if (@preg_match($pattern, $normalizedText)) {
+                    $foundWords[] = $bannedWord->word;
+                }
+            } else {
+                // Simple string matching
+                $normalizedBannedWord = mb_strtolower($bannedWord->word, 'UTF-8');
+                if (str_contains($normalizedText, $normalizedBannedWord)) {
+                    $foundWords[] = $bannedWord->word;
+                }
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'banned' => !empty($foundWords),
+                'words' => array_unique($foundWords),
+                'count' => count(array_unique($foundWords)),
+            ],
+        ]);
+    }
 }

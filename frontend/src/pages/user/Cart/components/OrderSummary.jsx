@@ -2,6 +2,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { FiArrowRight, FiLoader } from 'react-icons/fi';
+import { FaCcVisa, FaCcMastercard, FaCreditCard } from 'react-icons/fa';
 import CouponSection from './CouponSection';
 import ShippingBreakdown from './ShippingBreakdown';
 
@@ -104,34 +105,33 @@ const OrderSummary = ({
 };
 
 /**
- * Ödeme yöntemleri placeholder ikonları
+ * Ödeme yöntemleri ikonları
  */
 const PaymentIcons = () => (
   <div style={{
-    marginTop: '24px', 
-    display: 'flex', 
-    justifyContent: 'center', 
-    gap: '12px', 
-    opacity: 0.5
+    marginTop: '16px',
+    paddingTop: '16px',
+    borderTop: '1px solid #f1f5f9',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '12px',
   }}>
-    <div style={{
-      height: '24px', 
-      width: '40px', 
-      backgroundColor: '#e2e8f0', 
-      borderRadius: '4px'
-    }} />
-    <div style={{
-      height: '24px', 
-      width: '40px', 
-      backgroundColor: '#e2e8f0', 
-      borderRadius: '4px'
-    }} />
-    <div style={{
-      height: '24px', 
-      width: '40px', 
-      backgroundColor: '#e2e8f0', 
-      borderRadius: '4px'
-    }} />
+    <FaCcVisa 
+      size={48} 
+      style={{ color: '#1434CB' }}
+      title="Visa"
+    />
+    <FaCcMastercard 
+      size={48} 
+      style={{ color: '#EB001B' }}
+      title="Mastercard"
+    />
+    <FaCreditCard 
+      size={36} 
+      style={{ color: '#6b7280' }}
+      title="Diğer Kartlar"
+    />
   </div>
 );
 
