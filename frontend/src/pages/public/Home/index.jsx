@@ -1,6 +1,7 @@
 // src/pages/public/Home/index.jsx
 import React from 'react';
 import QuickViewModal from '../../../components/modals/QuickViewModal';
+import { CompareModal } from '../CategoryProducts/components/CompareModal';
 
 // Hooks
 import { useHome } from './useHome';
@@ -31,6 +32,8 @@ const Home = () => {
     showCookieBanner,
     favorites,
     quickViewProduct,
+    compareList,
+    isCompareModalOpen,
     selectedCategory,
     priceRange,
     minRating,
@@ -45,6 +48,7 @@ const Home = () => {
     // Setters
     setShowCookieBanner,
     setQuickViewProduct,
+    setIsCompareModalOpen,
     setPriceRange,
     setMinRating,
     setSortOrder,
@@ -52,6 +56,7 @@ const Home = () => {
     // Handlers
     addToCart,
     toggleFavorite,
+    toggleCompare,
     handleCategoryChange,
     clearFilters,
   } = useHome();
@@ -102,6 +107,8 @@ const Home = () => {
             setQuickViewProduct={setQuickViewProduct}
             addToCart={addToCart}
             clearFilters={clearFilters}
+            compareList={compareList}
+            toggleCompare={toggleCompare}
             styles={styles}
           />
           
@@ -189,6 +196,16 @@ const Home = () => {
         toggleFavorite={toggleFavorite}
         favorites={favorites}
       />
+
+      {/* Compare Modal */}
+      {isCompareModalOpen && (
+        <CompareModal
+          compareList={compareList}
+          onClose={() => setIsCompareModalOpen(false)}
+          onRemove={toggleCompare}
+          styles={styles}
+        />
+      )}
 
       {/* CSS Animations */}
       <style>{cssAnimations}</style>

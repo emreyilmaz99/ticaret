@@ -16,6 +16,8 @@ const ProductGrid = ({
   setQuickViewProduct,
   addToCart,
   clearFilters,
+  compareList,
+  toggleCompare,
   styles 
 }) => {
   if (isLoading) {
@@ -128,6 +130,8 @@ const ProductGrid = ({
           }} 
           onAddToCart={addToCart}
           onQuickView={setQuickViewProduct}
+          onToggleCompare={toggleCompare}
+          isInCompareList={compareList?.some(p => p.id === product.id)}
         />
       ))}
     </div>

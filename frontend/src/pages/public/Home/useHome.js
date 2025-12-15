@@ -25,6 +25,8 @@ export const useHome = () => {
   const [showCookieBanner, setShowCookieBanner] = useState(true);
   const [favorites, setFavorites] = useState([]);
   const [quickViewProduct, setQuickViewProduct] = useState(null);
+  const [compareList, setCompareList] = useState([]);
+  const [isCompareModalOpen, setIsCompareModalOpen] = useState(false);
   
   // Filter States
   const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || 'all');
@@ -148,6 +150,29 @@ export const useHome = () => {
     setSelectedCategory(categoryId);
   }, []);
 
+  // Compare handler
+  const toggleCompare = useCallback((product) => {
+    if (compareList.find(p => p.id === product.id)) {
+      setCompareList(compareList.filter(p => p.id !== product.id));
+      showToast('Ürün karşılaştırma listesinden çıkarıldı.', 'info');
+    } else {
+      if (compareList.length >= 3) {
+        showToast('En fazla 3 ürün karşılaştırabilirsiniz.', 'warning');
+        return;
+      }
+      const newCompareList = [...compareList, product];
+      setCompareList(newCompareList);
+      showToast('Ürün karşılaştırma listesine eklendi.', 'success');
+      
+      // 2 veya daha fazla ürün varsa otomatik modal aç
+      if (newCompareList.length >= 2) {
+        setTimeout(() => {
+          setIsCompareModalOpen(true);
+        }, 500);
+      }
+    }
+  }, [compareList, showToast]);
+
   // Clear filters
   const clearFilters = useCallback(() => {
     setSelectedCategory('all');
@@ -161,6 +186,8 @@ export const useHome = () => {
     showCookieBanner,
     favorites,
     quickViewProduct,
+    compareList,
+    isCompareModalOpen,
     selectedCategory,
     priceRange,
     minRating,
@@ -175,6 +202,7 @@ export const useHome = () => {
     // Setters
     setShowCookieBanner,
     setQuickViewProduct,
+    setIsCompareModalOpen,
     setPriceRange,
     setMinRating,
     setSortOrder,
@@ -182,6 +210,7 @@ export const useHome = () => {
     // Handlers
     addToCart,
     toggleFavorite,
+    toggleCompare,
     handleCategoryChange,
     clearFilters,
   };

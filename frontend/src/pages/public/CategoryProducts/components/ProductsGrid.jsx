@@ -127,7 +127,7 @@ export const ProductsGrid = ({
             product={product}
             onAddToCart={onAddToCart}
             onQuickView={onQuickView}
-            isInCompareList={compareList.includes(product.id)}
+            isInCompareList={compareList?.some(p => p.id === product.id)}
             onToggleCompare={onToggleCompare}
             viewMode={viewMode}
           />
