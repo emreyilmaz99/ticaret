@@ -1,13 +1,14 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { FaSignOutAlt, FaStore, FaTimes } from 'react-icons/fa';
+import { FaSignOutAlt, FaStore, FaTimes, FaChevronDown, FaChevronRight } from 'react-icons/fa';
 import { vendorLogout } from '../../features/vendor/api/vendorAuthApi';
-import { MENU_ITEMS } from './constants';
+import { MENU_GROUPS } from './constants';
 import { sidebarStyles as styles } from './styles';
 
 const VendorSidebar = ({ isMobile, isOpen, onClose }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [expandedGroups, setExpandedGroups] = useState([]);
 
   // Close sidebar on route change (mobile)
   useEffect(() => {
@@ -15,6 +16,14 @@ const VendorSidebar = ({ isMobile, isOpen, onClose }) => {
       onClose();
     }
   }, [location.pathname, isMobile, onClose]);
+
+  const toggleGroup = (groupKey) => {
+    setExpandedGroups(prev => 
+      prev.includes(groupKey) 
+        ? prev.filter(key => key !== groupKey)
+        : [...prev, groupKey]
+    );
+  };
 
   const handleLogout = async () => {
     try {
@@ -25,6 +34,94 @@ const VendorSidebar = ({ isMobile, isOpen, onClose }) => {
       localStorage.removeItem('vendor_token');
       navigate('/vendor/login');
     }
+  };
+
+  // Menü item component'i
+  const MenuItem = ({ item }) => {
+    const Icon = item.icon;
+    const isActive = location.pathname === item.path;
+    
+    return (
+      <Link 
+        to={item.path} 
+        style={{
+          ...styles.link(isActive),
+          paddingLeft: '40px',
+          fontSize: '13px',
+        }}
+        onMouseEnter={(e) => {
+          if (!isActive) {
+            e.currentTarget.style.backgroundColor = 'rgba(148, 163, 184, 0.1)';
+            e.currentTarget.style.color = '#cbd5e1';
+          }
+        }}
+        onMouseLeave={(e) => {
+          if (!isActive) {
+            e.currentTarget.style.backgroundColor = 'transparent';
+            e.currentTarget.style.color = '#94a3b8';
+          }
+        }}
+      >
+        <Icon size={14} />
+        <span>{item.label}</span>
+        {isActive && (
+          <div style={{
+            marginLeft: 'auto',
+            width: '5px',
+            height: '5px',
+            borderRadius: '50%',
+            backgroundColor: '#10b981',
+            animation: 'pulse 2s infinite',
+          }} />
+        )}
+      </Link>
+    );
+  };
+
+  // Grup başlığı component'i
+  const GroupHeader = ({ group }) => {
+    const isExpanded = expandedGroups.includes(group.key);
+    const hasActiveChild = group.items?.some(item => location.pathname === item.path);
+    const Icon = group.icon;
+    
+    return (
+      <div
+        onClick={() => group.items && toggleGroup(group.key)}
+        style={{
+          color: hasActiveChild ? '#10b981' : '#cbd5e1',
+          cursor: group.items ? 'pointer' : 'default',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px',
+          padding: '12px 16px',
+          borderRadius: '10px',
+          transition: 'all 0.2s ease',
+          fontWeight: '700',
+          fontSize: '13px',
+          backgroundColor: hasActiveChild ? 'rgba(16, 185, 129, 0.1)' : 'transparent',
+          marginTop: group.key === 'genel' ? '0' : '16px',
+          fontFamily: "'Plus Jakarta Sans', sans-serif",
+        }}
+        onMouseEnter={(e) => {
+          if (group.items) {
+            e.currentTarget.style.backgroundColor = 'rgba(148, 163, 184, 0.1)';
+          }
+        }}
+        onMouseLeave={(e) => {
+          if (!hasActiveChild) {
+            e.currentTarget.style.backgroundColor = 'transparent';
+          } else {
+            e.currentTarget.style.backgroundColor = 'rgba(16, 185, 129, 0.1)';
+          }
+        }}
+      >
+        {Icon && <Icon size={16} />}
+        <span style={{ flex: 1 }}>{group.label}</span>
+        {group.items && (
+          isExpanded ? <FaChevronDown size={12} /> : <FaChevronRight size={12} />
+        )}
+      </div>
+    );
   };
 
   return (
@@ -56,30 +153,23 @@ const VendorSidebar = ({ isMobile, isOpen, onClose }) => {
 
       {/* MENÜ LİNKLERİ */}
       <div style={styles.menuContainer}>
-        {MENU_ITEMS.map((section, index) => (
-          <React.Fragment key={index}>
-            <p style={{
-              ...styles.sectionTitle,
-              marginTop: index > 0 ? '24px' : '0'
-            }}>
-              {section.title}
-            </p>
-            
-            {section.items.map((item) => {
-              const Icon = item.icon;
-              const isActive = location.pathname === item.path;
-              
-              return (
-                <Link 
-                  key={item.path} 
-                  to={item.path} 
-                  style={styles.link(isActive)}
-                >
-                  <Icon size={18} /> {item.label}
-                </Link>
-              );
-            })}
-          </React.Fragment>
+        {MENU_GROUPS.map(group => (
+          <div key={group.key}>
+            <GroupHeader group={group} />
+            {group.items && expandedGroups.includes(group.key) && (
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '2px',
+                marginTop: '4px',
+                marginBottom: '4px',
+              }}>
+                {group.items.map(item => (
+                  <MenuItem key={item.path} item={item} />
+                ))}
+              </div>
+            )}
+          </div>
         ))}
       </div>
 

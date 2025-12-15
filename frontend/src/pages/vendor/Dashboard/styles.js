@@ -59,7 +59,7 @@ export const getStyles = () => ({
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     marginBottom: '24px',
-    background: 'linear-gradient(135deg, #059669 0%, #3b82f6 100%)',
+    background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
     padding: '28px 32px',
     borderRadius: '16px',
     border: '1px solid #e2e8f0',

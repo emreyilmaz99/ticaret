@@ -3,108 +3,181 @@ import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { 
   FaHome, FaBox, FaUsers, FaSignOutAlt, FaStore, 
-  FaUserShield, FaPercentage, FaLeaf, FaLayerGroup, FaShoppingBag, FaReceipt, FaStar, FaCommentAlt
+  FaUserShield, FaPercentage, FaLeaf, FaLayerGroup, FaShoppingBag, FaReceipt, FaStar, FaCommentAlt,
+  FaChevronDown, FaChevronRight, FaUserCheck, FaUserClock, FaTags
 } from 'react-icons/fa';
 
 const AdminSidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [hoveredItem, setHoveredItem] = useState(null);
+  const [expandedGroups, setExpandedGroups] = useState([]);
 
   const handleLogout = () => {
     localStorage.removeItem('admin_token');
     navigate('/admin/login');
   };
 
-  // Menü öğeleri
-  const menuItems = {
-    genel: [
-      { path: '/admin/dashboard', icon: FaHome, label: 'Özet' },
-    ],
-    yonetim: [
-      { path: '/admin/active-vendors', icon: FaStore, label: 'Satıcılar' },
-      { path: '/admin/vendors', icon: FaStore, label: 'Satıcı Başvuruları' },
-      { path: '/admin/vendor-applications', icon: FaUsers, label: 'Ön Başvurular' },
-      
-      // --- YENİ EKLENEN SİPARİŞLER ---
-      { path: '/admin/orders', icon: FaShoppingBag, label: 'Siparişler' },
-      // -----------------------------
-
-      { path: '/admin/commission-plans', icon: FaPercentage, label: 'Komisyon Planları' },
-      { path: '/admin/tax-classes', icon: FaReceipt, label: 'Vergi Sınıfları (KDV)' },
-      { path: '/admin/categories', icon: FaLayerGroup, label: 'Kategoriler' },
-      { path: '/admin/products', icon: FaBox, label: 'Ürünler' },
-      { path: '/admin/featured-deals', icon: FaStar, label: 'Öne Çıkan Ürünler' },
-      { path: '/admin/reviews', icon: FaCommentAlt, label: 'Değerlendirmeler' },
-      { path: '/admin/users', icon: FaUsers, label: 'Kullanıcılar' },
-      { path: '/admin/admins', icon: FaUserShield, label: 'Yöneticiler' },
-    ],
+  const toggleGroup = (groupKey) => {
+    setExpandedGroups(prev => 
+      prev.includes(groupKey) 
+        ? prev.filter(key => key !== groupKey)
+        : [...prev, groupKey]
+    );
   };
 
-  // Link stili
-  const getLinkStyle = (path, isHovered) => {
-    const isActive = location.pathname === path;
-    return {
-      color: isActive ? 'white' : '#94a3b8',
-      backgroundColor: isActive 
-        ? 'linear-gradient(135deg, #059669 0%, #047857 100%)' 
-        : 'transparent',
-      background: isActive ? 'linear-gradient(135deg, #059669 0%, #047857 100%)' : 'transparent',
-      textDecoration: 'none',
-      display: 'flex',
-      alignItems: 'center',
-      gap: '12px',
-      padding: '12px 16px',
-      borderRadius: '10px',
-      transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
-      fontWeight: isActive ? '600' : '500',
-      fontSize: '14px',
-      position: 'relative',
-      overflow: 'hidden',
-      boxShadow: isActive ? '0 4px 12px rgba(5, 150, 105, 0.3)' : 'none',
-      transform: 'translateX(0)',
-    };
-  };
+  // Kategorize edilmiş menü yapısı
+  const menuGroups = [
+    {
+      key: 'genel',
+      label: 'Genel',
+      items: [
+        { path: '/admin/dashboard', icon: FaHome, label: 'Özet' },
+      ]
+    },
+    {
+      key: 'saticilar',
+      label: 'Satıcı Yönetimi',
+      icon: FaStore,
+      items: [
+        { path: '/admin/active-vendors', icon: FaUserCheck, label: 'Aktif Satıcılar' },
+        { path: '/admin/vendors', icon: FaUserClock, label: 'Başvuru Onayları' },
+        { path: '/admin/vendor-applications', icon: FaUsers, label: 'Ön Başvurular' },
+      ]
+    },
+    {
+      key: 'urunler',
+      label: 'Ürün Yönetimi',
+      icon: FaBox,
+      items: [
+        { path: '/admin/products', icon: FaBox, label: 'Ürünler' },
+        { path: '/admin/categories', icon: FaLayerGroup, label: 'Kategoriler' },
+        { path: '/admin/featured-deals', icon: FaStar, label: 'Öne Çıkan Ürünler' },
+      ]
+    },
+    {
+      key: 'siparis',
+      label: 'Sipariş & Satış',
+      icon: FaShoppingBag,
+      items: [
+        { path: '/admin/orders', icon: FaShoppingBag, label: 'Siparişler' },
+        { path: '/admin/reviews', icon: FaCommentAlt, label: 'Değerlendirmeler' },
+      ]
+    },
+    {
+      key: 'finans',
+      label: 'Finansal İşlemler',
+      icon: FaPercentage,
+      items: [
+        { path: '/admin/commission-plans', icon: FaPercentage, label: 'Komisyon Planları' },
+        { path: '/admin/tax-classes', icon: FaReceipt, label: 'Vergi Sınıfları (KDV)' },
+      ]
+    },
+    {
+      key: 'kullanici',
+      label: 'Kullanıcı Yönetimi',
+      icon: FaUsers,
+      items: [
+        { path: '/admin/users', icon: FaUsers, label: 'Kullanıcılar' },
+        { path: '/admin/admins', icon: FaUserShield, label: 'Yöneticiler' },
+      ]
+    },
+  ];
 
-  // Aktif gösterge
-  const getActiveIndicator = (path) => {
-    const isActive = location.pathname === path;
-    return isActive ? (
-      <div style={{
-        position: 'absolute',
-        left: '-24px',
-        top: '50%',
-        transform: 'translateY(-50%)',
-        width: '4px',
-        height: '24px',
-        background: 'linear-gradient(180deg, #10b981 0%, #059669 100%)',
-        borderRadius: '0 4px 4px 0',
-      }} />
-    ) : null;
-  };
-
+  // Menü item component'i
   const MenuItem = ({ item }) => {
     const Icon = item.icon;
+    const isActive = location.pathname === item.path;
     
     return (
       <Link 
         to={item.path} 
-        style={getLinkStyle(item.path, false)}
+        style={{
+          color: isActive ? 'white' : '#94a3b8',
+          backgroundColor: isActive ? 'rgba(16, 185, 129, 0.15)' : 'transparent',
+          textDecoration: 'none',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px',
+          padding: '10px 16px',
+          paddingLeft: '40px',
+          borderRadius: '8px',
+          transition: 'all 0.2s ease',
+          fontWeight: isActive ? '600' : '500',
+          fontSize: '13px',
+          position: 'relative',
+          borderLeft: isActive ? '3px solid #10b981' : '3px solid transparent',
+        }}
+        onMouseEnter={(e) => {
+          if (!isActive) {
+            e.currentTarget.style.backgroundColor = 'rgba(148, 163, 184, 0.1)';
+            e.currentTarget.style.color = '#cbd5e1';
+          }
+        }}
+        onMouseLeave={(e) => {
+          if (!isActive) {
+            e.currentTarget.style.backgroundColor = 'transparent';
+            e.currentTarget.style.color = '#94a3b8';
+          }
+        }}
       >
-        {getActiveIndicator(item.path)}
-        <Icon size={18} />
+        <Icon size={14} />
         <span>{item.label}</span>
-        {location.pathname === item.path && (
+        {isActive && (
           <div style={{
             marginLeft: 'auto',
-            width: '6px',
-            height: '6px',
+            width: '5px',
+            height: '5px',
             borderRadius: '50%',
-            backgroundColor: '#a7f3d0',
+            backgroundColor: '#10b981',
             animation: 'pulse 2s infinite',
           }} />
         )}
       </Link>
+    );
+  };
+
+  // Grup başlığı component'i
+  const GroupHeader = ({ group }) => {
+    const isExpanded = expandedGroups.includes(group.key);
+    const Icon = group.icon;
+    const hasActiveChild = group.items?.some(item => location.pathname === item.path);
+    
+    return (
+      <div
+        onClick={() => group.items && toggleGroup(group.key)}
+        style={{
+          color: hasActiveChild ? '#10b981' : '#cbd5e1',
+          cursor: group.items ? 'pointer' : 'default',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px',
+          padding: '12px 16px',
+          borderRadius: '10px',
+          transition: 'all 0.2s ease',
+          fontWeight: '700',
+          fontSize: '13px',
+          backgroundColor: hasActiveChild ? 'rgba(16, 185, 129, 0.1)' : 'transparent',
+          marginTop: group.key === 'genel' ? '0' : '16px',
+        }}
+        onMouseEnter={(e) => {
+          if (group.items) {
+            e.currentTarget.style.backgroundColor = 'rgba(148, 163, 184, 0.1)';
+          }
+        }}
+        onMouseLeave={(e) => {
+          if (!hasActiveChild) {
+            e.currentTarget.style.backgroundColor = 'transparent';
+          } else {
+            e.currentTarget.style.backgroundColor = 'rgba(16, 185, 129, 0.1)';
+          }
+        }}
+      >
+        {Icon && <Icon size={16} />}
+        <span style={{ flex: 1 }}>{group.label}</span>
+        {group.items && (
+          isExpanded ? <FaChevronDown size={12} /> : <FaChevronRight size={12} />
+        )}
+      </div>
     );
   };
 
@@ -124,7 +197,7 @@ const AdminSidebar = () => {
       zIndex: 1000,
     }}>
       {/* LOGO ALANI */}
-      <div style={{ marginBottom: '40px', paddingLeft: '10px' }}>
+      <div style={{ marginBottom: '32px', paddingLeft: '10px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <div style={{
             width: '40px',
@@ -156,35 +229,32 @@ const AdminSidebar = () => {
       </div>
 
       {/* MENÜ LİNKLERİ */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1, overflowY: 'auto' }}>
-        <p style={{ 
-          fontSize: '10px', 
-          textTransform: 'uppercase', 
-          color: '#6ee7b7', 
-          fontWeight: '700', 
-          marginBottom: '8px', 
-          paddingLeft: '10px',
-          letterSpacing: '1px'
-        }}>
-          Genel
-        </p>
-        
-        {menuItems.genel.map(item => <MenuItem key={item.path} item={item} />)}
-        
-        <p style={{ 
-          fontSize: '10px', 
-          textTransform: 'uppercase', 
-          color: '#6ee7b7', 
-          fontWeight: '700', 
-          marginTop: '24px', 
-          marginBottom: '8px', 
-          paddingLeft: '10px',
-          letterSpacing: '1px'
-        }}>
-          Yönetim
-        </p>
-
-        {menuItems.yonetim.map(item => <MenuItem key={item.path} item={item} />)}
+      <div style={{ 
+        display: 'flex', 
+        flexDirection: 'column', 
+        flex: 1, 
+        overflowY: 'auto',
+        overflowX: 'hidden',
+        paddingRight: '4px',
+      }}>
+        {menuGroups.map(group => (
+          <div key={group.key}>
+            <GroupHeader group={group} />
+            {group.items && expandedGroups.includes(group.key) && (
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '2px',
+                marginTop: '4px',
+                marginBottom: '4px',
+              }}>
+                {group.items.map(item => (
+                  <MenuItem key={item.path} item={item} />
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
       </div>
 
       {/* ÇIKIŞ BUTONU */}

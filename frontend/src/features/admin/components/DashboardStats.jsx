@@ -59,8 +59,8 @@ export const DashboardStats = () => {
     <div>
       {/* ÜST BİLGİ KARTI */}
       <div style={{ 
-        backgroundColor: '#ffffff', 
-        color: '#0f172a',
+        background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)', 
+        color: '#ffffff',
         padding: '28px 32px', 
         borderRadius: '16px', 
         marginBottom: '32px',
@@ -73,14 +73,15 @@ export const DashboardStats = () => {
           marginBottom: '6px',
           letterSpacing: '-0.02em',
           margin: 0,
-          color: '#0f172a',
+          color: '#ffffff',
         }}>
           Hoş Geldin, {admin?.name} 👋
         </h1>
         <p style={{ 
           fontSize: '15px',
           margin: '6px 0 0 0',
-          color: '#64748b',
+          color: '#ffffff',
+          opacity: 0.9,
         }}>
           Bugün mağazanda neler olup bittiğine bir göz atalım.
         </p>
