@@ -123,6 +123,9 @@ class CartService extends BaseService
                 ]);
             }
 
+            // Sepet değiştiği için kuponu sıfırla
+            $this->cartRepo->updateCoupon($cart, null, 0);
+            
             $cart = $this->cartRepo->getWithItems($cart);
             
             return $this->successResponse(
@@ -159,6 +162,10 @@ class CartService extends BaseService
             }
 
             $this->cartItemRepo->updateQuantity($item, $quantity);
+            
+            // Sepet değiştiği için kuponu sıfırla
+            $this->cartRepo->updateCoupon($cart, null, 0);
+            
             $cart = $this->cartRepo->getWithItems($cart);
 
             return $this->successResponse(
@@ -184,6 +191,10 @@ class CartService extends BaseService
             }
 
             $this->cartItemRepo->removeItem($item);
+            
+            // Sepet değiştiği için kuponu sıfırla
+            $this->cartRepo->updateCoupon($cart, null, 0);
+            
             $cart = $this->cartRepo->getWithItems($cart);
 
             return $this->successResponse(

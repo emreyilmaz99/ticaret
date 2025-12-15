@@ -50,6 +50,7 @@ const useVendorProducts = () => {
   const [activeTab, setActiveTab] = useState('general');
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [filterText, setFilterText] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
   const [lightboxImage, setLightboxImage] = useState(null);
   const [viewMode, setViewMode] = useState('grid');
   const [sortOrder, setSortOrder] = useState('name_asc');
@@ -116,14 +117,25 @@ const useVendorProducts = () => {
 
   // Filtered & sorted products
   const filteredProducts = useMemo(() => {
-    if (!filterText) return products;
-    const search = filterText.toLowerCase();
-    return products.filter(p =>
-      p.name?.toLowerCase().includes(search) ||
-      p.sku?.toLowerCase().includes(search) ||
-      categories.find(c => c.id === p.category_id)?.name?.toLowerCase().includes(search)
-    );
-  }, [products, filterText, categories]);
+    let filtered = products;
+
+    // Status filter
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(p => p.status === statusFilter);
+    }
+
+    // Text filter
+    if (filterText) {
+      const search = filterText.toLowerCase();
+      filtered = filtered.filter(p =>
+        p.name?.toLowerCase().includes(search) ||
+        p.sku?.toLowerCase().includes(search) ||
+        categories.find(c => c.id === p.category_id)?.name?.toLowerCase().includes(search)
+      );
+    }
+
+    return filtered;
+  }, [products, filterText, statusFilter, categories]);
 
   const sortedProducts = useMemo(() => {
     return [...filteredProducts].sort((a, b) => {
@@ -140,7 +152,7 @@ const useVendorProducts = () => {
   }, [filteredProducts, sortOrder]);
 
   // Reset page on filter change
-  useEffect(() => { setCurrentPage(1); }, [filterText]);
+  useEffect(() => { setCurrentPage(1); }, [filterText, statusFilter]);
 
   // ============ MUTATIONS ============
   const createMutation = useMutation({
@@ -424,6 +436,7 @@ const useVendorProducts = () => {
   return {
     // Data
     products: sortedProducts,
+    allProducts: products,
     categories,
     groupedCategories,
     units,
@@ -439,6 +452,8 @@ const useVendorProducts = () => {
     setSortOrder,
     filterText,
     setFilterText,
+    statusFilter,
+    setStatusFilter,
     currentPage,
     setCurrentPage,
 

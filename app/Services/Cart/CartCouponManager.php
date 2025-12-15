@@ -7,9 +7,19 @@ use App\Models\Cart;
 use App\Models\User;
 use App\Models\VendorCoupon;
 use App\Services\BaseService;
+use App\Repositories\CartRepository;
 
 class CartCouponManager extends BaseService
 {
+    protected CartRepository $cartRepo;
+    protected CartResponseFormatter $formatter;
+
+    public function __construct(CartRepository $cartRepo, CartResponseFormatter $formatter)
+    {
+        $this->cartRepo = $cartRepo;
+        $this->formatter = $formatter;
+    }
+
     /**
      * Apply coupon to cart
      */
@@ -47,10 +57,16 @@ class CartCouponManager extends BaseService
             // İndirim hesapla
             $discount = $coupon->calculateDiscount($vendorSubtotal);
             
-            return $this->successResponse([
-                'code' => $code,
-                'discount' => $discount,
-            ], "{$code} kuponu uygulandı! {$discount} TL indirim kazandınız.");
+            // Kuponu sepete kaydet
+            $this->cartRepo->updateCoupon($cart, $code, $discount);
+            
+            // Sepeti yeniden yükle ve formatla
+            $cart = $this->cartRepo->getWithItems($cart);
+            
+            return $this->successResponse(
+                $this->formatter->format($cart),
+                "{$code} kuponu uygulandı! {$discount} TL indirim kazandınız."
+            );
             
         } catch (\Exception $e) {
             return $this->handleException($e, 'Kupon uygulanamadı');

@@ -21,6 +21,7 @@ const VendorProductsPage = () => {
   const {
     // Data
     products,
+    allProducts,
     categories,
     groupedCategories,
     units,
@@ -35,6 +36,8 @@ const VendorProductsPage = () => {
     setSortOrder,
     filterText,
     setFilterText,
+    statusFilter,
+    setStatusFilter,
     currentPage,
     setCurrentPage,
 
@@ -121,7 +124,11 @@ const VendorProductsPage = () => {
     <div style={styles.container}>
       <ProductHeader onCreateClick={openCreateModal} />
       
-      <ProductStats products={products} />
+      <ProductStats 
+        products={allProducts} 
+        statusFilter={statusFilter}
+        setStatusFilter={setStatusFilter}
+      />
       
       <ProductToolbar
         filterText={filterText}

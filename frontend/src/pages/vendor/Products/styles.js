@@ -913,14 +913,152 @@ export const styles = {
     gridTemplateColumns: 'repeat(4, 1fr)', 
     gap: '16px' 
   },
-  variantCard: { 
-    padding: '16px', 
-    border: '1px solid #e2e8f0', 
-    borderRadius: '8px', 
-    backgroundColor: '#f8fafc', 
-    position: 'relative', 
-    marginBottom: '12px' 
+
+  // --- Variants Section ---
+  variantsHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '20px',
+    paddingBottom: '16px',
+    borderBottom: '2px solid #e2e8f0'
   },
+  variantsTitle: {
+    fontSize: '18px',
+    fontWeight: '700',
+    color: '#0f172a',
+    margin: 0
+  },
+  addVariantBtn: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '10px 20px',
+    backgroundColor: '#059669',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '8px',
+    fontSize: '14px',
+    fontWeight: '600',
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+    boxShadow: '0 2px 4px rgba(5, 150, 105, 0.2)'
+  },
+  emptyVariants: {
+    textAlign: 'center',
+    padding: '48px 24px',
+    backgroundColor: '#f8fafc',
+    borderRadius: '12px',
+    border: '2px dashed #cbd5e1'
+  },
+  variantsList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '16px'
+  },
+  variantCard: { 
+    padding: '20px', 
+    border: '1px solid #e2e8f0', 
+    borderRadius: '12px', 
+    backgroundColor: '#fff', 
+    position: 'relative',
+    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
+    transition: 'all 0.2s'
+  },
+  variantHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '16px',
+    paddingBottom: '12px',
+    borderBottom: '1px solid #f1f5f9'
+  },
+  variantIndex: {
+    fontSize: '14px',
+    fontWeight: '700',
+    color: '#059669',
+    textTransform: 'uppercase',
+    letterSpacing: '0.5px'
+  },
+  variantDeleteBtn: {
+    padding: '8px 12px',
+    backgroundColor: '#fee2e2',
+    color: '#dc2626',
+    border: 'none',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    fontSize: '14px',
+    transition: 'all 0.2s',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  variantFields: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '16px'
+  },
+  variantRow: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+    gap: '16px'
+  },
+  variantField: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '8px'
+  },
+  variantLabel: {
+    fontSize: '13px',
+    fontWeight: '600',
+    color: '#475569',
+    marginBottom: '4px'
+  },
+  variantInput: {
+    padding: '10px 14px',
+    borderRadius: '8px',
+    border: '1px solid #e2e8f0',
+    fontSize: '14px',
+    outline: 'none',
+    transition: 'all 0.2s',
+    backgroundColor: '#fff'
+  },
+  variantSelect: {
+    padding: '10px 14px',
+    borderRadius: '8px',
+    border: '1px solid #e2e8f0',
+    fontSize: '14px',
+    outline: 'none',
+    backgroundColor: '#fff',
+    cursor: 'pointer',
+    transition: 'all 0.2s'
+  },
+  inputWithPrefix: {
+    position: 'relative',
+    display: 'flex',
+    alignItems: 'center',
+    width: '100%'
+  },
+  inputPrefix: {
+    position: 'absolute',
+    left: '14px',
+    fontSize: '14px',
+    color: '#64748b',
+    fontWeight: '600',
+    pointerEvents: 'none',
+    zIndex: 1
+  },
+  inputWithPrefixField: {
+    width: '100%',
+    padding: '10px 14px 10px 32px',
+    borderRadius: '8px',
+    border: '1px solid #e2e8f0',
+    fontSize: '14px',
+    outline: 'none',
+    transition: 'all 0.2s',
+    backgroundColor: '#fff'
+  },
+
   uploadBox: { 
     border: '2px dashed #cbd5e1', 
     borderRadius: '12px', 

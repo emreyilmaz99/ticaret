@@ -164,21 +164,44 @@ export const CartProvider = ({ children }) => {
 
   // Kupon uygula
   const applyCoupon = async (code) => {
+    // Mevcut sepeti kaydet - hata durumunda geri yüklemek için
+    const currentItems = [...cartItems];
+    const currentVendorGroups = [...vendorGroups];
+    const currentTotals = { ...totals };
+
     try {
       setLoading(true);
       const response = await cartApi.applyCoupon(code);
       
       if (response.success) {
-        setCartItems(response.data.items || []);
-        setVendorGroups(response.data.vendor_groups || []);
-        setTotals(response.data.totals);
-        setCoupon(response.data.coupon);
-        toast.success('Başarılı', response.message);
+        // Backend response yapısını kontrol et
+        const cartData = response.data;
+        
+        // Sepet bilgilerini güncelle
+        if (cartData.items && Array.isArray(cartData.items)) {
+          setCartItems(cartData.items);
+        }
+        if (cartData.vendor_groups && Array.isArray(cartData.vendor_groups)) {
+          setVendorGroups(cartData.vendor_groups);
+        }
+        if (cartData.totals) {
+          setTotals(cartData.totals);
+        }
+        if (cartData.coupon) {
+          setCoupon(cartData.coupon);
+        }
+        
+        toast.success('Başarılı', response.message || 'Kupon başarıyla uygulandı');
+      } else {
+        toast.error('Hata', response.message || 'Kupon uygulanamadı');
       }
     } catch (error) {
       console.error('Kupon uygulanırken hata:', error);
+      // Hata durumunda sepeti eski haline getir
+      setCartItems(currentItems);
+      setVendorGroups(currentVendorGroups);
+      setTotals(currentTotals);
       toast.error('Hata', error.response?.data?.message || 'Geçersiz kupon kodu');
-      setCoupon(null);
     } finally {
       setLoading(false);
     }
@@ -186,19 +209,39 @@ export const CartProvider = ({ children }) => {
 
   // Kuponu kaldır
   const removeCoupon = async () => {
+    // Mevcut sepeti kaydet
+    const currentItems = [...cartItems];
+    const currentVendorGroups = [...vendorGroups];
+    const currentTotals = { ...totals };
+
     try {
       setLoading(true);
       const response = await cartApi.removeCoupon();
       
       if (response.success) {
-        setCartItems(response.data.items || []);
-        setVendorGroups(response.data.vendor_groups || []);
-        setTotals(response.data.totals);
+        const cartData = response.data;
+        
+        if (cartData.items && Array.isArray(cartData.items)) {
+          setCartItems(cartData.items);
+        }
+        if (cartData.vendor_groups && Array.isArray(cartData.vendor_groups)) {
+          setVendorGroups(cartData.vendor_groups);
+        }
+        if (cartData.totals) {
+          setTotals(cartData.totals);
+        }
         setCoupon(null);
         toast.info('Bilgi', 'Kupon kaldırıldı');
+      } else {
+        toast.error('Hata', response.message || 'Kupon kaldırılamadı');
       }
     } catch (error) {
       console.error('Kupon kaldırılırken hata:', error);
+      // Hata durumunda sepeti eski haline getir
+      setCartItems(currentItems);
+      setVendorGroups(currentVendorGroups);
+      setTotals(currentTotals);
+      toast.error('Hata', error.response?.data?.message || 'Kupon kaldırılamadı');
     } finally {
       setLoading(false);
     }
