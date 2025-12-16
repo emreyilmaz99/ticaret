@@ -38,7 +38,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(\App\Repositories\Interfaces\FavoriteRepositoryInterface::class, \App\Repositories\FavoriteRepository::class);
 
         // Service bindings
-        $this->app->bind(\App\Interfaces\Services\AuthServiceInterface::class, \App\Services\AuthService::class);
+        $this->app->bind(\App\Interfaces\Services\AuthServiceInterface::class, \App\Services\Auth\AuthService::class);
         
         // Elasticsearch HTTP Client ve Transport bindings
         $this->app->bind(\Psr\Http\Client\ClientInterface::class, function ($app) {
