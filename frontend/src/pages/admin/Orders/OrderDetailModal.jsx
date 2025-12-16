@@ -815,7 +815,7 @@ const OrderDetailModal = ({ order, isOpen, onClose, styles, onCancel }) => {
           {/* İptal butonu sadece teslim edilmemiş siparişlerde göster */}
           {order.status !== 'delivered' && (
             <button 
-              style={{...styles.btnSecondary, color:'#DC2626', borderColor:'#FECACA'}}
+              style={{...styles.btnSecondary, color:'#DC2626', border:'1px solid #FECACA'}}
               onClick={() => setShowCancelModal(true)}
             >
               <FaBan style={{marginRight:'6px'}} /> İptal Et (Zorla)

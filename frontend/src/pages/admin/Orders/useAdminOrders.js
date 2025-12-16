@@ -32,11 +32,9 @@ export const useAdminOrders = () => {
   } = useQuery({
     queryKey: ['adminOrders', searchTerm, statusFilter, minAmount, maxAmount],
     queryFn: async () => {
-      const token = localStorage.getItem('admin_token');
       const queryString = buildQueryParams();
       const response = await apiClient.get(
-        `${BACKEND_URL}/api/v1/admin/orders${queryString ? '?' + queryString : ''}`,
-        { headers: { Authorization: `Bearer ${token}` } }
+        `/v1/admin/orders${queryString ? '?' + queryString : ''}`
       );
       return response.data.data;
     }
@@ -49,10 +47,7 @@ export const useAdminOrders = () => {
   } = useQuery({
     queryKey: ['adminOrderStats'],
     queryFn: async () => {
-      const token = localStorage.getItem('admin_token');
-      const response = await apiClient.get(`${BACKEND_URL}/api/v1/admin/orders/stats`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await apiClient.get('/v1/admin/orders/stats');
       return response.data.data;
     }
   });
@@ -60,11 +55,9 @@ export const useAdminOrders = () => {
   // Update status mutation
   const updateStatusMutation = useMutation({
     mutationFn: async ({ orderId, status }) => {
-      const token = localStorage.getItem('admin_token');
       const response = await apiClient.put(
-        `${BACKEND_URL}/api/v1/admin/orders/${orderId}/status`,
-        { status },
-        { headers: { Authorization: `Bearer ${token}` } }
+        `/v1/admin/orders/${orderId}/status`,
+        { status }
       );
       return response.data;
     },
@@ -81,11 +74,9 @@ export const useAdminOrders = () => {
   // Cancel order mutation
   const cancelOrderMutation = useMutation({
     mutationFn: async ({ orderId, reason }) => {
-      const token = localStorage.getItem('admin_token');
       const response = await apiClient.post(
-        `${BACKEND_URL}/api/v1/admin/orders/${orderId}/cancel`,
-        { reason },
-        { headers: { Authorization: `Bearer ${token}` } }
+        `/v1/admin/orders/${orderId}/cancel`,
+        { reason }
       );
       return response.data;
     },

@@ -6,11 +6,14 @@ import { styles } from '../styles';
  * Status header with icon, title and description
  */
 const StatusHeader = ({ config }) => {
+  // Extract border color from config.border (e.g., '2px solid #86efac' -> '#86efac')
+  const borderColor = config.border ? config.border.split(' ')[2] : config.bgColor;
+  
   return (
     <div style={{
       ...styles.header,
       backgroundColor: config.bgColor,
-      borderBottom: `1px solid ${config.borderColor}`
+      borderBottom: `1px solid ${borderColor}`
     }}>
       <div style={styles.headerIcon}>
         <StatusIcon iconType={config.iconType} color={config.color} />

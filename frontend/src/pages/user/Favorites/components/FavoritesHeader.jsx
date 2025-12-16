@@ -41,7 +41,7 @@ export const FavoritesHeader = ({
 
         <button 
           onClick={onClearAll}
-          style={{...styles.actionBtn, color: '#ef4444', borderColor: '#fee2e2'}}
+          style={{...styles.actionBtn, color: '#ef4444', border: '1px solid #fee2e2'}}
         >
           <FaTrash /> Tümünü Sil
         </button>

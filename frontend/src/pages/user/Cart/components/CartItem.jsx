@@ -153,17 +153,21 @@ const CartItem = ({
   };
 
   const handleIncrease = () => {
+    // Stok durumu kontrolü
+    const productStock = item.stock ?? item.product?.stock_quantity ?? 0;
+    
     // Stok kontrolü - stoktan fazla eklenemesin
-    if (item.stock && item.quantity >= item.stock) {
+    if (productStock > 0 && item.quantity >= productStock) {
       return;
     }
     onUpdateQuantity(item.quantity + 1);
   };
 
   // Stok durumu kontrolü
-  const isOutOfStock = item.stock === 0;
-  const isLowStock = item.stock > 0 && item.stock < 5;
-  const isAtMaxStock = item.stock && item.quantity >= item.stock;
+  const productStock = item.stock ?? item.product?.stock_quantity ?? 0;
+  const isOutOfStock = productStock === 0;
+  const isLowStock = productStock > 0 && productStock < 5;
+  const isAtMaxStock = productStock > 0 && item.quantity >= productStock;
 
   return (
     <div style={{
@@ -208,11 +212,11 @@ const CartItem = ({
             </p>
           ) : isLowStock ? (
             <p style={styles.lowStockWarning}>
-              ⚠️ Sadece {item.stock} adet kaldı!
+              ⚠️ Sadece {productStock} adet kaldı!
             </p>
-          ) : item.stock > 0 && (
+          ) : productStock > 0 && (
             <p style={styles.stockInfo}>
-              {item.stock} adet stokta
+              {productStock} adet stokta
             </p>
           )}
           {item.has_deal && item.deal_badge && (

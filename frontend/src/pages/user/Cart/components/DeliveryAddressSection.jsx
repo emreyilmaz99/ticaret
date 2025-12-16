@@ -139,7 +139,7 @@ const DeliveryAddressSection = ({
                       key={address.id}
                       style={{
                         ...styles.card,
-                        borderColor: isSelected ? '#059669' : '#e2e8f0',
+                        border: isSelected ? '2px solid #059669' : '2px solid #e2e8f0',
                         backgroundColor: 'white',
                       }}
                       onClick={() => selectAddress(address)}

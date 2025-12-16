@@ -45,7 +45,7 @@ const VendorStatusPage = () => {
         {/* Main Status Card */}
         <div style={{
           ...styles.card,
-          border: `2px solid ${config.borderColor}`
+          ...(config.border && { border: config.border })
         }}>
           <StatusHeader config={config} />
 

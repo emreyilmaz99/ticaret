@@ -1,22 +1,35 @@
 // src/hooks/useHoverEffect.js
-import { useCallback } from 'react';
+import { useState, useCallback } from 'react';
 
 /**
  * Custom hook for managing hover effects on elements
  * @param {Object} normalStyle - Default style object
  * @param {Object} hoverStyle - Style to apply on hover
- * @returns {Object} - Event handlers for mouse enter/leave
+ * @returns {Object} - isHovered state and event handlers
  */
 export const useHoverEffect = (normalStyle, hoverStyle) => {
+  const [isHovered, setIsHovered] = useState(false);
+
   const handleMouseEnter = useCallback((e) => {
-    if (!e.currentTarget) return;
-    Object.assign(e.currentTarget.style, hoverStyle);
+    setIsHovered(true);
+    if (e?.currentTarget && hoverStyle) {
+      Object.assign(e.currentTarget.style, hoverStyle);
+    }
   }, [hoverStyle]);
 
   const handleMouseLeave = useCallback((e) => {
-    if (!e.currentTarget) return;
-    Object.assign(e.currentTarget.style, normalStyle);
+    setIsHovered(false);
+    if (e?.currentTarget && normalStyle) {
+      Object.assign(e.currentTarget.style, normalStyle);
+    }
   }, [normalStyle]);
 
-  return { onMouseEnter: handleMouseEnter, onMouseLeave: handleMouseLeave };
+  return { 
+    isHovered,
+    handleMouseEnter, 
+    handleMouseLeave,
+    // Backward compatibility
+    onMouseEnter: handleMouseEnter, 
+    onMouseLeave: handleMouseLeave 
+  };
 };

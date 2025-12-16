@@ -68,10 +68,9 @@ class CartService extends BaseService
             // Check for active featured deal
             $featuredDeal = $product->activeFeaturedDeal;
             
-            // Get price from variant or deal price
-            $price = $product->variants()->first()?->price ?? 0;
+            // Get variant - either specified or first available
             $variant = null;
-
+            
             if ($variantId) {
                 $variant = ProductVariant::where('id', $variantId)
                     ->where('product_id', $productId)
@@ -80,21 +79,28 @@ class CartService extends BaseService
                 if (!$variant) {
                     return $this->errorResponse('Varyant bulunamadı', 404);
                 }
-
-                // Stock check
-                if ($variant->stock < $quantity) {
-                    return $this->errorResponse(
-                        'Yetersiz stok. Mevcut stok: ' . $variant->stock,
-                        400
-                    );
-                }
-
-                // Use deal price if available, otherwise variant price
-                $price = $featuredDeal ? $featuredDeal->deal_price : $variant->price;
             } else {
-                // No variant selected, use deal price if available
-                $price = $featuredDeal ? $featuredDeal->deal_price : $price;
+                // No variant selected, use first variant
+                $variant = $product->variants()->first();
+                
+                if (!$variant) {
+                    return $this->errorResponse('Ürün varyantı bulunamadı', 404);
+                }
+                
+                // Set variant_id for cart item
+                $variantId = $variant->id;
             }
+
+            // Stock check
+            if ($variant->stock < $quantity) {
+                return $this->errorResponse(
+                    'Yetersiz stok. Mevcut stok: ' . $variant->stock,
+                    400
+                );
+            }
+
+            // Use deal price if available, otherwise variant price
+            $price = $featuredDeal ? $featuredDeal->deal_price : $variant->price;
 
             // Check if item already exists in cart
             $existingItem = $this->cartItemRepo->findByCartProductVariant(
