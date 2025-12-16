@@ -1046,7 +1046,7 @@ const ReviewsSection = ({ productId, productName, styles: parentStyles }) => {
                     />
                   ))}
                   <span style={{ marginLeft: '6px', fontSize: '13px', fontWeight: '600', color: '#1e293b' }}>
-                    {review.rating.toFixed(1)}
+                    {parseFloat(review.rating || 0).toFixed(1)}
                   </span>
                 </div>
               </div>

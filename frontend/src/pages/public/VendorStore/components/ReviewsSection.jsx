@@ -38,7 +38,7 @@ const ReviewsSection = ({
       <div style={styles.summaryCard}>
         <div style={styles.summaryLeft}>
           <div style={styles.avgRating}>
-            <span style={styles.avgValue}>{summary.average_rating.toFixed(1)}</span>
+            <span style={styles.avgValue}>{parseFloat(summary.average_rating || 0).toFixed(1)}</span>
             <div style={styles.avgStars}>
               {renderStars(Math.round(summary.average_rating))}
             </div>

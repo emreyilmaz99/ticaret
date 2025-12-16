@@ -6,13 +6,13 @@ import { useToast } from '../../../../components/common/Toast';
 import {
   ApplicationTabs,
   SearchBar,
-  StatsCards,
-  PreApplicationTable,
   VendorTable,
+  PreApplicationTable,
   VendorDetailModal,
   PreApplicationDetailModal,
   ApproveModal,
-  RejectModal
+  RejectModal,
+  StatCard
 } from '../components';
 
 /**
@@ -119,11 +119,16 @@ const VendorApplicationsPage = () => {
       {activeTab === 'pre' && (
         <>
           {/* Stats */}
-          <StatsCards
-            stats={preStats}
-            activeFilter={statusFilter}
-            onFilterChange={setStatusFilter}
-          />
+          <div style={{ display: 'flex', gap: '16px', marginBottom: '24px' }}>
+            {preStats?.map((stat, index) => (
+              <StatCard
+                key={index}
+                {...stat}
+                isActive={statusFilter === stat.filter}
+                onClick={() => setStatusFilter(stat.filter)}
+              />
+            ))}
+          </div>
 
           {/* Search */}
           <SearchBar 

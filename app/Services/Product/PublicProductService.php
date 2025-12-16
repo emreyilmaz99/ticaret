@@ -379,15 +379,30 @@ class PublicProductService extends BaseService
 
     /**
      * Apply category filter to query
+     * Accepts both category ID (integer) and slug (string)
      */
     protected function applyCategoryFilter($query, Request $request): void
     {
         if ($request->filled('category_id')) {
-            $categoryId = $request->category_id;
-            $categoryIds = Category::where('id', $categoryId)
-                ->orWhere('parent_id', $categoryId)
-                ->pluck('id');
-            $query->whereIn('category_id', $categoryIds);
+            $categoryValue = $request->category_id;
+            
+            // Check if it's a numeric ID or a slug
+            if (is_numeric($categoryValue)) {
+                // Numeric ID
+                $categoryIds = Category::where('id', $categoryValue)
+                    ->orWhere('parent_id', $categoryValue)
+                    ->pluck('id');
+                $query->whereIn('category_id', $categoryIds);
+            } else {
+                // Slug string (like 'elektronik', 'moda')
+                $category = Category::where('slug', $categoryValue)->first();
+                if ($category) {
+                    $categoryIds = Category::where('id', $category->id)
+                        ->orWhere('parent_id', $category->id)
+                        ->pluck('id');
+                    $query->whereIn('category_id', $categoryIds);
+                }
+            }
         }
 
         if ($request->filled('category_slug')) {

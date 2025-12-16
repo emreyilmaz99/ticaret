@@ -41,7 +41,7 @@ const ProductInfo = ({
           {product.vendor.name}
           {product.vendor.rating > 0 && (
             <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#f59e0b' }}>
-              <FaStar size={12} /> {product.vendor.rating.toFixed(1)}
+              <FaStar size={12} /> {parseFloat(product.vendor.rating).toFixed(1)}
             </span>
           )}
         </Link>

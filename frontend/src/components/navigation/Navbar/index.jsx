@@ -216,7 +216,7 @@ const Navbar = () => {
           <div style={styles.mobileAddressBar} onClick={handleAddressClick}>
             <FaMapMarkerAlt />
             <span style={{ flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {currentAddress ? `${currentAddress.title || currentAddress.label || 'Adresim'} - ${currentAddress.city}` : 'Teslimat Adresi Seçin'}
+              {currentAddress ? `${currentAddress.title || currentAddress.label || 'Adresim'}${currentAddress.city ? ` - ${currentAddress.city}` : ''}` : 'Teslimat Adresi Seçin'}
             </span>
             <span style={{ fontSize: '18px' }}>›</span>
           </div>
@@ -253,7 +253,7 @@ const Navbar = () => {
             <div style={styles.addressBtn} onClick={handleAddressClick}>
               <FaMapMarkerAlt color="#059669" />
               <span>
-                {currentAddress ? `${currentAddress.title || currentAddress.label || 'Adresim'} - ${currentAddress.city}` : 'Teslimat Adresi Seç'}
+                {currentAddress ? `${currentAddress.title || currentAddress.label || 'Adresim'}${currentAddress.city ? ` - ${currentAddress.city}` : ''}` : 'Teslimat Adresi Seç'}
               </span>
             </div>
 

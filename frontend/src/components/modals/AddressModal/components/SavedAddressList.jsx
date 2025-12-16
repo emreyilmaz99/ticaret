@@ -3,7 +3,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { FaTrash } from 'react-icons/fa';
 import { styles } from '../styles';
-import { useHoverEffect } from '../../../common/hooks/useHoverEffect';
+import { useHoverEffect } from '../../../../hooks/useHoverEffect';
 
 const SavedAddressList = React.memo(({ addresses, selectedId, onSelect, onDelete }) => {
   const deleteHover = useHoverEffect({ scale: 1.1 });

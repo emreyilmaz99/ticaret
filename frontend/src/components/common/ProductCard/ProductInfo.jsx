@@ -45,7 +45,7 @@ const ProductInfo = React.memo(({
           />
         ))}
         <span style={{ color: '#0f172a', marginLeft: '4px', fontSize: '11px', fontWeight: '700' }}>
-          {rating.toFixed(1)}
+          {parseFloat(rating || 0).toFixed(1)}
         </span>
         <span style={{ color: '#94a3b8', fontSize: '10px' }}>
           ({reviewCount})

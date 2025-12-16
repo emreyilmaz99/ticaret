@@ -1,8 +1,8 @@
 // src/pages/admin/Applications/useVendorApplications.js
 import { useState, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { getApplications } from '../../features/vendor-application/api/vendorApplicationApi';
-import { getActiveCommissionPlans } from '../../features/commission/api/commissionApi';
+import { getApplications } from '../../../features/vendor-application/api/vendorApplicationApi';
+import { getActiveCommissionPlans } from '../../../features/commission/api/commissionApi';
 import apiClient from '@lib/apiClient';
 import useApplicationFilters from './hooks/useApplicationFilters';
 import useApplicationModals from './hooks/useApplicationModals';

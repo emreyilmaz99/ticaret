@@ -11,7 +11,7 @@ import SavedAddressList from './components/SavedAddressList';
 import AddressFormFields from './components/AddressFormFields';
 import { useAddressForm } from './hooks/useAddressForm';
 import { useAddressValidation } from './hooks/useAddressValidation';
-import { useHoverEffect } from '../../common/hooks/useHoverEffect';
+import { useHoverEffect } from '../../../hooks/useHoverEffect';
 import { styles } from './styles';
 
 const AddressModal = React.memo(({

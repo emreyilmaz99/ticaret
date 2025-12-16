@@ -6,6 +6,6 @@ export { SortBar } from './SortBar';
 export { ProductsGrid } from './ProductsGrid';
 export { CompareBar } from './CompareBar';
 // CompareModal ve QuickViewModal artık common components'ten kullanılıyor
-export { CompareModal } from '@components/modals/CompareModal';
-export { QuickViewModal } from '@components/modals/QuickViewModal';
+export { default as CompareModal } from '@components/modals/CompareModal';
+export { default as QuickViewModal } from '@components/modals/QuickViewModal';
 

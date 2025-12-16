@@ -11,7 +11,7 @@ import ProductImage from './components/ProductImage';
 import ProductInfo from './components/ProductInfo';
 import QuantitySelector from './components/QuantitySelector';
 import ProductActions from './components/ProductActions';
-import { useHoverEffect } from '../../common/hooks/useHoverEffect';
+import { useHoverEffect } from '../../../hooks/useHoverEffect';
 import { quantityConfig } from './config';
 import { styles } from './styles';
 

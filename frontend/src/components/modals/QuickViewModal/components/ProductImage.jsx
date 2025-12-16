@@ -1,7 +1,7 @@
 // src/components/modals/QuickViewModal/components/ProductImage.jsx
 import React from 'react';
 import PropTypes from 'prop-types';
-import { useProductImage } from '../../../common/hooks/useProductImage';
+import { useProductImage } from '../../../../hooks/useProductImage';
 import { styles } from '../styles';
 
 const ProductImage = React.memo(({ product }) => {

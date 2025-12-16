@@ -232,7 +232,7 @@ const ProductCard = ({ product, onAddToCart, showDiscount }) => {
         fontSize: '13px',
         fontWeight: '600'
       }}>
-        {ratingValue.toFixed(1)}
+        {parseFloat(ratingValue || 0).toFixed(1)}
       </span>
     );
     

@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
 import { FaTimes } from 'react-icons/fa';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { updateVendor } from '../../../../../api/vendorApi';
+import { updateVendor } from '../../../../api/vendorApi';
 import { useToast } from '../../../../../../components/common/Toast';
 import VendorEditForm from './VendorEditForm';
 import { modalStyles } from './styles';

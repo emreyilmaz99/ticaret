@@ -6,10 +6,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
+use Laravel\Scout\Searchable;
 
 class Product extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, Searchable;
 
     protected $keyType = 'string';
     public $incrementing = false;
@@ -211,6 +212,75 @@ class Product extends Model
         return $this->reviews()
             ->where('user_id', $user->id)
             ->exists();
+    }
+
+    /**
+     * Get the indexable data array for the model.
+     *
+     * @return array
+     */
+    public function toSearchableArray()
+    {
+        // Load relations if not already loaded
+        if (!$this->relationLoaded('vendor')) {
+            $this->load('vendor');
+        }
+        if (!$this->relationLoaded('category')) {
+            $this->load('category');
+        }
+        if (!$this->relationLoaded('variants')) {
+            $this->load('variants');
+        }
+
+        // Get min/max prices from variants
+        $prices = $this->variants->pluck('price')->filter();
+        $minPrice = $prices->min();
+        $maxPrice = $prices->max();
+        $inStock = $this->variants->sum('stock') > 0;
+
+        return [
+            'id' => $this->id,
+            'name' => $this->name,
+            'slug' => $this->slug,
+            'sku' => $this->sku,
+            'short_description' => $this->short_description,
+            'description' => $this->description,
+            'status' => $this->status,
+            'is_featured' => $this->is_featured,
+            'type' => $this->type,
+            'vendor_id' => $this->vendor_id,
+            'vendor_name' => $this->vendor?->name,
+            'vendor_slug' => $this->vendor?->slug,
+            'category_id' => $this->category_id,
+            'category_name' => $this->category?->name,
+            'category_slug' => $this->category?->slug,
+            'min_price' => $minPrice,
+            'max_price' => $maxPrice,
+            'in_stock' => $inStock,
+            'created_at' => $this->created_at?->timestamp,
+            'updated_at' => $this->updated_at?->timestamp,
+        ];
+    }
+
+    /**
+     * Get the index name for the model.
+     *
+     * @return string
+     */
+    public function searchableAs()
+    {
+        return 'products_index';
+    }
+
+    /**
+     * Determine if the model should be searchable.
+     *
+     * @return bool
+     */
+    public function shouldBeSearchable()
+    {
+        // Only index active products
+        return $this->status === 'active';
     }
 
     protected static function booted()

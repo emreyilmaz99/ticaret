@@ -3,7 +3,7 @@ import React, { useCallback } from 'react';
 import PropTypes from 'prop-types';
 import { FaMinus, FaPlus } from 'react-icons/fa';
 import { quantityConfig } from '../config';
-import { useHoverEffect } from '../../../common/hooks/useHoverEffect';
+import { useHoverEffect } from '../../../../hooks/useHoverEffect';
 import { styles } from '../styles';
 
 const QuantitySelector = React.memo(({ quantity, onQuantityChange, max = quantityConfig.max }) => {

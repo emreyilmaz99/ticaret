@@ -59,7 +59,7 @@ const PaymentSuccess = () => {
         </div>
 
         <div style={styles.actions}>
-          <Link to="/account/orders" style={styles.primaryButton}>
+          <Link to="/account/profile?tab=orders" style={styles.primaryButton}>
             <FiShoppingBag size={20} />
             Siparişlerimi Görüntüle
           </Link>

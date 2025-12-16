@@ -41,6 +41,7 @@ use App\Http\Controllers\Api\V1\Public\ProductController as PublicProductControl
 use App\Http\Controllers\Api\V1\Public\TaxClassController as PublicTaxClassController;
 use App\Http\Controllers\Api\V1\Public\FeaturedDealController;
 use App\Http\Controllers\Api\V1\Public\ProductReviewController;
+use App\Http\Controllers\Api\V1\Public\SearchController;
 
 // Checkout controller
 use App\Http\Controllers\Api\V1\User\CheckoutController;
@@ -286,6 +287,9 @@ Route::get('v1/categories/{slug}', [\App\Http\Controllers\Api\V1\Public\Category
 // tax classes (public - for vendors and product display)
 Route::get('v1/tax-classes', [PublicTaxClassController::class, 'index']);
 Route::post('v1/tax-classes/calculate', [PublicTaxClassController::class, 'calculate']);
+
+// search (public)
+Route::get('v1/search', [SearchController::class, 'search']);
 
 // products (public)
 Route::get('v1/products', [PublicProductController::class, 'index']);

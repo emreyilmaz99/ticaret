@@ -23,7 +23,7 @@ const VendorCard = ({ vendor, styles }) => {
             {vendor.rating > 0 && (
               <span style={styles.vendorStat}>
                 <FaStar color="#f59e0b" size={12} />
-                {vendor.rating.toFixed(1)} ({vendor.rating_count} değerlendirme)
+                {parseFloat(vendor.rating || 0).toFixed(1)} ({vendor.rating_count} değerlendirme)
               </span>
             )}
             {vendor.product_count > 0 && (

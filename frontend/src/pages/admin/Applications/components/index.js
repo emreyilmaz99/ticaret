@@ -6,6 +6,8 @@
 
 // Tables
 export { default as ApplicationTable } from './tables/ApplicationTable';
+export { default as VendorTable } from './tables/ApplicationTable'; // Alias for backward compatibility
+export { default as PreApplicationTable } from './tables/ApplicationTable'; // Alias for pre-applications
 
 // Modals
 export { default as VendorDetailModal } from './modals/VendorDetailModal';

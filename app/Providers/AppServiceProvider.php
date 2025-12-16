@@ -39,6 +39,36 @@ class AppServiceProvider extends ServiceProvider
 
         // Service bindings
         $this->app->bind(\App\Interfaces\Services\AuthServiceInterface::class, \App\Services\AuthService::class);
+        
+        // Elasticsearch HTTP Client ve Transport bindings
+        $this->app->bind(\Psr\Http\Client\ClientInterface::class, function ($app) {
+            return new \Http\Client\Curl\Client();
+        });
+
+        $this->app->singleton(\Elastic\Transport\NodePool\NodePoolInterface::class, function ($app) {
+            $hosts = [];
+            $esHost = config('scout.elasticsearch.hosts.0') ?? env('ES_HOST', '127.0.0.1') . ':' . env('ES_PORT', '9200');
+            
+            $scheme = 'http://';
+            $esUser = config('scout.elasticsearch.user') ?? env('ES_USER');
+            $esPass = config('scout.elasticsearch.pass') ?? env('ES_PASSWORD');
+            
+            $auth = '';
+            if (!empty($esUser)) {
+                $auth = rawurlencode($esUser) . ':' . rawurlencode($esPass) . '@';
+            }
+            $hosts[] = $scheme . $auth . $esHost;
+
+            $builder = \Elastic\Transport\TransportBuilder::create();
+            $nodePool = $builder->getNodePool();
+            $nodePool = $nodePool->setHosts($hosts);
+
+            return $nodePool;
+        });
+
+        $this->app->singleton(\Psr\Log\LoggerInterface::class, function () {
+            return new \Psr\Log\NullLogger();
+        });
     }
 
     /**

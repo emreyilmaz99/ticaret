@@ -2,7 +2,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { FaShoppingCart, FaHeart, FaEye } from 'react-icons/fa';
-import { useHoverEffect } from '../../../common/hooks/useHoverEffect';
+import { useHoverEffect } from '../../../../hooks/useHoverEffect';
 import { styles } from '../styles';
 
 const ProductActions = React.memo(({

@@ -130,9 +130,7 @@ export const useAdminOrders = () => {
       { key: 'created_at', label: 'Tarih', format: (val) => new Date(val).toLocaleDateString('tr-TR') },
     ];
     printData(ordersData.orders, 'Sipariş Listesi', columns);
-  };handleExportExcel,
-    handlePrint,
-    
+  };
 
   return {
     // Data
@@ -156,6 +154,8 @@ export const useAdminOrders = () => {
     // Actions
     updateOrderStatus,
     cancelOrder,
+    handleExportExcel,
+    handlePrint,
     
     // Error
     error: ordersError
