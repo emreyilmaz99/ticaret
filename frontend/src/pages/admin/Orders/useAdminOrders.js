@@ -1,9 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '../../../components/common/Toast';
-import axios from 'axios';
-
-const BACKEND_URL = 'http://127.0.0.1:8000';
+import apiClient from '@lib/apiClient';
 
 export const useAdminOrders = () => {
   const queryClient = useQueryClient();

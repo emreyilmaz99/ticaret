@@ -4,9 +4,7 @@ import {
   FaTimes, FaStore, FaUser, FaMapMarkerAlt, FaFileInvoice, 
   FaBan, FaCheckCircle, FaHistory, FaStickyNote, FaUserShield, FaCog 
 } from 'react-icons/fa';
-import axios from 'axios';
-
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:8000';
+import apiClient from '@lib/apiClient';
 
 // YENİ SERVİSİ IMPORT EDİYORUZ (Aynı klasörde invoiceService.js olmalı)
 import { printInvoice } from './invoiceService';

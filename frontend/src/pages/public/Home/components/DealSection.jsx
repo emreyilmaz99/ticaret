@@ -1,9 +1,7 @@
 // src/pages/public/Home/components/DealSection.jsx
 import React, { useState, useEffect, useCallback } from 'react';
 import { FaShoppingCart, FaClock, FaChevronLeft, FaChevronRight, FaEye } from 'react-icons/fa';
-import axios from 'axios';
-
-const BACKEND_URL = 'http://127.0.0.1:8000';
+import apiClient from '@lib/apiClient';
 
 /**
  * Dynamic Deal Section - Shows featured deals from database
@@ -18,7 +16,7 @@ const DealSection = ({ addToCart, styles, isMobile }) => {
   useEffect(() => {
     const fetchDeals = async () => {
       try {
-        const response = await axios.get(`${BACKEND_URL}/api/v1/featured-deals`);
+        const response = await apiClient.get('/v1/featured-deals');
         console.log('Featured Deals Response:', response.data);
         if (response.data.success && response.data.data && response.data.data.deals) {
           setDeals(response.data.data.deals);
