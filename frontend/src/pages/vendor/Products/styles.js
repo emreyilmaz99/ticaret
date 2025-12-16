@@ -466,7 +466,8 @@ export const styles = {
     border: '1px solid #e2e8f0', 
     outline: 'none', 
     fontSize: '14px',
-    transition: 'border-color 0.2s'
+    transition: 'border-color 0.2s',
+    boxSizing: 'border-box'
   },
   tableContainer: { 
     backgroundColor: 'white', 
@@ -569,9 +570,11 @@ export const styles = {
   },
   modalBody: { 
     flex: 1, 
-    overflowY: 'auto', 
+    overflowY: 'auto',
+    overflowX: 'hidden',
     display: 'flex',
-    flexDirection: 'column'
+    flexDirection: 'column',
+    boxSizing: 'border-box',
   },
   modalFooter: { 
     padding: '20px 24px', 
@@ -612,12 +615,6 @@ export const styles = {
   },
   
   // --- Form Styles ---
-  tabContent: {
-    padding: '24px',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '20px'
-  },
   select: {
     width: '100%',
     padding: '10px 12px',
@@ -626,7 +623,8 @@ export const styles = {
     outline: 'none',
     fontSize: '14px',
     backgroundColor: 'white',
-    color: '#334155'
+    color: '#334155',
+    boxSizing: 'border-box'
   },
   textarea: {
     width: '100%',
@@ -637,7 +635,8 @@ export const styles = {
     fontSize: '14px',
     minHeight: '100px',
     resize: 'vertical',
-    fontFamily: 'inherit'
+    fontFamily: 'inherit',
+    boxSizing: 'border-box'
   },
   required: {
     color: '#ef4444',
@@ -663,6 +662,134 @@ export const styles = {
     fontSize: '12px',
     color: '#94a3b8',
     marginTop: '4px'
+  },
+
+  // --- Tab Content Styles ---
+  tabContent: {
+    padding: '24px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '16px',
+    boxSizing: 'border-box',
+    width: '100%',
+    overflow: 'hidden',
+  },
+
+  // --- Switch Toggle Styles ---
+  switchLabel: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    cursor: 'pointer',
+  },
+  switchText: {
+    fontSize: '14px',
+    fontWeight: '500',
+    color: '#334155',
+  },
+  switch: {
+    width: '44px',
+    height: '24px',
+    backgroundColor: '#e2e8f0',
+    borderRadius: '12px',
+    position: 'relative',
+    transition: 'all 0.3s ease',
+    cursor: 'pointer',
+  },
+  switchActive: {
+    backgroundColor: '#059669',
+  },
+  switchHandle: {
+    width: '20px',
+    height: '20px',
+    backgroundColor: '#fff',
+    borderRadius: '50%',
+    position: 'absolute',
+    top: '2px',
+    left: '2px',
+    transition: 'all 0.3s ease',
+    boxShadow: '0 2px 4px rgba(0,0,0,0.15)',
+  },
+  switchHandleActive: {
+    left: '22px',
+  },
+
+  // --- Tags Styles (Modern Design) ---
+  tagInputWrapper: {
+    width: '100%',
+    marginBottom: '12px',
+  },
+  tagInputField: {
+    width: '100%',
+    padding: '12px 16px',
+    border: '2px solid #e2e8f0',
+    borderRadius: '10px',
+    fontSize: '14px',
+    color: '#334155',
+    backgroundColor: '#fff',
+    outline: 'none',
+    transition: 'all 0.2s ease',
+    boxSizing: 'border-box',
+  },
+  tagsListContainer: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: '10px',
+    padding: '0',
+    marginBottom: '8px',
+  },
+  tagsContainer: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '12px 16px',
+    minHeight: '52px',
+    backgroundColor: '#f8fafc',
+    border: '2px solid #e2e8f0',
+    borderRadius: '12px',
+    transition: 'all 0.2s ease',
+  },
+  tag: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '8px 14px',
+    backgroundColor: '#059669',
+    color: '#ffffff',
+    borderRadius: '8px',
+    fontSize: '13px',
+    fontWeight: '600',
+    letterSpacing: '0.3px',
+    boxShadow: '0 2px 6px rgba(5, 150, 105, 0.25)',
+    transition: 'all 0.2s ease',
+  },
+  tagRemoveBtn: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '18px',
+    height: '18px',
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    border: 'none',
+    borderRadius: '50%',
+    color: '#ffffff',
+    cursor: 'pointer',
+    transition: 'all 0.2s ease',
+    fontSize: '10px',
+    padding: 0,
+    marginLeft: '2px',
+  },
+  tagInput: {
+    flex: 1,
+    minWidth: '120px',
+    padding: '6px 0',
+    border: 'none',
+    outline: 'none',
+    backgroundColor: 'transparent',
+    fontSize: '14px',
+    color: '#334155',
   },
 
   // --- Confirm Modal Styles ---
@@ -871,17 +998,22 @@ export const styles = {
   contentArea: { 
     flex: 1, 
     padding: '32px', 
-    overflowY: 'auto' 
+    overflowY: 'auto',
+    overflowX: 'hidden',
+    boxSizing: 'border-box',
   },
   formGroup: { 
-    marginBottom: '20px' 
+    marginBottom: '16px',
+    width: '100%',
+    boxSizing: 'border-box',
   },
   label: { 
     display: 'block', 
     fontSize: '14px', 
     fontWeight: '500', 
     color: '#334155', 
-    marginBottom: '8px' 
+    marginBottom: '8px',
+    wordWrap: 'break-word',
   },
   readOnlyValue: {
     padding: '12px 16px',
@@ -892,7 +1024,9 @@ export const styles = {
     border: '1px solid #e2e8f0',
     minHeight: '44px',
     display: 'flex',
-    alignItems: 'center'
+    alignItems: 'center',
+    boxSizing: 'border-box',
+    wordWrap: 'break-word',
   },
   formInput: { 
     width: '100%', 

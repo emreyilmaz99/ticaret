@@ -145,8 +145,8 @@ export const getStyles = (isMobile = false) => ({
     width: '40px',
     height: '40px',
     borderRadius: '50%',
-    backgroundColor: '#eff6ff',
-    color: '#3b82f6',
+    backgroundColor: '#f0fdf4',
+    color: '#059669',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -171,9 +171,9 @@ export const getStyles = (isMobile = false) => ({
     justifyContent: 'center',
     transition: 'background 0.2s',
   },
-  btnView: { background: '#eff6ff', color: '#3b82f6' },
-  btnApprove: { background: '#f0fdf4', color: '#16a34a' },
-  btnReject: { background: '#fef2f2', color: '#ef4444' },
+  btnView: { background: '#f0fdf4', color: '#059669' },
+  btnApprove: { background: '#dcfce7', color: '#16a34a' },
+  btnReject: { background: '#f3f4f6', color: '#6b7280' },
   
   // Modal
   modalOverlay: {
@@ -240,8 +240,8 @@ export const getStyles = (isMobile = false) => ({
     transition: 'all 0.2s',
   },
   activeTab: {
-    color: '#2563eb',
-    borderBottom: '2px solid #2563eb',
+    color: '#059669',
+    borderBottom: '2px solid #059669',
   },
   
   // Section
@@ -290,8 +290,8 @@ export const getStyles = (isMobile = false) => ({
   dangerBtn: {
     padding: '10px 20px',
     background: 'white',
-    color: '#ef4444',
-    border: '1px solid #fecaca',
+    color: '#6b7280',
+    border: '1px solid #e5e7eb',
     borderRadius: '8px',
     fontWeight: '500',
     cursor: 'pointer',
@@ -348,9 +348,9 @@ export const getStyles = (isMobile = false) => ({
     fontSize: '12px',
     fontWeight: '600',
   },
-  badgePending: { background: '#fef3c7', color: '#b45309' },
-  badgeApproved: { background: '#dcfce7', color: '#166534' },
-  badgeRejected: { background: '#fee2e2', color: '#991b1b' },
+  badgePending: { background: '#f0fdf4', color: '#065f46' },
+  badgeApproved: { background: '#dcfce7', color: '#047857' },
+  badgeRejected: { background: '#f3f4f6', color: '#374151' },
 });
 
 // Default export for components using named import { styles }

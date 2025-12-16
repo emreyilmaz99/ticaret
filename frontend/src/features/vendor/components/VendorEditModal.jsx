@@ -16,7 +16,8 @@ const VendorEditModal = ({ vendor, isOpen = true, onClose }) => {
         name: vendor.storeName || vendor.name || '',
         email: vendor.email || '',
         phone: vendor.phone || '',
-        commission_rate: vendor.commission_rate ?? vendor.commissionRate ?? 0,
+        commission_rate: vendor.commission_rate ?? vendor.commissionRate ?? vendor.commission_plan?.rate ?? 0,
+        commission_plan_name: vendor.commission_plan?.name || 'Atanmamış',
         status: vendor.status || 'active',
         password: '',
         password_confirmation: '',
@@ -83,8 +84,9 @@ const VendorEditModal = ({ vendor, isOpen = true, onClose }) => {
                 <input value={formData.phone} onChange={(e) => updateField('phone', e.target.value.replace(/\D/g, '').slice(0, 10))} maxLength={10} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0' }} />
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '6px' }}>Komisyon (%)</label>
-                <input type="number" value={formData.commission_rate} onChange={(e) => updateField('commission_rate', parseFloat(e.target.value || 0))} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0' }} />
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '6px' }}>Komisyon (%) - {formData.commission_plan_name}</label>
+                <input type="number" value={formData.commission_rate} readOnly disabled style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0', backgroundColor: '#f8fafc', color: '#64748b' }} />
+                <small style={{ color: '#94a3b8', fontSize: '11px' }}>Komisyon oranı, atanmış komisyon planından gelmektedir.</small>
               </div>
               <div style={{ gridColumn: '1 / -1' }}>
                 <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '6px' }}>Durum</label>

@@ -30,9 +30,9 @@ const StatsCards = ({ stats, activeFilter, onFilterChange }) => {
 
   const cardConfigs = [
     { key: 'all', label: 'Toplam', value: stats.total, color: '#10b981' },
-    { key: 'pending', label: 'Beklemede', value: stats.pending, color: '#f59e0b' },
-    { key: 'approved', label: 'Onaylanan', value: stats.approved, color: '#059669' },
-    { key: 'rejected', label: 'Reddedilen', value: stats.rejected, color: '#ef4444' },
+    { key: 'pending', label: 'Beklemede', value: stats.pending, color: '#059669' },
+    { key: 'approved', label: 'Onaylanan', value: stats.approved, color: '#047857' },
+    { key: 'rejected', label: 'Reddedilen', value: stats.rejected, color: '#065f46' },
   ];
 
   return (

@@ -266,7 +266,7 @@ const PreApplicationDetailModal = ({
               padding: '12px 24px', 
               borderRadius: '10px', 
               border: 'none', 
-              background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)', 
+              background: 'linear-gradient(135deg, #6b7280 0%, #4b5563 100%)', 
               color: 'white', 
               cursor: 'pointer',
               fontWeight: '600',

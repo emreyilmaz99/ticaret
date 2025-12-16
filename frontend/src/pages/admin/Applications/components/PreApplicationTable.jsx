@@ -19,9 +19,9 @@ const PreApplicationTable = ({
 }) => {
   const getStatusBadge = (status) => {
     const badgeStyles = {
-      pending: { background: '#fef3c7', color: '#92400e' },
-      approved: { background: '#d1fae5', color: '#065f46' },
-      rejected: { background: '#fee2e2', color: '#991b1b' }
+      pending: { background: '#f0fdf4', color: '#065f46' },
+      approved: { background: '#dcfce7', color: '#047857' },
+      rejected: { background: '#f3f4f6', color: '#374151' }
     };
     const labels = {
       pending: 'Beklemede',

@@ -25,9 +25,9 @@ const RejectModal = ({
       <div style={styles.modalContent} onClick={e => e.stopPropagation()}>
         <div style={{
           ...styles.modalHeader, 
-          background: 'linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)'
+          background: 'linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%)'
         }}>
-          <h2 style={{margin: 0, fontSize: '20px', fontWeight: '700', color: '#991b1b'}}>
+          <h2 style={{margin: 0, fontSize: '20px', fontWeight: '700', color: '#374151'}}>
             ⚠️ Başvuruyu Reddet
           </h2>
           <button 
@@ -38,7 +38,7 @@ const RejectModal = ({
               cursor: 'pointer', 
               padding: '8px', 
               borderRadius: '8px',
-              color: '#991b1b'
+              color: '#374151'
             }}
           >
             <FaTimes size={18} />
@@ -57,7 +57,7 @@ const RejectModal = ({
           <textarea 
             style={{
               ...styles.textarea,
-              borderColor: reason.length > 0 && !isValid ? '#ef4444' : '#e5e7eb'
+              borderColor: reason.length > 0 && !isValid ? '#6b7280' : '#e5e7eb'
             }}
             value={reason}
             onChange={(e) => onReasonChange(e.target.value)}
@@ -67,7 +67,7 @@ const RejectModal = ({
             textAlign: 'right', 
             fontSize: '12px', 
             marginTop: '8px', 
-            color: !isValid ? '#ef4444' : '#059669',
+            color: !isValid ? '#6b7280' : '#059669',
             fontWeight: '500'
           }}>
             {reason.length} / 1000 (Min {minLength})
@@ -98,13 +98,13 @@ const RejectModal = ({
               borderRadius: '10px', 
               border: 'none', 
               background: !isValid 
-                ? '#fca5a5' 
-                : 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)', 
+                ? '#9ca3af' 
+                : 'linear-gradient(135deg, #6b7280 0%, #4b5563 100%)', 
               color: 'white', 
               cursor: !isValid ? 'not-allowed' : 'pointer',
               fontWeight: '600',
               fontSize: '14px',
-              boxShadow: isValid ? '0 4px 12px rgba(239, 68, 68, 0.3)' : 'none'
+              boxShadow: isValid ? '0 4px 12px rgba(107, 114, 128, 0.3)' : 'none'
             }}
           >
             {isSubmitting ? 'Reddediliyor...' : 'Reddet'}

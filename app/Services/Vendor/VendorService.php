@@ -44,7 +44,7 @@ class VendorService extends BaseService
                 $q->where('is_primary', true);
             }, 'bankAccounts' => function($q) {
                 $q->where('is_primary', true);
-            }])
+            }, 'commissionPlan'])
             ->withSum('payouts', 'amount')
             ->latest();
 

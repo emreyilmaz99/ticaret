@@ -120,7 +120,13 @@ const useVendorProducts = () => {
     let filtered = products;
 
     // Status filter
-    if (statusFilter !== 'all') {
+    if (statusFilter === 'low_stock') {
+      // Düşük stoklu ürünler (kritik ≤5 veya düşük 6-9)
+      filtered = filtered.filter(p => (p.stock || 0) < 10);
+    } else if (statusFilter === 'stock') {
+      // Stok paneli açıkken ürün listesi boş olsun
+      filtered = [];
+    } else if (statusFilter !== 'all') {
       filtered = filtered.filter(p => p.status === statusFilter);
     }
 

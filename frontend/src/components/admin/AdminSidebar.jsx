@@ -21,7 +21,7 @@ const AdminSidebar = () => {
     setExpandedGroups(prev => 
       prev.includes(groupKey) 
         ? prev.filter(key => key !== groupKey)
-        : [...prev, groupKey]
+        : [...prev, groupKey] 
     );
   };
 

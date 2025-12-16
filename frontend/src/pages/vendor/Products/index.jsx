@@ -130,44 +130,50 @@ const VendorProductsPage = () => {
         setStatusFilter={setStatusFilter}
       />
       
-      <ProductToolbar
-        filterText={filterText}
-        onFilterChange={setFilterText}
-        viewMode={viewMode}
-        onViewModeChange={setViewMode}
-        sortOrder={sortOrder}
-        onSortChange={setSortOrder}
-      />
-
-      {viewMode === 'grid' ? (
-        <ProductGrid
-          products={products}
-          getCategoryName={getCategoryName}
-          toFullUrl={toFullUrl}
-          onEdit={openEditModal}
-          onView={openViewModal}
-          onDelete={handleDeleteProduct}
-          onToggleStatus={handleToggleStatus}
-          onImageClick={setLightboxImage}
-        />
-      ) : (
-        <ProductTable
-          products={products}
-          getCategoryName={getCategoryName}
-          toFullUrl={toFullUrl}
-          onEdit={openEditModal}
-          onView={openViewModal}
-          onDelete={handleDeleteProduct}
-          onToggleStatus={handleToggleStatus}
-          onImageClick={setLightboxImage}
+      {statusFilter !== 'stock' && (
+        <ProductToolbar
+          filterText={filterText}
+          onFilterChange={setFilterText}
+          viewMode={viewMode}
+          onViewModeChange={setViewMode}
+          sortOrder={sortOrder}
+          onSortChange={setSortOrder}
         />
       )}
 
-      <Pagination
-        meta={paginationMeta}
-        currentPage={currentPage}
-        onPageChange={setCurrentPage}
-      />
+      {statusFilter !== 'stock' && (
+        <>
+          {viewMode === 'grid' ? (
+            <ProductGrid
+              products={products}
+              getCategoryName={getCategoryName}
+              toFullUrl={toFullUrl}
+              onEdit={openEditModal}
+              onView={openViewModal}
+              onDelete={handleDeleteProduct}
+              onToggleStatus={handleToggleStatus}
+              onImageClick={setLightboxImage}
+            />
+          ) : (
+            <ProductTable
+              products={products}
+              getCategoryName={getCategoryName}
+              toFullUrl={toFullUrl}
+              onEdit={openEditModal}
+              onView={openViewModal}
+              onDelete={handleDeleteProduct}
+              onToggleStatus={handleToggleStatus}
+              onImageClick={setLightboxImage}
+            />
+          )}
+
+          <Pagination
+            meta={paginationMeta}
+            currentPage={currentPage}
+            onPageChange={setCurrentPage}
+          />
+        </>
+      )}
 
       <ProductModal
         isOpen={isModalOpen}

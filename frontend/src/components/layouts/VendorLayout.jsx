@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { Outlet, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import VendorSidebar from '../vendor/VendorSidebar';
 import VendorBottomNav from '../vendor/VendorBottomNav';
 import VendorMobileHeader from '../vendor/VendorMobileHeader';
@@ -9,13 +9,14 @@ const VendorLayout = () => {
   const location = useLocation();
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-
-  useEffect(() => {
-    const token = localStorage.getItem('vendor_token');
-    if (!token) {
-      navigate('/vendor/login');
-    }
-  }, [navigate]);
+  
+  // Token kontrolü - sayfa yüklenmeden önce kontrol et
+  const token = localStorage.getItem('vendor_token');
+  
+  // Token yoksa hemen login sayfasına yönlendir
+  if (!token) {
+    return <Navigate to="/vendor/login" replace />;
+  }
 
   useEffect(() => {
     const handleResize = () => {

@@ -57,32 +57,41 @@ const SettingsTab = ({
       {/* Tags */}
       <div style={styles.formGroup}>
         <label style={styles.label}>Etiketler</label>
-        <div style={styles.tagsContainer}>
-          {formData.tags.map((tag, index) => (
-            <span key={index} style={styles.tag}>
-              {tag}
-              {!readOnly && (
-                <button
-                  type="button"
-                  style={styles.tagRemoveBtn}
-                  onClick={() => removeTag(index)}
-                >
-                  <FaTimes />
-                </button>
-              )}
-            </span>
-          ))}
-          {!readOnly && (
+        
+        {/* Input Bar */}
+        {!readOnly && (
+          <div style={styles.tagInputWrapper}>
             <input
               type="text"
               value={tagInput}
               onChange={(e) => setTagInput(e.target.value)}
               onKeyDown={handleTagInputKeyDown}
-              placeholder={formData.tags.length === 0 ? "Etiket eklemek için yazın ve Enter'a basın" : ""}
-              style={styles.tagInput}
+              placeholder="Etiket eklemek için yazın ve Enter'a basın"
+              style={styles.tagInputField}
             />
-          )}
-        </div>
+          </div>
+        )}
+
+        {/* Tags List - Alt satırda hizalı */}
+        {formData.tags.length > 0 && (
+          <div style={styles.tagsListContainer}>
+            {formData.tags.map((tag, index) => (
+              <span key={index} style={styles.tag}>
+                {tag}
+                {!readOnly && (
+                  <button
+                    type="button"
+                    style={styles.tagRemoveBtn}
+                    onClick={() => removeTag(index)}
+                  >
+                    <FaTimes />
+                  </button>
+                )}
+              </span>
+            ))}
+          </div>
+        )}
+
         <small style={styles.helpText}>
           Etiketler ürünlerinizin arama sonuçlarında daha kolay bulunmasını sağlar.
         </small>

@@ -152,17 +152,17 @@ const VendorApplicationsPage = () => {
         <>
           {/* Info */}
           <div style={{ 
-            background: '#fef3c7', 
+            background: '#f0fdf4', 
             padding: '16px 20px', 
             borderRadius: '12px', 
             marginBottom: '24px',
-            border: '1px solid #fde68a',
+            border: '1px solid #86efac',
             display: 'flex',
             alignItems: 'center',
             gap: '12px'
           }}>
             <span style={{ fontSize: '20px' }}>⏳</span>
-            <div style={{ fontSize: '14px', color: '#92400e' }}>
+            <div style={{ fontSize: '14px', color: '#065f46' }}>
               <strong>Toplam {vendorStats.total} satıcı</strong> aktivasyon bekliyor.
             </div>
           </div>
@@ -283,12 +283,8 @@ const VendorApplicationsPage = () => {
 
       {/* Detail Modal - Pre Application */}
       {activeTab === 'pre' && detailModalOpen && selectedApp && (
-        <PreApplicationDetailModal
+        <VendorDetailModal
           vendor={selectedApp}
-          activeTab="general"
-          setActiveTab={() => {}}
-          adminNote=""
-          setAdminNote={() => {}}
           onClose={closeDetailModal}
           onApprove={() => {
             closeDetailModal();
@@ -298,8 +294,8 @@ const VendorApplicationsPage = () => {
             closeDetailModal();
             handleRejectPreClick(selectedApp);
           }}
-          isApproving={false}
-          isRejecting={false}
+          showApproveButton={selectedApp.status === 'pending'}
+          showRejectButton={selectedApp.status === 'pending'}
         />
       )}
 

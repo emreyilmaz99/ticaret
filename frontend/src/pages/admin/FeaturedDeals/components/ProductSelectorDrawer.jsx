@@ -23,7 +23,7 @@ export default function ProductSelectorDrawer({ isOpen, onClose, onSelect }) {
     setLoading(true);
     setError(null);
     try {
-      const response = await axiosInstance.get('/v1/admin/featured-deals/create');
+      const response = await apiClient.get('/v1/admin/featured-deals/create');
       console.log('Products Response:', response.data);
       // Backend returns data directly as array
       const products = response.data.data || [];
