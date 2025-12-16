@@ -50,15 +50,15 @@ import FeaturedDealsPage from './pages/admin/FeaturedDeals';
 import ReviewsPage from './pages/admin/Reviews';
 
 // 3. Satıcı Sayfaları
-import VendorLogin from './pages/vendor/VendorLogin';
+import VendorLogin from './pages/vendor/Auth/Login';
 import VendorRegister from './pages/vendor/Register';
 import VendorFullApplication from './pages/vendor/FullApplication';
 import VendorStatusPage from './pages/vendor/StatusPage';
 import VendorDashboard from './pages/vendor/Dashboard';
-import VendorOnboarding from './pages/vendor/VendorOnboarding';
+import VendorOnboarding from './pages/vendor/Auth/Onboarding';
 import VendorProducts from './pages/vendor/Products';
 import VendorOrders from './pages/vendor/Orders'; 
-import VendorFinance from './pages/vendor/VendorFinance';
+import VendorFinance from './pages/vendor/Finance';
 import VendorSettings from './pages/vendor/Settings';
 import VendorShipping from './pages/vendor/Shipping';
 import VendorPromotions from './pages/vendor/Promotions';
