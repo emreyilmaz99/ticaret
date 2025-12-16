@@ -1,6 +1,6 @@
 // src/pages/vendor/Products/hooks/useTaxClasses.js
 import { useQuery } from '@tanstack/react-query';
-import axios from 'axios';
+import apiClient from '@lib/apiClient';
 
 const BACKEND_URL = 'http://127.0.0.1:8000';
 

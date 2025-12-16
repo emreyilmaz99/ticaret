@@ -33,6 +33,23 @@ export const CartProvider = ({ children }) => {
 
   // Sepeti API'den yükle
   const fetchCart = useCallback(async () => {
+    // Kullanıcı token'ı yoksa sepet yükleme
+    const userToken = localStorage.getItem('user_token');
+    if (!userToken) {
+      setInitialized(true);
+      setLoading(false);
+      // localStorage'dan sepeti yükle
+      const savedCart = localStorage.getItem('cartItems');
+      if (savedCart) {
+        try {
+          setCartItems(JSON.parse(savedCart));
+        } catch (e) {
+          console.error('Sepet parse hatası:', e);
+        }
+      }
+      return;
+    }
+
     try {
       setLoading(true);
       const response = await cartApi.getCart();
@@ -53,7 +70,11 @@ export const CartProvider = ({ children }) => {
       // Hata durumunda localStorage'a fallback
       const savedCart = localStorage.getItem('cartItems');
       if (savedCart) {
-        setCartItems(JSON.parse(savedCart));
+        try {
+          setCartItems(JSON.parse(savedCart));
+        } catch (e) {
+          console.error('Sepet parse hatası:', e);
+        }
       }
     } finally {
       setLoading(false);
