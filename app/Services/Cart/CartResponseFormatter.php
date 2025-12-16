@@ -77,6 +77,7 @@ class CartResponseFormatter
             'has_deal' => $priceInfo['has_deal'],
             'deal_badge' => $priceInfo['deal_badge'],
             'line_total' => $priceInfo['current_price'] * $item->quantity,
+            'stock' => $item->variant?->stock ?? 0, // Stok bilgisi eklendi
             'vendor_id' => $item->product?->vendor_id,
             'product' => [
                 'id' => $item->product?->id,

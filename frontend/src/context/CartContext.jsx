@@ -129,7 +129,12 @@ export const CartProvider = ({ children }) => {
       }
     } catch (error) {
       console.error('Miktar güncellenirken hata:', error);
-      toast.error('Hata', error.response?.data?.message || 'Miktar güncellenemedi');
+      // Stok hatası için özel mesaj
+      const errorMessage = error.response?.data?.message || 'Miktar güncellenemedi';
+      toast.error('Hata', errorMessage);
+      
+      // Hata durumunda sepeti yeniden yükle (güncel stok bilgisi için)
+      await fetchCart();
     } finally {
       setLoading(false);
     }

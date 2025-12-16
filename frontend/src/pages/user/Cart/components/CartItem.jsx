@@ -60,6 +60,23 @@ const defaultStyles = {
     cursor: 'pointer',
     marginTop: '4px',
   },
+  stockInfo: {
+    fontSize: '11px',
+    color: '#64748b',
+    marginTop: '4px',
+  },
+  lowStockWarning: {
+    fontSize: '11px',
+    color: '#f59e0b',
+    fontWeight: '600',
+    marginTop: '4px',
+  },
+  outOfStockWarning: {
+    fontSize: '11px',
+    color: '#ef4444',
+    fontWeight: '600',
+    marginTop: '4px',
+  },
   dealBadge: {
     display: 'inline-block',
     fontSize: '10px',
@@ -136,8 +153,17 @@ const CartItem = ({
   };
 
   const handleIncrease = () => {
+    // Stok kontrolü - stoktan fazla eklenemesin
+    if (item.stock && item.quantity >= item.stock) {
+      return;
+    }
     onUpdateQuantity(item.quantity + 1);
   };
+
+  // Stok durumu kontrolü
+  const isOutOfStock = item.stock === 0;
+  const isLowStock = item.stock > 0 && item.stock < 5;
+  const isAtMaxStock = item.stock && item.quantity >= item.stock;
 
   return (
     <div style={{
@@ -173,6 +199,20 @@ const CartItem = ({
           {item.variant && (
             <p style={styles.variantText}>
               {item.variant.title || item.variant.sku}
+            </p>
+          )}
+          {/* Stok bilgisi ve uyarıları */}
+          {isOutOfStock ? (
+            <p style={styles.outOfStockWarning}>
+              ⚠️ Stokta yok
+            </p>
+          ) : isLowStock ? (
+            <p style={styles.lowStockWarning}>
+              ⚠️ Sadece {item.stock} adet kaldı!
+            </p>
+          ) : item.stock > 0 && (
+            <p style={styles.stockInfo}>
+              {item.stock} adet stokta
             </p>
           )}
           {item.has_deal && item.deal_badge && (
@@ -221,6 +261,7 @@ const CartItem = ({
             onIncrease={handleIncrease}
             loading={loading}
             styles={styles}
+            isAtMaxStock={isAtMaxStock}
           />
         </div>
       )}
@@ -254,6 +295,7 @@ const CartItem = ({
           onIncrease={handleIncrease}
           loading={loading}
           styles={styles}
+          isAtMaxStock={isAtMaxStock}
         />
       </div>
 
@@ -270,7 +312,7 @@ const CartItem = ({
 /**
  * Miktar kontrol bileşeni
  */
-const QuantityControl = ({ quantity, onDecrease, onIncrease, loading, styles }) => (
+const QuantityControl = ({ quantity, onDecrease, onIncrease, loading, styles, isAtMaxStock }) => (
   <div style={styles.quantityControl}>
     <button 
       onClick={onDecrease}
@@ -287,9 +329,11 @@ const QuantityControl = ({ quantity, onDecrease, onIncrease, loading, styles }) 
       onClick={onIncrease}
       style={{
         ...styles.qtyBtn, 
-        opacity: loading ? 0.5 : 1
+        opacity: loading || isAtMaxStock ? 0.5 : 1,
+        cursor: isAtMaxStock ? 'not-allowed' : 'pointer'
       }}
-      disabled={loading}
+      disabled={loading || isAtMaxStock}
+      title={isAtMaxStock ? 'Maksimum stok miktarına ulaşıldı' : ''}
     >
       <FiPlus size={12} />
     </button>
@@ -333,6 +377,7 @@ QuantityControl.propTypes = {
   onIncrease: PropTypes.func.isRequired,
   loading: PropTypes.bool,
   styles: PropTypes.object.isRequired,
+  isAtMaxStock: PropTypes.bool,
 };
 
 export default CartItem;
