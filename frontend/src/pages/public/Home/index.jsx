@@ -1,7 +1,7 @@
 // src/pages/public/Home/index.jsx
 import React from 'react';
 import QuickViewModal from '../../../components/modals/QuickViewModal';
-import { CompareModal } from '../CategoryProducts/components/CompareModal';
+import { CompareModal } from '@components/modals/CompareModal';
 
 // Hooks
 import { useHome } from './useHome';

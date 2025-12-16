@@ -13,7 +13,7 @@ import {
 import { getMyCategoriesForProducts } from '../../../features/vendor/api/categoryApi';
 import { getUnits } from '../../../features/public/api/unitsApi';
 import { useToast } from '../../../components/common/Toast';
-import axios from '../../../lib/axios';
+import apiClient from '@lib/apiClient';
 
 // Initial form state
 const initialFormState = {
@@ -213,7 +213,7 @@ const useVendorProducts = () => {
   });
 
   // ============ HELPERS ============
-  const backendOrigin = (axios.defaults.baseURL || '').replace(/\/api\/?$/i, '');
+  const backendOrigin = (apiClient.defaults.baseURL || '').replace(/\/api\/?$/i, '');
   const toFullUrl = useCallback((u) => {
     if (!u) return null;
     if (u.startsWith('http')) return u;

@@ -5,14 +5,14 @@ import {
   FaCommentAlt, FaShoppingBag 
 } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
+import ConfirmModal from '../../../components/modals/ConfirmModal';
 
 import { getStyles } from './styles';
 import { useUserReviews } from './useUserReviews';
 import { 
   ReviewModal, 
   ReviewCard, 
-  PendingReviewCard, 
-  DeleteConfirmModal 
+  PendingReviewCard
 } from './components';
 
 const UserReviews = () => {
@@ -232,12 +232,16 @@ const UserReviews = () => {
       />
 
       {/* Delete Confirmation Modal */}
-      <DeleteConfirmModal
+      <ConfirmModal
         isOpen={deleteModal.isOpen}
         onClose={() => setDeleteModal({ isOpen: false, reviewId: null })}
         onConfirm={() => deleteReviewMutation.mutate(deleteModal.reviewId)}
-        isDeleting={isDeleting}
-        styles={styles}
+        title="Değerlendirmeyi Sil"
+        message="Bu değerlendirmeyi silmek istediğinizden emin misiniz? Bu işlem geri alınamaz."
+        confirmText={isDeleting ? 'Siliniyor...' : 'Evet, Sil'}
+        cancelText="Vazgeç"
+        type="danger"
+        isLoading={isDeleting}
       />
     </div>
   );

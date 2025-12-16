@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useToast } from '../../../components/common/Toast';
-import axios from '../../../lib/axios';
+import apiClient from '@lib/apiClient';
 import { INITIAL_FORM_STATE, styles } from './styles';
 
 /**
@@ -25,7 +25,7 @@ export const useFullApplication = () => {
   } = useQuery({
     queryKey: ['vendorStatus'],
     queryFn: async () => {
-      const response = await axios.get('/v1/vendor/application/status');
+      const response = await apiClient.get('/v1/vendor/application/status');
       return response.data.data;
     }
   });
@@ -64,7 +64,7 @@ export const useFullApplication = () => {
   // Submit mutation
   const submitMutation = useMutation({
     mutationFn: async (data) => {
-      const response = await axios.post('/v1/vendor/application/submit-full', data);
+      const response = await apiClient.post('/v1/vendor/application/submit-full', data);
       return response.data;
     },
     onSuccess: () => {

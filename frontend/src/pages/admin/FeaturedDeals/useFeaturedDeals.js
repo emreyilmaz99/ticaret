@@ -30,7 +30,7 @@ export const useFeaturedDeals = () => {
     queryFn: async () => {
       const token = localStorage.getItem('admin_token');
       const params = filterStatus !== 'all' ? `?status=${filterStatus}` : '';
-      const response = await axios.get(
+      const response = await apiClient.get(
         `${BACKEND_URL}/api/v1/admin/featured-deals${params}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -43,7 +43,7 @@ export const useFeaturedDeals = () => {
     queryKey: ['productsForDeals'],
     queryFn: async () => {
       const token = localStorage.getItem('admin_token');
-      const response = await axios.get(
+      const response = await apiClient.get(
         `${BACKEND_URL}/api/v1/admin/featured-deals/create`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -56,7 +56,7 @@ export const useFeaturedDeals = () => {
   const createMutation = useMutation({
     mutationFn: async (data) => {
       const token = localStorage.getItem('admin_token');
-      const response = await axios.post(
+      const response = await apiClient.post(
         `${BACKEND_URL}/api/v1/admin/featured-deals`,
         data,
         { headers: { Authorization: `Bearer ${token}` } }
@@ -78,7 +78,7 @@ export const useFeaturedDeals = () => {
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }) => {
       const token = localStorage.getItem('admin_token');
-      const response = await axios.put(
+      const response = await apiClient.put(
         `${BACKEND_URL}/api/v1/admin/featured-deals/${id}`,
         data,
         { headers: { Authorization: `Bearer ${token}` } }
@@ -101,7 +101,7 @@ export const useFeaturedDeals = () => {
     mutationFn: async (id) => {
       setDeletingId(id);
       const token = localStorage.getItem('admin_token');
-      await axios.delete(
+      await apiClient.delete(
         `${BACKEND_URL}/api/v1/admin/featured-deals/${id}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -123,7 +123,7 @@ export const useFeaturedDeals = () => {
     mutationFn: async (id) => {
       setTogglingId(id);
       const token = localStorage.getItem('admin_token');
-      const response = await axios.post(
+      const response = await apiClient.post(
         `${BACKEND_URL}/api/v1/admin/featured-deals/${id}/toggle`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
@@ -147,7 +147,7 @@ export const useFeaturedDeals = () => {
   const reorderMutation = useMutation({
     mutationFn: async (deals) => {
       const token = localStorage.getItem('admin_token');
-      const response = await axios.post(
+      const response = await apiClient.post(
         `${BACKEND_URL}/api/v1/admin/featured-deals/reorder`,
         { deals },
         { headers: { Authorization: `Bearer ${token}` } }

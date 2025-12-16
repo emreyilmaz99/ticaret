@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { FaTimes, FaSearch, FaCheck } from 'react-icons/fa';
-import axiosInstance from '../../../../lib/axios';
+import apiClient from '@lib/apiClient';
 
 const BACKEND_URL = 'http://127.0.0.1:8000';
 

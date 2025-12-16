@@ -7,5 +7,6 @@ export { default as ProductGrid } from './ProductGrid';
 export { default as ProductTable } from './ProductTable';
 export { default as Pagination } from './Pagination';
 export { default as ProductModal } from './ProductModal';
-export { default as ConfirmModal } from './ConfirmModal';
+// ConfirmModal artık common components'ten kullanılıyor
+export { default as ConfirmModal } from '@components/modals/ConfirmModal';
 export { default as Lightbox } from './Lightbox';

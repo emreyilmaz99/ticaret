@@ -98,8 +98,12 @@ const usePreApplications = () => {
   // Filtered Vendors
   const filteredVendors = useMemo(() => {
     return vendors.filter(v => {
-      const matchesSearch = v.storeName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      const matchesSearch = 
+        v.storeName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        v.store_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        v.company_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         v.owner?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        v.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         v.email?.toLowerCase().includes(searchTerm.toLowerCase());
       
       const matchesStatus = statusFilter === 'all' ? true : v.status === statusFilter;
@@ -110,8 +114,9 @@ const usePreApplications = () => {
 
   // Handlers
   const openDetailModal = useCallback((vendor) => {
+    console.log('openDetailModal called with:', vendor);
     setSelectedVendor(vendor);
-    setAdminNote(vendor.adminNotes || '');
+    setAdminNote(vendor.admin_notes || vendor.adminNotes || '');
     setActiveTab('general');
     setIsDetailModalOpen(true);
   }, []);

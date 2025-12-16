@@ -18,7 +18,7 @@ export const useTaxClasses = () => {
     queryKey: ['taxClasses'],
     queryFn: async () => {
       const token = localStorage.getItem('admin_token');
-      const response = await axios.get(`${BACKEND_URL}/api/v1/admin/tax-classes`, {
+      const response = await apiClient.get(`${BACKEND_URL}/api/v1/admin/tax-classes`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       return response.data.data.tax_classes || [];
@@ -29,7 +29,7 @@ export const useTaxClasses = () => {
   const createMutation = useMutation({
     mutationFn: async (data) => {
       const token = localStorage.getItem('admin_token');
-      const response = await axios.post(
+      const response = await apiClient.post(
         `${BACKEND_URL}/api/v1/admin/tax-classes`,
         data,
         { headers: { Authorization: `Bearer ${token}` } }
@@ -49,7 +49,7 @@ export const useTaxClasses = () => {
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }) => {
       const token = localStorage.getItem('admin_token');
-      const response = await axios.put(
+      const response = await apiClient.put(
         `${BACKEND_URL}/api/v1/admin/tax-classes/${id}`,
         data,
         { headers: { Authorization: `Bearer ${token}` } }
@@ -69,7 +69,7 @@ export const useTaxClasses = () => {
   const deleteMutation = useMutation({
     mutationFn: async (id) => {
       const token = localStorage.getItem('admin_token');
-      const response = await axios.delete(
+      const response = await apiClient.delete(
         `${BACKEND_URL}/api/v1/admin/tax-classes/${id}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );

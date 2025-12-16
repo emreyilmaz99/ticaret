@@ -9,7 +9,7 @@ export const useTaxClasses = () => {
     queryKey: ['vendor-tax-classes'],
     queryFn: async () => {
       // Public endpoint - authentication gerekmez
-      const response = await axios.get(`${BACKEND_URL}/api/v1/tax-classes`);
+      const response = await apiClient.get(`${BACKEND_URL}/api/v1/tax-classes`);
       // Sadece aktif vergi sınıflarını getir
       return (response.data.data.tax_classes || []).filter(tc => tc.is_active);
     }

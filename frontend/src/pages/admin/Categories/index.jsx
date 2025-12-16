@@ -1,13 +1,13 @@
 // src/pages/admin/Categories/index.jsx
 import React from 'react';
 import { FaPlus } from 'react-icons/fa';
+import ConfirmModal from '../../../components/modals/ConfirmModal';
 
 // Alt Bileşenler
 import CategoryStats from './CategoryStats';
 import CategoryToolbar from './CategoryToolbar';
 import CategoryTree from './CategoryTree';
 import CategoryFormModal from './CategoryFormModal';
-import DeleteConfirmModal from './DeleteConfirmModal';
 
 // Custom Hook
 import useCategoriesPage from './useCategoriesPage';
@@ -123,13 +123,16 @@ const CategoriesPage = () => {
       />
 
       {/* Delete Confirmation Modal */}
-      <DeleteConfirmModal
+      <ConfirmModal
         isOpen={deleteConfirmOpen}
-        category={categoryToDelete}
+        onClose={cancelDelete}
         onConfirm={handleDelete}
-        onCancel={cancelDelete}
-        isDeleting={isDeleting}
-        styles={styles}
+        title="Kategoriyi Sil"
+        message={categoryToDelete ? `"${categoryToDelete.name}" kategorisini silmek istediğinizden emin misiniz?` : 'Bu kategoriyi silmek istediğinizden emin misiniz?'}
+        confirmText={isDeleting ? 'Siliniyor...' : 'Evet, Sil'}
+        cancelText="İptal"
+        type="danger"
+        isLoading={isDeleting}
       />
     </div>
   );

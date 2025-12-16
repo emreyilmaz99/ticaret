@@ -1,29 +1,29 @@
-import axios from '../../../lib/axios';
+import apiClient from '@lib/apiClient';
 
 export const vendorLogin = async (credentials) => {
-  const response = await axios.post('/v1/vendor/login', credentials);
+  const response = await apiClient.post('/v1/vendor/login', credentials);
   return response.data;
 };
 
 export const vendorLogout = async () => {
-  const response = await axios.post('/v1/vendor/logout');
+  const response = await apiClient.post('/v1/vendor/logout');
   return response.data;
 };
 
 export const getVendorProfile = async () => {
-  const response = await axios.get('/v1/vendor/me');
+  const response = await apiClient.get('/v1/vendor/me');
   return response.data;
 };
 
 export const vendorRegister = async (payload) => {
   // Pre-application submission
-  const response = await axios.post('/v1/vendor-applications', payload);
+  const response = await apiClient.post('/v1/vendor-applications', payload);
   return response.data;
 };
 
 export const submitFullApplication = async (id, payload) => {
   // Full application submission
-  const response = await axios.post(`/v1/vendor-applications/${id}/submit-full`, payload);
+  const response = await apiClient.post(`/v1/vendor-applications/${id}/submit-full`, payload);
   return response.data;
 };
 
@@ -48,21 +48,21 @@ export const updateVendorProfile = async (data) => {
     config.headers = { 'Content-Type': 'multipart/form-data' };
   }
 
-  const response = await axios.put('/v1/vendor/profile', body, config);
+  const response = await apiClient.put('/v1/vendor/profile', body, config);
   return response.data;
 };
 
 export const createVendorAddress = async (payload) => {
-  const response = await axios.post('/v1/vendor/addresses', payload);
+  const response = await apiClient.post('/v1/vendor/addresses', payload);
   return response.data;
 };
 
 export const createVendorBankAccount = async (payload) => {
-  const response = await axios.post('/v1/vendor/bank-accounts', payload);
+  const response = await apiClient.post('/v1/vendor/bank-accounts', payload);
   return response.data;
 };
 
 export const completeOnboarding = async () => {
-  const response = await axios.post('/v1/vendor/onboarding/complete');
+  const response = await apiClient.post('/v1/vendor/onboarding/complete');
   return response.data;
 };

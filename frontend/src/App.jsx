@@ -3,7 +3,6 @@ import { AuthProvider } from './context/AuthContext';
 import { ToastProvider } from './components/common/Toast';
 import { FavoritesProvider } from './context/FavoritesContext';
 import { CartProvider } from './context/CartContext';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 // --- LAYOUTS (DÜZENLER) ---
 import Navbar from './components/navigation/Navbar';
@@ -67,24 +66,13 @@ import VendorReviews from './pages/vendor/Reviews';
 import VendorLayout from './components/layouts/VendorLayout';
 import VendorCategories from './pages/vendor/Categories';
 
-// QueryClient for React Query
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 1000 * 60 * 5, // 5 minutes
-      retry: 1,
-    },
-  },
-});
-
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <ToastProvider>
-          <FavoritesProvider>
-            <CartProvider>
-              <Router>
+    <AuthProvider>
+      <ToastProvider>
+        <FavoritesProvider>
+          <CartProvider>
+            <Router>
                 <div className="App">
                   <Routes>
               
@@ -188,7 +176,6 @@ function App() {
         </FavoritesProvider>
       </ToastProvider>
     </AuthProvider>
-    </QueryClientProvider>
   );
 }
 

@@ -6,7 +6,7 @@ import { useToast } from '../../../components/common/Toast';
 import { useAuth } from '../../../context/AuthContext';
 import { useCart } from '../../../context/CartContext';
 import { getProducts, getCategories } from '../../../api/publicApi';
-import axios from '../../../lib/axios';
+import apiClient from '@lib/apiClient';
 
 /**
  * Custom hook for Home page state and logic
@@ -110,7 +110,7 @@ export const useHome = () => {
 
       console.log('Adding to cart:', payload);
 
-      const response = await axios.post('/v1/cart/items', payload);
+      const response = await apiClient.post('/v1/cart/items', payload);
 
       if (response.data.success) {
         showToast(`${product.name} sepete eklendi!`, 'success');

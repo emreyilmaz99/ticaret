@@ -18,7 +18,7 @@ const DealSection = ({ addToCart, styles, isMobile }) => {
   useEffect(() => {
     const fetchDeals = async () => {
       try {
-        const response = await axios.get(`${BACKEND_URL}/api/v1/featured-deals`);
+        const response = await apiClient.get(`${BACKEND_URL}/api/v1/featured-deals`);
         console.log('Featured Deals Response:', response.data);
         if (response.data.success && response.data.data && response.data.data.deals) {
           setDeals(response.data.data.deals);
@@ -81,7 +81,7 @@ const DealSection = ({ addToCart, styles, isMobile }) => {
   const handleClick = async () => {
     if (!currentDeal) return;
     try {
-      await axios.post(`${BACKEND_URL}/api/v1/featured-deals/${currentDeal.id}/click`);
+      await apiClient.post(`${BACKEND_URL}/api/v1/featured-deals/${currentDeal.id}/click`);
     } catch (error) {
       console.error('Click tracking failed:', error);
     }
@@ -95,7 +95,7 @@ const DealSection = ({ addToCart, styles, isMobile }) => {
     
     // Track conversion
     try {
-      await axios.post(`${BACKEND_URL}/api/v1/featured-deals/${currentDeal.id}/conversion`);
+      await apiClient.post(`${BACKEND_URL}/api/v1/featured-deals/${currentDeal.id}/conversion`);
     } catch (error) {
       console.error('Conversion tracking failed:', error);
     }

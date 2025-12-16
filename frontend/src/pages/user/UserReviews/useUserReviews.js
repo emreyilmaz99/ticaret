@@ -1,7 +1,7 @@
 // src/pages/user/UserReviews/useUserReviews.js
 import { useState, useMemo, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import api from '../../../services/api';
+import apiClient from '@lib/apiClient';
 import { toast } from 'react-hot-toast';
 
 export const useUserReviews = () => {
@@ -41,7 +41,7 @@ export const useUserReviews = () => {
   } = useQuery({
     queryKey: ['userReviews'],
     queryFn: async () => {
-      const response = await api.get('/v1/user/reviews');
+      const response = await apiClient.get('/v1/user/reviews');
       return response.data;
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -56,7 +56,7 @@ export const useUserReviews = () => {
   } = useQuery({
     queryKey: ['reviewableOrders'],
     queryFn: async () => {
-      const response = await api.get('/v1/user/reviewable-orders');
+      const response = await apiClient.get('/v1/user/reviewable-orders');
       return response.data;
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -99,7 +99,7 @@ export const useUserReviews = () => {
         formData.append(`photos[${index}]`, file);
       });
 
-      const response = await api.post(
+      const response = await apiClient.post(
         `/v1/user/orders/${orderId}/items/${orderItemId}/review`,
         formData,
         { headers: { 'Content-Type': 'multipart/form-data' } }
@@ -127,7 +127,7 @@ export const useUserReviews = () => {
   // Delete review mutation
   const deleteReviewMutation = useMutation({
     mutationFn: async (reviewId) => {
-      const response = await api.delete(`/v1/user/reviews/${reviewId}`);
+      const response = await apiClient.delete(`/v1/user/reviews/${reviewId}`);
       return response.data;
     },
     onSuccess: () => {

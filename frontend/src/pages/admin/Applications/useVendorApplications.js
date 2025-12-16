@@ -10,7 +10,7 @@ import {
 } from '../../../features/vendor-application/api/vendorApplicationApi';
 import { getActiveCommissionPlans } from '../../../features/commission/api/commissionApi';
 import { useToast } from '../../../components/common/Toast';
-import axios from '../../../lib/axios';
+import apiClient from '@lib/apiClient';
 
 /**
  * Vendor Applications sayfası için custom hook
@@ -31,6 +31,7 @@ const useVendorApplications = () => {
   // Modal State
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
   const [approveModalOpen, setApproveModalOpen] = useState(false);
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [rejectionReason, setRejectionReason] = useState('');
   const [selectedCommissionPlan, setSelectedCommissionPlan] = useState(null);
   
@@ -53,7 +54,7 @@ const useVendorApplications = () => {
   const { data: pendingVendorsData, isLoading: pendingVendorsLoading } = useQuery({
     queryKey: ['pendingActivationVendors'],
     queryFn: async () => {
-      const response = await axios.get('/v1/admin/vendors', { 
+      const response = await apiClient.get('/v1/admin/vendors', { 
         params: { status: 'pending_full_approval' } 
       });
       return response.data;
@@ -254,14 +255,17 @@ const useVendorApplications = () => {
   }, []);
 
   const openDetailModal = useCallback((item) => {
+    console.log('openDetailModal called with:', item);
     if (activeTab === 'pre') {
       setSelectedApp(item);
     } else {
       setSelectedVendor(item);
     }
+    setDetailModalOpen(true);
   }, [activeTab]);
 
   const closeDetailModal = useCallback(() => {
+    setDetailModalOpen(false);
     setSelectedApp(null);
     setSelectedVendor(null);
   }, []);
@@ -294,6 +298,9 @@ const useVendorApplications = () => {
     // Selected Items
     selectedApp,
     selectedVendor,
+    
+    // Detail Modal
+    detailModalOpen,
     openDetailModal,
     closeDetailModal,
     

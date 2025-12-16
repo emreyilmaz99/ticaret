@@ -1,7 +1,7 @@
 // src/pages/admin/Reviews/BannedWordsTab.jsx
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import api from '../../../services/api';
+import apiClient from '@lib/apiClient';
 import {
   FaPlus, FaTrash, FaSearch, FaBan, FaRegSadTear,
   FaCheck, FaTimes, FaExclamationTriangle, FaCode,
@@ -60,7 +60,7 @@ const BannedWordsTab = ({ styles }) => {
   } = useQuery({
     queryKey: ['admin-banned-words'],
     queryFn: async () => {
-      const response = await api.get('/v1/admin/banned-words?all=true');
+      const response = await apiClient.get('/v1/admin/banned-words?all=true');
       return response.data;
     },
   });
@@ -69,7 +69,7 @@ const BannedWordsTab = ({ styles }) => {
   const { data: statsData } = useQuery({
     queryKey: ['admin-banned-words-stats'],
     queryFn: async () => {
-      const response = await api.get('/v1/admin/banned-words/stats');
+      const response = await apiClient.get('/v1/admin/banned-words/stats');
       return response.data;
     },
   });
@@ -78,7 +78,7 @@ const BannedWordsTab = ({ styles }) => {
   const addWordMutation = useMutation({
     mutationFn: async ({ word, is_regex }) => {
       console.log('API çağrısı yapılıyor:', { word, is_regex });
-      const response = await api.post('/v1/admin/banned-words', { word, is_regex });
+      const response = await apiClient.post('/v1/admin/banned-words', { word, is_regex });
       console.log('API yanıtı:', response.data);
       return response.data;
     },
@@ -105,7 +105,7 @@ const BannedWordsTab = ({ styles }) => {
         : words.split('\n').map(w => w.trim()).filter(w => w);
       
       console.log('Toplu ekleme API çağrısı:', { wordList });
-      const response = await api.post('/v1/admin/banned-words/bulk', { words: wordList });
+      const response = await apiClient.post('/v1/admin/banned-words/bulk', { words: wordList });
       console.log('Toplu ekleme yanıtı:', response.data);
       return response.data;
     },
@@ -127,7 +127,7 @@ const BannedWordsTab = ({ styles }) => {
   // Delete word mutation
   const deleteWordMutation = useMutation({
     mutationFn: async (id) => {
-      await api.delete(`/v1/admin/banned-words/${id}`);
+      await apiClient.delete(`/v1/admin/banned-words/${id}`);
       return id;
     },
     onSuccess: () => {
@@ -144,7 +144,7 @@ const BannedWordsTab = ({ styles }) => {
   // Bulk delete mutation
   const bulkDeleteMutation = useMutation({
     mutationFn: async (ids) => {
-      await api.post('/v1/admin/banned-words/bulk-delete', { ids });
+      await apiClient.post('/v1/admin/banned-words/bulk-delete', { ids });
       return ids;
     },
     onSuccess: (ids) => {
@@ -161,7 +161,7 @@ const BannedWordsTab = ({ styles }) => {
   // Update word mutation
   const updateWordMutation = useMutation({
     mutationFn: async ({ id, word, is_regex }) => {
-      const response = await api.put(`/v1/admin/banned-words/${id}`, { word, is_regex });
+      const response = await apiClient.put(`/v1/admin/banned-words/${id}`, { word, is_regex });
       return response.data;
     },
     onSuccess: () => {

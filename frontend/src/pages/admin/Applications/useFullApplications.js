@@ -7,7 +7,7 @@ import {
 } from '../../../features/vendor-application/api/vendorApplicationApi';
 import { getActiveCommissionPlans } from '../../../features/commission/api/commissionApi';
 import { useToast } from '../../../components/common/Toast';
-import axios from '../../../lib/axios';
+import apiClient from '@lib/apiClient';
 
 /**
  * Full Applications sayfası için custom hook
@@ -29,7 +29,7 @@ const useFullApplications = () => {
   const { data: vendorsData, isLoading, error } = useQuery({
     queryKey: ['pendingFullApprovalVendors'],
     queryFn: async () => {
-      const response = await axios.get('/v1/admin/vendors', { 
+      const response = await apiClient.get('/v1/admin/vendors', { 
         params: { status: 'pending_full_approval' } 
       });
       return response.data;

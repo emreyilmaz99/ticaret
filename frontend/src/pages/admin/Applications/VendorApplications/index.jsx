@@ -9,6 +9,8 @@ import {
   StatsCards,
   PreApplicationTable,
   VendorTable,
+  VendorDetailModal,
+  PreApplicationDetailModal,
   ApproveModal,
   RejectModal
 } from '../components';
@@ -48,7 +50,11 @@ const VendorApplicationsPage = () => {
     // Selected Items
     selectedApp,
     selectedVendor,
+    
+    // Detail Modal
+    detailModalOpen,
     openDetailModal,
+    closeDetailModal,
     
     // Approve Modal
     approveModalOpen,
@@ -274,6 +280,46 @@ const VendorApplicationsPage = () => {
         isSubmitting={activeTab === 'pre' ? isRejectingPre : isRejectingVendor}
         minLength={10}
       />
+
+      {/* Detail Modal - Pre Application */}
+      {activeTab === 'pre' && detailModalOpen && selectedApp && (
+        <PreApplicationDetailModal
+          vendor={selectedApp}
+          activeTab="general"
+          setActiveTab={() => {}}
+          adminNote=""
+          setAdminNote={() => {}}
+          onClose={closeDetailModal}
+          onApprove={() => {
+            closeDetailModal();
+            handleApprovePreClick(selectedApp);
+          }}
+          onReject={() => {
+            closeDetailModal();
+            handleRejectPreClick(selectedApp);
+          }}
+          isApproving={false}
+          isRejecting={false}
+        />
+      )}
+
+      {/* Detail Modal - Full Application (Vendor) */}
+      {activeTab === 'full' && detailModalOpen && selectedVendor && (
+        <VendorDetailModal
+          vendor={selectedVendor}
+          onClose={closeDetailModal}
+          onApprove={() => {
+            closeDetailModal();
+            handleApproveVendorClick(selectedVendor);
+          }}
+          onReject={() => {
+            closeDetailModal();
+            handleRejectVendorClick(selectedVendor);
+          }}
+          showApproveButton={true}
+          showRejectButton={true}
+        />
+      )}
     </div>
   );
 };

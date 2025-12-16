@@ -3,7 +3,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { useCart } from '../../../context/CartContext';
-import api from '../../../services/api';
+import apiClient from '@lib/apiClient';
 import { getMainCategories } from '../../../api/publicApi';
 
 // Debounce hook
@@ -64,7 +64,7 @@ export const useVendorStore = () => {
   const { data: vendorData, isLoading, error } = useQuery({
     queryKey: ['vendor', slug],
     queryFn: async () => {
-      const response = await api.get(`/v1/vendors/${slug}`);
+      const response = await apiClient.get(`/v1/vendors/${slug}`);
       return response.data.data;
     },
     enabled: !!slug,
@@ -77,7 +77,7 @@ export const useVendorStore = () => {
   const { data: categoriesData, isLoading: categoriesLoading } = useQuery({
     queryKey: ['vendorCategories', slug],
     queryFn: async () => {
-      const response = await api.get(`/v1/vendors/${slug}/categories`);
+      const response = await apiClient.get(`/v1/vendors/${slug}/categories`);
       return response.data.data;
     },
     enabled: !!slug,
@@ -119,7 +119,7 @@ export const useVendorStore = () => {
       // For deals tab, only show discounted products
       if (activeTab === 'deals') params.append('has_discount', '1');
       
-      const response = await api.get(`/v1/vendors/${slug}/products?${params}`);
+      const response = await apiClient.get(`/v1/vendors/${slug}/products?${params}`);
       return response.data;
     },
     getNextPageParam: (lastPage) => {
@@ -141,7 +141,7 @@ export const useVendorStore = () => {
       });
       if (selectedRating) params.append('rating', selectedRating);
       
-      const response = await api.get(`/v1/vendors/${slug}/reviews?${params}`);
+      const response = await apiClient.get(`/v1/vendors/${slug}/reviews?${params}`);
       return response.data;
     },
     enabled: !!slug && activeTab === 'reviews',

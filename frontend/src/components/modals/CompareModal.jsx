@@ -1,8 +1,10 @@
-// src/pages/public/CategoryProducts/components/CompareModal.jsx
+// src/components/modals/CompareModal.jsx
 import React from 'react';
 import { FaTimes, FaStar, FaShoppingCart, FaCheckCircle, FaTimesCircle } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
-import { formatPrice } from '../styles';
+
+// Utility function
+const formatPrice = (price) => new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(price || 0);
 
 export const CompareModal = ({ compareList, onClose, onRemove, styles }) => {
   const navigate = useNavigate();
@@ -293,3 +295,5 @@ export const CompareModal = ({ compareList, onClose, onRemove, styles }) => {
     </div>
   );
 };
+
+export default CompareModal;

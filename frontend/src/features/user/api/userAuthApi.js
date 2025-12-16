@@ -1,10 +1,10 @@
-import axios from '../../../lib/axios';
+import apiClient from '@lib/apiClient';
 
 /**
  * Register a new user
  */
 export const registerUser = async (data) => {
-  const response = await axios.post('/v1/user/register', data);
+  const response = await apiClient.post('/v1/user/register', data);
   return response.data;
 };
 
@@ -12,7 +12,7 @@ export const registerUser = async (data) => {
  * Login user
  */
 export const loginUser = async (email, password) => {
-  const response = await axios.post('/v1/user/login', { email, password });
+  const response = await apiClient.post('/v1/user/login', { email, password });
   return response.data;
 };
 
@@ -20,7 +20,7 @@ export const loginUser = async (email, password) => {
  * Logout user
  */
 export const logoutUser = async () => {
-  const response = await axios.post('/v1/user/logout');
+  const response = await apiClient.post('/v1/user/logout');
   return response.data;
 };
 
@@ -28,7 +28,7 @@ export const logoutUser = async () => {
  * Get current user info
  */
 export const getUserMe = async () => {
-  const response = await axios.get('/v1/user/me');
+  const response = await apiClient.get('/v1/user/me');
   return response.data;
 };
 
@@ -36,7 +36,7 @@ export const getUserMe = async () => {
  * Get user profile
  */
 export const getUserProfile = async () => {
-  const response = await axios.get('/v1/user/profile');
+  const response = await apiClient.get('/v1/user/profile');
   return response.data;
 };
 
@@ -44,7 +44,7 @@ export const getUserProfile = async () => {
  * Update user profile
  */
 export const updateUserProfile = async (data) => {
-  const response = await axios.put('/v1/user/profile', data);
+  const response = await apiClient.put('/v1/user/profile', data);
   return response.data;
 };
 
@@ -52,7 +52,7 @@ export const updateUserProfile = async (data) => {
  * Update user password
  */
 export const updateUserPassword = async (data) => {
-  const response = await axios.put('/v1/user/password', data);
+  const response = await apiClient.put('/v1/user/password', data);
   return response.data;
 };
 
@@ -62,7 +62,7 @@ export const updateUserPassword = async (data) => {
 export const uploadUserAvatar = async (file) => {
   const formData = new FormData();
   formData.append('avatar', file);
-  const response = await axios.post('/v1/user/avatar', formData, {
+  const response = await apiClient.post('/v1/user/avatar', formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
@@ -74,6 +74,6 @@ export const uploadUserAvatar = async (file) => {
  * Delete user avatar
  */
 export const deleteUserAvatar = async () => {
-  const response = await axios.delete('/v1/user/avatar');
+  const response = await apiClient.delete('/v1/user/avatar');
   return response.data;
 };

@@ -1,26 +1,26 @@
-import axios from '../../../lib/axios';
+import apiClient from '@lib/apiClient';
 
 export const getAdmins = async (params) => {
-  const response = await axios.get('/v1/admin/admins', { params });
+  const response = await apiClient.get('/v1/admin/admins', { params });
   return response.data;
 };
 
 export const getAdmin = async (id) => {
-  const response = await axios.get(`/v1/admin/admins/${id}`);
+  const response = await apiClient.get(`/v1/admin/admins/${id}`);
   return response.data;
 };
 
 export const createAdmin = async (data) => {
-  const response = await axios.post('/v1/admin/admins', data);
+  const response = await apiClient.post('/v1/admin/admins', data);
   return response.data;
 };
 
 export const updateAdmin = async (id, data) => {
-  const response = await axios.put(`/v1/admin/admins/${id}`, data);
+  const response = await apiClient.put(`/v1/admin/admins/${id}`, data);
   return response.data;
 };
 
 export const deleteAdmin = async (id) => {
-  const response = await axios.delete(`/v1/admin/admins/${id}`);
+  const response = await apiClient.delete(`/v1/admin/admins/${id}`);
   return response.data;
 };

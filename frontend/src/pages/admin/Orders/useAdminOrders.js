@@ -35,7 +35,7 @@ export const useAdminOrders = () => {
     queryFn: async () => {
       const token = localStorage.getItem('admin_token');
       const queryString = buildQueryParams();
-      const response = await axios.get(
+      const response = await apiClient.get(
         `${BACKEND_URL}/api/v1/admin/orders${queryString ? '?' + queryString : ''}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -51,7 +51,7 @@ export const useAdminOrders = () => {
     queryKey: ['adminOrderStats'],
     queryFn: async () => {
       const token = localStorage.getItem('admin_token');
-      const response = await axios.get(`${BACKEND_URL}/api/v1/admin/orders/stats`, {
+      const response = await apiClient.get(`${BACKEND_URL}/api/v1/admin/orders/stats`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       return response.data.data;
@@ -62,7 +62,7 @@ export const useAdminOrders = () => {
   const updateStatusMutation = useMutation({
     mutationFn: async ({ orderId, status }) => {
       const token = localStorage.getItem('admin_token');
-      const response = await axios.put(
+      const response = await apiClient.put(
         `${BACKEND_URL}/api/v1/admin/orders/${orderId}/status`,
         { status },
         { headers: { Authorization: `Bearer ${token}` } }
@@ -83,7 +83,7 @@ export const useAdminOrders = () => {
   const cancelOrderMutation = useMutation({
     mutationFn: async ({ orderId, reason }) => {
       const token = localStorage.getItem('admin_token');
-      const response = await axios.post(
+      const response = await apiClient.post(
         `${BACKEND_URL}/api/v1/admin/orders/${orderId}/cancel`,
         { reason },
         { headers: { Authorization: `Bearer ${token}` } }

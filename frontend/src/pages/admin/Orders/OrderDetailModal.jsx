@@ -33,7 +33,7 @@ const OrderDetailModal = ({ order, isOpen, onClose, styles, onCancel }) => {
     setLoadingNotes(true);
     try {
       const token = localStorage.getItem('admin_token');
-      const response = await axios.get(
+      const response = await apiClient.get(
         `${BACKEND_URL}/api/v1/admin/orders/${order.order_id}/notes`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -60,7 +60,7 @@ const OrderDetailModal = ({ order, isOpen, onClose, styles, onCancel }) => {
     setLoadingUserOrders(true);
     try {
       const token = localStorage.getItem('admin_token');
-      const response = await axios.get(
+      const response = await apiClient.get(
         `${BACKEND_URL}/api/v1/admin/orders/${order.order_id}/user-orders`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -105,7 +105,7 @@ const OrderDetailModal = ({ order, isOpen, onClose, styles, onCancel }) => {
 
     try {
       const token = localStorage.getItem('admin_token');
-      const response = await axios.post(
+      const response = await apiClient.post(
         `${BACKEND_URL}/api/v1/admin/orders/${order.order_id}/notes`,
         {
           note: adminNote,

@@ -30,7 +30,7 @@ const VendorHeader = ({ vendor, stats, isMobile }) => {
   const handleFollow = () => {
     setIsFollowing(!isFollowing);
     // TODO: API'ye takip isteği gönder
-    // api.post(`/v1/vendors/${vendor.slug}/follow`)
+    // apiClient.post(`/v1/vendors/${vendor.slug}/follow`)
   };
 
   // Paylaş fonksiyonu

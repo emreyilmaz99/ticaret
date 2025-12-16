@@ -1,9 +1,9 @@
-import axios from '../../../lib/axios';
+import apiClient from '@lib/apiClient';
 
 export const loginAdmin = (credentials) => {
-  return axios.post('/v1/admin/login', credentials);
+  return apiClient.post('/v1/admin/login', credentials);
 };
 
 export const getAdminProfile = () => {
-  return axios.get('/v1/admin/me');
+  return apiClient.get('/v1/admin/me');
 };

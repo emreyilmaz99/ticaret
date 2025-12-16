@@ -1,7 +1,7 @@
 // src/pages/admin/Reviews/useReviewsPage.js
 import { useState, useCallback, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import api from '../../../services/api';
+import apiClient from '@lib/apiClient';
 import { useToast } from '../../../components/common/Toast';
 
 export const useReviewsPage = () => {
@@ -31,7 +31,7 @@ export const useReviewsPage = () => {
       if (searchTerm) params.append('search', searchTerm);
       params.append('per_page', '100');
 
-      const response = await api.get(`/v1/admin/reviews?${params}`);
+      const response = await apiClient.get(`/v1/admin/reviews?${params}`);
       return response.data;
     },
   });
@@ -40,7 +40,7 @@ export const useReviewsPage = () => {
   const { data: statsData, isLoading: isLoadingStats } = useQuery({
     queryKey: ['adminReviewStats'],
     queryFn: async () => {
-      const response = await api.get('/v1/admin/reviews/stats');
+      const response = await apiClient.get('/v1/admin/reviews/stats');
       return response.data;
     },
   });
@@ -51,7 +51,7 @@ export const useReviewsPage = () => {
   // Approve mutation
   const approveMutation = useMutation({
     mutationFn: async (reviewId) => {
-      const response = await api.post(`/v1/admin/reviews/${reviewId}/approve`);
+      const response = await apiClient.post(`/v1/admin/reviews/${reviewId}/approve`);
       return response.data;
     },
     onSuccess: () => {
@@ -67,7 +67,7 @@ export const useReviewsPage = () => {
   // Reject mutation
   const rejectMutation = useMutation({
     mutationFn: async ({ reviewId, reason }) => {
-      const response = await api.post(`/v1/admin/reviews/${reviewId}/reject`, {
+      const response = await apiClient.post(`/v1/admin/reviews/${reviewId}/reject`, {
         rejection_reason: reason,
       });
       return response.data;
@@ -85,7 +85,7 @@ export const useReviewsPage = () => {
   // Bulk approve mutation
   const bulkApproveMutation = useMutation({
     mutationFn: async (reviewIds) => {
-      const response = await api.post('/v1/admin/reviews/bulk-approve', {
+      const response = await apiClient.post('/v1/admin/reviews/bulk-approve', {
         review_ids: reviewIds,
       });
       return response.data;
@@ -104,7 +104,7 @@ export const useReviewsPage = () => {
   // Bulk reject mutation
   const bulkRejectMutation = useMutation({
     mutationFn: async ({ reviewIds, reason }) => {
-      const response = await api.post('/v1/admin/reviews/bulk-reject', {
+      const response = await apiClient.post('/v1/admin/reviews/bulk-reject', {
         review_ids: reviewIds,
         rejection_reason: reason,
       });

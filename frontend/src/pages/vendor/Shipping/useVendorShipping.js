@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '../../../components/common/Toast';
-import axios from '../../../lib/axios';
+import apiClient from '@lib/apiClient';
 
 /**
  * Custom hook for vendor shipping settings
@@ -38,7 +38,7 @@ export const useVendorShipping = () => {
   const { data: settingsData, isLoading } = useQuery({
     queryKey: ['vendor', 'shipping-settings'],
     queryFn: async () => {
-      const res = await axios.get('/v1/vendor/shipping-settings');
+      const res = await apiClient.get('/v1/vendor/shipping-settings');
       return res.data;
     }
   });
@@ -60,7 +60,7 @@ export const useVendorShipping = () => {
   // Update mutation
   const updateMutation = useMutation({
     mutationFn: async (data) => {
-      const res = await axios.put('/v1/vendor/shipping-settings', data);
+      const res = await apiClient.put('/v1/vendor/shipping-settings', data);
       return res.data;
     },
     onSuccess: (data) => {

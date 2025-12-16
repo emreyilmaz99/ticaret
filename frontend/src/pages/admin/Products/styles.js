@@ -1,5 +1,5 @@
 // src/pages/admin/Products/styles.js
-import axios from '../../../lib/axios';
+import apiClient from '@lib/apiClient';
 
 /**
  * Products sayfası için merkezi stil tanımlamaları
@@ -209,7 +209,7 @@ export const getStyles = (isMobile = false) => ({
 });
 
 // Backend URL helper
-const backendOrigin = (axios.defaults.baseURL || '').replace(/\/api\/?$/i, '');
+const backendOrigin = (apiClient.defaults.baseURL || '').replace(/\/api\/?$/i, '');
 
 export const toFullUrl = (u) => {
   if (!u) return null;

@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '../../../components/common/Toast';
-import axios from '../../../lib/axios';
+import apiClient from '@lib/apiClient';
 
 const useVendorPromotions = () => {
   const navigate = useNavigate();
@@ -27,7 +27,7 @@ const useVendorPromotions = () => {
   const { data: couponsData, isLoading: couponsLoading } = useQuery({
     queryKey: ['vendor', 'coupons'],
     queryFn: async () => {
-      const res = await axios.get('/v1/vendor/coupons');
+      const res = await apiClient.get('/v1/vendor/coupons');
       return res.data;
     }
   });
@@ -35,7 +35,7 @@ const useVendorPromotions = () => {
   const { data: campaignsData, isLoading: campaignsLoading } = useQuery({
     queryKey: ['vendor', 'campaigns'],
     queryFn: async () => {
-      const res = await axios.get('/v1/vendor/campaigns');
+      const res = await apiClient.get('/v1/vendor/campaigns');
       return res.data;
     }
   });
@@ -43,7 +43,7 @@ const useVendorPromotions = () => {
   const { data: productsData } = useQuery({
     queryKey: ['vendor', 'products-for-campaign'],
     queryFn: async () => {
-      const res = await axios.get('/v1/vendor/products?per_page=1000');
+      const res = await apiClient.get('/v1/vendor/products?per_page=1000');
       return res.data;
     }
   });
@@ -57,7 +57,7 @@ const useVendorPromotions = () => {
   // ============ COUPON MUTATIONS ============
   const createCouponMutation = useMutation({
     mutationFn: async (data) => {
-      const res = await axios.post('/v1/vendor/coupons', data);
+      const res = await apiClient.post('/v1/vendor/coupons', data);
       return res.data;
     },
     onSuccess: (data) => {
@@ -72,7 +72,7 @@ const useVendorPromotions = () => {
 
   const updateCouponMutation = useMutation({
     mutationFn: async ({ id, data }) => {
-      const res = await axios.put(`/v1/vendor/coupons/${id}`, data);
+      const res = await apiClient.put(`/v1/vendor/coupons/${id}`, data);
       return res.data;
     },
     onSuccess: (data) => {
@@ -87,7 +87,7 @@ const useVendorPromotions = () => {
 
   const deleteCouponMutation = useMutation({
     mutationFn: async (id) => {
-      const res = await axios.delete(`/v1/vendor/coupons/${id}`);
+      const res = await apiClient.delete(`/v1/vendor/coupons/${id}`);
       return res.data;
     },
     onSuccess: (data) => {
@@ -101,7 +101,7 @@ const useVendorPromotions = () => {
 
   const toggleCouponMutation = useMutation({
     mutationFn: async (id) => {
-      const res = await axios.put(`/v1/vendor/coupons/${id}/toggle`);
+      const res = await apiClient.put(`/v1/vendor/coupons/${id}/toggle`);
       return res.data;
     },
     onSuccess: (data) => {
@@ -116,7 +116,7 @@ const useVendorPromotions = () => {
   // ============ CAMPAIGN MUTATIONS ============
   const createCampaignMutation = useMutation({
     mutationFn: async (data) => {
-      const res = await axios.post('/v1/vendor/campaigns', data);
+      const res = await apiClient.post('/v1/vendor/campaigns', data);
       return res.data;
     },
     onSuccess: (data) => {
@@ -131,7 +131,7 @@ const useVendorPromotions = () => {
 
   const updateCampaignMutation = useMutation({
     mutationFn: async ({ id, data }) => {
-      const res = await axios.put(`/v1/vendor/campaigns/${id}`, data);
+      const res = await apiClient.put(`/v1/vendor/campaigns/${id}`, data);
       return res.data;
     },
     onSuccess: (data) => {
@@ -146,7 +146,7 @@ const useVendorPromotions = () => {
 
   const deleteCampaignMutation = useMutation({
     mutationFn: async (id) => {
-      const res = await axios.delete(`/v1/vendor/campaigns/${id}`);
+      const res = await apiClient.delete(`/v1/vendor/campaigns/${id}`);
       return res.data;
     },
     onSuccess: (data) => {
@@ -160,7 +160,7 @@ const useVendorPromotions = () => {
 
   const toggleCampaignMutation = useMutation({
     mutationFn: async (id) => {
-      const res = await axios.put(`/v1/vendor/campaigns/${id}/toggle`);
+      const res = await apiClient.put(`/v1/vendor/campaigns/${id}/toggle`);
       return res.data;
     },
     onSuccess: (data) => {

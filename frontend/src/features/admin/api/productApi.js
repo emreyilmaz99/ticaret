@@ -1,20 +1,20 @@
-import axios from '../../../lib/axios';
+import apiClient from '@lib/apiClient';
 
 // Get all products with filters
 export const getProducts = async (params = {}) => {
-  const response = await axios.get('/v1/admin/products', { params });
+  const response = await apiClient.get('/v1/admin/products', { params });
   return response.data;
 };
 
 // Get product statistics
 export const getProductStatistics = async () => {
-  const response = await axios.get('/v1/admin/products/statistics');
+  const response = await apiClient.get('/v1/admin/products/statistics');
   return response.data;
 };
 
 // Get single product
 export const getProduct = async (id) => {
-  const response = await axios.get(`/v1/admin/products/${id}`);
+  const response = await apiClient.get(`/v1/admin/products/${id}`);
   return response.data;
 };
 
@@ -24,7 +24,7 @@ export const updateProductStatus = async (id, status, rejectionReason = null) =>
   if (status === 'rejected' && rejectionReason) {
     data.rejection_reason = rejectionReason;
   }
-  const response = await axios.put(`/v1/admin/products/${id}/status`, data);
+  const response = await apiClient.put(`/v1/admin/products/${id}/status`, data);
   return response.data;
 };
 
@@ -37,12 +37,12 @@ export const bulkUpdateProductStatus = async (productIds, status, rejectionReaso
   if (status === 'rejected' && rejectionReason) {
     data.rejection_reason = rejectionReason;
   }
-  const response = await axios.post('/v1/admin/products/bulk-status', data);
+  const response = await apiClient.post('/v1/admin/products/bulk-status', data);
   return response.data;
 };
 
 // Delete product
 export const deleteProduct = async (id) => {
-  const response = await axios.delete(`/v1/admin/products/${id}`);
+  const response = await apiClient.delete(`/v1/admin/products/${id}`);
   return response.data;
 };

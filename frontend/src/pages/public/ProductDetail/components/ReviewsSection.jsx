@@ -9,7 +9,7 @@ import {
   FaChevronDown, FaChevronUp, FaStore
 } from 'react-icons/fa';
 import { useAuth } from '../../../../context/AuthContext';
-import api from '../../../../services/api';
+import apiClient from '@lib/apiClient';
 import { toast } from 'react-hot-toast';
 
 const ReviewsSection = ({ productId, productName, styles: parentStyles }) => {
@@ -44,7 +44,7 @@ const ReviewsSection = ({ productId, productName, styles: parentStyles }) => {
       params.append('sort_by', sortBy);
       params.append('per_page', '50');
       
-      const response = await api.get(`/v1/products/${productId}/reviews?${params}`);
+      const response = await apiClient.get(`/v1/products/${productId}/reviews?${params}`);
       return response.data;
     },
     enabled: !!productId,
@@ -54,7 +54,7 @@ const ReviewsSection = ({ productId, productName, styles: parentStyles }) => {
   const { data: summaryData } = useQuery({
     queryKey: ['productReviewSummary', productId],
     queryFn: async () => {
-      const response = await api.get(`/v1/products/${productId}/review-summary`);
+      const response = await apiClient.get(`/v1/products/${productId}/review-summary`);
       return response.data;
     },
     enabled: !!productId,
@@ -64,7 +64,7 @@ const ReviewsSection = ({ productId, productName, styles: parentStyles }) => {
   const { data: canReviewData } = useQuery({
     queryKey: ['canReview', productId],
     queryFn: async () => {
-      const response = await api.get('/v1/user/reviewable-orders');
+      const response = await apiClient.get('/v1/user/reviewable-orders');
       const orders = response.data?.data || [];
       // Check if any reviewable item matches this product
       for (const order of orders) {
@@ -85,7 +85,7 @@ const ReviewsSection = ({ productId, productName, styles: parentStyles }) => {
   // Helpful vote mutation
   const helpfulMutation = useMutation({
     mutationFn: async ({ reviewId, isHelpful }) => {
-      const response = await api.post(`/v1/reviews/${reviewId}/helpful`, { is_helpful: isHelpful });
+      const response = await apiClient.post(`/v1/reviews/${reviewId}/helpful`, { is_helpful: isHelpful });
       return response.data;
     },
     onSuccess: () => {
@@ -106,7 +106,7 @@ const ReviewsSection = ({ productId, productName, styles: parentStyles }) => {
         formDataObj.append(`photos[${index}]`, file);
       });
 
-      const response = await api.post(
+      const response = await apiClient.post(
         `/v1/orders/${orderId}/items/${orderItemId}/review`,
         formDataObj,
         { headers: { 'Content-Type': 'multipart/form-data' } }

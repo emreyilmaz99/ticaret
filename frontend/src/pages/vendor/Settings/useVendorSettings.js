@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getVendorProfile, updateVendorProfile } from '../../../features/vendor/api/vendorAuthApi';
 import { useToast } from '../../../components/common/Toast';
-import axios from '../../../lib/axios';
+import apiClient from '@lib/apiClient';
 
 // Türkiye şehirleri
 export const TURKEY_CITIES = [
@@ -114,7 +114,7 @@ const useVendorSettings = () => {
 
   // ============ ADDRESS MUTATIONS ============
   const createAddressMutation = useMutation({
-    mutationFn: (data) => axios.post('/v1/vendor/addresses', data),
+    mutationFn: (data) => apiClient.post('/v1/vendor/addresses', data),
     onSuccess: () => {
       queryClient.invalidateQueries(['vendor', 'me']);
       toast.success('Başarılı', 'Adres eklendi.');
@@ -124,7 +124,7 @@ const useVendorSettings = () => {
   });
 
   const updateAddressMutation = useMutation({
-    mutationFn: ({ id, data }) => axios.put(`/v1/vendor/addresses/${id}`, data),
+    mutationFn: ({ id, data }) => apiClient.put(`/v1/vendor/addresses/${id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries(['vendor', 'me']);
       toast.success('Başarılı', 'Adres güncellendi.');
@@ -134,7 +134,7 @@ const useVendorSettings = () => {
   });
 
   const deleteAddressMutation = useMutation({
-    mutationFn: (id) => axios.delete(`/v1/vendor/addresses/${id}`),
+    mutationFn: (id) => apiClient.delete(`/v1/vendor/addresses/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries(['vendor', 'me']);
       toast.success('Başarılı', 'Adres silindi.');
@@ -144,7 +144,7 @@ const useVendorSettings = () => {
 
   // ============ BANK MUTATIONS ============
   const createBankMutation = useMutation({
-    mutationFn: (data) => axios.post('/v1/vendor/bank-accounts', data),
+    mutationFn: (data) => apiClient.post('/v1/vendor/bank-accounts', data),
     onSuccess: () => {
       queryClient.invalidateQueries(['vendor', 'me']);
       toast.success('Başarılı', 'Banka hesabı eklendi.');
@@ -154,7 +154,7 @@ const useVendorSettings = () => {
   });
 
   const updateBankMutation = useMutation({
-    mutationFn: ({ id, data }) => axios.put(`/v1/vendor/bank-accounts/${id}`, data),
+    mutationFn: ({ id, data }) => apiClient.put(`/v1/vendor/bank-accounts/${id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries(['vendor', 'me']);
       toast.success('Başarılı', 'Banka hesabı güncellendi.');
@@ -164,7 +164,7 @@ const useVendorSettings = () => {
   });
 
   const deleteBankMutation = useMutation({
-    mutationFn: (id) => axios.delete(`/v1/vendor/bank-accounts/${id}`),
+    mutationFn: (id) => apiClient.delete(`/v1/vendor/bank-accounts/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries(['vendor', 'me']);
       toast.success('Başarılı', 'Banka hesabı silindi.');

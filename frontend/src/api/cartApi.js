@@ -1,4 +1,4 @@
-import axios from '../lib/axios';
+import apiClient from '@lib/apiClient';
 
 // Session ID'yi localStorage'dan al veya oluştur
 const getCartSessionId = () => {
@@ -32,7 +32,7 @@ const cartAxios = () => {
  */
 export const getCart = async () => {
   const config = cartAxios();
-  const response = await axios.get('v1/cart', config);
+  const response = await apiClient.get('v1/cart', config);
   return response.data;
 };
 
@@ -53,7 +53,7 @@ export const addToCart = async (productId, variantId = null, quantity = 1) => {
   console.log('Adding to cart with payload:', payload);
   
   const config = cartAxios();
-  const response = await axios.post('v1/cart/items', payload, config);
+  const response = await apiClient.post('v1/cart/items', payload, config);
   return response.data;
 };
 
@@ -61,7 +61,7 @@ export const addToCart = async (productId, variantId = null, quantity = 1) => {
  * Sepet öğesi miktarını güncelle
  */
 export const updateCartItem = async (itemId, quantity) => {
-  const response = await axios.put(`/v1/cart/items/${itemId}`, {
+  const response = await apiClient.put(`/v1/cart/items/${itemId}`, {
     quantity,
   }, cartAxios());
   return response.data;
@@ -71,7 +71,7 @@ export const updateCartItem = async (itemId, quantity) => {
  * Sepetten ürün kaldır
  */
 export const removeFromCart = async (itemId) => {
-  const response = await axios.delete(`/v1/cart/items/${itemId}`, cartAxios());
+  const response = await apiClient.delete(`/v1/cart/items/${itemId}`, cartAxios());
   return response.data;
 };
 
@@ -79,7 +79,7 @@ export const removeFromCart = async (itemId) => {
  * Sepeti temizle
  */
 export const clearCart = async () => {
-  const response = await axios.delete('/v1/cart/clear', cartAxios());
+  const response = await apiClient.delete('/v1/cart/clear', cartAxios());
   return response.data;
 };
 
@@ -87,7 +87,7 @@ export const clearCart = async () => {
  * Kupon uygula
  */
 export const applyCoupon = async (code) => {
-  const response = await axios.post('/v1/cart/coupon', { code }, cartAxios());
+  const response = await apiClient.post('/v1/cart/coupon', { code }, cartAxios());
   return response.data;
 };
 
@@ -95,7 +95,7 @@ export const applyCoupon = async (code) => {
  * Kuponu kaldır
  */
 export const removeCoupon = async () => {
-  const response = await axios.delete('/v1/cart/coupon', cartAxios());
+  const response = await apiClient.delete('/v1/cart/coupon', cartAxios());
   return response.data;
 };
 
@@ -103,7 +103,7 @@ export const removeCoupon = async () => {
  * Misafir sepetini kullanıcıya aktar (giriş yaptıktan sonra çağrılır)
  */
 export const mergeCart = async () => {
-  const response = await axios.post('/v1/cart/merge', {}, cartAxios());
+  const response = await apiClient.post('/v1/cart/merge', {}, cartAxios());
   // Başarılı merge sonrası session ID'yi temizle
   localStorage.removeItem('cartSessionId');
   return response.data;

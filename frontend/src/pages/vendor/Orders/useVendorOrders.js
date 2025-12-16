@@ -36,7 +36,7 @@ export const useVendorOrders = () => {
     queryFn: async () => {
       const token = localStorage.getItem('vendor_token');
       const queryString = buildQueryParams();
-      const response = await axios.get(
+      const response = await apiClient.get(
         `${BACKEND_URL}/api/v1/vendor/orders${queryString ? '?' + queryString : ''}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -52,7 +52,7 @@ export const useVendorOrders = () => {
     queryKey: ['vendorOrderStats'],
     queryFn: async () => {
       const token = localStorage.getItem('vendor_token');
-      const response = await axios.get(`${BACKEND_URL}/api/v1/vendor/orders/stats`, {
+      const response = await apiClient.get(`${BACKEND_URL}/api/v1/vendor/orders/stats`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       return response.data.data;
@@ -63,7 +63,7 @@ export const useVendorOrders = () => {
   const updateStatusMutation = useMutation({
     mutationFn: async ({ orderId, status }) => {
       const token = localStorage.getItem('vendor_token');
-      const response = await axios.put(
+      const response = await apiClient.put(
         `${BACKEND_URL}/api/v1/vendor/orders/${orderId}/status`,
         { status },
         { headers: { Authorization: `Bearer ${token}` } }
@@ -84,7 +84,7 @@ export const useVendorOrders = () => {
   const cancelOrderMutation = useMutation({
     mutationFn: async (orderId) => {
       const token = localStorage.getItem('vendor_token');
-      const response = await axios.post(
+      const response = await apiClient.post(
         `${BACKEND_URL}/api/v1/vendor/orders/${orderId}/cancel`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
