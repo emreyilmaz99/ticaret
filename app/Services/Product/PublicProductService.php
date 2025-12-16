@@ -533,21 +533,22 @@ class PublicProductService extends BaseService
 
     /**
      * Get main categories (parent_id = null) with product counts (cached)
+     * Only counts active products from active vendors
      */
     public function getMainCategories(): ServiceResponse
     {
         try {
-            $categories = Cache::remember('main_categories_with_counts', self::CATEGORIES_CACHE_TTL, function () {
+            $categories = Cache::remember('main_categories_with_active_counts', self::CATEGORIES_CACHE_TTL, function () {
                 return Category::whereNull('parent_id')
                     ->where('is_active', true)
-                    ->with(['children' => fn($q) => $q->withCount('directProducts')])
-                    ->withCount('directProducts')
+                    ->with(['children' => fn($q) => $q->withCount('activeDirectProducts')])
+                    ->withCount('activeDirectProducts')
                     ->orderBy('sort_order')
                     ->orderBy('name')
                     ->get()
                     ->map(function ($category) {
-                        $directCount = $category->direct_products_count ?? 0;
-                        $childrenCount = $category->children->sum('direct_products_count') ?? 0;
+                        $directCount = $category->active_direct_products_count ?? 0;
+                        $childrenCount = $category->children->sum('active_direct_products_count') ?? 0;
                         
                         return [
                             'id' => $category->id,

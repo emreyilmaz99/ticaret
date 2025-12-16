@@ -97,7 +97,7 @@ export const useHome = () => {
   const addToCart = useCallback(async (product) => {
     if (!user) {
       showToast('Sepete eklemek için lütfen giriş yapın.', 'warning');
-      navigate('/login');
+      navigate('/register');
       return;
     }
 

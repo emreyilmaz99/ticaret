@@ -304,9 +304,8 @@ Route::get('v1/featured-deals', [FeaturedDealController::class, 'index']);
 Route::post('v1/featured-deals/{deal}/click', [FeaturedDealController::class, 'click']);
 Route::post('v1/featured-deals/{deal}/conversion', [FeaturedDealController::class, 'conversion']);
 
-// Cart API (supports both guest and authenticated users)
-// Uses optional auth - will authenticate if token present, otherwise continue as guest
-Route::prefix('v1/cart')->middleware(['auth.optional:sanctum'])->group(function () {
+// Cart API (requires authentication - no guest cart)
+Route::prefix('v1/cart')->middleware(['auth:sanctum', 'ability:user:*'])->group(function () {
     Route::get('/', [\App\Http\Controllers\Api\V1\Public\CartController::class, 'index']);
     Route::post('/items', [\App\Http\Controllers\Api\V1\Public\CartController::class, 'addItem']);
     Route::put('/items/{itemId}', [\App\Http\Controllers\Api\V1\Public\CartController::class, 'updateItem']);
@@ -314,7 +313,6 @@ Route::prefix('v1/cart')->middleware(['auth.optional:sanctum'])->group(function 
     Route::delete('/clear', [\App\Http\Controllers\Api\V1\Public\CartController::class, 'clear']);
     Route::post('/coupon', [\App\Http\Controllers\Api\V1\Public\CartController::class, 'applyCoupon']);
     Route::delete('/coupon', [\App\Http\Controllers\Api\V1\Public\CartController::class, 'removeCoupon']);
-    Route::post('/merge', [\App\Http\Controllers\Api\V1\Public\CartController::class, 'merge']);
 });
 
 // User API

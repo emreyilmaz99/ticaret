@@ -1,17 +1,20 @@
 // src/pages/public/ProductDetail/useProductDetail.js
 import { useState, useEffect, useCallback } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { getProduct, getRelatedProducts } from '../../../api/publicApi';
 import { useCart } from '../../../context/CartContext';
 import { useFavorites } from '../../../context/FavoritesContext';
 import { useToast } from '../../../components/common/Toast';
+import { useAuth } from '../../../context/AuthContext';
 
 /**
  * Custom hook for ProductDetail page
  */
 export const useProductDetail = () => {
   const { slug } = useParams();
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const { addToCart } = useCart();
   const { isFavorite, toggleFavorite } = useFavorites();
   const toast = useToast();
@@ -128,6 +131,12 @@ export const useProductDetail = () => {
 
   // Handlers
   const handleAddToCart = useCallback(() => {
+    if (!user) {
+      toast.warning('Dikkat', 'Sepete eklemek için lütfen giriş yapın.');
+      navigate('/register');
+      return;
+    }
+
     if (!isInStock) {
       toast.error('Hata', 'Bu ürün şu anda stokta yok.');
       return;
@@ -137,7 +146,7 @@ export const useProductDetail = () => {
       id: product.id,
       variantId: selectedVariant?.id,
     }, quantity, selectedVariant);
-  }, [isInStock, product, selectedVariant, quantity, addToCart, toast]);
+  }, [user, isInStock, product, selectedVariant, quantity, addToCart, toast, navigate]);
 
   const handleShare = useCallback((platform) => {
     const urls = {

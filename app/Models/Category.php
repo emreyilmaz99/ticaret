@@ -48,6 +48,16 @@ class Category extends Model
     }
 
     /**
+     * Doğrudan kategoriye bağlı aktif ürünler (sadece active status ve active vendor)
+     */
+    public function activeDirectProducts()
+    {
+        return $this->hasMany(Product::class, 'category_id')
+            ->where('status', 'active')
+            ->whereHas('vendor', fn($q) => $q->where('status', 'active'));
+    }
+
+    /**
      * Bu kategoride ürün satma yetkisi olan satıcılar
      */
     public function vendors()
@@ -141,6 +151,21 @@ class Category extends Model
         
         foreach ($this->children as $child) {
             $count += $child->total_product_count;
+        }
+        
+        return $count;
+    }
+
+    /**
+     * Kategorideki aktif ürün sayısı (alt kategoriler dahil)
+     * Sadece active status ve active vendor olan ürünler
+     */
+    public function getActiveProductCountAttribute(): int
+    {
+        $count = $this->activeDirectProducts()->count();
+        
+        foreach ($this->children as $child) {
+            $count += $child->active_product_count;
         }
         
         return $count;
