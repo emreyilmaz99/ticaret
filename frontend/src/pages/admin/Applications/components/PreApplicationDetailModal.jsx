@@ -5,6 +5,8 @@ import {
   FaCalendarAlt, FaInstagram, FaGlobe, FaFilePdf, FaExternalLinkAlt
 } from 'react-icons/fa';
 import { styles } from '../styles';
+import { DetailField, DetailSection } from '../shared/components';
+import { formatDate } from '../shared/utils/formatters';
 
 /**
  * Ön Başvuru Detay Modalı
@@ -105,18 +107,20 @@ const PreApplicationDetailModal = ({
         }}>
           {activeTab === 'general' && (
             <div>
-              <div style={styles.detailGrid}>
-                <DetailItem label="Mağaza Adı" value={vendor.storeName || '-'} icon={<FaStore size={10} />} />
-                <DetailItem label="Yetkili Kişi" value={vendor.owner || vendor.full_name || '-'} icon={<FaUser size={10} />} />
-                <DetailItem label="E-posta" value={vendor.email || '-'} />
-                <DetailItem label="Telefon" value={vendor.phone || '-'} />
-                <DetailItem 
-                  label="Kayıt Tarihi" 
-                  value={vendor.created_at ? new Date(vendor.created_at).toLocaleDateString('tr-TR') : '-'} 
-                  icon={<FaCalendarAlt size={10} />} 
-                />
-                <DetailItem label="Durum" value={getStatusLabel(vendor.status)} />
-              </div>
+              <DetailSection title="Genel Bilgiler" icon={<FaUser />}>
+                <div style={styles.detailGrid}>
+                  <DetailField label="Mağaza Adı" value={vendor.storeName || '-'} icon={<FaStore size={12} />} />
+                  <DetailField label="Yetkili Kişi" value={vendor.owner || vendor.full_name || '-'} icon={<FaUser size={12} />} />
+                  <DetailField label="E-posta" value={vendor.email || '-'} />
+                  <DetailField label="Telefon" value={vendor.phone || '-'} />
+                  <DetailField 
+                    label="Kayıt Tarihi" 
+                    value={vendor.created_at ? formatDate(vendor.created_at) : '-'} 
+                    icon={<FaCalendarAlt size={12} />} 
+                  />
+                  <DetailField label="Durum" value={getStatusLabel(vendor.status)} />
+                </div>
+              </DetailSection>
 
               {/* Sosyal Medya */}
               <div style={{ marginTop: '24px' }}>
@@ -194,23 +198,23 @@ const PreApplicationDetailModal = ({
           )}
 
           {activeTab === 'address' && (
-            <div>
+            <DetailSection title="Adres Bilgileri" icon={<FaMapMarkerAlt />}>
               <div style={styles.detailGrid}>
-                <DetailItem label="İl" value={vendor.city || '-'} />
-                <DetailItem label="İlçe" value={vendor.district || '-'} />
-                <DetailItem label="Adres" value={vendor.address || '-'} fullWidth />
+                <DetailField label="İl" value={vendor.city || '-'} />
+                <DetailField label="İlçe" value={vendor.district || '-'} />
               </div>
-            </div>
+              <DetailField label="Adres" value={vendor.address || '-'} style={{ marginTop: '16px' }} />
+            </DetailSection>
           )}
 
           {activeTab === 'bank' && (
-            <div>
+            <DetailSection title="Banka Bilgileri" icon={<FaUniversity />}>
               <div style={styles.detailGrid}>
-                <DetailItem label="Banka" value={vendor.bankName || '-'} icon={<FaUniversity size={10} />} />
-                <DetailItem label="IBAN" value={vendor.iban || '-'} />
-                <DetailItem label="Hesap Sahibi" value={vendor.accountHolder || '-'} />
+                <DetailField label="Banka" value={vendor.bankName || '-'} icon={<FaUniversity size={12} />} />
+                <DetailField label="IBAN" value={vendor.iban || '-'} />
+                <DetailField label="Hesap Sahibi" value={vendor.accountHolder || '-'} />
               </div>
-            </div>
+            </DetailSection>
           )}
 
           {/* Admin Notu */}
@@ -301,25 +305,6 @@ const PreApplicationDetailModal = ({
 };
 
 // Helper Components
-const DetailItem = ({ label, value, icon, fullWidth }) => (
-  <div style={{ marginBottom: '4px', gridColumn: fullWidth ? '1 / -1' : 'auto' }}>
-    <span style={{ 
-      fontSize: '11px', 
-      color: '#6b7280', 
-      marginBottom: '6px', 
-      display: 'flex',
-      alignItems: 'center',
-      gap: '6px',
-      textTransform: 'uppercase',
-      fontWeight: '600',
-      letterSpacing: '0.5px'
-    }}>
-      {icon} {label}
-    </span>
-    <span style={{ fontSize: '15px', color: '#111827', fontWeight: '600' }}>{value}</span>
-  </div>
-);
-
 const SocialLink = ({ href, icon, label, color }) => (
   <a 
     href={href}

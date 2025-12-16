@@ -19,7 +19,6 @@ const AdminOrders = () => {
     orders,
     stats,
     isLoadingOrders,
-    isLoadingStats,
     searchTerm,
     setSearchTerm,
     statusFilter,
@@ -29,7 +28,9 @@ const AdminOrders = () => {
     maxAmount,
     setMaxAmount,
     updateOrderStatus,
-    cancelOrder
+    cancelOrder,
+    handleExportExcel,
+    handlePrint
   } = useAdminOrders();
 
   // Gelişmiş Filtreler
@@ -38,47 +39,6 @@ const AdminOrders = () => {
   // Modal
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-
-  // --- AKSİYONLAR ---
-
-  // Excel İndirme
-  const handleDownloadExcel = () => {
-    if (orders.length === 0) {
-      alert("İndirilecek veri bulunamadı.");
-      return;
-    }
-    const headers = ["Siparis No", "Musteri", "Tarih", "Odeme Yontemi", "Tutar", "Durum"];
-    const rows = orders.map(order => [
-      order.id, `"${order.customer.name}"`, order.date, order.paymentMethod, order.amount, order.status
-    ]);
-    const csvContent = [headers.join(","), ...rows.map(row => row.join(","))].join("\n");
-    const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", `Siparisler_${new Date().toLocaleDateString('tr-TR')}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  // Toplu Yazdırma
-  const handleBulkPrint = () => {
-    if (orders.length === 0) {
-      alert("Yazdırılacak sipariş yok.");
-      return;
-    }
-    const printWindow = window.open('', '_blank', 'width=900,height=600');
-    const printContent = `
-      <html><head><title>Sipariş Listesi</title>
-      <style>body{font-family:sans-serif;padding:20px;} table{width:100%;border-collapse:collapse;margin-top:20px;} th,td{border:1px solid #ddd;padding:10px;text-align:left;font-size:12px;} th{background-color:#f4f4f4;}</style>
-      </head><body><h2>Sipariş Listesi</h2><table><thead><tr><th>No</th><th>Müşteri</th><th>Tutar</th><th>Durum</th></tr></thead>
-      <tbody>${orders.map(o => `<tr><td>${o.id}</td><td>${o.customer.name}</td><td>${new Intl.NumberFormat('tr-TR',{style:'currency',currency:'TRY'}).format(o.amount)}</td><td>${o.status}</td></tr>`).join('')}</tbody></table>
-      <script>window.onload=function(){window.print();}</script></body></html>
-    `;
-    printWindow.document.write(printContent);
-    printWindow.document.close();
-  };
 
   const handleViewDetail = (order) => {
     setSelectedOrder(order);
@@ -111,10 +71,10 @@ const AdminOrders = () => {
           <p style={styles.subtitle}>Mağazanıza gelen siparişleri buradan yönetebilirsiniz.</p>
         </div>
         <div style={styles.headerActions}>
-          <button style={styles.exportBtn} onClick={handleBulkPrint}>
-            <FaPrint /> Toplu Etiket Yazdır
+          <button style={styles.exportBtn} onClick={handlePrint}>
+            <FaPrint /> Yazdır
           </button>
-          <button style={styles.exportBtn} onClick={handleDownloadExcel}>
+          <button style={styles.exportBtn} onClick={handleExportExcel}>
             <FaFileExcel /> Excel İndir
           </button>
         </div>

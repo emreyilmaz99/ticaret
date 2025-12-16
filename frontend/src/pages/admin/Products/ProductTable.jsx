@@ -1,7 +1,7 @@
 // src/pages/admin/Products/ProductTable.jsx
 import React from 'react';
 import { FaStore, FaImage, FaEye, FaCheck, FaTimes } from 'react-icons/fa';
-import StatusBadge from './StatusBadge';
+import { StatusBadge } from '../../../features/admin/shared';
 import { toFullUrl } from './styles';
 
 /**

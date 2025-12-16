@@ -351,7 +351,220 @@ export const getStyles = (isMobile = false) => ({
   badgePending: { background: '#f0fdf4', color: '#065f46' },
   badgeApproved: { background: '#dcfce7', color: '#047857' },
   badgeRejected: { background: '#f3f4f6', color: '#374151' },
+  
+  // Detail Grid (for PreApplicationDetailModal)
+  detailGrid: {
+    display: 'grid',
+    gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
+    gap: '16px',
+  },
+  
+  // VendorDetailModal specific styles
+  vendorModal: {
+    overlay: {
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      background: 'rgba(0, 0, 0, 0.5)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 1000,
+      padding: '20px',
+      animation: 'fadeIn 0.2s ease',
+    },
+    content: {
+      background: 'white',
+      borderRadius: '20px',
+      maxWidth: '900px',
+      width: '100%',
+      maxHeight: '90vh',
+      overflow: 'hidden',
+      boxShadow: '0 25px 50px rgba(0, 0, 0, 0.25)',
+      animation: 'slideUp 0.3s ease',
+      display: 'flex',
+      flexDirection: 'column',
+    },
+    header: {
+      background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+      padding: '28px 32px',
+      borderTopLeftRadius: '20px',
+      borderTopRightRadius: '20px',
+      position: 'relative',
+      overflow: 'hidden',
+    },
+    headerPattern: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      background: 'radial-gradient(circle at 30% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 50%)',
+      pointerEvents: 'none',
+    },
+    headerContent: {
+      position: 'relative',
+      zIndex: 1,
+    },
+    companyIcon: {
+      width: '52px',
+      height: '52px',
+      borderRadius: '14px',
+      background: 'rgba(255, 255, 255, 0.25)',
+      backdropFilter: 'blur(10px)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontSize: '22px',
+      border: '2px solid rgba(255, 255, 255, 0.3)',
+      boxShadow: '0 8px 16px rgba(0, 0, 0, 0.1)',
+    },
+    companyName: {
+      fontSize: '26px',
+      fontWeight: '800',
+      color: 'white',
+      margin: 0,
+      textShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+      letterSpacing: '-0.5px',
+    },
+    closeButton: {
+      background: 'rgba(255, 255, 255, 0.2)',
+      border: '2px solid rgba(255, 255, 255, 0.3)',
+      borderRadius: '12px',
+      width: '44px',
+      height: '44px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      cursor: 'pointer',
+      transition: 'all 0.2s',
+      backdropFilter: 'blur(10px)',
+    },
+    tabNav: {
+      display: 'flex',
+      gap: '10px',
+      padding: '0 32px',
+      background: '#f9fafb',
+      borderBottom: '2px solid #e5e7eb',
+    },
+    tabButton: (isActive) => ({
+      flex: 1,
+      padding: '16px 24px',
+      background: isActive ? 'white' : 'transparent',
+      border: 'none',
+      borderBottom: isActive ? '3px solid #10b981' : '3px solid transparent',
+      color: isActive ? '#10b981' : '#6b7280',
+      fontSize: '15px',
+      fontWeight: isActive ? '700' : '600',
+      cursor: 'pointer',
+      transition: 'all 0.2s',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: '10px',
+    }),
+    bodyContent: {
+      padding: '32px',
+      overflowY: 'auto',
+      flex: 1,
+    },
+    footer: {
+      padding: '24px 32px',
+      background: '#f9fafb',
+      borderTop: '2px solid #e5e7eb',
+      display: 'flex',
+      gap: '12px',
+      justifyContent: 'flex-end',
+      borderBottomLeftRadius: '20px',
+      borderBottomRightRadius: '20px',
+    },
+    footerButton: (variant = 'default') => {
+      const variants = {
+        default: {
+          padding: '12px 32px',
+          background: 'white',
+          border: '2px solid #d1d5db',
+          borderRadius: '10px',
+          fontSize: '15px',
+          fontWeight: '600',
+          color: '#4b5563',
+          cursor: 'pointer',
+          transition: 'all 0.2s',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+        },
+        reject: {
+          padding: '12px 32px',
+          background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+          border: 'none',
+          borderRadius: '10px',
+          fontSize: '15px',
+          fontWeight: '700',
+          color: 'white',
+          cursor: 'pointer',
+          transition: 'all 0.2s',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          boxShadow: '0 4px 12px rgba(239, 68, 68, 0.3)',
+        },
+        approve: {
+          padding: '12px 32px',
+          background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+          border: 'none',
+          borderRadius: '10px',
+          fontSize: '15px',
+          fontWeight: '700',
+          color: 'white',
+          cursor: 'pointer',
+          transition: 'all 0.2s',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)',
+        },
+      };
+      return variants[variant] || variants.default;
+    },
+  },
 });
+
+// CSS Keyframes for animations
+export const modalAnimations = `
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes fadeInContent {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+`;
 
 // Default export for components using named import { styles }
 export const styles = getStyles();

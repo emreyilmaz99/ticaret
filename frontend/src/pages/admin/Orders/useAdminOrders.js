@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '../../../components/common/Toast';
+import { exportToExcel, printData } from '../../../features/admin/shared';
 import apiClient from '@lib/apiClient';
 
 export const useAdminOrders = () => {
@@ -106,6 +107,32 @@ export const useAdminOrders = () => {
   const cancelOrder = ({ orderId, reason }) => {
     cancelOrderMutation.mutate({ orderId, reason });
   };
+
+  // Export to Excel using shared utility
+  const handleExportExcel = () => {
+    const columns = [
+      { key: 'order_number', label: 'Sipariş No' },
+      { key: 'customer_name', label: 'Müşteri', format: (val, item) => item.user?.name || '-' },
+      { key: 'total_amount', label: 'Tutar', format: (val) => `${val} ₺` },
+      { key: 'status', label: 'Durum' },
+      { key: 'created_at', label: 'Tarih', format: (val) => new Date(val).toLocaleDateString('tr-TR') },
+    ];
+    exportToExcel(ordersData.orders, 'siparisler', columns);
+  };
+
+  // Print using shared utility
+  const handlePrint = () => {
+    const columns = [
+      { key: 'order_number', label: 'Sipariş No' },
+      { key: 'customer_name', label: 'Müşteri', format: (val, item) => item.user?.name || '-' },
+      { key: 'total_amount', label: 'Tutar', format: (val) => `${val} ₺` },
+      { key: 'status', label: 'Durum' },
+      { key: 'created_at', label: 'Tarih', format: (val) => new Date(val).toLocaleDateString('tr-TR') },
+    ];
+    printData(ordersData.orders, 'Sipariş Listesi', columns);
+  };handleExportExcel,
+    handlePrint,
+    
 
   return {
     // Data

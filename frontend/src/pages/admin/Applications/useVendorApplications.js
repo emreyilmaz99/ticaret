@@ -1,44 +1,21 @@
 // src/pages/admin/Applications/useVendorApplications.js
-import { useState, useMemo, useCallback } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { 
-  getApplications, 
-  approvePreApplication, 
-  rejectPreApplication,
-  approveFullApplication,
-  rejectFullApplication
-} from '../../../features/vendor-application/api/vendorApplicationApi';
-import { getActiveCommissionPlans } from '../../../features/commission/api/commissionApi';
-import { useToast } from '../../../components/common/Toast';
+import { useState, useCallback } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { getApplications } from '../../features/vendor-application/api/vendorApplicationApi';
+import { getActiveCommissionPlans } from '../../features/commission/api/commissionApi';
 import apiClient from '@lib/apiClient';
+import useApplicationFilters from './hooks/useApplicationFilters';
+import useApplicationModals from './hooks/useApplicationModals';
+import useApplicationMutations from './hooks/useApplicationMutations';
 
 /**
- * Vendor Applications sayfası için custom hook
- * Hem Pre Applications hem de Full Applications'u yönetir
+ * Vendor Applications sayfası için orchestrator hook
+ * Üç modüler hook'u birleştirir: filters, modals, mutations
  */
 const useVendorApplications = () => {
-  const queryClient = useQueryClient();
-  const toast = useToast();
-  
   // Tab state: 'pre' for pre-applications, 'full' for pending activation vendors
   const [activeTab, setActiveTab] = useState('pre');
   const [filters, setFilters] = useState({ type: 'pre_application' });
-  
-  // Selection State
-  const [selectedApp, setSelectedApp] = useState(null);
-  const [selectedVendor, setSelectedVendor] = useState(null);
-  
-  // Modal State
-  const [rejectModalOpen, setRejectModalOpen] = useState(false);
-  const [approveModalOpen, setApproveModalOpen] = useState(false);
-  const [detailModalOpen, setDetailModalOpen] = useState(false);
-  const [rejectionReason, setRejectionReason] = useState('');
-  const [selectedCommissionPlan, setSelectedCommissionPlan] = useState(null);
-  
-  // Search & Filter
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [hoveredRow, setHoveredRow] = useState(null);
 
   // ============ QUERIES ============
 
@@ -63,7 +40,7 @@ const useVendorApplications = () => {
     keepPreviousData: true
   });
 
-  // Komisyon planlarını getir
+  // Commission plans query
   const { data: commissionPlansData } = useQuery({
     queryKey: ['activeCommissionPlans'],
     queryFn: getActiveCommissionPlans,
@@ -72,203 +49,120 @@ const useVendorApplications = () => {
   const commissionPlans = commissionPlansData?.data?.data || [];
   const applications = preAppData?.data?.data?.data || [];
   const pendingVendors = pendingVendorsData?.data?.data || pendingVendorsData?.data || [];
-  
   const isLoading = activeTab === 'pre' ? preAppLoading : pendingVendorsLoading;
 
-  // ============ FILTERED DATA ============
+  // ============ MODULAR HOOKS ============
 
-  // Filtreleme - Pre Applications
-  const filteredApplications = useMemo(() => {
-    return applications.filter(app => {
-      const matchesSearch = !searchTerm || 
-        app.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        app.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        app.company_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        app.phone?.includes(searchTerm);
-      
-      const matchesStatus = statusFilter === 'all' || app.status === statusFilter;
-      
-      return matchesSearch && matchesStatus;
-    });
-  }, [applications, searchTerm, statusFilter]);
+  // Filter hook
+  const {
+    searchTerm,
+    setSearchTerm,
+    statusFilter,
+    setStatusFilter,
+    hoveredRow,
+    setHoveredRow,
+    filteredApplications,
+    filteredVendors,
+    preStats,
+    vendorStats,
+    resetFilters,
+  } = useApplicationFilters(applications, pendingVendors);
 
-  // Filtreleme - Pending Vendors
-  const filteredVendors = useMemo(() => {
-    return pendingVendors.filter(vendor => {
-      const matchesSearch = !searchTerm || 
-        vendor.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        vendor.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        vendor.company_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        vendor.phone?.includes(searchTerm);
-      
-      return matchesSearch;
-    });
-  }, [pendingVendors, searchTerm]);
+  // Modal hook
+  const {
+    selectedApp,
+    selectedVendor,
+    setSelectedApp,
+    setSelectedVendor,
+    approveModalOpen,
+    openApproveModal,
+    closeApproveModal,
+    selectedCommissionPlan,
+    setSelectedCommissionPlan,
+    rejectModalOpen,
+    openRejectModal,
+    closeRejectModal,
+    rejectionReason,
+    setRejectionReason,
+    detailModalOpen,
+    openDetailModal,
+    closeDetailModal,
+    closeAllModals,
+  } = useApplicationModals();
 
-  // ============ STATS ============
-
-  const preStats = useMemo(() => ({
-    total: applications.length,
-    pending: applications.filter(a => a.status === 'pending').length,
-    approved: applications.filter(a => a.status === 'approved').length,
-    rejected: applications.filter(a => a.status === 'rejected').length,
-  }), [applications]);
-
-  const vendorStats = useMemo(() => ({
-    total: pendingVendors.length,
-  }), [pendingVendors]);
-
-  // ============ MUTATIONS ============
-
-  // Approve Pre Application
-  const approvePreMutation = useMutation({
-    mutationFn: approvePreApplication,
-    onSuccess: () => {
-      queryClient.invalidateQueries(['preApplications']);
-      queryClient.invalidateQueries(['pendingActivationVendors']);
-      setSelectedApp(null);
-      setApproveModalOpen(false);
-      toast.success('Ön Başvuru Onaylandı!', 'Satıcı hesabı oluşturuldu. Satıcı tam başvurusunu tamamlaması için bilgilendirilecek.');
-    },
-    onError: (err) => toast.error('Hata', err.response?.data?.message || 'Hata oluştu')
-  });
-
-  // Approve Full Application (Vendor Activation)
-  const approveFullMutation = useMutation({
-    mutationFn: ({ vendorId, commissionPlanId }) => approveFullApplication(vendorId, commissionPlanId),
-    onSuccess: () => {
-      queryClient.invalidateQueries(['pendingActivationVendors']);
-      queryClient.invalidateQueries(['active-vendors']);
-      setSelectedVendor(null);
-      setApproveModalOpen(false);
-      setSelectedCommissionPlan(null);
-      toast.success('Satıcı Aktifleştirildi', 'Satıcı başarıyla aktif edildi ve iyzico\'ya kaydedildi.');
-    },
-    onError: (err) => toast.error('Hata', err.response?.data?.message || 'Hata oluştu')
-  });
-
-  // Reject Pre Application
-  const rejectPreMutation = useMutation({
-    mutationFn: ({ id, reason }) => rejectPreApplication(id, reason),
-    onSuccess: () => {
-      queryClient.invalidateQueries(['preApplications']);
-      setRejectModalOpen(false);
-      setSelectedApp(null);
-      setRejectionReason('');
-      toast.success('Başvuru Reddedildi', 'Ön başvuru başarıyla reddedildi.');
-    },
-    onError: (err) => toast.error('Hata', err.response?.data?.message || 'Hata oluştu')
-  });
-
-  // Reject Full Application (Vendor)
-  const rejectFullMutation = useMutation({
-    mutationFn: ({ vendorId, reason }) => rejectFullApplication(vendorId, reason),
-    onSuccess: () => {
-      queryClient.invalidateQueries(['pendingActivationVendors']);
-      setRejectModalOpen(false);
-      setSelectedVendor(null);
-      setRejectionReason('');
-      toast.success('Başvuru Reddedildi', 'Tam başvuru reddedildi.');
-    },
-    onError: (err) => toast.error('Hata', err.response?.data?.message || 'Hata oluştu')
-  });
+  // Mutation hook
+  const {
+    submitApprovePre,
+    submitRejectPre,
+    isApprovingPre,
+    isRejectingPre,
+    submitApproveVendor,
+    submitRejectVendor,
+    isApprovingVendor,
+    isRejectingVendor,
+  } = useApplicationMutations();
 
   // ============ HANDLERS - PRE APPLICATION ============
 
   const handleApprovePreClick = useCallback((app) => {
-    setSelectedApp(app);
-    setApproveModalOpen(true);
-  }, []);
+    openApproveModal(app, false);
+  }, [openApproveModal]);
 
   const handleRejectPreClick = useCallback((app) => {
-    setSelectedApp(app);
-    setRejectModalOpen(true);
-  }, []);
+    openRejectModal(app, false);
+  }, [openRejectModal]);
 
-  const submitApprovePre = useCallback(() => {
-    approvePreMutation.mutate(selectedApp.id);
-  }, [selectedApp, approvePreMutation]);
+  const handleSubmitApprovePre = useCallback(() => {
+    submitApprovePre(selectedApp.id);
+    closeApproveModal();
+  }, [selectedApp, submitApprovePre, closeApproveModal]);
 
-  const submitRejectPre = useCallback(() => {
-    if (rejectionReason.length < 10) {
-      toast.warning('Uyarı', 'Red nedeni en az 10 karakter olmalıdır.');
-      return;
+  const handleSubmitRejectPre = useCallback(() => {
+    const success = submitRejectPre(selectedApp.id, rejectionReason);
+    if (success) {
+      closeRejectModal();
     }
-    rejectPreMutation.mutate({ id: selectedApp.id, reason: rejectionReason });
-  }, [selectedApp, rejectionReason, rejectPreMutation, toast]);
+  }, [selectedApp, rejectionReason, submitRejectPre, closeRejectModal]);
 
   // ============ HANDLERS - VENDOR (FULL) ============
 
   const handleApproveVendorClick = useCallback((vendor) => {
-    setSelectedVendor(vendor);
     const defaultPlan = commissionPlans.find(p => p.is_default);
-    setSelectedCommissionPlan(defaultPlan?.id || (commissionPlans[0]?.id || null));
-    setApproveModalOpen(true);
-  }, [commissionPlans]);
+    const planId = defaultPlan?.id || (commissionPlans[0]?.id || null);
+    openApproveModal(vendor, true, planId);
+  }, [commissionPlans, openApproveModal]);
 
   const handleRejectVendorClick = useCallback((vendor) => {
-    setSelectedVendor(vendor);
-    setRejectModalOpen(true);
-  }, []);
+    openRejectModal(vendor, true);
+  }, [openRejectModal]);
 
-  const submitApproveVendor = useCallback(() => {
-    if (!selectedCommissionPlan) {
-      toast.warning('Uyarı', 'Lütfen bir komisyon planı seçin.');
-      return;
+  const handleSubmitApproveVendor = useCallback(() => {
+    const success = submitApproveVendor(selectedVendor.id, selectedCommissionPlan);
+    if (success) {
+      closeApproveModal();
     }
-    approveFullMutation.mutate({ vendorId: selectedVendor.id, commissionPlanId: selectedCommissionPlan });
-  }, [selectedVendor, selectedCommissionPlan, approveFullMutation, toast]);
+  }, [selectedVendor, selectedCommissionPlan, submitApproveVendor, closeApproveModal]);
 
-  const submitRejectVendor = useCallback(() => {
-    if (rejectionReason.length < 10) {
-      toast.warning('Uyarı', 'Red nedeni en az 10 karakter olmalıdır.');
-      return;
+  const handleSubmitRejectVendor = useCallback(() => {
+    const success = submitRejectVendor(selectedVendor.id, rejectionReason);
+    if (success) {
+      closeRejectModal();
     }
-    rejectFullMutation.mutate({ vendorId: selectedVendor.id, reason: rejectionReason });
-  }, [selectedVendor, rejectionReason, rejectFullMutation, toast]);
+  }, [selectedVendor, rejectionReason, submitRejectVendor, closeRejectModal]);
 
   // ============ TAB HANDLERS ============
 
   const handleTabChange = useCallback((tab) => {
     setActiveTab(tab);
-    setSearchTerm('');
-    setStatusFilter('all');
-    setSelectedApp(null);
-    setSelectedVendor(null);
-    setApproveModalOpen(false);
-    setRejectModalOpen(false);
-  }, []);
+    resetFilters();
+    closeAllModals();
+  }, [resetFilters, closeAllModals]);
 
-  // ============ MODAL HANDLERS ============
+  // ============ DETAIL MODAL HANDLERS ============
 
-  const closeApproveModal = useCallback(() => {
-    setApproveModalOpen(false);
-    setSelectedApp(null);
-    setSelectedVendor(null);
-  }, []);
-
-  const closeRejectModal = useCallback(() => {
-    setRejectModalOpen(false);
-    setRejectionReason('');
-    setSelectedApp(null);
-    setSelectedVendor(null);
-  }, []);
-
-  const openDetailModal = useCallback((item) => {
-    console.log('openDetailModal called with:', item);
-    if (activeTab === 'pre') {
-      setSelectedApp(item);
-    } else {
-      setSelectedVendor(item);
-    }
-    setDetailModalOpen(true);
-  }, [activeTab]);
-
-  const closeDetailModal = useCallback(() => {
-    setDetailModalOpen(false);
-    setSelectedApp(null);
-    setSelectedVendor(null);
-  }, []);
+  const handleOpenDetailModal = useCallback((item) => {
+    openDetailModal(item, activeTab === 'full');
+  }, [activeTab, openDetailModal]);
 
   return {
     // Tab State
@@ -301,7 +195,7 @@ const useVendorApplications = () => {
     
     // Detail Modal
     detailModalOpen,
-    openDetailModal,
+    openDetailModal: handleOpenDetailModal,
     closeDetailModal,
     
     // Approve Modal
@@ -312,13 +206,13 @@ const useVendorApplications = () => {
     
     // Pre Application handlers
     handleApprovePreClick,
-    submitApprovePre,
-    isApprovingPre: approvePreMutation.isPending,
+    submitApprovePre: handleSubmitApprovePre,
+    isApprovingPre,
     
     // Vendor handlers
     handleApproveVendorClick,
-    submitApproveVendor,
-    isApprovingVendor: approveFullMutation.isPending,
+    submitApproveVendor: handleSubmitApproveVendor,
+    isApprovingVendor,
     
     // Reject Modal
     rejectModalOpen,
@@ -328,13 +222,13 @@ const useVendorApplications = () => {
     
     // Pre Application reject
     handleRejectPreClick,
-    submitRejectPre,
-    isRejectingPre: rejectPreMutation.isPending,
+    submitRejectPre: handleSubmitRejectPre,
+    isRejectingPre,
     
     // Vendor reject
     handleRejectVendorClick,
-    submitRejectVendor,
-    isRejectingVendor: rejectFullMutation.isPending,
+    submitRejectVendor: handleSubmitRejectVendor,
+    isRejectingVendor,
   };
 };
 
