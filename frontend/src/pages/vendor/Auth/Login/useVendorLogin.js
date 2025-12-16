@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { useToast } from '../../../../contexts/ToastContext';
-import axiosInstance from '../../../../api/axiosInstance';
+import { useToast } from '../../../../components/common/Toast';
+import apiClient from '../../../../lib/apiClient';
 
 // Vendor Status Constants
 export const VENDOR_STATUS = {
@@ -23,7 +23,7 @@ const useVendorLogin = () => {
 
   const loginMutation = useMutation({
     mutationFn: async (credentials) => {
-      const response = await axiosInstance.post('/vendor/auth/login', credentials);
+      const response = await apiClient.post('/v1/vendor/login', credentials);
       return response.data;
     },
     onSuccess: (data) => {
