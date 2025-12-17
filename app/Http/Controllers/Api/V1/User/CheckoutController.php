@@ -4,21 +4,20 @@ namespace App\Http\Controllers\Api\V1\User;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\User\InitializeCheckoutRequest;
-use App\Models\Order;
-use App\Models\UserAddress;
 use App\Services\Order\CheckoutService;
+use App\Services\User\UserAddressService;
+use App\Traits\ResponseHttp;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 
 class CheckoutController extends Controller
 {
-    protected CheckoutService $checkoutService;
+    use ResponseHttp;
 
-    public function __construct(CheckoutService $checkoutService)
-    {
-        $this->checkoutService = $checkoutService;
-    }
+    public function __construct(
+        protected CheckoutService $checkoutService,
+        protected UserAddressService $addressService
+    ) {}
 
     /**
      * Checkout başlat - iyzico Checkout Form oluştur
@@ -30,47 +29,29 @@ class CheckoutController extends Controller
 
         // Kimlik numarası kontrolü
         if (empty($user->identity_number)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Ödeme yapabilmek için kimlik numaranızı profilinize eklemeniz gerekiyor',
-            ], 422);
+            return $this->error('Ödeme yapabilmek için kimlik numaranızı profilinize eklemeniz gerekiyor', 422);
         }
 
         // Kullanıcının sepetini al
         $cart = $user->cart;
         if (!$cart || $cart->items->isEmpty()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Sepetiniz boş',
-            ], 400);
+            return $this->error('Sepetiniz boş', 400);
         }
 
-        // Adresleri al (soft-deleted adresleri hariç tut)
-        $shippingAddress = UserAddress::where('user_id', $user->id)
-            ->where('id', $request->shipping_address_id)
-            ->whereNull('deleted_at')
-            ->first();
-        
-        if (!$shippingAddress) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Teslimat adresi bulunamadı veya silinmiş',
-            ], 404);
+        // Adresleri kontrol et
+        $shippingAddressResult = $this->addressService->getAddress($user->id, $request->shipping_address_id);
+        if (!$shippingAddressResult->isSuccess()) {
+            return $this->fromServiceResponse($shippingAddressResult);
         }
+        $shippingAddress = $shippingAddressResult->getData()['address'];
 
         $billingAddress = null;
         if ($request->billing_address_id) {
-            $billingAddress = UserAddress::where('user_id', $user->id)
-                ->where('id', $request->billing_address_id)
-                ->whereNull('deleted_at')
-                ->first();
-                
-            if (!$billingAddress) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Fatura adresi bulunamadı veya silinmiş',
-                ], 404);
+            $billingAddressResult = $this->addressService->getAddress($user->id, $request->billing_address_id);
+            if (!$billingAddressResult->isSuccess()) {
+                return $this->fromServiceResponse($billingAddressResult);
             }
+            $billingAddress = $billingAddressResult->getData()['address'];
         }
 
         // Sepetten sipariş oluştur
@@ -82,11 +63,7 @@ class CheckoutController extends Controller
         );
 
         if (!$orderResult->isSuccess()) {
-            return response()->json([
-                'success' => false,
-                'message' => $orderResult->getMessage(),
-                'data' => $orderResult->getData(),
-            ], $orderResult->getStatusCode());
+            return $this->fromServiceResponse($orderResult);
         }
 
         $orderData = $orderResult->getData();
@@ -102,26 +79,17 @@ class CheckoutController extends Controller
         );
 
         if (!$paymentResult->isSuccess()) {
-            // Sipariş oluşturuldu ama ödeme başlatılamadı
-            $order->updatePaymentStatus(Order::PAYMENT_FAILED);
-            return response()->json([
-                'success' => false,
-                'message' => $paymentResult->getMessage(),
-            ], $paymentResult->getStatusCode());
+            return $this->fromServiceResponse($paymentResult);
         }
 
         $paymentData = $paymentResult->getData();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Ödeme formu hazır',
-            'data' => [
-                'order_id' => $order->id,
-                'order_number' => $order->order_number,
-                'checkout_form_content' => $paymentData['checkoutFormContent'],
-                'payment_page_url' => $paymentData['paymentPageUrl'],
-            ],
-        ]);
+        return $this->success([
+            'order_id' => $order->id,
+            'order_number' => $order->order_number,
+            'checkout_form_content' => $paymentData['checkoutFormContent'],
+            'payment_page_url' => $paymentData['paymentPageUrl'],
+        ], 'Ödeme formu hazır');
     }
 
     /**
@@ -130,38 +98,21 @@ class CheckoutController extends Controller
      */
     public function callback(Request $request)
     {
-        Log::info('iyzico callback received', $request->all());
-
         $token = $request->input('token');
         
         if (empty($token)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Token bulunamadı',
-            ], 400);
+            return $this->error('Token bulunamadı', 400);
         }
 
         $result = $this->checkoutService->handlePaymentCallback($token);
 
         if (!$result->isSuccess()) {
-            Log::error('Payment callback failed', [
-                'token' => $token,
-                'error' => $result->getMessage(),
-            ]);
-
-            // Başarısız ödeme sayfasına yönlendir (frontend URL)
             return redirect()->away(config('app.frontend_url') . '/odeme/basarisiz?error=' . urlencode($result->getMessage()));
         }
 
         $data = $result->getData();
         $order = $data['order'];
 
-        Log::info('Payment callback successful', [
-            'order_id' => $order->id,
-            'order_number' => $order->order_number,
-        ]);
-
-        // Başarılı ödeme sayfasına yönlendir (frontend URL)
         return redirect()->away(config('app.frontend_url') . '/odeme/basarili?order=' . $order->order_number);
     }
 
@@ -173,112 +124,21 @@ class CheckoutController extends Controller
     {
         $user = $request->user();
         
-        $order = Order::where('order_number', $orderNumber)
+        $order = \App\Models\Order::where('order_number', $orderNumber)
             ->where('user_id', $user->id)
             ->first();
 
         if (!$order) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Sipariş bulunamadı',
-            ], 404);
+            return $this->error('Sipariş bulunamadı', 404);
         }
 
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'order_number' => $order->order_number,
-                'status' => $order->status,
-                'payment_status' => $order->payment_status,
-                'status_label' => $order->status_label,
-                'payment_status_label' => $order->payment_status_label,
-                'paid_at' => $order->paid_at,
-            ],
-        ]);
-    }
-
-    /**
-     * Sipariş detayı
-     * GET /api/orders/{orderNumber}
-     */
-    public function show(Request $request, string $orderNumber): JsonResponse
-    {
-        $user = $request->user();
-        
-        $order = Order::with(['items.vendor', 'statusHistory'])
-            ->where('order_number', $orderNumber)
-            ->where('user_id', $user->id)
-            ->first();
-
-        if (!$order) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Sipariş bulunamadı',
-            ], 404);
-        }
-
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'order' => $order,
-            ],
-        ]);
-    }
-
-    /**
-     * Kullanıcının siparişleri
-     * GET /api/orders
-     */
-    public function index(Request $request): JsonResponse
-    {
-        $user = $request->user();
-        
-        $orders = Order::where('user_id', $user->id)
-            ->orderBy('created_at', 'desc')
-            ->paginate($request->input('per_page', 10));
-
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'orders' => $orders,
-            ],
-        ]);
-    }
-
-    /**
-     * Siparişi iptal et (sadece pending durumda)
-     * POST /api/orders/{orderNumber}/cancel
-     */
-    public function cancel(Request $request, string $orderNumber): JsonResponse
-    {
-        $user = $request->user();
-        
-        $order = Order::where('order_number', $orderNumber)
-            ->where('user_id', $user->id)
-            ->first();
-
-        if (!$order) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Sipariş bulunamadı',
-            ], 404);
-        }
-
-        if (!$order->isCancellable()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Bu sipariş iptal edilemez',
-            ], 400);
-        }
-
-        $order->updateStatus(Order::STATUS_CANCELLED, 'Kullanıcı tarafından iptal edildi', $user);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Sipariş iptal edildi',
-            'data' => [
-                'order' => $order->fresh(),
-            ],
+        return $this->success([
+            'order_number' => $order->order_number,
+            'status' => $order->status,
+            'payment_status' => $order->payment_status,
+            'status_label' => $order->status_label,
+            'payment_status_label' => $order->payment_status_label,
+            'paid_at' => $order->paid_at,
         ]);
     }
 }

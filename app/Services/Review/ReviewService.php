@@ -266,4 +266,62 @@ class ReviewService extends BaseService
         }
     }
 
+    /**
+     * Get reviewable orders for user
+     */
+    public function getReviewableOrders(int $userId): ServiceResponse
+    {
+        try {
+            $orders = Order::where('user_id', $userId)
+                ->with(['items.product.photos', 'items.review'])
+                ->where('status', 'delivered')
+                ->latest()
+                ->get()
+                ->map(function ($order) {
+                    $reviewableItems = $order->items
+                        ->filter(fn($item) => !$item->review)
+                        ->map(fn($item) => [
+                            'order_item_id' => $item->id,
+                            'product_id' => $item->product_id,
+                            'product_name' => $item->product->name,
+                            'product_image' => $item->product->photos->first()?->path ?? null,
+                        ])
+                        ->values();
+
+                    return [
+                        'order_id' => $order->id,
+                        'order_number' => $order->order_number,
+                        'order_date' => $order->created_at->format('d.m.Y'),
+                        'reviewable_items' => $reviewableItems,
+                    ];
+                })
+                ->filter(fn($order) => $order['reviewable_items']->isNotEmpty())
+                ->values();
+
+            return $this->successResponse($orders, 'Değerlendirilebilir siparişler getirildi');
+
+        } catch (\Exception $e) {
+            return $this->handleException($e, 'Değerlendirilebilir siparişler alınamadı');
+        }
+    }
+
+    /**
+     * Get user's reviews
+     */
+    public function getUserReviews(int $userId, int $perPage = 10): ServiceResponse
+    {
+        try {
+            $reviews = ProductReview::withTrashed()
+                ->with(['product.photos', 'media', 'response.vendor'])
+                ->where('user_id', $userId)
+                ->latest()
+                ->paginate($perPage);
+
+            return $this->successResponse($reviews, 'Yorumlar getirildi');
+
+        } catch (\Exception $e) {
+            return $this->handleException($e, 'Yorumlar alınamadı');
+        }
+    }
+
 }

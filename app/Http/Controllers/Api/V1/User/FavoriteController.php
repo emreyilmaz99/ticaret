@@ -6,11 +6,14 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\User\ToggleFavoriteRequest;
 use App\Http\Requests\Api\V1\User\CheckFavoritesRequest;
 use App\Services\User\FavoriteService;
+use App\Traits\ResponseHttp;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class FavoriteController extends Controller
 {
+    use ResponseHttp;
+
     public function __construct(
         protected FavoriteService $favoriteService
     ) {}
@@ -20,16 +23,9 @@ class FavoriteController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $user = $request->user();
-        $perPage = $request->integer('per_page', 20);
-        
-        $result = $this->favoriteService->getFavorites($user->id, $perPage);
-        
-        return response()->json([
-            'success' => $result->isSuccess(),
-            'data' => $result->getData(),
-            'message' => $result->getMessage(),
-        ], $result->getStatusCode());
+        return $this->fromServiceResponse(
+            $this->favoriteService->getFavorites($request->user()->id, $request->integer('per_page', 20))
+        );
     }
 
     /**
@@ -37,14 +33,9 @@ class FavoriteController extends Controller
      */
     public function store(ToggleFavoriteRequest $request): JsonResponse
     {
-        $user = $request->user();
-        $result = $this->favoriteService->addFavorite($user->id, $request->product_id);
-        
-        return response()->json([
-            'success' => $result->isSuccess(),
-            'message' => $result->getMessage(),
-            'data' => $result->getData(),
-        ], $result->getStatusCode());
+        return $this->fromServiceResponse(
+            $this->favoriteService->addFavorite($request->user()->id, $request->product_id)
+        );
     }
 
     /**
@@ -52,14 +43,9 @@ class FavoriteController extends Controller
      */
     public function destroy(Request $request, string $productId): JsonResponse
     {
-        $user = $request->user();
-        $result = $this->favoriteService->removeFavorite($user->id, $productId);
-        
-        return response()->json([
-            'success' => $result->isSuccess(),
-            'message' => $result->getMessage(),
-            'data' => $result->getData(),
-        ], $result->getStatusCode());
+        return $this->fromServiceResponse(
+            $this->favoriteService->removeFavorite($request->user()->id, $productId)
+        );
     }
 
     /**
@@ -67,14 +53,9 @@ class FavoriteController extends Controller
      */
     public function toggle(ToggleFavoriteRequest $request): JsonResponse
     {
-        $user = $request->user();
-        $result = $this->favoriteService->toggleFavorite($user->id, $request->product_id);
-        
-        return response()->json([
-            'success' => $result->isSuccess(),
-            'message' => $result->getMessage(),
-            'data' => $result->getData(),
-        ], $result->getStatusCode());
+        return $this->fromServiceResponse(
+            $this->favoriteService->toggleFavorite($request->user()->id, $request->product_id)
+        );
     }
 
     /**
@@ -82,13 +63,9 @@ class FavoriteController extends Controller
      */
     public function check(CheckFavoritesRequest $request): JsonResponse
     {
-        $user = $request->user();
-        $result = $this->favoriteService->checkFavorites($user->id, $request->product_ids);
-        
-        return response()->json([
-            'success' => $result->isSuccess(),
-            'data' => $result->getData(),
-        ], $result->getStatusCode());
+        return $this->fromServiceResponse(
+            $this->favoriteService->checkFavorites($request->user()->id, $request->product_ids)
+        );
     }
 
     /**
@@ -96,13 +73,9 @@ class FavoriteController extends Controller
      */
     public function clear(Request $request): JsonResponse
     {
-        $user = $request->user();
-        $result = $this->favoriteService->clearFavorites($user->id);
-        
-        return response()->json([
-            'success' => $result->isSuccess(),
-            'message' => $result->getMessage(),
-        ], $result->getStatusCode());
+        return $this->fromServiceResponse(
+            $this->favoriteService->clearFavorites($request->user()->id)
+        );
     }
 
     /**
@@ -110,12 +83,8 @@ class FavoriteController extends Controller
      */
     public function count(Request $request): JsonResponse
     {
-        $user = $request->user();
-        $result = $this->favoriteService->getCount($user->id);
-        
-        return response()->json([
-            'success' => $result->isSuccess(),
-            'data' => $result->getData(),
-        ], $result->getStatusCode());
+        return $this->fromServiceResponse(
+            $this->favoriteService->getCount($request->user()->id)
+        );
     }
 }

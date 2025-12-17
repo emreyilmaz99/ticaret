@@ -6,11 +6,14 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\User\UserLoginRequest;
 use App\Http\Requests\Api\V1\User\UserRegisterRequest;
 use App\Services\Auth\AuthService;
+use App\Traits\ResponseHttp;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class UserAuthController extends Controller
 {
+    use ResponseHttp;
+
     public function __construct(
         protected AuthService $authService
     ) {}
@@ -20,13 +23,9 @@ class UserAuthController extends Controller
      */
     public function register(UserRegisterRequest $request): JsonResponse
     {
-        $result = $this->authService->userRegister($request->validated());
-
-        return response()->json([
-            'success' => $result->isSuccess(),
-            'message' => $result->getMessage(),
-            'data' => $result->getData(),
-        ], $result->getStatusCode());
+        return $this->fromServiceResponse(
+            $this->authService->userRegister($request->validated())
+        );
     }
 
     /**
@@ -34,13 +33,9 @@ class UserAuthController extends Controller
      */
     public function login(UserLoginRequest $request): JsonResponse
     {
-        $result = $this->authService->userLogin($request->validated());
-
-        return response()->json([
-            'success' => $result->isSuccess(),
-            'message' => $result->getMessage(),
-            'data' => $result->getData(),
-        ], $result->getStatusCode());
+        return $this->fromServiceResponse(
+            $this->authService->userLogin($request->validated())
+        );
     }
 
     /**
@@ -48,12 +43,9 @@ class UserAuthController extends Controller
      */
     public function logout(Request $request): JsonResponse
     {
-        $result = $this->authService->logout($request->user());
-
-        return response()->json([
-            'success' => $result->isSuccess(),
-            'message' => $result->getMessage(),
-        ], $result->getStatusCode());
+        return $this->fromServiceResponse(
+            $this->authService->logout($request->user())
+        );
     }
 
     /**
@@ -61,11 +53,8 @@ class UserAuthController extends Controller
      */
     public function me(Request $request): JsonResponse
     {
-        $result = $this->authService->getCurrentUser($request->user());
-
-        return response()->json([
-            'success' => $result->isSuccess(),
-            'data' => $result->getData(),
-        ], $result->getStatusCode());
+        return $this->fromServiceResponse(
+            $this->authService->getCurrentUser($request->user())
+        );
     }
 }

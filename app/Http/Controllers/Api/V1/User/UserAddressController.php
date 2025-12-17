@@ -5,25 +5,27 @@ namespace App\Http\Controllers\Api\V1\User;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\User\StoreUserAddressRequest;
 use App\Http\Requests\Api\V1\User\UpdateUserAddressRequest;
-use App\Models\UserAddress;
+use App\Services\User\UserAddressService;
+use App\Traits\ResponseHttp;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class UserAddressController extends Controller
 {
+    use ResponseHttp;
+
+    public function __construct(
+        protected UserAddressService $addressService
+    ) {}
+
     /**
      * Get all addresses for the authenticated user.
      */
     public function index(Request $request): JsonResponse
     {
-        $addresses = $request->user()->addresses()->orderByDesc('is_default')->orderByDesc('created_at')->get();
-
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'addresses' => $addresses,
-            ],
-        ]);
+        return $this->fromServiceResponse(
+            $this->addressService->getUserAddresses($request->user()->id)
+        );
     }
 
     /**
@@ -31,161 +33,48 @@ class UserAddressController extends Controller
      */
     public function store(StoreUserAddressRequest $request): JsonResponse
     {
-        $validated = $request->validated();
-        $user = $request->user();
-
-        // If this is the first address or marked as default, reset other defaults
-        $isDefault = $validated['is_default'] ?? false;
-        if ($isDefault || $user->addresses()->count() === 0) {
-            $user->addresses()->update(['is_default' => false]);
-            $validated['is_default'] = true;
-        }
-
-        $address = $user->addresses()->create($validated);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Adres başarıyla eklendi.',
-            'data' => [
-                'address' => $address,
-            ],
-        ], 201);
+        return $this->fromServiceResponse(
+            $this->addressService->createAddress($request->user()->id, $request->validated())
+        );
     }
 
     /**
      * Get a specific address.
      */
-    public function show(Request $request, UserAddress $address): JsonResponse
+    public function show(Request $request, int $addressId): JsonResponse
     {
-        // Ensure the address belongs to the authenticated user
-        if ($address->user_id !== $request->user()->id) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Bu adrese erişim yetkiniz yok.',
-            ], 403);
-        }
-
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'address' => $address,
-            ],
-        ]);
+        return $this->fromServiceResponse(
+            $this->addressService->getAddress($request->user()->id, $addressId)
+        );
     }
 
     /**
      * Update an address.
      */
-    public function update(UpdateUserAddressRequest $request, UserAddress $address): JsonResponse
+    public function update(UpdateUserAddressRequest $request, int $addressId): JsonResponse
     {
-        $validated = $request->validated();
-
-        // Handle default address logic
-        if (isset($validated['is_default']) && $validated['is_default']) {
-            $request->user()->addresses()->where('id', '!=', $address->id)->update(['is_default' => false]);
-        }
-
-        $address->update($validated);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Adres başarıyla güncellendi.',
-            'data' => [
-                'address' => $address->fresh(),
-            ],
-        ]);
+        return $this->fromServiceResponse(
+            $this->addressService->updateAddress($request->user()->id, $addressId, $request->validated())
+        );
     }
 
     /**
      * Delete an address.
      */
-    public function destroy(Request $request, UserAddress $address): JsonResponse
+    public function destroy(Request $request, int $addressId): JsonResponse
     {
-        // Ensure the address belongs to the authenticated user
-        if ($address->user_id !== $request->user()->id) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Bu adrese erişim yetkiniz yok.',
-            ], 403);
-        }
-
-        $wasDefault = $address->is_default;
-        $address->delete();
-
-        // If deleted address was default, make another one default
-        if ($wasDefault) {
-            $newDefault = $request->user()->addresses()->first();
-            if ($newDefault) {
-                $newDefault->update(['is_default' => true]);
-            }
-        }
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Adres başarıyla silindi.',
-        ]);
+        return $this->fromServiceResponse(
+            $this->addressService->deleteAddress($request->user()->id, $addressId)
+        );
     }
 
     /**
      * Set an address as default.
      */
-    public function setDefault(Request $request, UserAddress $address): JsonResponse
+    public function setDefault(Request $request, int $addressId): JsonResponse
     {
-        // Ensure the address belongs to the authenticated user
-        if ($address->user_id !== $request->user()->id) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Bu adrese erişim yetkiniz yok.',
-            ], 403);
-        }
-
-        // Reset all defaults
-        $request->user()->addresses()->update(['is_default' => false]);
-        
-        // Set this one as default
-        $address->update(['is_default' => true]);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Varsayılan adres güncellendi.',
-            'data' => [
-                'address' => $address->fresh(),
-            ],
-        ]);
-    }
-
-    /**
-     * Restore a soft-deleted address.
-     */
-    public function restore(Request $request, $id): JsonResponse
-    {
-        $address = UserAddress::withTrashed()
-            ->where('id', $id)
-            ->where('user_id', $request->user()->id)
-            ->first();
-
-        if (!$address) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Adres bulunamadı.',
-            ], 404);
-        }
-
-        if (!$address->trashed()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Bu adres zaten aktif.',
-            ], 400);
-        }
-
-        $address->restore();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Adres başarıyla geri yüklendi.',
-            'data' => [
-                'address' => $address->fresh(),
-            ],
-        ]);
+        return $this->fromServiceResponse(
+            $this->addressService->setDefaultAddress($request->user()->id, $addressId)
+        );
     }
 }
