@@ -6,36 +6,16 @@ use App\Models\VendorMedia;
 use App\Repositories\Interfaces\VendorMediaRepositoryInterface;
 use Illuminate\Database\Eloquent\Collection;
 
-class VendorMediaRepository implements VendorMediaRepositoryInterface
+class VendorMediaRepository extends EloquentBaseRepository implements VendorMediaRepositoryInterface
 {
-    protected VendorMedia $model;
-
     public function __construct(VendorMedia $model)
     {
-        $this->model = $model;
-    }
-
-    public function create(array $data): VendorMedia
-    {
-        return $this->model->create($data);
-    }
-
-    public function update(int $id, array $data): VendorMedia
-    {
-        $media = $this->model->findOrFail($id);
-        $media->update($data);
-        return $media->fresh();
+        parent::__construct($model);
     }
 
     public function findById(int $id): ?VendorMedia
     {
         return $this->model->find($id);
-    }
-
-    public function delete(int $id): bool
-    {
-        $media = $this->model->findOrFail($id);
-        return (bool) $media->delete();
     }
 
     public function findByVendorAndId(int $vendorId, int $mediaId): ?VendorMedia

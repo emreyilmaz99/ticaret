@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\Admin\StoreTaxClassRequest;
+use App\Http\Requests\Api\V1\Admin\UpdateTaxClassRequest;
 use App\Services\Tax\TaxClassCrudService;
 use App\Traits\ResponseHttp;
 use Illuminate\Http\Request;
@@ -44,16 +46,9 @@ class TaxClassController extends Controller
      * Yeni vergi sınıfı oluştur
      * POST /api/v1/admin/tax-classes
      */
-    public function store(Request $request): JsonResponse
+    public function store(StoreTaxClassRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255|unique:tax_classes,name',
-            'rate' => 'required|numeric|min:0|max:100',
-            'description' => 'nullable|string',
-            'is_default' => 'boolean',
-            'is_active' => 'boolean',
-            'sort_order' => 'integer|min:0',
-        ]);
+        $validated = $request->validated();
 
         $result = $this->service->create($validated);
         return $this->fromServiceResponse($result);
@@ -63,16 +58,9 @@ class TaxClassController extends Controller
      * Vergi sınıfını güncelle
      * PUT /api/v1/admin/tax-classes/{id}
      */
-    public function update(Request $request, int $id): JsonResponse
+    public function update(UpdateTaxClassRequest $request, int $id): JsonResponse
     {
-        $validated = $request->validate([
-            'name' => 'sometimes|string|max:255|unique:tax_classes,name,' . $id,
-            'rate' => 'sometimes|numeric|min:0|max:100',
-            'description' => 'nullable|string',
-            'is_default' => 'boolean',
-            'is_active' => 'boolean',
-            'sort_order' => 'integer|min:0',
-        ]);
+        $validated = $request->validated();
 
         $result = $this->service->update($id, $validated);
         return $this->fromServiceResponse($result);

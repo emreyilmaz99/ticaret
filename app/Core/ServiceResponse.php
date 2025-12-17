@@ -18,6 +18,7 @@ class ServiceResponse
     protected int $statusCode = 200;
     protected string $message = '';
     protected $data = null;
+    protected $errors = null;
 
     public function isSuccess(): bool
     {
@@ -60,6 +61,17 @@ class ServiceResponse
     public function setData($data): static
     {
         $this->data = $data;
+        return $this;
+    }
+
+    public function getErrors()
+    {
+        return $this->errors;
+    }
+
+    public function setErrors($errors): static
+    {
+        $this->errors = $errors;
         return $this;
     }
 }

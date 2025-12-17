@@ -6,7 +6,7 @@ return [
     'enabled' => true,
     // change it to true will make lrd to throw exception if rules in request class need to be changed
     // keep it false
-    'debug' => false,
+    'debug' => true,
 
     /*
     * Route where request docs will be served from laravel app.

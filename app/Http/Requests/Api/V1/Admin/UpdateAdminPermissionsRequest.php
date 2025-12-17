@@ -2,9 +2,8 @@
 
 namespace App\Http\Requests\Api\V1\Admin;
 
-use Illuminate\Foundation\Http\FormRequest;
 
-class UpdateAdminPermissionsRequest extends FormRequest
+class UpdateAdminPermissionsRequest extends BaseAdminRequest
 {
     public function authorize(): bool
     {

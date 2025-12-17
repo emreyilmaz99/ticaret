@@ -4,11 +4,14 @@ namespace App\Http\Controllers\Api\V1\Public;
 
 use App\Http\Controllers\Controller;
 use App\Services\Cart\CartService;
+use App\Traits\ResponseHttp;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class CartController extends Controller
 {
+    use ResponseHttp;
+    
     protected CartService $cartService;
 
     public function __construct(CartService $cartService)
@@ -26,11 +29,7 @@ class CartController extends Controller
 
         $result = $this->cartService->getCart($user, $sessionId);
 
-        return response()->json([
-            'success' => $result->isSuccess(),
-            'message' => $result->getMessage(),
-            'data' => $result->getData(),
-        ], $result->getStatusCode());
+        return $this->fromServiceResponse($result);
     }
 
     /**
@@ -54,11 +53,7 @@ class CartController extends Controller
 
         $result = $this->cartService->addItem($user, $sessionId, $validated);
 
-        return response()->json([
-            'success' => $result->isSuccess(),
-            'message' => $result->getMessage(),
-            'data' => $result->getData(),
-        ], $result->getStatusCode());
+        return $this->fromServiceResponse($result);
     }
 
     /**
@@ -75,11 +70,7 @@ class CartController extends Controller
 
         $result = $this->cartService->updateItem($user, $sessionId, $itemId, $validated['quantity']);
 
-        return response()->json([
-            'success' => $result->isSuccess(),
-            'message' => $result->getMessage(),
-            'data' => $result->getData(),
-        ], $result->getStatusCode());
+        return $this->fromServiceResponse($result);
     }
 
     /**
@@ -92,11 +83,7 @@ class CartController extends Controller
 
         $result = $this->cartService->removeItem($user, $sessionId, $itemId);
 
-        return response()->json([
-            'success' => $result->isSuccess(),
-            'message' => $result->getMessage(),
-            'data' => $result->getData(),
-        ], $result->getStatusCode());
+        return $this->fromServiceResponse($result);
     }
 
     /**
@@ -109,11 +96,7 @@ class CartController extends Controller
 
         $result = $this->cartService->clearCart($user, $sessionId);
 
-        return response()->json([
-            'success' => $result->isSuccess(),
-            'message' => $result->getMessage(),
-            'data' => $result->getData(),
-        ], $result->getStatusCode());
+        return $this->fromServiceResponse($result);
     }
 
     /**
@@ -130,11 +113,7 @@ class CartController extends Controller
 
         $result = $this->cartService->applyCoupon($user, $sessionId, $validated['code']);
 
-        return response()->json([
-            'success' => $result->isSuccess(),
-            'message' => $result->getMessage(),
-            'data' => $result->getData(),
-        ], $result->getStatusCode());
+        return $this->fromServiceResponse($result);
     }
 
     /**
@@ -147,11 +126,7 @@ class CartController extends Controller
 
         $result = $this->cartService->removeCoupon($user, $sessionId);
 
-        return response()->json([
-            'success' => $result->isSuccess(),
-            'message' => $result->getMessage(),
-            'data' => $result->getData(),
-        ], $result->getStatusCode());
+        return $this->fromServiceResponse($result);
     }
 
     /**
@@ -162,21 +137,14 @@ class CartController extends Controller
         $user = $this->getAuthUser($request);
 
         if (!$user) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Giriş yapmanız gerekiyor',
-            ], 401);
+            return $this->error('Giriş yapmanız gerekiyor', 401);
         }
 
         $sessionId = $request->header('X-Cart-Session') ?? $request->session_id;
 
         $result = $this->cartService->mergeCart($user, $sessionId);
 
-        return response()->json([
-            'success' => $result->isSuccess(),
-            'message' => $result->getMessage(),
-            'data' => $result->getData(),
-        ], $result->getStatusCode());
+        return $this->fromServiceResponse($result);
     }
 
     /**

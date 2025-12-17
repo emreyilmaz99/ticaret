@@ -3,6 +3,9 @@
 namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\Http\Controllers\Api\V1\Admin\BaseAdminController;
+use App\Http\Requests\Api\V1\Admin\AddOrderNoteRequest;
+use App\Http\Requests\Api\V1\Admin\CancelOrderRequest;
+use App\Http\Requests\Api\V1\Admin\UpdateOrderStatusRequest;
 use App\Services\Admin\AdminOrderService;
 use Illuminate\Http\Request;
 
@@ -40,12 +43,8 @@ class OrderController extends BaseAdminController
     /**
      * Update order status
      */
-    public function updateStatus(Request $request, int $orderId)
+    public function updateStatus(UpdateOrderStatusRequest $request, int $orderId)
     {
-        $request->validate([
-            'status' => 'required|in:pending,confirmed,processing,shipped,delivered,cancelled,returned'
-        ]);
-
         $result = $this->service->updateOrderStatus(
             $orderId,
             $request->input('status')
@@ -57,12 +56,8 @@ class OrderController extends BaseAdminController
     /**
      * Cancel order
      */
-    public function cancel(Request $request, int $orderId)
+    public function cancel(CancelOrderRequest $request, int $orderId)
     {
-        $request->validate([
-            'reason' => 'required|string|max:500'
-        ]);
-
         $adminId = $request->user()->id;
         $result = $this->service->cancelOrder($orderId, $request->reason, $adminId);
 
@@ -72,14 +67,8 @@ class OrderController extends BaseAdminController
     /**
      * Add note to order
      */
-    public function addNote(Request $request, int $orderId)
+    public function addNote(AddOrderNoteRequest $request, int $orderId)
     {
-        $request->validate([
-            'note' => 'required|string|max:1000',
-            'is_visible_to_vendor' => 'boolean',
-            'is_visible_to_customer' => 'boolean',
-        ]);
-
         $adminId = $request->user()->id;
         $note = $this->service->addNote(
             $orderId,
@@ -89,11 +78,10 @@ class OrderController extends BaseAdminController
             $request->input('is_visible_to_customer', false)
         );
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Not başarıyla eklendi',
-            'data' => ['note' => $note]
-        ]);
+        return $this->success(
+            ['note' => $note],
+            'Not başarıyla eklendi'
+        );
     }
 
     /**
@@ -103,10 +91,10 @@ class OrderController extends BaseAdminController
     {
         $notes = $this->service->getNotes($orderId);
 
-        return response()->json([
-            'success' => true,
-            'data' => ['notes' => $notes]
-        ]);
+        return $this->success(
+            ['notes' => $notes],
+            'Sipariş notları başarıyla getirildi.'
+        );
     }
 
     /**
@@ -117,10 +105,10 @@ class OrderController extends BaseAdminController
         $order = \App\Models\Order::findOrFail($orderId);
         $orders = $this->service->getUserOrders($order->user_id, $orderId);
 
-        return response()->json([
-            'success' => true,
-            'data' => ['orders' => $orders]
-        ]);
+        return $this->success(
+            ['orders' => $orders],
+            'Kullanıcı siparişleri başarıyla getirildi.'
+        );
     }
 }
 

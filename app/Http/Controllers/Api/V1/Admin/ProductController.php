@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\Admin\BulkUpdateProductStatusRequest;
+use App\Http\Requests\Api\V1\Admin\UpdateProductStatusRequest;
 use App\Http\Resources\Api\V1\Shared\ProductResource;
 use App\Models\Product;
 use App\Traits\ResponseHttp;
@@ -70,13 +72,8 @@ class ProductController extends Controller
     /**
      * Update product status (approve/reject/publish/unpublish)
      */
-    public function updateStatus(Request $request, $id)
+    public function updateStatus(UpdateProductStatusRequest $request, $id)
     {
-        $request->validate([
-            'status' => 'required|in:pending,active,rejected,draft,inactive,banned',
-            'rejection_reason' => 'required_if:status,rejected|nullable|string|max:1000'
-        ]);
-        
         $product = Product::find($id);
         
         if (!$product) {
@@ -121,15 +118,8 @@ class ProductController extends Controller
     /**
      * Bulk update status
      */
-    public function bulkUpdateStatus(Request $request)
+    public function bulkUpdateStatus(BulkUpdateProductStatusRequest $request)
     {
-        $request->validate([
-            'product_ids' => 'required|array|min:1',
-            'product_ids.*' => 'string',
-            'status' => 'required|in:pending,active,rejected,draft,inactive,banned',
-            'rejection_reason' => 'required_if:status,rejected|nullable|string|max:1000'
-        ]);
-        
         $updateData = ['status' => $request->status];
         
         // If rejecting, add rejection details

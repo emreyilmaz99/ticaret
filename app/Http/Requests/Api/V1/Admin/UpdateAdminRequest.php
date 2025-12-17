@@ -2,14 +2,9 @@
 
 namespace App\Http\Requests\Api\V1\Admin;
 
-use Illuminate\Foundation\Http\FormRequest;
 
-class UpdateAdminRequest extends FormRequest
+class UpdateAdminRequest extends BaseAdminRequest
 {
-    public function authorize(): bool
-    {
-        return true;
-    }
 
     public function rules(): array
     {

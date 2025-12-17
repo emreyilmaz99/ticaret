@@ -6,36 +6,16 @@ use App\Models\ProductSetting;
 use App\Repositories\Interfaces\ProductSettingRepositoryInterface;
 use Illuminate\Database\Eloquent\Collection;
 
-class ProductSettingRepository implements ProductSettingRepositoryInterface
+class ProductSettingRepository extends EloquentBaseRepository implements ProductSettingRepositoryInterface
 {
-    protected ProductSetting $model;
-
     public function __construct(ProductSetting $model)
     {
-        $this->model = $model;
-    }
-
-    public function create(array $data): ProductSetting
-    {
-        return $this->model->create($data);
-    }
-
-    public function update(int $id, array $data): ProductSetting
-    {
-        $setting = $this->model->findOrFail($id);
-        $setting->update($data);
-        return $setting->fresh();
+        parent::__construct($model);
     }
 
     public function findById(int $id): ?ProductSetting
     {
         return $this->model->find($id);
-    }
-
-    public function delete(int $id): bool
-    {
-        $setting = $this->model->findOrFail($id);
-        return (bool) $setting->delete();
     }
 
     public function findByProductAndKey(string $productId, string $key): ?ProductSetting

@@ -4,12 +4,15 @@ namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Admin\BulkReviewActionRequest;
+use App\Http\Requests\Api\V1\Admin\RejectReviewRequest;
 use App\Models\ProductReview;
+use App\Traits\ResponseHttp;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class AdminReviewController extends Controller
 {
+    use ResponseHttp;
     /**
      * GET /api/v1/admin/reviews
      * List all reviews with filters
@@ -39,10 +42,10 @@ class AdminReviewController extends Controller
             ->latest()
             ->paginate($request->integer('per_page', 50));
 
-        return response()->json([
-            'success' => true,
-            'data' => $query,
-        ]);
+        return $this->success(
+            $query,
+            'Yorumlar başarıyla getirildi.'
+        );
     }
 
     /**
@@ -62,10 +65,10 @@ class AdminReviewController extends Controller
                 ]);
         });
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Seçilen yorumlar onaylandı.',
-        ]);
+        return $this->success(
+            null,
+            'Seçilen yorumlar onaylandı.'
+        );
     }
 
     /**
@@ -86,10 +89,10 @@ class AdminReviewController extends Controller
                 ]);
         });
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Seçilen yorumlar reddedildi.',
-        ]);
+        return $this->success(
+            null,
+            'Seçilen yorumlar reddedildi.'
+        );
     }
 
     /**
@@ -101,10 +104,7 @@ class AdminReviewController extends Controller
         $review = ProductReview::findOrFail($id);
 
         if ($review->status === 'approved') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Yorum zaten onaylanmış.',
-            ], 400);
+            return $this->error('Yorum zaten onaylandı.', 400);
         }
 
         $review->update([
@@ -112,33 +112,22 @@ class AdminReviewController extends Controller
             'rejection_reason' => null,
         ]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Yorum onaylandı.',
-            'data' => $review,
-        ]);
+        return $this->success(
+            $review,
+            'Yorum onaylandı.'
+        );
     }
 
     /**
      * POST /api/v1/admin/reviews/{id}/reject
      * Reject single review
      */
-    public function reject(Request $request, string $id)
+    public function reject(RejectReviewRequest $request, string $id)
     {
-        $request->validate([
-            'rejection_reason' => 'required|string|max:500',
-        ], [
-            'rejection_reason.required' => 'Ret nedeni belirtilmelidir.',
-            'rejection_reason.max' => 'Ret nedeni en fazla 500 karakter olabilir.',
-        ]);
-
         $review = ProductReview::findOrFail($id);
 
         if ($review->status === 'rejected') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Yorum zaten reddedilmiş.',
-            ], 400);
+            return $this->error('Yorum zaten reddedilmiş.', 400);
         }
 
         $review->update([
@@ -146,11 +135,10 @@ class AdminReviewController extends Controller
             'rejection_reason' => $request->input('rejection_reason'),
         ]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Yorum reddedildi.',
-            'data' => $review,
-        ]);
+        return $this->success(
+            $review,
+            'Yorum reddedildi.'
+        );
     }
 
     /**
@@ -167,10 +155,10 @@ class AdminReviewController extends Controller
             'total' => ProductReview::withTrashed()->count(),
         ];
 
-        return response()->json([
-            'success' => true,
-            'data' => $stats,
-        ]);
+        return $this->success(
+            $stats,
+            'Yorum istatistikleri başarıyla getirildi.'
+        );
     }
 
     /**
@@ -184,9 +172,9 @@ class AdminReviewController extends Controller
             ->latest('deleted_at')
             ->paginate($request->integer('per_page', 50));
 
-        return response()->json([
-            'success' => true,
-            'data' => $reviews,
-        ]);
+        return $this->success(
+            $reviews,
+            'Silinmiş yorumlar başarıyla getirildi.'
+        );
     }
 }

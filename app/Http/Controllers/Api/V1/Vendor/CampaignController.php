@@ -3,14 +3,17 @@
 namespace App\Http\Controllers\Api\V1\Vendor;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\Api\V1\Vendor\CampaignResource;
 use App\Models\VendorCampaign;
 use App\Models\Product;
+use App\Traits\ResponseHttp;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
 class CampaignController extends Controller
 {
+    use ResponseHttp;
     /**
      * Satıcının kampanyalarını listele
      */
@@ -23,10 +26,10 @@ class CampaignController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-        return response()->json([
-            'status' => 'success',
-            'data' => $campaigns,
-        ]);
+        return $this->success(
+            CampaignResource::collection($campaigns),
+            'Campaigns listed'
+        );
     }
 
     /**
@@ -60,11 +63,11 @@ class CampaignController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Doğrulama hatası',
-                'errors' => $validator->errors(),
-            ], 422);
+            return $this->error(
+                'Doğrulama hatası',
+                422,
+                $validator->errors()
+            );
         }
 
         // Ürünlerin satıcıya ait olduğunu kontrol et
@@ -75,10 +78,10 @@ class CampaignController extends Controller
             ->toArray();
 
         if (count($validProducts) !== count($productIds)) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Seçilen ürünlerden bazıları size ait değil.',
-            ], 422);
+            return $this->error(
+                'Seçilen ürünlerden bazıları size ait değil.',
+                422
+            );
         }
 
         // Ürünlerin başka bir kampanyada olup olmadığını kontrol et
@@ -94,10 +97,10 @@ class CampaignController extends Controller
 
         if ($productsInOtherCampaigns->count() > 0) {
             $conflictingProducts = $productsInOtherCampaigns->flatMap->products->pluck('name')->unique()->implode(', ');
-            return response()->json([
-                'status' => 'error',
-                'message' => "Şu ürünler zaten başka bir kampanyada: {$conflictingProducts}",
-            ], 422);
+            return $this->error(
+                "Şu ürünler zaten başka bir kampanyada: {$conflictingProducts}",
+                422
+            );
         }
 
         $campaign = VendorCampaign::create([
@@ -114,11 +117,11 @@ class CampaignController extends Controller
         // Ürünleri kampanyaya ekle
         $campaign->products()->attach($validProducts);
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Kampanya başarıyla oluşturuldu.',
-            'data' => $campaign->load('products:id,name'),
-        ], 201);
+        return $this->success(
+            new CampaignResource($campaign->load('products:id,name')),
+            'Kampanya başarıyla oluşturuldu.',
+            201
+        );
     }
 
     /**
@@ -129,16 +132,13 @@ class CampaignController extends Controller
         $vendor = auth('vendor')->user();
 
         if ($campaign->vendor_id !== $vendor->id) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Bu kampanyaya erişim yetkiniz yok.',
-            ], 403);
+            return $this->error('Bu kampanyaya erişim yetkiniz yok.', 403);
         }
 
-        return response()->json([
-            'status' => 'success',
-            'data' => $campaign->load('products:id,name'),
-        ]);
+        return $this->success(
+            new CampaignResource($campaign->load('products:id,name')),
+            'Campaign retrieved'
+        );
     }
 
     /**
@@ -149,10 +149,7 @@ class CampaignController extends Controller
         $vendor = auth('vendor')->user();
 
         if ($campaign->vendor_id !== $vendor->id) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Bu kampanyaya erişim yetkiniz yok.',
-            ], 403);
+            return $this->error('Bu kampanyaya erişim yetkiniz yok.', 403);
         }
 
         $validator = Validator::make($request->all(), [
@@ -172,21 +169,21 @@ class CampaignController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Doğrulama hatası',
-                'errors' => $validator->errors(),
-            ], 422);
+            return $this->error(
+                'Doğrulama hatası',
+                422,
+                $validator->errors()
+            );
         }
 
         // pay_quantity < buy_quantity kontrolü
         $buyQty = $request->buy_quantity ?? $campaign->buy_quantity;
         $payQty = $request->pay_quantity ?? $campaign->pay_quantity;
         if ($payQty >= $buyQty) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Ödenecek adet, alınacak adetten az olmalıdır.',
-            ], 422);
+            return $this->error(
+                'Ödenecek adet, alınacak adetten az olmalıdır.',
+                422
+            );
         }
 
         // Ürünleri güncelle
@@ -198,10 +195,10 @@ class CampaignController extends Controller
                 ->toArray();
 
             if (count($validProducts) !== count($productIds)) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Seçilen ürünlerden bazıları size ait değil.',
-                ], 422);
+                return $this->error(
+                    'Seçilen ürünlerden bazıları size ait değil.',
+                    422
+                );
             }
 
             // Ürünlerin başka bir kampanyada olup olmadığını kontrol et (mevcut kampanya hariç)
@@ -218,10 +215,10 @@ class CampaignController extends Controller
 
             if ($productsInOtherCampaigns->count() > 0) {
                 $conflictingProducts = $productsInOtherCampaigns->flatMap->products->pluck('name')->unique()->implode(', ');
-                return response()->json([
-                    'status' => 'error',
-                    'message' => "Şu ürünler zaten başka bir kampanyada: {$conflictingProducts}",
-                ], 422);
+                return $this->error(
+                    "Şu ürünler zaten başka bir kampanyada: {$conflictingProducts}",
+                    422
+                );
             }
 
             $campaign->products()->sync($validProducts);
@@ -232,11 +229,10 @@ class CampaignController extends Controller
             'starts_at', 'ends_at', 'is_active'
         ]));
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Kampanya başarıyla güncellendi.',
-            'data' => $campaign->fresh()->load('products:id,name'),
-        ]);
+        return $this->success(
+            new CampaignResource($campaign->fresh()->load('products:id,name')),
+            'Kampanya başarıyla güncellendi.'
+        );
     }
 
     /**
@@ -247,18 +243,15 @@ class CampaignController extends Controller
         $vendor = auth('vendor')->user();
 
         if ($campaign->vendor_id !== $vendor->id) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Bu kampanyaya erişim yetkiniz yok.',
-            ], 403);
+            return $this->error('Bu kampanyaya erişim yetkiniz yok.', 403);
         }
 
         $campaign->delete();
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Kampanya başarıyla silindi.',
-        ]);
+        return $this->success(
+            null,
+            'Kampanya başarıyla silindi.'
+        );
     }
 
     /**
@@ -269,18 +262,14 @@ class CampaignController extends Controller
         $vendor = auth('vendor')->user();
 
         if ($campaign->vendor_id !== $vendor->id) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Bu kampanyaya erişim yetkiniz yok.',
-            ], 403);
+            return $this->error('Bu kampanyaya erişim yetkiniz yok.', 403);
         }
 
         $campaign->update(['is_active' => !$campaign->is_active]);
 
-        return response()->json([
-            'status' => 'success',
-            'message' => $campaign->is_active ? 'Kampanya aktifleştirildi.' : 'Kampanya devre dışı bırakıldı.',
-            'data' => $campaign->fresh()->load('products:id,name'),
-        ]);
+        return $this->success(
+            new CampaignResource($campaign->fresh()->load('products:id,name')),
+            $campaign->is_active ? 'Kampanya aktifleştirildi.' : 'Kampanya devre dışı bırakıldı.'
+        );
     }
 }

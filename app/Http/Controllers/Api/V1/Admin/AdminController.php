@@ -22,18 +22,11 @@ class AdminController extends BaseAdminController
 
         $paginator = $this->service->list($perPage);
 
-        // Use Resource Collection to transform data (especially roles)
-        $collection = AdminResource::collection($paginator);
-
-        return $this->success([
-            'data' => $collection,
-            'meta' => [
-                'current_page' => $paginator->currentPage(),
-                'last_page' => $paginator->lastPage(),
-                'per_page' => $paginator->perPage(),
-                'total' => $paginator->total(),
-            ],
-        ]);
+        return $this->paginated(
+            $paginator,
+            AdminResource::class,
+            'Adminler başarıyla getirildi.'
+        );
     }
 
     public function show(int $id)

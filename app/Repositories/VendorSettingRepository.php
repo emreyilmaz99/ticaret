@@ -6,36 +6,16 @@ use App\Models\VendorSetting;
 use App\Repositories\Interfaces\VendorSettingRepositoryInterface;
 use Illuminate\Database\Eloquent\Collection;
 
-class VendorSettingRepository implements VendorSettingRepositoryInterface
+class VendorSettingRepository extends EloquentBaseRepository implements VendorSettingRepositoryInterface
 {
-    protected VendorSetting $model;
-
     public function __construct(VendorSetting $model)
     {
-        $this->model = $model;
-    }
-
-    public function create(array $data): VendorSetting
-    {
-        return $this->model->create($data);
-    }
-
-    public function update(int $id, array $data): VendorSetting
-    {
-        $setting = $this->model->findOrFail($id);
-        $setting->update($data);
-        return $setting->fresh();
+        parent::__construct($model);
     }
 
     public function findById(int $id): ?VendorSetting
     {
         return $this->model->find($id);
-    }
-
-    public function delete(int $id): bool
-    {
-        $setting = $this->model->findOrFail($id);
-        return (bool) $setting->delete();
     }
 
     public function findByVendorAndKey(int $vendorId, string $key): ?VendorSetting

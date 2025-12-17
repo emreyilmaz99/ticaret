@@ -3,12 +3,19 @@
 namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\Admin\BulkDestroyBannedWordsRequest;
+use App\Http\Requests\Api\V1\Admin\BulkStoreBannedWordsRequest;
+use App\Http\Requests\Api\V1\Admin\StoreBannedWordRequest;
+use App\Http\Requests\Api\V1\Admin\TestBannedWordsRequest;
+use App\Http\Requests\Api\V1\Admin\UpdateBannedWordRequest;
+use App\Http\Resources\Api\V1\Admin\BannedWordResource;
 use App\Models\BannedWord;
+use App\Traits\ResponseHttp;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 
 class AdminBannedWordController extends Controller
 {
+    use ResponseHttp;
     /**
      * GET /api/v1/admin/banned-words
      * List all banned words
@@ -25,31 +32,28 @@ class AdminBannedWordController extends Controller
             })
             ->orderBy('word');
 
-        $bannedWords = $request->boolean('all') 
-            ? $query->get() 
-            : $query->paginate($request->integer('per_page', 50));
+        if ($request->boolean('all')) {
+            $bannedWords = $query->get();
+            return $this->success(
+                BannedWordResource::collection($bannedWords),
+                'Banned words listed'
+            );
+        }
 
-        return response()->json([
-            'success' => true,
-            'data' => $bannedWords,
-        ]);
+        $bannedWords = $query->paginate($request->integer('per_page', 50));
+        return $this->paginated(
+            BannedWordResource::collection($bannedWords),
+            'Banned words listed'
+        );
     }
 
     /**
      * POST /api/v1/admin/banned-words
      * Create a new banned word
      */
-    public function store(Request $request)
+    public function store(StoreBannedWordRequest $request)
     {
-        $validated = $request->validate([
-            'word' => 'required|string|max:100|unique:banned_words,word',
-            'is_regex' => 'boolean',
-            'pattern' => 'nullable|string|max:255',
-        ], [
-            'word.required' => 'Yasaklı kelime zorunludur.',
-            'word.unique' => 'Bu kelime zaten yasaklı listesinde.',
-            'word.max' => 'Kelime en fazla 100 karakter olabilir.',
-        ]);
+        $validated = $request->validated();
 
         $bannedWord = BannedWord::create([
             'word' => strtolower(trim($validated['word'])),
@@ -57,31 +61,21 @@ class AdminBannedWordController extends Controller
             'pattern' => $validated['pattern'] ?? null,
         ]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Yasaklı kelime eklendi.',
-            'data' => $bannedWord,
-        ], 201);
+        return $this->success(
+            new BannedWordResource($bannedWord),
+            'Yasaklı kelime eklendi.',
+            201
+        );
     }
 
     /**
      * PUT /api/v1/admin/banned-words/{id}
      * Update a banned word
      */
-    public function update(Request $request, int $id)
+    public function update(UpdateBannedWordRequest $request, int $id)
     {
         $bannedWord = BannedWord::findOrFail($id);
-
-        $validated = $request->validate([
-            'word' => [
-                'required',
-                'string',
-                'max:100',
-                Rule::unique('banned_words', 'word')->ignore($bannedWord->id),
-            ],
-            'is_regex' => 'boolean',
-            'pattern' => 'nullable|string|max:255',
-        ]);
+        $validated = $request->validated();
 
         $bannedWord->update([
             'word' => strtolower(trim($validated['word'])),
@@ -89,11 +83,10 @@ class AdminBannedWordController extends Controller
             'pattern' => $validated['pattern'] ?? null,
         ]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Yasaklı kelime güncellendi.',
-            'data' => $bannedWord,
-        ]);
+        return $this->success(
+            new BannedWordResource($bannedWord),
+            'Yasaklı kelime güncellendi.'
+        );
     }
 
     /**
@@ -105,22 +98,20 @@ class AdminBannedWordController extends Controller
         $bannedWord = BannedWord::findOrFail($id);
         $bannedWord->delete();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Yasaklı kelime silindi.',
-        ]);
+        return $this->success(
+            null,
+            'Yasaklı kelime silindi.',
+            200
+        );
     }
 
     /**
      * POST /api/v1/admin/banned-words/bulk
      * Bulk create banned words
      */
-    public function bulkStore(Request $request)
+    public function bulkStore(BulkStoreBannedWordsRequest $request)
     {
-        $validated = $request->validate([
-            'words' => 'required|array|min:1',
-            'words.*' => 'string|max:100',
-        ]);
+        $validated = $request->validated();
 
         $words = array_unique(array_map(function ($word) {
             return strtolower(trim($word));
@@ -138,33 +129,29 @@ class AdminBannedWordController extends Controller
             }
         }
 
-        return response()->json([
-            'success' => true,
-            'message' => "{$created} yasaklı kelime eklendi.",
-            'data' => [
+        return $this->success(
+            [
                 'created' => $created,
                 'skipped' => count($existingWords),
             ],
-        ]);
+            "{$created} yasaklı kelime eklendi."
+        );
     }
 
     /**
      * DELETE /api/v1/admin/banned-words/bulk
      * Bulk delete banned words
      */
-    public function bulkDestroy(Request $request)
+    public function bulkDestroy(BulkDestroyBannedWordsRequest $request)
     {
-        $validated = $request->validate([
-            'ids' => 'required|array|min:1',
-            'ids.*' => 'integer|exists:banned_words,id',
-        ]);
+        $validated = $request->validated();
 
         $deleted = BannedWord::whereIn('id', $validated['ids'])->delete();
 
-        return response()->json([
-            'success' => true,
-            'message' => "{$deleted} yasaklı kelime silindi.",
-        ]);
+        return $this->success(
+            ['deleted' => $deleted],
+            "{$deleted} yasaklı kelime silindi."
+        );
     }
 
     /**
@@ -179,24 +166,16 @@ class AdminBannedWordController extends Controller
             'simple' => BannedWord::where('is_regex', false)->count(),
         ];
 
-        return response()->json([
-            'success' => true,
-            'data' => $stats,
-        ]);
+        return $this->success($stats, 'Statistics retrieved');
     }
 
     /**
      * POST /api/v1/admin/banned-words/test
      * Test text against banned words
      */
-    public function test(Request $request)
+    public function test(TestBannedWordsRequest $request)
     {
-        $validated = $request->validate([
-            'text' => 'required|string|max:5000',
-        ], [
-            'text.required' => 'Test edilecek metin zorunludur.',
-            'text.max' => 'Metin en fazla 5000 karakter olabilir.',
-        ]);
+        $validated = $request->validated();
 
         $text = $validated['text'];
         $normalizedText = mb_strtolower($text, 'UTF-8');
@@ -220,13 +199,13 @@ class AdminBannedWordController extends Controller
             }
         }
 
-        return response()->json([
-            'success' => true,
-            'data' => [
+        return $this->success(
+            [
                 'banned' => !empty($foundWords),
                 'words' => array_unique($foundWords),
                 'count' => count(array_unique($foundWords)),
             ],
-        ]);
+            'Test completed'
+        );
     }
 }

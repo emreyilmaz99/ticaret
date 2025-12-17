@@ -4,12 +4,14 @@ namespace App\Http\Controllers\Api\V1\Vendor;
 
 use App\Http\Controllers\Controller;
 use App\Models\VendorShippingSetting;
+use App\Traits\ResponseHttp;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Validator;
 
 class ShippingSettingController extends Controller
 {
+    use ResponseHttp;
     /**
      * Satıcının kargo ayarlarını getir
      * 
@@ -22,18 +24,18 @@ class ShippingSettingController extends Controller
         // Ayarları getir veya varsayılan değerlerle oluştur
         $settings = VendorShippingSetting::getOrCreateDefault($vendor->id);
         
-        return response()->json([
-            'status' => 'success',
-            'data' => [
+        return $this->success(
+            [
                 'shipping_cost' => (float) $settings->shipping_cost,
                 'free_shipping_threshold' => (float) $settings->free_shipping_threshold,
                 'is_shipping_enabled' => $settings->is_shipping_enabled,
+                'defaults' => [
+                    'shipping_cost' => VendorShippingSetting::DEFAULT_SHIPPING_COST,
+                    'free_shipping_threshold' => VendorShippingSetting::DEFAULT_FREE_SHIPPING_THRESHOLD,
+                ],
             ],
-            'defaults' => [
-                'shipping_cost' => VendorShippingSetting::DEFAULT_SHIPPING_COST,
-                'free_shipping_threshold' => VendorShippingSetting::DEFAULT_FREE_SHIPPING_THRESHOLD,
-            ],
-        ]);
+            'Kargo ayarları başarıyla getirildi.'
+        );
     }
 
     /**
@@ -64,11 +66,11 @@ class ShippingSettingController extends Controller
         ]);
         
         if ($validator->fails()) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Doğrulama hatası',
-                'errors' => $validator->errors(),
-            ], 422);
+            return $this->error(
+                'Doğrulama hatası',
+                422,
+                $validator->errors()
+            );
         }
         
         // Ayarları güncelle veya oluştur
@@ -81,14 +83,13 @@ class ShippingSettingController extends Controller
             ]
         );
         
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Kargo ayarları başarıyla güncellendi.',
-            'data' => [
+        return $this->success(
+            [
                 'shipping_cost' => (float) $settings->shipping_cost,
                 'free_shipping_threshold' => (float) $settings->free_shipping_threshold,
                 'is_shipping_enabled' => $settings->is_shipping_enabled,
             ],
-        ]);
+            'Kargo ayarları başarıyla güncellendi.'
+        );
     }
 }

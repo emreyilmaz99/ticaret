@@ -7,11 +7,14 @@ use App\Http\Requests\Api\V1\Vendor\StoreReviewResponseRequest;
 use App\Models\ProductReview;
 use App\Models\ReviewResponse;
 use App\Services\Review\VendorReviewResponseService;
+use App\Traits\ResponseHttp;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
 class VendorReviewController extends Controller
 {
+    use ResponseHttp;
+
     protected VendorReviewResponseService $responseService;
 
     public function __construct(VendorReviewResponseService $responseService)
@@ -36,10 +39,10 @@ class VendorReviewController extends Controller
             ->latest()
             ->paginate($request->integer('per_page', 20));
 
-        return response()->json([
-            'success' => true,
-            'data' => $reviews,
-        ]);
+        return $this->success(
+            $reviews,
+            'Ürün yorumları başarıyla getirildi.'
+        );
     }
 
     /**
@@ -115,10 +118,10 @@ class VendorReviewController extends Controller
             'current_page' => $reviews->currentPage(),
         ]);
 
-        return response()->json([
-            'success' => true,
-            'data' => $reviews,
-        ]);
+        return $this->success(
+            $reviews,
+            'Yorumlar başarıyla getirildi.'
+        );
     }
 
     /**
@@ -147,11 +150,7 @@ class VendorReviewController extends Controller
             'message' => $result->getMessage(),
         ]);
 
-        return response()->json([
-            'success' => $result->isSuccess(),
-            'message' => $result->getMessage(),
-            'data' => $result->getData(),
-        ], $result->isSuccess() ? 201 : 400);
+        return $this->fromServiceResponse($result, 201);
     }
 
     /**
@@ -164,17 +163,7 @@ class VendorReviewController extends Controller
 
         $result = $this->responseService->deleteResponse($vendor, $responseId);
 
-        if (!$result->isSuccess()) {
-            return response()->json([
-                'success' => false,
-                'message' => $result->getMessage(),
-            ], 404);
-        }
-
-        return response()->json([
-            'success' => true,
-            'message' => $result->getMessage(),
-        ]);
+        return $this->fromServiceResponse($result);
     }
 
     /**
@@ -220,9 +209,9 @@ class VendorReviewController extends Controller
             'with_media' => $withMedia,
         ];
 
-        return response()->json([
-            'success' => true,
-            'data' => $stats,
-        ]);
+        return $this->success(
+            $stats,
+            'Yorum istatistikleri başarıyla getirildi.'
+        );
     }
 }

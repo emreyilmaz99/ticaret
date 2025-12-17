@@ -33,50 +33,12 @@ class VendorAuthController extends BaseVendorController
         $vendor = request()->user();
 
         // Load relations that onboarding needs
-        $vendor->loadMissing(['addresses', 'bankAccounts']);
+        $vendor->loadMissing(['addresses', 'bankAccounts', 'roles']);
 
-        $sr = new \App\Core\ServiceResponse();
-        $sr->setSuccess(true)
-           ->setStatusCode(200)
-           ->setMessage('OK')
-           ->setData([
-               'vendor' => [
-                   'id' => $vendor->id,
-                   'name' => $vendor->name,
-                   'email' => $vendor->email,
-                   'company_name' => $vendor->company_name,
-                   'tax_id' => $vendor->tax_id,
-                   'phone' => $vendor->phone,
-                   'logo_path' => $vendor->logo_path,
-                   'cover_path' => $vendor->cover_path,
-                   'status' => $vendor->status ?? null,
-                   'roles' => $vendor->roles->pluck('name'),
-                   'addresses' => $vendor->addresses->map(function($a){
-                       return [
-                           'id' => $a->id,
-                           'label' => $a->label,
-                           'country' => $a->country,
-                           'city' => $a->city,
-                           'address_line' => $a->address_line,
-                           'postal_code' => $a->postal_code,
-                           'is_primary' => (bool) $a->is_primary,
-                       ];
-                   })->toArray(),
-                   'bank_accounts' => $vendor->bankAccounts->map(function($b){
-                       return [
-                           'id' => $b->id,
-                           'bank_name' => $b->bank_name,
-                           'account_holder' => $b->account_holder,
-                           'iban' => $b->iban,
-                           'currency' => $b->currency,
-                           'is_primary' => (bool) $b->is_primary,
-                       ];
-                   })->toArray(),
-                   'created_at' => $vendor->created_at?->toIso8601String(),
-               ],
-           ]);
-
-        return $this->fromServiceResponse($sr);
+        return $this->success(
+            ['vendor' => new \App\Http\Resources\Api\V1\Shared\VendorResource($vendor)],
+            'Vendor retrieved'
+        );
     }
 
     public function logout(\Illuminate\Http\Request $request)

@@ -6,36 +6,16 @@ use App\Models\VendorAddress;
 use App\Repositories\Interfaces\VendorAddressRepositoryInterface;
 use Illuminate\Database\Eloquent\Collection;
 
-class VendorAddressRepository implements VendorAddressRepositoryInterface
+class VendorAddressRepository extends EloquentBaseRepository implements VendorAddressRepositoryInterface
 {
-    protected VendorAddress $model;
-
     public function __construct(VendorAddress $model)
     {
-        $this->model = $model;
-    }
-
-    public function create(array $data): VendorAddress
-    {
-        return $this->model->create($data);
-    }
-
-    public function update(int $id, array $data): VendorAddress
-    {
-        $address = $this->model->findOrFail($id);
-        $address->update($data);
-        return $address->fresh();
+        parent::__construct($model);
     }
 
     public function findById(int $id): ?VendorAddress
     {
         return $this->model->find($id);
-    }
-
-    public function delete(int $id): bool
-    {
-        $address = $this->model->findOrFail($id);
-        return (bool) $address->delete();
     }
 
     public function findByVendorAndId(int $vendorId, int $addressId): ?VendorAddress

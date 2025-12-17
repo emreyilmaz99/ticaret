@@ -25,8 +25,9 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'auth.optional' => \App\Http\Middleware\OptionalAuth::class,
+            'ability' => \App\Http\Middleware\CheckSanctumAbilities::class, // Override Sanctum's ability middleware
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        // Exception handling is done in app/Exceptions/Handler.php
     })->create();

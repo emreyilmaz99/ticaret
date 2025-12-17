@@ -107,10 +107,7 @@ class CommissionPlanController extends BaseAdminController
         $planId = request()->input('commission_plan_id');
         
         if (!$planId) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Commission plan ID is required'
-            ], 400);
+            return $this->error('Commission plan ID is required', 400);
         }
 
         $result = $this->commissionPlanService->assignToVendor($vendorId, $planId);

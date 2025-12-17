@@ -6,36 +6,16 @@ use App\Models\ProductVariantMetadata;
 use App\Repositories\Interfaces\ProductVariantMetadataRepositoryInterface;
 use Illuminate\Database\Eloquent\Collection;
 
-class ProductVariantMetadataRepository implements ProductVariantMetadataRepositoryInterface
+class ProductVariantMetadataRepository extends EloquentBaseRepository implements ProductVariantMetadataRepositoryInterface
 {
-    protected ProductVariantMetadata $model;
-
     public function __construct(ProductVariantMetadata $model)
     {
-        $this->model = $model;
-    }
-
-    public function create(array $data): ProductVariantMetadata
-    {
-        return $this->model->create($data);
-    }
-
-    public function update(int $id, array $data): ProductVariantMetadata
-    {
-        $metadata = $this->model->findOrFail($id);
-        $metadata->update($data);
-        return $metadata->fresh();
+        parent::__construct($model);
     }
 
     public function findById(int $id): ?ProductVariantMetadata
     {
         return $this->model->find($id);
-    }
-
-    public function delete(int $id): bool
-    {
-        $metadata = $this->model->findOrFail($id);
-        return (bool) $metadata->delete();
     }
 
     public function findByVariantAndKey(int $variantId, string $key): ?ProductVariantMetadata

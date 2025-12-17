@@ -2,18 +2,8 @@
 
 namespace App\Http\Requests\Api\V1\Admin;
 
-use Illuminate\Foundation\Http\FormRequest;
-
-class StoreBannedWordRequest extends FormRequest
+class StoreBannedWordRequest extends BaseAdminRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
-    public function authorize(): bool
-    {
-        return true;
-    }
-
     /**
      * Get the validation rules that apply to the request.
      *
@@ -25,6 +15,18 @@ class StoreBannedWordRequest extends FormRequest
             'word' => ['required', 'string', 'max:255', 'unique:banned_words,word'],
             'is_regex' => ['boolean'],
             'pattern' => ['nullable', 'string'],
+        ];
+    }
+
+    /**
+     * Get custom messages for validator errors.
+     */
+    public function messages(): array
+    {
+        return [
+            'word.required' => 'Kelime alanı zorunludur.',
+            'word.unique' => 'Bu kelime zaten yasaklı listede mevcut.',
+            'word.max' => 'Kelime en fazla 255 karakter olabilir.',
         ];
     }
 }

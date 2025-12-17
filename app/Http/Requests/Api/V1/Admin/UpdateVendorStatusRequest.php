@@ -2,9 +2,8 @@
 
 namespace App\Http\Requests\Api\V1\Admin;
 
-use Illuminate\Foundation\Http\FormRequest;
 
-class UpdateVendorStatusRequest extends FormRequest
+class UpdateVendorStatusRequest extends BaseAdminRequest
 {
     public function authorize(): bool
     {

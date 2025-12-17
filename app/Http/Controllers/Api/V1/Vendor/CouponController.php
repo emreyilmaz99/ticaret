@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Api\V1\Vendor;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\Api\V1\Vendor\CouponResource;
 use App\Models\VendorCoupon;
+use App\Traits\ResponseHttp;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -11,6 +13,8 @@ use Illuminate\Validation\Rule;
 
 class CouponController extends Controller
 {
+    use ResponseHttp;
+
     /**
      * Satıcının kuponlarını listele
      */
@@ -22,10 +26,10 @@ class CouponController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-        return response()->json([
-            'status' => 'success',
-            'data' => $coupons,
-        ]);
+        return $this->success(
+            CouponResource::collection($coupons),
+            'Kuponlar başarıyla getirildi.'
+        );
     }
 
     /**
@@ -65,11 +69,11 @@ class CouponController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Doğrulama hatası',
-                'errors' => $validator->errors(),
-            ], 422);
+            return $this->error(
+                'Doğrulama hatası',
+                422,
+                $validator->errors()
+            );
         }
 
         $coupon = VendorCoupon::create([
@@ -86,11 +90,11 @@ class CouponController extends Controller
             'is_active' => $request->is_active ?? true,
         ]);
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Kupon başarıyla oluşturuldu.',
-            'data' => $coupon,
-        ], 201);
+        return $this->success(
+            new CouponResource($coupon),
+            'Kupon başarıyla oluşturuldu.',
+            201
+        );
     }
 
     /**
@@ -101,16 +105,13 @@ class CouponController extends Controller
         $vendor = auth('vendor')->user();
 
         if ($coupon->vendor_id !== $vendor->id) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Bu kupona erişim yetkiniz yok.',
-            ], 403);
+            return $this->error('Bu kupona erişim yetkiniz yok.', 403);
         }
 
-        return response()->json([
-            'status' => 'success',
-            'data' => $coupon,
-        ]);
+        return $this->success(
+            new CouponResource($coupon),
+            'Kupon detayı başarıyla getirildi.'
+        );
     }
 
     /**
@@ -121,10 +122,7 @@ class CouponController extends Controller
         $vendor = auth('vendor')->user();
 
         if ($coupon->vendor_id !== $vendor->id) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Bu kupona erişim yetkiniz yok.',
-            ], 403);
+            return $this->error('Bu kupona erişim yetkiniz yok.', 403);
         }
 
         $validator = Validator::make($request->all(), [
@@ -155,11 +153,11 @@ class CouponController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Doğrulama hatası',
-                'errors' => $validator->errors(),
-            ], 422);
+            return $this->error(
+                'Doğrulama hatası',
+                422,
+                $validator->errors()
+            );
         }
 
         $data = $validator->validated();
@@ -169,11 +167,10 @@ class CouponController extends Controller
 
         $coupon->update($data);
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Kupon başarıyla güncellendi.',
-            'data' => $coupon->fresh(),
-        ]);
+        return $this->success(
+            new CouponResource($coupon->fresh()),
+            'Kupon başarıyla güncellendi.'
+        );
     }
 
     /**
@@ -184,18 +181,15 @@ class CouponController extends Controller
         $vendor = auth('vendor')->user();
 
         if ($coupon->vendor_id !== $vendor->id) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Bu kupona erişim yetkiniz yok.',
-            ], 403);
+            return $this->error('Bu kupona erişim yetkiniz yok.', 403);
         }
 
         $coupon->delete();
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Kupon başarıyla silindi.',
-        ]);
+        return $this->success(
+            null,
+            'Kupon başarıyla silindi.'
+        );
     }
 
     /**
@@ -206,18 +200,14 @@ class CouponController extends Controller
         $vendor = auth('vendor')->user();
 
         if ($coupon->vendor_id !== $vendor->id) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Bu kupona erişim yetkiniz yok.',
-            ], 403);
+            return $this->error('Bu kupona erişim yetkiniz yok.', 403);
         }
 
         $coupon->update(['is_active' => !$coupon->is_active]);
 
-        return response()->json([
-            'status' => 'success',
-            'message' => $coupon->is_active ? 'Kupon aktifleştirildi.' : 'Kupon devre dışı bırakıldı.',
-            'data' => $coupon->fresh(),
-        ]);
+        return $this->success(
+            new CouponResource($coupon->fresh()),
+            $coupon->is_active ? 'Kupon aktifleştirildi.' : 'Kupon devre dışı bırakıldı.'
+        );
     }
 }

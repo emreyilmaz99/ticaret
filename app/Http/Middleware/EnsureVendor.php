@@ -2,9 +2,9 @@
 
 namespace App\Http\Middleware;
 
+use App\Core\ApiResponse;
 use Closure;
 use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse;
 
 class EnsureVendor
 {
@@ -13,7 +13,7 @@ class EnsureVendor
         $user = $request->user();
 
         if (! $user) {
-            return new JsonResponse(['success' => false, 'message' => 'Unauthenticated'], 401);
+            return ApiResponse::error('Unauthenticated', 401);
         }
 
         if ($user instanceof \App\Models\Vendor) {
@@ -24,6 +24,6 @@ class EnsureVendor
             return $next($request);
         }
 
-        return new JsonResponse(['success' => false, 'message' => 'Forbidden - vendor only'], 403);
+        return ApiResponse::error('Forbidden - vendor only', 403);
     }
 }

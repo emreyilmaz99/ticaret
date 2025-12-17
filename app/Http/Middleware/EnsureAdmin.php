@@ -2,9 +2,9 @@
 
 namespace App\Http\Middleware;
 
+use App\Core\ApiResponse;
 use Closure;
 use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse;
 
 class EnsureAdmin
 {
@@ -13,7 +13,7 @@ class EnsureAdmin
         $user = $request->user();
 
         if (! $user) {
-            return new JsonResponse(['success' => false, 'message' => 'Unauthenticated'], 401);
+            return ApiResponse::error('Unauthenticated', 401);
         }
 
         // If tokenable model is Admin or user is instance of Admin
@@ -26,6 +26,6 @@ class EnsureAdmin
             return $next($request);
         }
 
-        return new JsonResponse(['success' => false, 'message' => 'Forbidden - admin only'], 403);
+        return ApiResponse::error('Forbidden - admin only', 403);
     }
 }

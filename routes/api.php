@@ -55,7 +55,7 @@ Route::prefix('v1/admin')->group(function () {
     Route::post('login', [AdminAuthController::class, 'login']);
 
     // protected admin routes (require Sanctum token, token ability and admin check)
-    Route::middleware(['auth:sanctum', 'ability:admin:*', EnsureAdmin::class])->group(function () {
+    Route::middleware(['auth:sanctum', \App\Http\Middleware\CheckSanctumAbilities::class . ':admin:*', EnsureAdmin::class])->group(function () {
         Route::post('logout', [AdminAuthController::class, 'logout']);
         Route::get('me', [AdminAuthController::class, 'me']);
         Route::get('users', [UserController::class, 'index']);
@@ -190,7 +190,7 @@ Route::prefix('v1/vendor')->group(function () {
     Route::post('register', [VendorRegistrationController::class, 'store']);
 
     // protected vendor routes
-    Route::middleware(['auth:sanctum', 'ability:vendor:*', EnsureVendor::class])->group(function () {
+    Route::middleware(['auth:sanctum', \App\Http\Middleware\CheckSanctumAbilities::class . ':vendor:*', EnsureVendor::class])->group(function () {
         Route::post('logout', [VendorAuthController::class, 'logout']);
         Route::get('me', [VendorAuthController::class, 'me']);
         
@@ -309,7 +309,7 @@ Route::post('v1/featured-deals/{deal}/click', [FeaturedDealController::class, 'c
 Route::post('v1/featured-deals/{deal}/conversion', [FeaturedDealController::class, 'conversion']);
 
 // Cart API (requires authentication - no guest cart)
-Route::prefix('v1/cart')->middleware(['auth:sanctum', 'ability:user:*'])->group(function () {
+Route::prefix('v1/cart')->middleware(['auth:sanctum', \App\Http\Middleware\CheckSanctumAbilities::class . ':user:*'])->group(function () {
     Route::get('/', [\App\Http\Controllers\Api\V1\Public\CartController::class, 'index']);
     Route::post('/items', [\App\Http\Controllers\Api\V1\Public\CartController::class, 'addItem']);
     Route::put('/items/{itemId}', [\App\Http\Controllers\Api\V1\Public\CartController::class, 'updateItem']);
@@ -326,7 +326,7 @@ Route::prefix('v1/user')->group(function () {
     Route::post('login', [UserAuthController::class, 'login']);
 
     // Protected user routes
-    Route::middleware(['auth:sanctum', 'ability:user:*'])->group(function () {
+    Route::middleware(['auth:sanctum', \App\Http\Middleware\CheckSanctumAbilities::class . ':user:*'])->group(function () {
         Route::post('logout', [UserAuthController::class, 'logout']);
         Route::get('me', [UserAuthController::class, 'me']);
 

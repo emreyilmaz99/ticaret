@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers\Api\V1\Admin;
 
+use App\Http\Requests\Api\V1\Admin\BulkUpdateCategoryStatusRequest;
 use App\Http\Requests\Api\V1\Admin\StoreCategoryRequest;
+use App\Http\Requests\Api\V1\Admin\UpdateCategoryOrderRequest;
 use App\Http\Requests\Api\V1\Admin\UpdateCategoryRequest;
 use App\Models\Category;
 use Illuminate\Http\Request;
@@ -130,32 +132,9 @@ class CategoryController extends BaseAdminController
     /**
      * Kategori güncelle
      */
-    public function update(Request $request, Category $category)
+    public function update(UpdateCategoryRequest $request, Category $category)
     {
-        $validated = $request->validate([
-            'name' => 'sometimes|required|string|max:255',
-            'parent_id' => [
-                'nullable',
-                'exists:categories,id',
-                // Kendisini veya alt kategorilerinden birini parent olarak seçemez
-                function ($attribute, $value, $fail) use ($category) {
-                    if ($value == $category->id) {
-                        $fail('Kategori kendisini üst kategori olarak seçemez.');
-                    }
-                    // Alt kategorilerini de kontrol et
-                    $childIds = $this->getAllChildIds($category);
-                    if (in_array($value, $childIds)) {
-                        $fail('Kategori kendi alt kategorisini üst kategori olarak seçemez.');
-                    }
-                }
-            ],
-            'description' => 'nullable|string|max:1000',
-            'icon' => 'nullable|string|max:100',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
-            'sort_order' => 'nullable|integer|min:0',
-            'is_active' => 'nullable|boolean',
-            'settings' => 'nullable|array',
-        ]);
+        $validated = $request->validated();
 
         // Slug güncelle (isim değiştiyse)
         if (isset($validated['name']) && $validated['name'] !== $category->name) {
@@ -217,13 +196,9 @@ class CategoryController extends BaseAdminController
     /**
      * Toplu durum güncelleme
      */
-    public function bulkUpdateStatus(Request $request)
+    public function bulkUpdateStatus(BulkUpdateCategoryStatusRequest $request)
     {
-        $validated = $request->validate([
-            'ids' => 'required|array|min:1',
-            'ids.*' => 'exists:categories,id',
-            'is_active' => 'required|boolean',
-        ]);
+        $validated = $request->validated();
 
         Category::whereIn('id', $validated['ids'])
             ->update(['is_active' => $validated['is_active']]);
@@ -234,13 +209,9 @@ class CategoryController extends BaseAdminController
     /**
      * Sıralama güncelleme
      */
-    public function updateOrder(Request $request)
+    public function updateOrder(UpdateCategoryOrderRequest $request)
     {
-        $validated = $request->validate([
-            'categories' => 'required|array',
-            'categories.*.id' => 'required|exists:categories,id',
-            'categories.*.sort_order' => 'required|integer|min:0',
-        ]);
+        $validated = $request->validated();
 
         foreach ($validated['categories'] as $item) {
             Category::where('id', $item['id'])->update(['sort_order' => $item['sort_order']]);

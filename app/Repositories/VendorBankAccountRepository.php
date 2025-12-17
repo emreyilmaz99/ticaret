@@ -6,36 +6,16 @@ use App\Models\VendorBankAccount;
 use App\Repositories\Interfaces\VendorBankAccountRepositoryInterface;
 use Illuminate\Database\Eloquent\Collection;
 
-class VendorBankAccountRepository implements VendorBankAccountRepositoryInterface
+class VendorBankAccountRepository extends EloquentBaseRepository implements VendorBankAccountRepositoryInterface
 {
-    protected VendorBankAccount $model;
-
     public function __construct(VendorBankAccount $model)
     {
-        $this->model = $model;
-    }
-
-    public function create(array $data): VendorBankAccount
-    {
-        return $this->model->create($data);
-    }
-
-    public function update(int $id, array $data): VendorBankAccount
-    {
-        $account = $this->model->findOrFail($id);
-        $account->update($data);
-        return $account->fresh();
+        parent::__construct($model);
     }
 
     public function findById(int $id): ?VendorBankAccount
     {
         return $this->model->find($id);
-    }
-
-    public function delete(int $id): bool
-    {
-        $account = $this->model->findOrFail($id);
-        return (bool) $account->delete();
     }
 
     public function findByVendorAndId(int $vendorId, int $accountId): ?VendorBankAccount

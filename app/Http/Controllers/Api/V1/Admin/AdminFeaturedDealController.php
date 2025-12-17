@@ -3,8 +3,12 @@
 namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\Admin\ReorderFeaturedDealsRequest;
+use App\Http\Requests\Api\V1\Admin\StoreFeaturedDealRequest;
+use App\Http\Requests\Api\V1\Admin\UpdateFeaturedDealRequest;
 use App\Models\FeaturedDeal;
 use App\Models\Product;
+use App\Traits\ResponseHttp;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -12,6 +16,7 @@ use Illuminate\Support\Facades\Log;
 
 class AdminFeaturedDealController extends Controller
 {
+    use ResponseHttp;
     /**
      * Display a listing of featured deals
      */
@@ -47,9 +52,8 @@ class AdminFeaturedDealController extends Controller
             'inactive' => FeaturedDeal::where('is_active', false)->count(),
         ];
 
-        return response()->json([
-            'success' => true,
-            'data' => [
+        return $this->success(
+            [
                 'deals' => $deals->items(),
                 'stats' => $stats,
                 'pagination' => [
@@ -59,7 +63,8 @@ class AdminFeaturedDealController extends Controller
                     'total' => $deals->total(),
                 ],
             ],
-        ]);
+            'Öne çıkan ürünler başarıyla getirildi.'
+        );
     }
 
     /**
@@ -103,32 +108,18 @@ class AdminFeaturedDealController extends Controller
                 ];
             });
 
-        return response()->json([
-            'success' => true,
-            'data' => $products,
-        ]);
+        return $this->success(
+            $products,
+            'Ürünler başarıyla getirildi.'
+        );
     }
 
     /**
      * Store a new featured deal
      */
-    public function store(Request $request): JsonResponse
+    public function store(StoreFeaturedDealRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'product_id' => 'required|exists:products,id',
-            'variant_id' => 'nullable|exists:product_variants,id',
-            'deal_price' => 'required|numeric|min:0',
-            'original_price' => 'required|numeric|min:0|gt:deal_price',
-            'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'background_color' => 'nullable|string|max:20',
-            'badge_text' => 'nullable|string|max:50',
-            'badge_color' => 'nullable|string|max:20',
-            'starts_at' => 'nullable|date',
-            'ends_at' => 'nullable|date|after:starts_at',
-            'is_active' => 'boolean',
-            'sort_order' => 'nullable|integer|min:0',
-        ]);
+        $validated = $request->validated();
 
         try {
             $deal = FeaturedDeal::create($validated);
@@ -139,23 +130,21 @@ class AdminFeaturedDealController extends Controller
                 'admin_id' => $request->user()->id,
             ]);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Öne çıkan ürün başarıyla oluşturuldu.',
-                'data' => [
-                    'deal' => $deal->load(['product.photos', 'product.vendor', 'variant']),
-                ],
-            ], 201);
+            return $this->success(
+                ['deal' => $deal->load(['product.photos', 'product.vendor', 'variant'])],
+                'Öne çıkan ürün başarıyla oluşturuldu.',
+                201
+            );
         } catch (\Exception $e) {
             Log::error('Featured deal creation failed', [
                 'error' => $e->getMessage(),
                 'admin_id' => $request->user()->id,
             ]);
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Öne çıkan ürün oluşturulamadı: ' . $e->getMessage(),
-            ], 500);
+            return $this->error(
+                'Öne çıkan ürün oluşturulamadı: ' . $e->getMessage(),
+                500
+            );
         }
     }
 
@@ -166,34 +155,18 @@ class AdminFeaturedDealController extends Controller
     {
         $deal->load(['product.photos', 'product.vendor', 'variant']);
 
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'deal' => $deal,
-            ],
-        ]);
+        return $this->success(
+            ['deal' => $deal],
+            'Öne çıkan ürün detayı başarıyla getirildi.'
+        );
     }
 
     /**
      * Update the specified deal
      */
-    public function update(Request $request, FeaturedDeal $deal): JsonResponse
+    public function update(UpdateFeaturedDealRequest $request, FeaturedDeal $deal): JsonResponse
     {
-        $validated = $request->validate([
-            'product_id' => 'sometimes|exists:products,id',
-            'variant_id' => 'nullable|exists:product_variants,id',
-            'deal_price' => 'sometimes|numeric|min:0',
-            'original_price' => 'sometimes|numeric|min:0',
-            'title' => 'sometimes|string|max:255',
-            'description' => 'nullable|string',
-            'background_color' => 'nullable|string|max:20',
-            'badge_text' => 'nullable|string|max:50',
-            'badge_color' => 'nullable|string|max:20',
-            'starts_at' => 'nullable|date',
-            'ends_at' => 'nullable|date',
-            'is_active' => 'boolean',
-            'sort_order' => 'nullable|integer|min:0',
-        ]);
+        $validated = $request->validated();
 
         try {
             $deal->update($validated);
@@ -203,23 +176,20 @@ class AdminFeaturedDealController extends Controller
                 'admin_id' => $request->user()->id,
             ]);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Öne çıkan ürün başarıyla güncellendi.',
-                'data' => [
-                    'deal' => $deal->fresh(['product.photos', 'product.vendor', 'variant']),
-                ],
-            ]);
+            return $this->success(
+                ['deal' => $deal->fresh(['product.photos', 'product.vendor', 'variant'])],
+                'Öne çıkan ürün başarıyla güncellendi.'
+            );
         } catch (\Exception $e) {
             Log::error('Featured deal update failed', [
                 'deal_id' => $deal->id,
                 'error' => $e->getMessage(),
             ]);
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Öne çıkan ürün güncellenemedi: ' . $e->getMessage(),
-            ], 500);
+            return $this->error(
+                'Öne çıkan ürün güncellenemedi: ' . $e->getMessage(),
+                500
+            );
         }
     }
 
@@ -235,20 +205,20 @@ class AdminFeaturedDealController extends Controller
                 'deal_id' => $deal->id,
             ]);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Öne çıkan ürün başarıyla silindi.',
-            ]);
+            return $this->success(
+                null,
+                'Öne çıkan ürün başarıyla silindi.'
+            );
         } catch (\Exception $e) {
             Log::error('Featured deal deletion failed', [
                 'deal_id' => $deal->id,
                 'error' => $e->getMessage(),
             ]);
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Öne çıkan ürün silinemedi: ' . $e->getMessage(),
-            ], 500);
+            return $this->error(
+                'Öne çıkan ürün silinemedi: ' . $e->getMessage(),
+                500
+            );
         }
     }
 
@@ -262,31 +232,24 @@ class AdminFeaturedDealController extends Controller
                 'is_active' => !$deal->is_active,
             ]);
 
-            return response()->json([
-                'success' => true,
-                'message' => $deal->is_active ? 'Öne çıkan ürün aktifleştirildi.' : 'Öne çıkan ürün pasifleştirildi.',
-                'data' => [
-                    'deal' => $deal,
-                ],
-            ]);
+            return $this->success(
+                ['deal' => $deal],
+                $deal->is_active ? 'Öne çıkan ürün aktifleştirildi.' : 'Öne çıkan ürün pasifleştirildi.'
+            );
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Durum değiştirilemedi: ' . $e->getMessage(),
-            ], 500);
+            return $this->error(
+                'Durum değiştirilemedi: ' . $e->getMessage(),
+                500
+            );
         }
     }
 
     /**
      * Reorder deals
      */
-    public function reorder(Request $request): JsonResponse
+    public function reorder(ReorderFeaturedDealsRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'deals' => 'required|array',
-            'deals.*.id' => 'required|exists:featured_deals,id',
-            'deals.*.sort_order' => 'required|integer|min:0',
-        ]);
+        $validated = $request->validated();
 
         try {
             DB::transaction(function () use ($validated) {
@@ -296,15 +259,15 @@ class AdminFeaturedDealController extends Controller
                 }
             });
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Sıralama başarıyla güncellendi.',
-            ]);
+            return $this->success(
+                null,
+                'Sıralama başarıyla güncellendi.'
+            );
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Sıralama güncellenemedi: ' . $e->getMessage(),
-            ], 500);
+            return $this->error(
+                'Sıralama güncellenemedi: ' . $e->getMessage(),
+                500
+            );
         }
     }
 }

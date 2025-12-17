@@ -4,11 +4,7 @@ namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\Http\Controllers\Api\V1\Admin\BaseAdminController;
 use App\Http\Requests\Api\V1\Admin\LoginRequest;
-use App\Http\Resources\Api\V1\Admin\UserResource;
-use App\Models\Admin;
 use App\Services\Auth\AuthService;
-
-use Illuminate\Support\Facades\Hash;
 
 class AdminAuthController extends BaseAdminController
 {
@@ -31,22 +27,12 @@ class AdminAuthController extends BaseAdminController
     public function me()
     {
         $user = request()->user();
+        $user->loadMissing('roles');
 
-        $sr = new \App\Core\ServiceResponse();
-        $sr->setSuccess(true)
-           ->setStatusCode(200)
-           ->setMessage('OK')
-           ->setData([
-               'user' => [
-                   'id' => $user->id,
-                   'name' => $user->name,
-                   'email' => $user->email,
-                   'roles' => $user->roles->pluck('name'),
-                   'created_at' => $user->created_at?->toIso8601String(),
-               ],
-           ]);
-
-        return $this->fromServiceResponse($sr);
+        return $this->success(
+            ['user' => new \App\Http\Resources\Api\V1\Admin\AdminResource($user)],
+            'User retrieved'
+        );
     }
 
     public function logout(\Illuminate\Http\Request $request)
