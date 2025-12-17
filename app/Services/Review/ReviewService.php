@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Services\BaseService;
 use App\Services\Media\ImageService;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 
 class ReviewService extends BaseService
 {
@@ -196,6 +197,72 @@ class ReviewService extends BaseService
 
         } catch (\Exception $e) {
             return $this->handleException($e, 'Yorumlar alınamadı');
+        }
+    }
+
+    /**
+     * Vote a review as helpful or not helpful
+     */
+    public function voteHelpful(string|int $reviewId, bool $isHelpful): ServiceResponse
+    {
+        try {
+            $review = ProductReview::find($reviewId);
+
+            if (!$review) {
+                return $this->errorResponse('Yorum bulunamadı', 404);
+            }
+
+            if ($isHelpful) {
+                $review->increment('helpful_count');
+            } else {
+                $review->increment('unhelpful_count');
+            }
+
+            $data = [
+                'helpful_count' => $review->helpful_count,
+                'unhelpful_count' => $review->unhelpful_count,
+            ];
+
+            return $this->successResponse($data, 'Oyunuz kaydedildi');
+
+        } catch (\Exception $e) {
+            return $this->handleException($e, 'Oy kaydedilemedi');
+        }
+    }
+
+    /**
+     * Get review summary/statistics for a product
+     */
+    public function getSummary(string $productId): ServiceResponse
+    {
+        try {
+            $cacheKey = "product:{$productId}:review_summary";
+
+            $summary = Cache::remember($cacheKey, 600, function () use ($productId) {
+                $reviews = ProductReview::where('product_id', $productId)
+                    ->where('status', 'approved')
+                    ->get();
+
+                $totalReviews = $reviews->count();
+                $averageRating = $totalReviews > 0 ? round($reviews->avg('rating'), 1) : 0;
+
+                // Rating breakdown
+                $ratingBreakdown = [];
+                for ($i = 1; $i <= 5; $i++) {
+                    $ratingBreakdown[$i] = $reviews->where('rating', $i)->count();
+                }
+
+                return [
+                    'total_reviews' => $totalReviews,
+                    'average_rating' => $averageRating,
+                    'rating_breakdown' => $ratingBreakdown,
+                ];
+            });
+
+            return $this->successResponse($summary, 'Yorum özeti getirildi');
+
+        } catch (\Exception $e) {
+            return $this->handleException($e, 'Yorum özeti alınamadı');
         }
     }
 

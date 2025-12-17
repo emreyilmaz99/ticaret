@@ -4,6 +4,7 @@ namespace App\Services\Product;
 
 use App\Services\BaseService;
 use App\Core\ServiceResponse;
+use App\Models\Category;
 use App\Repositories\Interfaces\CategoryRepositoryInterface;
 use Illuminate\Support\Str;
 
@@ -15,6 +16,76 @@ class CategoryService extends BaseService
     {
         $this->repo = $repo;
     }
+
+    // ==================== Public API Methods ====================
+
+    /**
+     * Get all active categories with optional filters for public API
+     */
+    public function listPublic(array $filters = []): ServiceResponse
+    {
+        $query = Category::query()
+            ->where('is_active', true)
+            ->select(['id', 'parent_id', 'name', 'slug', 'icon', 'image', 'description']);
+
+        // Root only filter
+        if (isset($filters['root_only']) && ($filters['root_only'] === 'true' || $filters['root_only'] == '1')) {
+            $query->whereNull('parent_id');
+        }
+
+        // Parent ID filter
+        if (isset($filters['parent_id'])) {
+            $query->where('parent_id', $filters['parent_id']);
+        }
+
+        $categories = $query->orderBy('sort_order')->orderBy('name')->get();
+
+        return $this->successResponse($categories, 'Categories retrieved');
+    }
+
+    /**
+     * Get hierarchical tree of active categories for public API
+     */
+    public function getTree(): ServiceResponse
+    {
+        $categories = Category::whereNull('parent_id')
+            ->where('is_active', true)
+            ->with(['activeChildren' => function ($q) {
+                $q->with(['activeChildren' => function ($q2) {
+                    $q2->select(['id', 'parent_id', 'name', 'slug', 'icon', 'image'])
+                       ->orderBy('sort_order')
+                       ->orderBy('name');
+                }])
+                ->select(['id', 'parent_id', 'name', 'slug', 'icon', 'image'])
+                ->orderBy('sort_order')
+                ->orderBy('name');
+            }])
+            ->select(['id', 'parent_id', 'name', 'slug', 'icon', 'image', 'description'])
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get();
+
+        return $this->successResponse($categories, 'Category tree retrieved');
+    }
+
+    /**
+     * Get category by slug for public API
+     */
+    public function findBySlug(string $slug): ServiceResponse
+    {
+        $category = Category::where('slug', $slug)
+            ->where('is_active', true)
+            ->with(['activeChildren:id,parent_id,name,slug,icon,image', 'parent:id,name,slug'])
+            ->first();
+
+        if (!$category) {
+            return $this->errorResponse('Kategori bulunamadı.', 404);
+        }
+
+        return $this->successResponse($category, 'Category found');
+    }
+
+    // ==================== Vendor API Methods ====================
 
     public function listForVendor($vendor, int $perPage = 15): ServiceResponse
     {

@@ -3,17 +3,23 @@
 namespace App\Http\Controllers\Api\V1\Public;
 
 use App\Http\Controllers\Controller;
-use App\Models\Unit;
+use App\Services\Product\UnitService;
 use App\Traits\ResponseHttp;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class UnitsController extends Controller
 {
     use ResponseHttp;
 
-    public function index(Request $request)
+    public function __construct(
+        protected UnitService $unitService
+    ) {}
+
+    public function index(Request $request): JsonResponse
     {
-        $units = Unit::orderBy('id')->get();
-        return $this->success($units, 'Birimler başarıyla getirildi.');
+        return $this->fromServiceResponse(
+            $this->unitService->list()
+        );
     }
 }

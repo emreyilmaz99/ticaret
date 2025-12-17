@@ -29,5 +29,10 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        // Exception handling is done in app/Exceptions/Handler.php
+        // Handle unauthenticated responses for API
+        $exceptions->renderable(function (\Illuminate\Auth\AuthenticationException $e, $request) {
+            if ($request->is('api/*') || $request->expectsJson()) {
+                return \App\Core\ApiResponse::error('Unauthenticated.', 401);
+            }
+        });
     })->create();

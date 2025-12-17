@@ -3,136 +3,69 @@
 namespace App\Http\Controllers\Api\V1\Public;
 
 use App\Http\Controllers\Controller;
-use App\Models\Vendor;
+use App\Http\Requests\Api\V1\PublicRequests\FilterVendorProductsRequest;
+use App\Http\Resources\Api\V1\Public\PublicVendorResource;
+use App\Http\Resources\Api\V1\Public\PublicReviewResource;
+use App\Services\Vendor\VendorService;
 use App\Traits\FormatsProductData;
+use App\Traits\ResponseHttp;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 
 class PublicVendorController extends Controller
 {
-    use FormatsProductData;
+    use FormatsProductData, ResponseHttp;
+    
+    public function __construct(
+        protected VendorService $vendorService
+    ) {}
     /**
      * Get vendor profile by slug
      * GET /api/v1/vendors/{slug}
      */
     public function show(string $slug): JsonResponse
     {
-        $vendor = Vendor::where('slug', $slug)
-            ->where('status', 'active')
-            ->firstOrFail();
-
-        // Calculate review stats from all vendor's products
-        $allReviews = \App\Models\ProductReview::whereIn(
-            'product_id',
-            $vendor->products()->where('status', 'active')->pluck('id')
-        )->where('status', 'approved')->get();
-
-        $averageRating = round($allReviews->avg('rating') ?? 0, 1);
-        $totalReviews = $allReviews->count();
-
-        // Calculate stats
-        $stats = [
-            'total_products' => $vendor->products()->where('status', 'active')->count(),
-            'total_reviews' => $totalReviews,
-            'average_rating' => $averageRating,
-            'followers' => 0, // TODO: Implement followers if needed
+        $result = $this->vendorService->getPublicProfile($slug);
+        
+        if (!$result->isSuccess()) {
+            return $this->fromServiceResponse($result);
+        }
+        
+        $vendorData = $result->getData();
+        
+        // Transform vendor using resource
+        $data = [
+            'vendor' => new PublicVendorResource($vendorData['vendor']),
+            'stats' => $vendorData['stats'],
         ];
 
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'vendor' => [
-                    'id' => $vendor->id,
-                    'name' => $vendor->name,
-                    'company_name' => $vendor->company_name,
-                    'business_name' => $vendor->business_name ?? $vendor->company_name,
-                    'slug' => $vendor->slug,
-                    'description' => $vendor->description,
-                    'logo' => $vendor->logo ? url('/storage/' . $vendor->logo) : null,
-                    'banner' => $vendor->banner ? url('/storage/' . $vendor->banner) : null,
-                    'city' => $vendor->city,
-                    'district' => $vendor->district,
-                    'rating_avg' => $averageRating,
-                    'review_count' => $totalReviews,
-                    'created_at' => $vendor->created_at->format('Y-m-d'),
-                ],
-                'stats' => $stats,
-            ],
-        ]);
+        return $this->success($data, 'Vendor profile retrieved');
     }
 
     /**
      * Get vendor products
      * GET /api/v1/vendors/{slug}/products
      */
-    public function products(Request $request, string $slug): JsonResponse
+    public function products(FilterVendorProductsRequest $request, string $slug): JsonResponse
     {
-        $vendor = Vendor::where('slug', $slug)
-            ->where('status', 'active')
-            ->firstOrFail();
+        $filters = [
+            'category_id' => $request->input('category'),
+            'search' => $request->input('search'),
+            'has_discount' => $request->boolean('has_discount'),
+            'min_price' => $request->input('min_price'),
+            'max_price' => $request->input('max_price'),
+            'sort' => $request->input('sort', 'newest'),
+            'per_page' => 20,
+        ];
 
-        $query = $vendor->products()
-            ->with(['photos', 'variants', 'category', 'activeFeaturedDeal'])
-            ->where('status', 'active');
-
-        // Category filter
-        if ($request->filled('category')) {
-            $query->where('category_id', $request->category);
+        $result = $this->vendorService->getProducts($slug, $filters);
+        
+        if (!$result->isSuccess()) {
+            return $this->fromServiceResponse($result);
         }
+        
+        $products = $result->getData();
 
-        // Search filter
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('description', 'like', "%{$search}%");
-            });
-        }
-
-        // Has discount filter (for deals tab)
-        if ($request->boolean('has_discount')) {
-            $query->whereHas('activeFeaturedDeal');
-        }
-
-        // Price range filter
-        if ($request->filled('min_price')) {
-            $query->whereHas('variants', function($q) use ($request) {
-                $q->where('price', '>=', $request->min_price);
-            });
-        }
-        if ($request->filled('max_price')) {
-            $query->whereHas('variants', function($q) use ($request) {
-                $q->where('price', '<=', $request->max_price);
-            });
-        }
-
-        // Sorting
-        $sortBy = $request->get('sort', 'newest');
-        switch ($sortBy) {
-            case 'price_asc':
-                $query->orderBy('price', 'asc');
-                break;
-            case 'price_desc':
-                $query->orderBy('price', 'desc');
-                break;
-            case 'name_asc':
-                $query->orderBy('name', 'asc');
-                break;
-            case 'name_desc':
-                $query->orderBy('name', 'desc');
-                break;
-            case 'popular':
-                $query->orderByDesc('view_count');
-                break;
-            case 'newest':
-            default:
-                $query->latest();
-                break;
-        }
-
-        $products = $query->paginate(20);
-
-        // Transform products using the same logic as PublicProductService
+        // Transform products with featured deal logic
         $transformedProducts = $products->map(function ($product) {
             $minPrice = $product->variants->min('price');
             $maxPrice = $product->variants->max('price');
@@ -173,8 +106,7 @@ class PublicVendorController extends Controller
             ];
         });
 
-        return response()->json([
-            'success' => true,
+        $data = [
             'data' => $transformedProducts,
             'meta' => [
                 'current_page' => $products->currentPage(),
@@ -182,7 +114,9 @@ class PublicVendorController extends Controller
                 'per_page' => $products->perPage(),
                 'total' => $products->total(),
             ],
-        ]);
+        ];
+
+        return $this->success($data, 'Vendor products retrieved');
     }
 
     /**
@@ -191,142 +125,43 @@ class PublicVendorController extends Controller
      */
     public function categories(string $slug): JsonResponse
     {
-        $vendor = Vendor::where('slug', $slug)
-            ->where('status', 'active')
-            ->firstOrFail();
-
-        $categories = $vendor->products()
-            ->where('status', 'active')
-            ->with('category')
-            ->get()
-            ->pluck('category')
-            ->filter()
-            ->unique('id')
-            ->values()
-            ->map(function ($category) use ($vendor) {
-                return [
-                    'id' => $category->id,
-                    'name' => $category->name,
-                    'slug' => $category->slug,
-                    'product_count' => $vendor->products()
-                        ->where('category_id', $category->id)
-                        ->where('status', 'active')
-                        ->count(),
-                ];
-            });
-
-        return response()->json([
-            'success' => true,
-            'data' => $categories,
-        ]);
+        return $this->fromServiceResponse(
+            $this->vendorService->getCategories($slug)
+        );
     }
 
     /**
      * Get vendor reviews
      * GET /api/v1/vendors/{slug}/reviews
      */
-    public function reviews(Request $request, string $slug): JsonResponse
+    public function reviews(FilterVendorProductsRequest $request, string $slug): JsonResponse
     {
-        $vendor = Vendor::where('slug', $slug)
-            ->where('status', 'active')
-            ->firstOrFail();
-
-        $query = \App\Models\ProductReview::whereIn(
-            'product_id',
-            $vendor->products()->where('status', 'active')->pluck('id')
-        )
-            ->where('status', 'approved')
-            ->with(['user', 'product.photos', 'media']);
-
-        // Rating filter
-        if ($request->filled('rating')) {
-            $query->where('rating', $request->rating);
-        }
-
-        // Sorting
-        $sortBy = $request->get('sort', 'newest');
-        switch ($sortBy) {
-            case 'oldest':
-                $query->oldest();
-                break;
-            case 'highest':
-                $query->orderBy('rating', 'desc');
-                break;
-            case 'lowest':
-                $query->orderBy('rating', 'asc');
-                break;
-            case 'helpful':
-                $query->orderBy('helpful_count', 'desc');
-                break;
-            case 'newest':
-            default:
-                $query->latest();
-                break;
-        }
-
-        $reviews = $query->paginate(10);
-
-        // Transform reviews
-        $transformedReviews = $reviews->map(function ($review) {
-            return [
-                'id' => $review->id,
-                'rating' => $review->rating,
-                'title' => $review->title,
-                'comment' => $review->comment,
-                'is_anonymous' => $review->is_anonymous,
-                'is_verified_purchase' => $review->is_verified_purchase,
-                'helpful_count' => $review->helpful_count,
-                'unhelpful_count' => $review->unhelpful_count,
-                'created_at' => $review->created_at->format('Y-m-d'),
-                'user' => $review->is_anonymous ? null : [
-                    'name' => $review->user->name,
-                    'avatar' => $review->user->avatar_url,
-                ],
-                'product' => [
-                    'id' => $review->product->id,
-                    'name' => $review->product->name,
-                    'slug' => $review->product->slug,
-                    'image' => $review->product->photos->first()?->path
-                        ? url('/storage/' . $review->product->photos->first()->path)
-                        : null,
-                ],
-                'media' => $review->media->map(function ($media) {
-                    return [
-                        'type' => $media->type,
-                        'url' => url('/storage/' . $media->path),
-                    ];
-                }),
-            ];
-        });
-
-        // Calculate review summary
-        $allReviews = \App\Models\ProductReview::whereIn(
-            'product_id',
-            $vendor->products()->where('status', 'active')->pluck('id')
-        )->where('status', 'approved')->get();
-
-        $summary = [
-            'average_rating' => round($allReviews->avg('rating') ?? 0, 1),
-            'total_reviews' => $allReviews->count(),
-            'rating_distribution' => [
-                5 => $allReviews->where('rating', 5)->count(),
-                4 => $allReviews->where('rating', 4)->count(),
-                3 => $allReviews->where('rating', 3)->count(),
-                2 => $allReviews->where('rating', 2)->count(),
-                1 => $allReviews->where('rating', 1)->count(),
-            ],
+        $filters = [
+            'rating' => $request->input('rating'),
+            'sort_by' => $request->input('sort', 'newest'),
+            'per_page' => 10,
         ];
 
-        return response()->json([
-            'success' => true,
+        $result = $this->vendorService->getReviews($slug, $filters);
+        
+        if (!$result->isSuccess()) {
+            return $this->fromServiceResponse($result);
+        }
+        
+        $data = $result->getData();
+
+        // Transform reviews using Resource
+        $transformedReviews = PublicReviewResource::collection($data['reviews']);
+
+        return $this->success([
             'data' => $transformedReviews,
-            'summary' => $summary,
+            'summary' => $data['summary'],
             'meta' => [
-                'current_page' => $reviews->currentPage(),
-                'last_page' => $reviews->lastPage(),
-                'per_page' => $reviews->perPage(),
-                'total' => $reviews->total(),
+                'current_page' => $data['reviews']->currentPage(),
+                'last_page' => $data['reviews']->lastPage(),
+                'per_page' => $data['reviews']->perPage(),
+                'total' => $data['reviews']->total(),
             ],
-        ]);
+        ], 'Vendor reviews retrieved');
     }
 }

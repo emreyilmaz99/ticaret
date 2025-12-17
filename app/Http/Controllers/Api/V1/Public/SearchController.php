@@ -2,33 +2,34 @@
 
 namespace App\Http\Controllers\Api\V1\Public;
 
+use App\Core\ApiResponse;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\PublicRequests\SearchProductsRequest;
 use App\Models\Product;
-use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 
 class SearchController extends Controller
 {
     /**
      * Ürün araması - autocomplete için
      */
-    public function search(Request $request)
+    public function search(SearchProductsRequest $request): JsonResponse
     {
         $query = $request->input('q', '');
         
         if (empty($query) || strlen($query) < 2) {
-            return response()->json([
-                'success' => true,
-                'data' => [
-                    'products' => [],
-                    'popular_searches' => [
-                        'iPhone',
-                        'Samsung',
-                        'Laptop',
-                        'Kulaklık',
-                        'Telefon Kılıfı'
-                    ]
+            $data = [
+                'products' => [],
+                'popular_searches' => [
+                    'iPhone',
+                    'Samsung',
+                    'Laptop',
+                    'Kulaklık',
+                    'Telefon Kılıfı'
                 ]
-            ]);
+            ];
+            
+            return ApiResponse::success($data, 'Popular searches');
         }
 
         // Elasticsearch ile arama
@@ -53,12 +54,11 @@ class SearchController extends Controller
                 ];
             });
 
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'products' => $products,
-                'total' => $products->count()
-            ]
-        ]);
+        $data = [
+            'products' => $products,
+            'total' => $products->count()
+        ];
+
+        return ApiResponse::success($data, 'Search results');
     }
 }

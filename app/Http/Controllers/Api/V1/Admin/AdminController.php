@@ -20,23 +20,12 @@ class AdminController extends BaseAdminController
     {
         $perPage = (int) $request->query('per_page', 15);
 
-        $paginator = $this->service->list($perPage);
-
-        return $this->paginated(
-            $paginator,
-            AdminResource::class,
-            'Adminler başarıyla getirildi.'
-        );
+        return $this->fromServiceResponse($this->service->list($perPage));
     }
 
     public function show(int $id)
     {
-        $admin = $this->service->find($id);
-        if (! $admin) {
-            return $this->error('Admin not found', 404);
-        }
-
-        return $this->success(new AdminResource($admin->load('roles')));
+        return $this->fromServiceResponse($this->service->find($id));
     }
 
     public function store(\App\Http\Requests\Api\V1\Admin\StoreAdminRequest $request)
@@ -45,9 +34,7 @@ class AdminController extends BaseAdminController
         $roles = $data['roles'] ?? [];
         unset($data['roles']);
 
-        $sr = $this->service->createWithRoles($data, $roles);
-
-        return $this->fromServiceResponse($sr);
+        return $this->fromServiceResponse($this->service->createWithRoles($data, $roles));
     }
 
     public function update(\App\Http\Requests\Api\V1\Admin\UpdateAdminRequest $request, int $id)
@@ -56,30 +43,21 @@ class AdminController extends BaseAdminController
         $roles = $data['roles'] ?? [];
         unset($data['roles']);
 
-        // update basic fields
-        $admin = $this->service->find($id);
-        if (! $admin) {
-            return $this->error('Admin not found', 404);
+        // Update basic fields first
+        $updateResult = $this->service->update($id, $data);
+        
+        if (!$updateResult->isSuccess()) {
+            return $this->fromServiceResponse($updateResult);
         }
 
-        // hash handled by model mutator
-        $this->service->update($id, $data);
-
-        // update roles and status via dedicated method
-        $sr = $this->service->updateRolesAndStatus($id, $roles, $data['is_active'] ?? null);
-
-        return $this->fromServiceResponse($sr);
+        // Then update roles and status
+        return $this->fromServiceResponse(
+            $this->service->updateRolesAndStatus($id, $roles, $data['is_active'] ?? null)
+        );
     }
 
     public function destroy(int $id)
     {
-        $admin = $this->service->find($id);
-        if (! $admin) {
-            return $this->error('Admin not found', 404);
-        }
-
-        $this->service->delete($id);
-
-        return $this->success(null, 'Admin deleted', 200);
+        return $this->fromServiceResponse($this->service->delete($id));
     }
 }

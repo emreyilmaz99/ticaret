@@ -19,59 +19,10 @@ class AdminService extends BaseService
         $this->repo = $repo;
     }
 
-    public function list(int $perPage = 15)
+    public function list(int $perPage = 15): ServiceResponse
     {
-        // Eager load roles to ensure they are available in the resource
-        return $this->repo->paginateWithRoles($perPage);
-    }
-
-    public function find(int $id)
-    {
-        return $this->repo->find($id);
-    }
-
-    public function create(array $data)
-    {
-        return $this->repo->create($data);
-    }
-
-    public function update(int $id, array $data)
-    {
-        return $this->repo->update($id, $data);
-    }
-
-    public function delete(int $id): bool
-    {
-        return $this->repo->delete($id);
-    }
-
-    /**
-     * Create admin and assign roles (array of role names).
-     */
-    public function createWithRoles(array $data, array $roles = []): ServiceResponse
-    {
-        $admin = $this->create($data);
-
-        if (!$admin) {
-            return $this->errorResponse('Could not create admin', 500);
-        }
-
-        if (!empty($roles)) {
-            $admin->syncRoles($roles);
-            $admin->primary_role = $roles[0] ?? null;
-            $admin->save();
-        }
-
-        return $this->successResponse($admin, 'Admin created', 201);
-    }
-
-    /**
-     * Return a ServiceResponse-wrapped paginated admin list for admin UI
-     */
-    public function listForAdminResponse(int $perPage = 15): ServiceResponse
-    {
-        $paginator = $this->list($perPage);
-
+        $paginator = $this->repo->paginateWithRoles($perPage);
+        
         $data = [
             'data' => $paginator->items(),
             'meta' => [
@@ -85,15 +36,95 @@ class AdminService extends BaseService
         return $this->successResponse($data, 'Admins listed');
     }
 
+    public function find(int $id): ServiceResponse
+    {
+        $admin = $this->repo->find($id);
+        
+        if (!$admin) {
+            return $this->errorResponse('Admin not found', 404);
+        }
+
+        return $this->successResponse($admin, 'Admin found');
+    }
+
+    public function create(array $data): ServiceResponse
+    {
+        $admin = $this->repo->create($data);
+        
+        if (!$admin) {
+            return $this->errorResponse('Could not create admin', 500);
+        }
+
+        return $this->successResponse($admin, 'Admin created', 201);
+    }
+
+    public function update(int $id, array $data): ServiceResponse
+    {
+        $admin = $this->repo->find($id);
+        
+        if (!$admin) {
+            return $this->errorResponse('Admin not found', 404);
+        }
+        
+        $updated = $this->repo->update($id, $data);
+        
+        return $this->successResponse($updated, 'Admin updated');
+    }
+
+    public function delete(int $id): ServiceResponse
+    {
+        $admin = $this->repo->find($id);
+        
+        if (!$admin) {
+            return $this->errorResponse('Admin not found', 404);
+        }
+        
+        $this->repo->delete($id);
+
+        return $this->successResponse(null, 'Admin deleted');
+    }
+
+    /**
+     * Create admin and assign roles (array of role names).
+     */
+    public function createWithRoles(array $data, array $roles = []): ServiceResponse
+    {
+        $createResult = $this->create($data);
+        
+        if (!$createResult->isSuccess()) {
+            return $createResult;
+        }
+        
+        $admin = $createResult->getData();
+
+        if (!empty($roles)) {
+            $admin->syncRoles($roles);
+            $admin->primary_role = $roles[0] ?? null;
+            $admin->save();
+        }
+
+        return $this->successResponse($admin, 'Admin created with roles', 201);
+    }
+
+    /**
+     * Return a ServiceResponse-wrapped paginated admin list for admin UI
+     */
+    public function listForAdminResponse(int $perPage = 15): ServiceResponse
+    {
+        return $this->list($perPage);
+    }
+
     /**
      * Update admin roles and active status
      */
     public function updateRolesAndStatus(int $id, array $roles = [], ?bool $isActive = null): ServiceResponse
     {
-        $admin = $this->find($id);
-        if (!$admin) {
-            return $this->errorResponse('Admin not found', 404);
+        $findResult = $this->find($id);
+        if (!$findResult->isSuccess()) {
+            return $findResult;
         }
+        
+        $admin = $findResult->getData();
 
         if ($isActive !== null) {
             $admin->is_active = (bool) $isActive;
@@ -114,10 +145,12 @@ class AdminService extends BaseService
      */
     public function listPermissionsForAdmin(int $adminId): ServiceResponse
     {
-        $admin = $this->find($adminId);
-        if (!$admin) {
-            return $this->errorResponse('Admin not found', 404);
+        $findResult = $this->find($adminId);
+        if (!$findResult->isSuccess()) {
+            return $findResult;
         }
+        
+        $admin = $findResult->getData();
 
         $all = \Spatie\Permission\Models\Permission::all()->map(fn($p) => $p->name)->toArray();
         $assigned = $admin->getAllPermissions()->pluck('name')->toArray();
@@ -135,10 +168,12 @@ class AdminService extends BaseService
      */
     public function updateAdminPermissions(int $adminId, array $permissions): ServiceResponse
     {
-        $admin = $this->find($adminId);
-        if (!$admin) {
-            return $this->errorResponse('Admin not found', 404);
+        $findResult = $this->find($adminId);
+        if (!$findResult->isSuccess()) {
+            return $findResult;
         }
+        
+        $admin = $findResult->getData();
 
         // Validate provided permission names exist; ignore unknown names
         $valid = \Spatie\Permission\Models\Permission::whereIn('name', $permissions)->pluck('name')->toArray();

@@ -3,11 +3,11 @@
 namespace App\Http\Controllers\Api\V1\Public;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\PublicRequests\CalculateTaxRequest;
 use App\Services\Tax\TaxClassCrudService;
 use App\Services\Tax\TaxCalculationService;
 use App\Traits\ResponseHttp;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 
 class TaxClassController extends Controller
 {
@@ -38,12 +38,9 @@ class TaxClassController extends Controller
      * Vergi hesaplama (Satıcı ürün eklerken önizleme için)
      * POST /api/v1/tax-classes/calculate
      */
-    public function calculate(Request $request): JsonResponse
+    public function calculate(CalculateTaxRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'tax_class_id' => 'required|exists:tax_classes,id',
-            'price' => 'required|numeric|min:0',
-        ]);
+        $validated = $request->validated();
 
         $result = $this->calculationService->calculate(
             $validated['tax_class_id'],
