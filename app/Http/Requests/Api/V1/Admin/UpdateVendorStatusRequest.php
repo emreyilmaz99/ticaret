@@ -13,7 +13,7 @@ class UpdateVendorStatusRequest extends BaseAdminRequest
     public function rules(): array
     {
         return [
-            'status' => 'required|string|in:active,inactive,suspended,banned',
+            'status' => 'required|string|in:active,inactive,suspended,banned,pending,pre_pending,pre_approved,rejected',
         ];
     }
 }

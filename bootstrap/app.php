@@ -23,9 +23,14 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Enable CORS for API routes
+        $middleware->api(prepend: [
+            \Illuminate\Http\Middleware\HandleCors::class,
+        ]);
+        
         $middleware->alias([
             'auth.optional' => \App\Http\Middleware\OptionalAuth::class,
-            'ability' => \App\Http\Middleware\CheckSanctumAbilities::class, // Override Sanctum's ability middleware
+            'ability' => \App\Http\Middleware\CheckSanctumAbilities::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
