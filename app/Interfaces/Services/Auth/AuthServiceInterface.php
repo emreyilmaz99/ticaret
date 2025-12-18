@@ -3,6 +3,7 @@
 namespace App\Interfaces\Services\Auth;
 
 use App\Core\ServiceResponse;
+use App\Models\User;
 
 interface AuthServiceInterface
 {
@@ -10,6 +11,6 @@ interface AuthServiceInterface
     public function vendorLogin(array $data): ServiceResponse;
     public function userRegister(array $data): ServiceResponse;
     public function userLogin(array $data): ServiceResponse;
-    public function getCurrentUser($user): ServiceResponse;
+    public function getCurrentUser(User $user): ServiceResponse;
     public function logout($user): ServiceResponse;
 }
