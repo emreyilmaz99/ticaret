@@ -1,10 +1,12 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Order;
 
+use App\Interfaces\Services\Order\OrderFinancialCalculatorInterface;
 use App\Models\OrderItem;
+use App\Services\BaseService;
 
-class OrderFinancialCalculator
+class OrderFinancialCalculator extends BaseService implements OrderFinancialCalculatorInterface
 {
     /**
      * Calculate financial breakdown for an order item with coupon discount

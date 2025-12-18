@@ -3,8 +3,8 @@
 namespace App\Services\Vendor;
 
 use App\Interfaces\Services\Vendor\VendorOrderServiceInterface;
+use App\Interfaces\Services\Order\OrderFinancialCalculatorInterface;
 use App\Services\BaseService;
-use App\Services\OrderFinancialCalculator;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Vendor;
@@ -17,10 +17,10 @@ class VendorOrderService extends BaseService implements VendorOrderServiceInterf
 {
     use FormatsOrderData, FormatsProductData;
     
-    protected OrderFinancialCalculator $financialCalculator;
+    protected OrderFinancialCalculatorInterface $financialCalculator;
     protected const STATS_CACHE_TTL = 900; // 15 minutes
     
-    public function __construct(OrderFinancialCalculator $financialCalculator)
+    public function __construct(OrderFinancialCalculatorInterface $financialCalculator)
     {
         $this->financialCalculator = $financialCalculator;
     }

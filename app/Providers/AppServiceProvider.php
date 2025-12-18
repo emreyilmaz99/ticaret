@@ -88,6 +88,7 @@ class AppServiceProvider extends ServiceProvider
         // Order Feature Services
         $this->app->bind(\App\Interfaces\Services\Order\OrderServiceInterface::class, \App\Services\Order\OrderService::class);
         $this->app->bind(\App\Interfaces\Services\Order\CouponServiceInterface::class, \App\Services\Order\CouponService::class);
+        $this->app->bind(\App\Interfaces\Services\Order\OrderFinancialCalculatorInterface::class, \App\Services\Order\OrderFinancialCalculator::class);
         
         // Admin Services
         $this->app->bind(\App\Interfaces\Services\Admin\CommissionPlanServiceInterface::class, \App\Services\Admin\CommissionPlanService::class);

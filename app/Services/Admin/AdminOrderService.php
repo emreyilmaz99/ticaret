@@ -3,8 +3,8 @@
 namespace App\Services\Admin;
 
 use App\Interfaces\Services\Admin\AdminOrderServiceInterface;
+use App\Interfaces\Services\Order\OrderFinancialCalculatorInterface;
 use App\Services\BaseService;
-use App\Services\OrderFinancialCalculator;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\OrderNote;
@@ -16,9 +16,9 @@ class AdminOrderService extends BaseService implements AdminOrderServiceInterfac
 {
     use FormatsOrderData, FormatsProductData;
     
-    protected OrderFinancialCalculator $financialCalculator;
+    protected OrderFinancialCalculatorInterface $financialCalculator;
     
-    public function __construct(OrderFinancialCalculator $financialCalculator)
+    public function __construct(OrderFinancialCalculatorInterface $financialCalculator)
     {
         $this->financialCalculator = $financialCalculator;
     }
