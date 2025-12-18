@@ -32,6 +32,15 @@ return Application::configure(basePath: dirname(__DIR__))
             'auth.optional' => \App\Http\Middleware\OptionalAuth::class,
             'ability' => \App\Http\Middleware\CheckSanctumAbilities::class,
         ]);
+        
+        // Configure stateful API authentication - prevent redirect to 'login' route
+        $middleware->redirectGuestsTo(function ($request) {
+            if ($request->is('api/*') || $request->expectsJson()) {
+                // Return null to prevent redirect - let exception handler deal with it
+                return null;
+            }
+            return route('login'); // Web routes can still redirect
+        });
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         // Handle unauthenticated responses for API
