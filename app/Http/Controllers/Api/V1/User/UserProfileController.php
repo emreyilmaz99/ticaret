@@ -7,7 +7,7 @@ use App\Http\Requests\Api\V1\User\UpdateAvatarRequest;
 use App\Http\Requests\Api\V1\User\UpdatePasswordRequest;
 use App\Http\Requests\Api\V1\User\UpdateUserProfileRequest;
 use App\Http\Resources\Api\V1\User\UserProfileResource;
-use App\Services\User\UserProfileService;
+use App\Interfaces\Services\User\UserProfileServiceInterface;
 use App\Traits\ResponseHttp;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -17,7 +17,7 @@ class UserProfileController extends Controller
     use ResponseHttp;
 
     public function __construct(
-        protected UserProfileService $profileService
+        protected UserProfileServiceInterface $profileService
     ) {}
 
     /**

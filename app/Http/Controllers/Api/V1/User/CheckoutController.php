@@ -4,8 +4,8 @@ namespace App\Http\Controllers\Api\V1\User;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\User\InitializeCheckoutRequest;
-use App\Services\Order\CheckoutService;
-use App\Services\User\UserAddressService;
+use App\Interfaces\Services\Order\CheckoutServiceInterface;
+use App\Interfaces\Services\User\UserAddressServiceInterface;
 use App\Traits\ResponseHttp;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -15,8 +15,8 @@ class CheckoutController extends Controller
     use ResponseHttp;
 
     public function __construct(
-        protected CheckoutService $checkoutService,
-        protected UserAddressService $addressService
+        protected CheckoutServiceInterface $checkoutService,
+        protected UserAddressServiceInterface $addressService
     ) {}
 
     /**

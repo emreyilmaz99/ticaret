@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Api\V1\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Admin\StoreTaxClassRequest;
 use App\Http\Requests\Api\V1\Admin\UpdateTaxClassRequest;
-use App\Services\Tax\TaxClassCrudService;
+use App\Interfaces\Services\Tax\TaxClassCrudServiceInterface;
 use App\Traits\ResponseHttp;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -14,9 +14,9 @@ class TaxClassController extends Controller
 {
     use ResponseHttp;
 
-    protected TaxClassCrudService $service;
+    protected TaxClassCrudServiceInterface $service;
 
-    public function __construct(TaxClassCrudService $service)
+    public function __construct(TaxClassCrudServiceInterface $service)
     {
         $this->service = $service;
     }

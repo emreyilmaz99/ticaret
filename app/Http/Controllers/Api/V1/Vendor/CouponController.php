@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Vendor\StoreCouponRequest;
 use App\Http\Requests\Api\V1\Vendor\UpdateCouponRequest;
 use App\Http\Resources\Api\V1\Vendor\CouponResource;
-use App\Services\Vendor\VendorCouponService;
+use App\Interfaces\Services\Vendor\VendorCouponServiceInterface;
 use App\Traits\ResponseHttp;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -16,7 +16,7 @@ class CouponController extends Controller
     use ResponseHttp;
 
     public function __construct(
-        protected VendorCouponService $couponService
+        protected VendorCouponServiceInterface $couponService
     ) {}
 
     /**

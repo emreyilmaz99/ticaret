@@ -4,14 +4,14 @@ namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\Http\Controllers\Api\V1\Admin\BaseAdminController;
 use App\Http\Resources\Api\V1\Admin\AdminResource;
-use App\Services\Admin\AdminService;
+use App\Interfaces\Services\Admin\AdminServiceInterface;
 use Illuminate\Http\Request;
 
 class AdminController extends BaseAdminController
 {
-    protected AdminService $service;
+    protected AdminServiceInterface $service;
 
-    public function __construct(AdminService $service)
+    public function __construct(AdminServiceInterface $service)
     {
         $this->service = $service;
     }

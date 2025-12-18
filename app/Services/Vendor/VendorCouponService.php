@@ -3,11 +3,12 @@
 namespace App\Services\Vendor;
 
 use App\Core\ServiceResponse;
+use App\Interfaces\Services\Vendor\VendorCouponServiceInterface;
 use App\Models\VendorCoupon;
 use App\Services\BaseService;
 use Illuminate\Support\Facades\DB;
 
-class VendorCouponService extends BaseService
+class VendorCouponService extends BaseService implements VendorCouponServiceInterface
 {
     /**
      * Get vendor's coupons

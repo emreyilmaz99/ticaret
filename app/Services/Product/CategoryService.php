@@ -2,13 +2,14 @@
 
 namespace App\Services\Product;
 
+use App\Interfaces\Services\Product\CategoryServiceInterface;
 use App\Services\BaseService;
 use App\Core\ServiceResponse;
 use App\Models\Category;
 use App\Repositories\Interfaces\CategoryRepositoryInterface;
 use Illuminate\Support\Str;
 
-class CategoryService extends BaseService
+class CategoryService extends BaseService implements CategoryServiceInterface
 {
     protected CategoryRepositoryInterface $repo;
 

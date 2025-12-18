@@ -2,6 +2,7 @@
 
 namespace App\Services\Vendor;
 
+use App\Interfaces\Services\Vendor\VendorServiceInterface;
 use App\Services\BaseService;
 use App\Repositories\VendorRepository;
 use App\Services\Vendor\VendorAddressService;
@@ -13,7 +14,7 @@ use App\Core\ServiceResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\UploadedFile;
 
-class VendorService extends BaseService
+class VendorService extends BaseService implements VendorServiceInterface
 {
     protected VendorRepository $repo;
     protected VendorAddressService $addressService;

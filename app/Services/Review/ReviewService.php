@@ -2,6 +2,7 @@
 
 namespace App\Services\Review;
 
+use App\Interfaces\Services\Review\ReviewServiceInterface;
 use App\Core\ServiceResponse;
 use App\Models\Order;
 use App\Models\OrderItem;
@@ -14,7 +15,7 @@ use App\Services\Media\ImageService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 
-class ReviewService extends BaseService
+class ReviewService extends BaseService implements ReviewServiceInterface
 {
     protected BannedWordService $bannedWordService;
     protected ImageService $imageService;

@@ -2,6 +2,7 @@
 
 namespace App\Services\Vendor;
 
+use App\Interfaces\Services\Vendor\VendorApplicationPreServiceInterface;
 use App\Services\BaseService;
 use App\Repositories\VendorApplicationRepository;
 use App\Repositories\VendorRepository;
@@ -18,7 +19,7 @@ use Illuminate\Support\Str;
  * - Approve pre-application (creates vendor account)
  * - Reject pre-application
  */
-class VendorApplicationPreService extends BaseService
+class VendorApplicationPreService extends BaseService implements VendorApplicationPreServiceInterface
 {
     protected VendorApplicationRepository $applicationRepo;
     protected VendorRepository $vendorRepo;

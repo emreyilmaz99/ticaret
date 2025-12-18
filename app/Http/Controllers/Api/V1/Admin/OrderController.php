@@ -6,14 +6,14 @@ use App\Http\Controllers\Api\V1\Admin\BaseAdminController;
 use App\Http\Requests\Api\V1\Admin\AddOrderNoteRequest;
 use App\Http\Requests\Api\V1\Admin\CancelOrderRequest;
 use App\Http\Requests\Api\V1\Admin\UpdateOrderStatusRequest;
-use App\Services\Admin\AdminOrderService;
+use App\Interfaces\Services\Admin\AdminOrderServiceInterface;
 use Illuminate\Http\Request;
 
 class OrderController extends BaseAdminController
 {
-    protected AdminOrderService $service;
+    protected AdminOrderServiceInterface $service;
 
-    public function __construct(AdminOrderService $service)
+    public function __construct(AdminOrderServiceInterface $service)
     {
         $this->service = $service;
     }

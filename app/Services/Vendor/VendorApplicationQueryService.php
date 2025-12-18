@@ -2,6 +2,7 @@
 
 namespace App\Services\Vendor;
 
+use App\Interfaces\Services\Vendor\VendorApplicationQueryServiceInterface;
 use App\Services\BaseService;
 use App\Repositories\VendorApplicationRepository;
 use App\Models\VendorApplication;
@@ -16,7 +17,7 @@ use App\Models\Vendor;
  * - Get vendor application status
  * - Get pending pre-applications
  */
-class VendorApplicationQueryService extends BaseService
+class VendorApplicationQueryService extends BaseService implements VendorApplicationQueryServiceInterface
 {
     protected VendorApplicationRepository $applicationRepo;
 

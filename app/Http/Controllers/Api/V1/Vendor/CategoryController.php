@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Api\V1\Vendor;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Vendor\StoreCategoryRequest;
 use App\Http\Requests\Api\V1\Vendor\UpdateCategoryRequest;
-use App\Services\Product\CategoryService;
+use App\Interfaces\Services\Product\CategoryServiceInterface;
 use App\Traits\ResponseHttp;
 use Illuminate\Http\Request;
 
@@ -13,9 +13,9 @@ class CategoryController extends Controller
 {
     use ResponseHttp;
 
-    protected CategoryService $service;
+    protected CategoryServiceInterface $service;
 
-    public function __construct(CategoryService $service)
+    public function __construct(CategoryServiceInterface $service)
     {
         $this->service = $service;
     }

@@ -8,7 +8,7 @@ use App\Http\Requests\Api\V1\Vendor\UpdateProductRequest;
 use App\Http\Requests\Api\V1\Vendor\UpdateProductStatusRequest;
 use App\Http\Resources\Api\V1\Shared\ProductResource;
 use App\Models\Product;
-use App\Services\Product\ProductService;
+use App\Interfaces\Services\Product\ProductServiceInterface;
 use App\Traits\ResponseHttp;
 use Illuminate\Http\Request;
 
@@ -16,9 +16,9 @@ class ProductController extends Controller
 {
     use ResponseHttp;
     
-    protected ProductService $service;
+    protected ProductServiceInterface $service;
 
-    public function __construct(ProductService $service)
+    public function __construct(ProductServiceInterface $service)
     {
         $this->service = $service;
     }

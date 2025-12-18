@@ -2,10 +2,11 @@
 
 namespace App\Services\Vendor;
 
+use App\Interfaces\Services\Vendor\VendorBankAccountServiceInterface;
 use App\Services\BaseService;
 use App\Repositories\Interfaces\VendorBankAccountRepositoryInterface;
 
-class VendorBankAccountService extends BaseService
+class VendorBankAccountService extends BaseService implements VendorBankAccountServiceInterface
 {
     protected VendorBankAccountRepositoryInterface $bankRepo;
 

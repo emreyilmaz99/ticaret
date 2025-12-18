@@ -4,8 +4,8 @@ namespace App\Http\Controllers\Api\V1\Public;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\PublicRequests\CalculateTaxRequest;
-use App\Services\Tax\TaxClassCrudService;
-use App\Services\Tax\TaxCalculationService;
+use App\Interfaces\Services\Tax\TaxClassCrudServiceInterface;
+use App\Interfaces\Services\Tax\TaxCalculationServiceInterface;
 use App\Traits\ResponseHttp;
 use Illuminate\Http\JsonResponse;
 
@@ -13,12 +13,12 @@ class TaxClassController extends Controller
 {
     use ResponseHttp;
 
-    protected TaxClassCrudService $crudService;
-    protected TaxCalculationService $calculationService;
+    protected TaxClassCrudServiceInterface $crudService;
+    protected TaxCalculationServiceInterface $calculationService;
 
     public function __construct(
-        TaxClassCrudService $crudService,
-        TaxCalculationService $calculationService
+        TaxClassCrudServiceInterface $crudService,
+        TaxCalculationServiceInterface $calculationService
     ) {
         $this->crudService = $crudService;
         $this->calculationService = $calculationService;

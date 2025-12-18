@@ -4,16 +4,16 @@ namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\Http\Requests\Api\V1\Admin\StoreCommissionPlanRequest;
 use App\Http\Requests\Api\V1\Admin\UpdateCommissionPlanRequest;
-use App\Services\Admin\CommissionPlanService;
+use App\Interfaces\Services\Admin\CommissionPlanServiceInterface;
 use App\Traits\ResponseHttp;
 
 class CommissionPlanController extends BaseAdminController
 {
     use ResponseHttp;
 
-    protected CommissionPlanService $commissionPlanService;
+    protected CommissionPlanServiceInterface $commissionPlanService;
 
-    public function __construct(CommissionPlanService $commissionPlanService)
+    public function __construct(CommissionPlanServiceInterface $commissionPlanService)
     {
         $this->commissionPlanService = $commissionPlanService;
     }

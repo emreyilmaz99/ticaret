@@ -2,13 +2,14 @@
 
 namespace App\Services\Product;
 
+use App\Interfaces\Services\Product\StockServiceInterface;
 use App\Services\BaseService;
 use App\Exceptions\InsufficientStockException;
 use App\Models\Order;
 use App\Models\ProductVariant;
 use Illuminate\Support\Facades\Log;
 
-class StockService extends BaseService
+class StockService extends BaseService implements StockServiceInterface
 {
     /**
      * Sipariş için stokları düşür

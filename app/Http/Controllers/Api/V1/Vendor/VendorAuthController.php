@@ -4,13 +4,13 @@ namespace App\Http\Controllers\Api\V1\Vendor;
 
 use App\Http\Controllers\Api\V1\Vendor\BaseVendorController;
 use App\Http\Requests\Api\V1\Admin\LoginRequest;
-use App\Services\Auth\AuthService;
+use App\Interfaces\Services\Auth\AuthServiceInterface;
 
 class VendorAuthController extends BaseVendorController
 {
-    protected AuthService $authService;
+    protected AuthServiceInterface $authService;
 
-    public function __construct(AuthService $authService)
+    public function __construct(AuthServiceInterface $authService)
     {
         $this->authService = $authService;
     }

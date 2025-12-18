@@ -2,6 +2,7 @@
 
 namespace App\Services\Payment;
 
+use App\Interfaces\Services\Payment\IyzicoServiceInterface;
 use App\Services\BaseService;
 use App\Services\Payment\IyzicoSubMerchantService;
 use App\Services\Payment\IyzicoCheckoutService;
@@ -19,7 +20,7 @@ use App\Models\UserAddress;
  * 
  * @deprecated Use IyzicoSubMerchantService, IyzicoCheckoutService, or IyzicoUtilityService directly
  */
-class IyzicoService extends BaseService
+class IyzicoService extends BaseService implements IyzicoServiceInterface
 {
     protected IyzicoSubMerchantService $subMerchantService;
     protected IyzicoCheckoutService $checkoutService;
@@ -79,7 +80,7 @@ class IyzicoService extends BaseService
      * Initialize Checkout Form
      * @deprecated Use IyzicoCheckoutService::initializeCheckoutForm()
      */
-    public function initializeCheckoutForm(Order $order, User $user, UserAddress $shippingAddress, array $basketItems)
+    public function initializeCheckoutForm(Order $order, User $user, UserAddress $shippingAddress, array $basketItems): \App\Core\ServiceResponse
     {
         return $this->checkoutService->initializeCheckoutForm($order, $user, $shippingAddress, $basketItems);
     }
@@ -88,7 +89,7 @@ class IyzicoService extends BaseService
      * Retrieve Checkout Form Result
      * @deprecated Use IyzicoCheckoutService::retrieveCheckoutForm()
      */
-    public function retrieveCheckoutForm(string $token)
+    public function retrieveCheckoutForm(string $token): \App\Core\ServiceResponse
     {
         return $this->checkoutService->retrieveCheckoutForm($token);
     }

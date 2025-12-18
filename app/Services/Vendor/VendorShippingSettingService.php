@@ -2,11 +2,12 @@
 
 namespace App\Services\Vendor;
 
+use App\Interfaces\Services\Vendor\VendorShippingSettingServiceInterface;
 use App\Core\ServiceResponse;
 use App\Models\VendorShippingSetting;
 use App\Services\BaseService;
 
-class VendorShippingSettingService extends BaseService
+class VendorShippingSettingService extends BaseService implements VendorShippingSettingServiceInterface
 {
     /**
      * Satıcının kargo ayarlarını getir veya varsayılan değerlerle oluştur

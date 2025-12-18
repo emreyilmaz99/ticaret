@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Api\V1\User;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\User\ToggleFavoriteRequest;
 use App\Http\Requests\Api\V1\User\CheckFavoritesRequest;
-use App\Services\User\FavoriteService;
+use App\Interfaces\Services\User\FavoriteServiceInterface;
 use App\Traits\ResponseHttp;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -15,7 +15,7 @@ class FavoriteController extends Controller
     use ResponseHttp;
 
     public function __construct(
-        protected FavoriteService $favoriteService
+        protected FavoriteServiceInterface $favoriteService
     ) {}
 
     /**

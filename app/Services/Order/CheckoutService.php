@@ -2,6 +2,7 @@
 
 namespace App\Services\Order;
 
+use App\Interfaces\Services\Order\CheckoutServiceInterface;
 use App\Services\BaseService;
 use App\Models\Cart;
 use App\Models\Order;
@@ -14,7 +15,7 @@ use Illuminate\Support\Facades\Log;
 use App\Services\Order\OrderService;
 use App\Services\Payment\PaymentGatewayService;
 
-class CheckoutService extends BaseService
+class CheckoutService extends BaseService implements CheckoutServiceInterface
 {
     protected OrderService $orderService;
     protected PaymentGatewayService $paymentGateway;

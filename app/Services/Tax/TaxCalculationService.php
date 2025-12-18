@@ -2,11 +2,12 @@
 
 namespace App\Services\Tax;
 
+use App\Interfaces\Services\Tax\TaxCalculationServiceInterface;
 use App\Core\ServiceResponse;
 use App\Models\TaxClass;
 use App\Services\BaseService;
 
-class TaxCalculationService extends BaseService
+class TaxCalculationService extends BaseService implements TaxCalculationServiceInterface
 {
     /**
      * Fiyat için vergi hesapla

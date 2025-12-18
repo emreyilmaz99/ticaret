@@ -2,6 +2,7 @@
 
 namespace App\Services\Order;
 
+use App\Interfaces\Services\Order\OrderServiceInterface;
 use App\Services\BaseService;
 use App\Models\Cart;
 use App\Models\Order;
@@ -16,7 +17,7 @@ use App\Models\UserAddress;
  * 
  * @deprecated Use OrderValidationService, OrderCreationService, or OrderPaymentService directly
  */
-class OrderService extends BaseService
+class OrderService extends BaseService implements OrderServiceInterface
 {
     protected OrderValidationService $validationService;
     protected OrderCreationService $creationService;

@@ -2,13 +2,14 @@
 
 namespace App\Services\Vendor;
 
+use App\Interfaces\Services\Vendor\VendorPayoutServiceInterface;
 use App\Services\BaseService;
 use App\Models\Vendor;
 use App\Models\VendorPayout;
 use App\Repositories\Interfaces\VendorPayoutRepositoryInterface;
 use Illuminate\Support\Facades\DB;
 
-class VendorPayoutService extends BaseService
+class VendorPayoutService extends BaseService implements VendorPayoutServiceInterface
 {
     protected VendorPayoutRepositoryInterface $payoutRepo;
 

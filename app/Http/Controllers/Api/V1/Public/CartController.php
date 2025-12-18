@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\PublicRequests\AddCartItemRequest;
 use App\Http\Requests\Api\V1\PublicRequests\UpdateCartItemRequest;
 use App\Http\Requests\Api\V1\PublicRequests\ApplyCouponRequest;
-use App\Services\Cart\CartService;
+use App\Interfaces\Services\Cart\CartServiceInterface;
 use App\Traits\ResponseHttp;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -15,9 +15,9 @@ class CartController extends Controller
 {
     use ResponseHttp;
     
-    protected CartService $cartService;
+    protected CartServiceInterface $cartService;
 
-    public function __construct(CartService $cartService)
+    public function __construct(CartServiceInterface $cartService)
     {
         $this->cartService = $cartService;
     }

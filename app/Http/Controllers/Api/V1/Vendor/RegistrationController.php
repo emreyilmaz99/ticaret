@@ -5,16 +5,16 @@ namespace App\Http\Controllers\Api\V1\Vendor;
 use App\Http\Controllers\Controller;
 use App\Traits\ResponseHttp;
 use App\Http\Requests\Api\V1\Vendor\RegisterVendorRequest;
-use App\Services\Vendor\VendorService;
+use App\Interfaces\Services\Vendor\VendorServiceInterface;
 use App\Http\Resources\Api\V1\Shared\VendorResource;
 
 class RegistrationController extends Controller
 {
     use ResponseHttp;
 
-    protected VendorService $service;
+    protected VendorServiceInterface $service;
 
-    public function __construct(VendorService $service)
+    public function __construct(VendorServiceInterface $service)
     {
         $this->service = $service;
     }

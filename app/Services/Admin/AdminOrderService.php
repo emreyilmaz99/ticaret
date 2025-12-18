@@ -2,6 +2,7 @@
 
 namespace App\Services\Admin;
 
+use App\Interfaces\Services\Admin\AdminOrderServiceInterface;
 use App\Services\BaseService;
 use App\Services\OrderFinancialCalculator;
 use App\Models\Order;
@@ -11,7 +12,7 @@ use App\Traits\FormatsOrderData;
 use App\Traits\FormatsProductData;
 use Illuminate\Support\Facades\DB;
 
-class AdminOrderService extends BaseService
+class AdminOrderService extends BaseService implements AdminOrderServiceInterface
 {
     use FormatsOrderData, FormatsProductData;
     

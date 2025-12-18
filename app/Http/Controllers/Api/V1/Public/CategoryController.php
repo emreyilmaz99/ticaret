@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api\V1\Public;
 
 use App\Http\Controllers\Controller;
-use App\Services\Product\CategoryService;
+use App\Interfaces\Services\Product\CategoryServiceInterface;
 use App\Traits\ResponseHttp;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -13,7 +13,7 @@ class CategoryController extends Controller
     use ResponseHttp;
 
     public function __construct(
-        protected CategoryService $categoryService
+        protected CategoryServiceInterface $categoryService
     ) {}
 
     /**

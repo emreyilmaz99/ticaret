@@ -3,6 +3,7 @@
 namespace App\Services\Product;
 
 use App\Core\ServiceResponse;
+use App\Interfaces\Services\Product\ProductServiceInterface;
 use App\Services\BaseService;
 use App\Models\Product;
 use App\Models\Vendor;
@@ -17,7 +18,7 @@ use App\Traits\ManagesProductData;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
-class ProductService extends BaseService
+class ProductService extends BaseService implements ProductServiceInterface
 {
     use ManagesProductData;
     protected ProductRepositoryInterface $repo;

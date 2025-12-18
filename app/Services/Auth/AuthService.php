@@ -2,6 +2,7 @@
 
 namespace App\Services\Auth;
 
+use App\Interfaces\Services\Auth\AuthServiceInterface;
 use App\Core\ServiceResponse;
 use App\Models\Admin;
 use App\Models\User;
@@ -9,7 +10,7 @@ use App\Models\Vendor;
 use App\Services\BaseService;
 use Illuminate\Support\Facades\Hash;
 
-class AuthService extends BaseService
+class AuthService extends BaseService implements AuthServiceInterface
 {
     /**
      * User registration
@@ -72,6 +73,7 @@ class AuthService extends BaseService
                     'email' => $user->email,
                     'phone' => $user->phone,
                     'avatar' => $user->avatar_url,
+                    // @phpstan-ignore-next-line (cast to date, format() is available)
                     'birth_date' => $user->birth_date?->format('Y-m-d'),
                     'gender' => $user->gender,
                 ],
@@ -100,6 +102,7 @@ class AuthService extends BaseService
                     'phone' => $user->phone,
                     'identity_number' => $user->identity_number,
                     'avatar' => $user->avatar_url,
+                    // @phpstan-ignore-next-line (cast to date, format() is available)
                     'birth_date' => $user->birth_date?->format('Y-m-d'),
                     'gender' => $user->gender,
                     'email_verified_at' => $user->email_verified_at,

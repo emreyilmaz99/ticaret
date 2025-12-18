@@ -2,11 +2,12 @@
 
 namespace App\Services\Vendor;
 
+use App\Interfaces\Services\Vendor\VendorSettingsServiceInterface;
 use App\Services\BaseService;
 use App\Core\ServiceResponse;
 use App\Repositories\Interfaces\VendorSettingRepositoryInterface;
 
-class VendorSettingsService extends BaseService
+class VendorSettingsService extends BaseService implements VendorSettingsServiceInterface
 {
     protected VendorSettingRepositoryInterface $settingRepo;
 

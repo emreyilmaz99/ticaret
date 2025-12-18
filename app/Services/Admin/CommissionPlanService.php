@@ -2,11 +2,12 @@
 
 namespace App\Services\Admin;
 
+use App\Interfaces\Services\Admin\CommissionPlanServiceInterface;
 use App\Repositories\Interfaces\CommissionPlanRepositoryInterface;
 use App\Repositories\VendorRepository;
 use App\Services\BaseService;
 
-class CommissionPlanService extends BaseService
+class CommissionPlanService extends BaseService implements CommissionPlanServiceInterface
 {
     protected CommissionPlanRepositoryInterface $commissionPlanRepository;
     protected VendorRepository $vendorRepository;

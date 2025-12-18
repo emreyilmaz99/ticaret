@@ -2,6 +2,7 @@
 
 namespace App\Services\Vendor;
 
+use App\Interfaces\Services\Vendor\VendorApplicationFullServiceInterface;
 use App\Services\BaseService;
 use App\Services\Payment\IyzicoService;
 use App\Repositories\VendorApplicationRepository;
@@ -22,7 +23,7 @@ use Illuminate\Support\Facades\Log;
  * - Reject full application
  * - Vendor-based approval/rejection
  */
-class VendorApplicationFullService extends BaseService
+class VendorApplicationFullService extends BaseService implements VendorApplicationFullServiceInterface
 {
     protected VendorApplicationRepository $applicationRepo;
     protected VendorRepository $vendorRepo;

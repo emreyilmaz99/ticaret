@@ -2,6 +2,7 @@
 
 namespace App\Services\User;
 
+use App\Interfaces\Services\User\FavoriteServiceInterface;
 use App\Core\ServiceResponse;
 use App\Models\Product;
 use App\Repositories\Interfaces\FavoriteRepositoryInterface;
@@ -9,7 +10,7 @@ use App\Services\BaseService;
 use App\Traits\FormatsProductData;
 use Illuminate\Support\Facades\Cache;
 
-class FavoriteService extends BaseService
+class FavoriteService extends BaseService implements FavoriteServiceInterface
 {
     use FormatsProductData;
     

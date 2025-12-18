@@ -2,10 +2,11 @@
 
 namespace App\Services\Vendor;
 
+use App\Interfaces\Services\Vendor\VendorAddressServiceInterface;
 use App\Services\BaseService;
 use App\Repositories\Interfaces\VendorAddressRepositoryInterface;
 
-class VendorAddressService extends BaseService
+class VendorAddressService extends BaseService implements VendorAddressServiceInterface
 {
     protected VendorAddressRepositoryInterface $addressRepo;
 

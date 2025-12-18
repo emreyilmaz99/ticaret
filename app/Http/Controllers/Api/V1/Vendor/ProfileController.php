@@ -6,16 +6,16 @@ use App\Http\Controllers\Api\V1\Vendor\BaseVendorController;
 use App\Http\Requests\Api\V1\Vendor\UpdateProfileRequest;
 use App\Http\Requests\Api\V1\Vendor\UpdateVendorCategoriesRequest;
 use App\Http\Resources\Api\V1\Admin\VendorResource;
-use App\Services\Vendor\VendorService;
-use App\Services\Vendor\VendorCategoryService;
+use App\Interfaces\Services\Vendor\VendorServiceInterface;
+use App\Interfaces\Services\Vendor\VendorCategoryServiceInterface;
 use Illuminate\Http\Request;
 
 class ProfileController extends BaseVendorController
 {
-    protected VendorService $service;
-    protected VendorCategoryService $categoryService;
+    protected VendorServiceInterface $service;
+    protected VendorCategoryServiceInterface $categoryService;
 
-    public function __construct(VendorService $service, VendorCategoryService $categoryService)
+    public function __construct(VendorServiceInterface $service, VendorCategoryServiceInterface $categoryService)
     {
         $this->service = $service;
         $this->categoryService = $categoryService;

@@ -2,13 +2,14 @@
 
 namespace App\Services\Order;
 
+use App\Interfaces\Services\Order\CouponServiceInterface;
 use App\Services\BaseService;
 use App\Models\CouponUsage;
 use App\Models\Order;
 use App\Models\VendorCoupon;
 use Illuminate\Support\Facades\Log;
 
-class CouponService extends BaseService
+class CouponService extends BaseService implements CouponServiceInterface
 {
     /**
      * Sipariş için kupon kullanımını kaydet

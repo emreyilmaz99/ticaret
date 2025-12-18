@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Api\V1\Vendor;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Vendor\UpdateShippingSettingRequest;
-use App\Services\Vendor\VendorShippingSettingService;
+use App\Interfaces\Services\Vendor\VendorShippingSettingServiceInterface;
 use App\Traits\ResponseHttp;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -14,7 +14,7 @@ class ShippingSettingController extends Controller
     use ResponseHttp;
 
     public function __construct(
-        protected VendorShippingSettingService $shippingSettingService
+        protected VendorShippingSettingServiceInterface $shippingSettingService
     ) {}
 
     /**

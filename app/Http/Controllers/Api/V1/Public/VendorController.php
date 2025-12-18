@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Api\V1\Public;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\PublicRequests\FilterVendorProductsRequest;
 use App\Http\Resources\Api\V1\Shared\VendorResource;
-use App\Services\Vendor\VendorService;
+use App\Interfaces\Services\Vendor\VendorServiceInterface;
 use App\Traits\ResponseHttp;
 use Illuminate\Http\JsonResponse;
 
@@ -14,7 +14,7 @@ class VendorController extends Controller
     use ResponseHttp;
 
     public function __construct(
-        protected VendorService $vendorService
+        protected VendorServiceInterface $vendorService
     ) {}
 
     /**

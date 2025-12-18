@@ -3,11 +3,12 @@
 namespace App\Services\Vendor;
 
 use App\Core\ServiceResponse;
+use App\Interfaces\Services\Vendor\VendorCampaignServiceInterface;
 use App\Models\Product;
 use App\Models\VendorCampaign;
 use App\Services\BaseService;
 
-class VendorCampaignService extends BaseService
+class VendorCampaignService extends BaseService implements VendorCampaignServiceInterface
 {
     /**
      * Get vendor's campaigns

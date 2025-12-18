@@ -4,14 +4,14 @@ namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\Http\Controllers\Api\V1\Admin\BaseAdminController;
 use App\Http\Resources\Api\V1\Admin\VendorResource;
-use App\Services\Vendor\VendorService;
+use App\Interfaces\Services\Vendor\VendorServiceInterface;
 use Illuminate\Http\Request;
 
 class VendorController extends BaseAdminController
 {
-    protected VendorService $service;
+    protected VendorServiceInterface $service;
 
-    public function __construct(VendorService $service)
+    public function __construct(VendorServiceInterface $service)
     {
         $this->service = $service;
     }

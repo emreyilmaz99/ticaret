@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Api\V1\Vendor;
 
 use App\Http\Controllers\Controller;
 use App\Traits\ResponseHttp;
-use App\Services\Vendor\VendorPayoutService;
+use App\Interfaces\Services\Vendor\VendorPayoutServiceInterface;
 use App\Http\Requests\Api\V1\Vendor\RequestPayoutRequest;
 use App\Http\Resources\Api\V1\Vendor\VendorPayoutResource;
 use Illuminate\Http\Request;
@@ -13,9 +13,9 @@ class PayoutController extends Controller
 {
     use ResponseHttp;
 
-    protected VendorPayoutService $payoutService;
+    protected VendorPayoutServiceInterface $payoutService;
 
-    public function __construct(VendorPayoutService $payoutService)
+    public function __construct(VendorPayoutServiceInterface $payoutService)
     {
         $this->payoutService = $payoutService;
     }

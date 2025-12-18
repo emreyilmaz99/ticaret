@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Traits\ResponseHttp;
-use App\Services\Admin\AdminService;
+use App\Interfaces\Services\Admin\AdminServiceInterface;
 use App\Http\Requests\Api\V1\Admin\UpdatePayoutStatusRequest;
 use Illuminate\Http\Request;
 
@@ -12,9 +12,9 @@ class VendorPayoutController extends Controller
 {
     use ResponseHttp;
 
-    protected AdminService $service;
+    protected AdminServiceInterface $service;
 
-    public function __construct(AdminService $service)
+    public function __construct(AdminServiceInterface $service)
     {
         $this->service = $service;
     }

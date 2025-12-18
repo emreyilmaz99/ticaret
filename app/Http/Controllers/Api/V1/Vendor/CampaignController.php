@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Vendor\StoreCampaignRequest;
 use App\Http\Requests\Api\V1\Vendor\UpdateCampaignRequest;
 use App\Http\Resources\Api\V1\Vendor\CampaignResource;
-use App\Services\Vendor\VendorCampaignService;
+use App\Interfaces\Services\Vendor\VendorCampaignServiceInterface;
 use App\Traits\ResponseHttp;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -16,7 +16,7 @@ class CampaignController extends Controller
     use ResponseHttp;
 
     public function __construct(
-        protected VendorCampaignService $campaignService
+        protected VendorCampaignServiceInterface $campaignService
     ) {}
 
     /**

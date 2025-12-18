@@ -2,13 +2,14 @@
 
 namespace App\Services\Payment;
 
+use App\Interfaces\Services\Payment\PaymentGatewayServiceInterface;
 use App\Services\Payment\IyzicoService;
 use App\Core\ServiceResponse;
 use App\Models\Order;
 use App\Models\User;
 use App\Models\UserAddress;
 
-class PaymentGatewayService
+class PaymentGatewayService implements PaymentGatewayServiceInterface
 {
     protected IyzicoService $iyzicoService;
 

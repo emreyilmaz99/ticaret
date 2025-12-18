@@ -37,8 +37,86 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(\App\Repositories\Interfaces\CartItemRepositoryInterface::class, \App\Repositories\CartItemRepository::class);
         $this->app->bind(\App\Repositories\Interfaces\FavoriteRepositoryInterface::class, \App\Repositories\FavoriteRepository::class);
 
-        // Service bindings
-        $this->app->bind(\App\Interfaces\Services\AuthServiceInterface::class, \App\Services\Auth\AuthService::class);
+        // Service bindings - Core Services (18)
+        // Auth
+        $this->app->bind(\App\Interfaces\Services\Auth\AuthServiceInterface::class, \App\Services\Auth\AuthService::class);
+        
+        // Product Services
+        $this->app->bind(\App\Interfaces\Services\Product\ProductServiceInterface::class, \App\Services\Product\ProductService::class);
+        $this->app->bind(\App\Interfaces\Services\Product\ProductCatalogServiceInterface::class, \App\Services\Product\ProductCatalogService::class);
+        $this->app->bind(\App\Interfaces\Services\Product\CategoryServiceInterface::class, \App\Services\Product\CategoryService::class);
+        $this->app->bind(\App\Interfaces\Services\Product\StockServiceInterface::class, \App\Services\Product\StockService::class);
+        
+        // Cart
+        $this->app->bind(\App\Interfaces\Services\Cart\CartServiceInterface::class, \App\Services\Cart\CartService::class);
+        
+        // User
+        $this->app->bind(\App\Interfaces\Services\User\UserServiceInterface::class, \App\Services\User\UserService::class);
+        
+        // Vendor Services
+        $this->app->bind(\App\Interfaces\Services\Vendor\VendorServiceInterface::class, \App\Services\Vendor\VendorService::class);
+        $this->app->bind(\App\Interfaces\Services\Vendor\VendorApplicationPreServiceInterface::class, \App\Services\Vendor\VendorApplicationPreService::class);
+        $this->app->bind(\App\Interfaces\Services\Vendor\VendorApplicationFullServiceInterface::class, \App\Services\Vendor\VendorApplicationFullService::class);
+        
+        // Order Services
+        $this->app->bind(\App\Interfaces\Services\Order\OrderCreationServiceInterface::class, \App\Services\Order\OrderCreationService::class);
+        $this->app->bind(\App\Interfaces\Services\Order\OrderPaymentServiceInterface::class, \App\Services\Order\OrderPaymentService::class);
+        $this->app->bind(\App\Interfaces\Services\Order\OrderValidationServiceInterface::class, \App\Services\Order\OrderValidationService::class);
+        $this->app->bind(\App\Interfaces\Services\Order\CheckoutServiceInterface::class, \App\Services\Order\CheckoutService::class);
+        
+        // Payment Services
+        $this->app->bind(\App\Interfaces\Services\Payment\PaymentGatewayServiceInterface::class, \App\Services\Payment\PaymentGatewayService::class);
+        $this->app->bind(\App\Interfaces\Services\Payment\IyzicoServiceInterface::class, \App\Services\Payment\IyzicoService::class);
+        
+        // Review
+        $this->app->bind(\App\Interfaces\Services\Review\ReviewServiceInterface::class, \App\Services\Review\ReviewService::class);
+        
+        // Service bindings - Feature Services (15)
+        // User Services
+        $this->app->bind(\App\Interfaces\Services\User\FavoriteServiceInterface::class, \App\Services\User\FavoriteService::class);
+        $this->app->bind(\App\Interfaces\Services\User\UserAddressServiceInterface::class, \App\Services\User\UserAddressService::class);
+        $this->app->bind(\App\Interfaces\Services\User\UserProfileServiceInterface::class, \App\Services\User\UserProfileService::class);
+        
+        // Vendor Feature Services
+        $this->app->bind(\App\Interfaces\Services\Vendor\VendorPayoutServiceInterface::class, \App\Services\Vendor\VendorPayoutService::class);
+        $this->app->bind(\App\Interfaces\Services\Vendor\VendorAddressServiceInterface::class, \App\Services\Vendor\VendorAddressService::class);
+        $this->app->bind(\App\Interfaces\Services\Vendor\VendorBankAccountServiceInterface::class, \App\Services\Vendor\VendorBankAccountService::class);
+        $this->app->bind(\App\Interfaces\Services\Vendor\VendorSettingsServiceInterface::class, \App\Services\Vendor\VendorSettingsService::class);
+        $this->app->bind(\App\Interfaces\Services\Vendor\VendorShippingSettingServiceInterface::class, \App\Services\Vendor\VendorShippingSettingService::class);
+        $this->app->bind(\App\Interfaces\Services\Vendor\VendorOrderServiceInterface::class, \App\Services\Vendor\VendorOrderService::class);
+        
+        // Order Feature Services
+        $this->app->bind(\App\Interfaces\Services\Order\OrderServiceInterface::class, \App\Services\Order\OrderService::class);
+        $this->app->bind(\App\Interfaces\Services\Order\CouponServiceInterface::class, \App\Services\Order\CouponService::class);
+        
+        // Admin Services
+        $this->app->bind(\App\Interfaces\Services\Admin\CommissionPlanServiceInterface::class, \App\Services\Admin\CommissionPlanService::class);
+        $this->app->bind(\App\Interfaces\Services\Admin\AdminOrderServiceInterface::class, \App\Services\Admin\AdminOrderService::class);
+        $this->app->bind(\App\Interfaces\Services\Admin\AdminServiceInterface::class, \App\Services\Admin\AdminService::class);
+        $this->app->bind(\App\Interfaces\Services\Admin\AdminBannedWordServiceInterface::class, \App\Services\Admin\AdminBannedWordService::class);
+        $this->app->bind(\App\Interfaces\Services\Admin\AdminFeaturedDealServiceInterface::class, \App\Services\Admin\AdminFeaturedDealService::class);
+        $this->app->bind(\App\Interfaces\Services\Admin\AdminReviewServiceInterface::class, \App\Services\Admin\AdminReviewService::class);
+        $this->app->bind(\App\Interfaces\Services\Admin\AdminCategoryServiceInterface::class, \App\Services\Admin\AdminCategoryService::class);
+        $this->app->bind(\App\Interfaces\Services\Admin\AdminProductManagementServiceInterface::class, \App\Services\Admin\AdminProductManagementService::class);
+        
+        // Tax Services
+        $this->app->bind(\App\Interfaces\Services\Tax\TaxCalculationServiceInterface::class, \App\Services\Tax\TaxCalculationService::class);
+        $this->app->bind(\App\Interfaces\Services\Tax\TaxClassCrudServiceInterface::class, \App\Services\Tax\TaxClassCrudService::class);
+        
+        // Vendor Additional Services
+        $this->app->bind(\App\Interfaces\Services\Vendor\VendorCategoryServiceInterface::class, \App\Services\Vendor\VendorCategoryService::class);
+        $this->app->bind(\App\Interfaces\Services\Vendor\VendorCouponServiceInterface::class, \App\Services\Vendor\VendorCouponService::class);
+        $this->app->bind(\App\Interfaces\Services\Vendor\VendorCampaignServiceInterface::class, \App\Services\Vendor\VendorCampaignService::class);
+        $this->app->bind(\App\Interfaces\Services\Vendor\VendorApplicationQueryServiceInterface::class, \App\Services\Vendor\VendorApplicationQueryService::class);
+        
+        // Product Additional Services
+        $this->app->bind(\App\Interfaces\Services\Product\UnitServiceInterface::class, \App\Services\Product\UnitService::class);
+        $this->app->bind(\App\Interfaces\Services\Product\PublicProductServiceInterface::class, \App\Services\Product\PublicProductService::class);
+        $this->app->bind(\App\Interfaces\Services\Product\FeaturedDealServiceInterface::class, \App\Services\Product\FeaturedDealService::class);
+        $this->app->bind(\App\Interfaces\Services\Product\SearchServiceInterface::class, \App\Services\Product\SearchService::class);
+        
+        // Review Services
+        $this->app->bind(\App\Interfaces\Services\Review\VendorReviewResponseServiceInterface::class, \App\Services\Review\VendorReviewResponseService::class);
         
         // Elasticsearch HTTP Client ve Transport bindings
         $this->app->bind(\Psr\Http\Client\ClientInterface::class, function ($app) {

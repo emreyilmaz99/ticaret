@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api\V1\Public;
 
 use App\Http\Controllers\Controller;
-use App\Services\Product\PublicProductService;
+use App\Interfaces\Services\Product\PublicProductServiceInterface;
 use App\Traits\ResponseHttp;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -13,7 +13,7 @@ class ProductController extends Controller
     use ResponseHttp;
 
     public function __construct(
-        protected PublicProductService $productService
+        protected PublicProductServiceInterface $productService
     ) {}
 
     /**

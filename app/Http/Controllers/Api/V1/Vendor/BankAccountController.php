@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Api\V1\Vendor;
 
 use App\Http\Controllers\Controller;
 use App\Traits\ResponseHttp;
-use App\Services\Vendor\VendorBankAccountService;
+use App\Interfaces\Services\Vendor\VendorBankAccountServiceInterface;
 use App\Http\Requests\Api\V1\Vendor\StoreVendorBankAccountRequest;
 use App\Http\Resources\Api\V1\Vendor\VendorBankAccountResource;
 use Illuminate\Http\Request;
@@ -13,9 +13,9 @@ class BankAccountController extends Controller
 {
     use ResponseHttp;
 
-    protected VendorBankAccountService $bankAccountService;
+    protected VendorBankAccountServiceInterface $bankAccountService;
 
-    public function __construct(VendorBankAccountService $bankAccountService)
+    public function __construct(VendorBankAccountServiceInterface $bankAccountService)
     {
         $this->bankAccountService = $bankAccountService;
     }

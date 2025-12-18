@@ -2,6 +2,7 @@
 
 namespace App\Services\Admin;
 
+use App\Interfaces\Services\Admin\AdminServiceInterface;
 use App\Repositories\AdminRepository;
 use App\Core\ServiceResponse;
 use App\Services\BaseService;
@@ -10,7 +11,7 @@ use App\Models\Vendor;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
-class AdminService extends BaseService
+class AdminService extends BaseService implements AdminServiceInterface
 {
     protected AdminRepository $repo;
 

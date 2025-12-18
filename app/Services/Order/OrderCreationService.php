@@ -2,6 +2,7 @@
 
 namespace App\Services\Order;
 
+use App\Interfaces\Services\Order\OrderCreationServiceInterface;
 use App\Services\BaseService;
 use App\Models\Cart;
 use App\Models\Order;
@@ -17,7 +18,7 @@ use Illuminate\Support\Facades\Log;
  * 
  * Handles order creation from cart.
  */
-class OrderCreationService extends BaseService
+class OrderCreationService extends BaseService implements OrderCreationServiceInterface
 {
     protected OrderValidationService $validationService;
 

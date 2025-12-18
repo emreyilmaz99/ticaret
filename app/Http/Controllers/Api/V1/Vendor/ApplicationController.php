@@ -4,14 +4,14 @@ namespace App\Http\Controllers\Api\V1\Vendor;
 
 use App\Http\Controllers\Api\V1\Vendor\BaseVendorController;
 use App\Http\Requests\Api\V1\Vendor\SubmitFullApplicationRequest;
-use App\Services\Vendor\VendorApplicationFullService;
-use App\Services\Vendor\VendorApplicationQueryService;
+use App\Interfaces\Services\Vendor\VendorApplicationFullServiceInterface;
+use App\Interfaces\Services\Vendor\VendorApplicationQueryServiceInterface;
 
 class ApplicationController extends BaseVendorController
 {
     public function __construct(
-        protected VendorApplicationFullService $fullService,
-        protected VendorApplicationQueryService $queryService
+        protected VendorApplicationFullServiceInterface $fullService,
+        protected VendorApplicationQueryServiceInterface $queryService
     ) {}
 
     /**

@@ -2,6 +2,7 @@
 
 namespace App\Services\Order;
 
+use App\Interfaces\Services\Order\OrderPaymentServiceInterface;
 use App\Services\BaseService;
 use App\Models\Order;
 use App\Services\Product\StockService;
@@ -15,7 +16,7 @@ use Illuminate\Support\Facades\Log;
  * 
  * Handles payment processing and post-payment order updates.
  */
-class OrderPaymentService extends BaseService
+class OrderPaymentService extends BaseService implements OrderPaymentServiceInterface
 {
     protected StockService $stockService;
     protected CouponService $couponService;
@@ -142,7 +143,7 @@ class OrderPaymentService extends BaseService
         ]);
 
         $order->statusHistory()->create([
-            'old_status' => Order::STATUS_PAID,
+            'old_status' => Order::STATUS_CONFIRMED,
             'new_status' => Order::STATUS_CANCELLED,
             'note' => 'Stok yetersiz - Otomatik iptal: ' . $errorMessage,
             'changed_by_type' => 'system',

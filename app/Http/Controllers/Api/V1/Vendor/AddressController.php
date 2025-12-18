@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Api\V1\Vendor;
 
 use App\Http\Controllers\Controller;
 use App\Traits\ResponseHttp;
-use App\Services\Vendor\VendorAddressService;
+use App\Interfaces\Services\Vendor\VendorAddressServiceInterface;
 use App\Http\Requests\Api\V1\Vendor\StoreVendorAddressRequest;
 use App\Http\Resources\Api\V1\Vendor\VendorAddressResource;
 use Illuminate\Http\Request;
@@ -13,9 +13,9 @@ class AddressController extends Controller
 {
     use ResponseHttp;
 
-    protected VendorAddressService $addressService;
+    protected VendorAddressServiceInterface $addressService;
 
-    public function __construct(VendorAddressService $addressService)
+    public function __construct(VendorAddressServiceInterface $addressService)
     {
         $this->addressService = $addressService;
     }

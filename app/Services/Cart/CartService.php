@@ -3,6 +3,7 @@
 namespace App\Services\Cart;
 
 use App\Core\ServiceResponse;
+use App\Interfaces\Services\Cart\CartServiceInterface;
 use App\Models\Cart;
 use App\Services\BaseService;
 use App\Models\Product;
@@ -12,7 +13,7 @@ use App\Repositories\Interfaces\CartRepositoryInterface;
 use App\Repositories\Interfaces\CartItemRepositoryInterface;
 use Illuminate\Support\Str;
 
-class CartService extends BaseService
+class CartService extends BaseService implements CartServiceInterface
 {
     protected CartRepositoryInterface $cartRepo;
     protected CartItemRepositoryInterface $cartItemRepo;

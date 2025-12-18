@@ -2,11 +2,12 @@
 
 namespace App\Services\Vendor;
 
+use App\Interfaces\Services\Vendor\VendorCategoryServiceInterface;
 use App\Services\BaseService;
 use App\Models\Vendor;
 use App\Models\Category;
 
-class VendorCategoryService extends BaseService
+class VendorCategoryService extends BaseService implements VendorCategoryServiceInterface
 {
     /**
      * Get vendor's selected categories

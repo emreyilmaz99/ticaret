@@ -2,10 +2,11 @@
 
 namespace App\Services\User;
 
+use App\Interfaces\Services\User\UserServiceInterface;
 use App\Repositories\UserRepository;
 use App\Services\BaseService;
 
-class UserService extends BaseService
+class UserService extends BaseService implements UserServiceInterface
 {
     protected UserRepository $repo;
 

@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\User\StoreUserAddressRequest;
 use App\Http\Requests\Api\V1\User\UpdateUserAddressRequest;
 use App\Http\Resources\Api\V1\User\UserAddressResource;
-use App\Services\User\UserAddressService;
+use App\Interfaces\Services\User\UserAddressServiceInterface;
 use App\Traits\ResponseHttp;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -16,7 +16,7 @@ class UserAddressController extends Controller
     use ResponseHttp;
 
     public function __construct(
-        protected UserAddressService $addressService
+        protected UserAddressServiceInterface $addressService
     ) {}
 
     /**

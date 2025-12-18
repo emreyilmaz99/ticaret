@@ -2,11 +2,12 @@
 
 namespace App\Services\User;
 
+use App\Interfaces\Services\User\UserAddressServiceInterface;
 use App\Core\ServiceResponse;
 use App\Models\UserAddress;
 use App\Services\BaseService;
 
-class UserAddressService extends BaseService
+class UserAddressService extends BaseService implements UserAddressServiceInterface
 {
     /**
      * Get all addresses for user

@@ -2,12 +2,13 @@
 
 namespace App\Services\Tax;
 
+use App\Interfaces\Services\Tax\TaxClassCrudServiceInterface;
 use App\Core\ServiceResponse;
 use App\Models\TaxClass;
 use App\Services\BaseService;
 use Illuminate\Support\Facades\DB;
 
-class TaxClassCrudService extends BaseService
+class TaxClassCrudService extends BaseService implements TaxClassCrudServiceInterface
 {
     /**
      * Tüm vergi sınıflarını listele

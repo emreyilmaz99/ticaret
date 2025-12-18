@@ -2,6 +2,7 @@
 
 namespace App\Services\Vendor;
 
+use App\Interfaces\Services\Vendor\VendorOrderServiceInterface;
 use App\Services\BaseService;
 use App\Services\OrderFinancialCalculator;
 use App\Models\Order;
@@ -12,7 +13,7 @@ use App\Traits\FormatsProductData;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 
-class VendorOrderService extends BaseService
+class VendorOrderService extends BaseService implements VendorOrderServiceInterface
 {
     use FormatsOrderData, FormatsProductData;
     

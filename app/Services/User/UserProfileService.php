@@ -2,13 +2,14 @@
 
 namespace App\Services\User;
 
+use App\Interfaces\Services\User\UserProfileServiceInterface;
 use App\Core\ServiceResponse;
 use App\Models\User;
 use App\Services\BaseService;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 
-class UserProfileService extends BaseService
+class UserProfileService extends BaseService implements UserProfileServiceInterface
 {
     /**
      * Get user profile

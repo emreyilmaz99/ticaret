@@ -3,12 +3,13 @@
 namespace App\Services\Review;
 
 use App\Core\ServiceResponse;
+use App\Interfaces\Services\Review\VendorReviewResponseServiceInterface;
 use App\Models\ProductReview;
 use App\Models\ReviewResponse;
 use App\Models\Vendor;
 use App\Services\BaseService;
 
-class VendorReviewResponseService extends BaseService
+class VendorReviewResponseService extends BaseService implements VendorReviewResponseServiceInterface
 {
     protected BannedWordService $bannedWordService;
 

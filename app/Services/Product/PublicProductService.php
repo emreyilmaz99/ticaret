@@ -3,6 +3,7 @@
 namespace App\Services\Product;
 
 use App\Core\ServiceResponse;
+use App\Interfaces\Services\Product\PublicProductServiceInterface;
 use App\Models\Category;
 use App\Models\Product;
 use App\Services\BaseService;
@@ -10,7 +11,7 @@ use App\Traits\FormatsProductData;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 
-class PublicProductService extends BaseService
+class PublicProductService extends BaseService implements PublicProductServiceInterface
 {
     use FormatsProductData;
     

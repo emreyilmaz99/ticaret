@@ -2,6 +2,7 @@
 
 namespace App\Services\Product;
 
+use App\Interfaces\Services\Product\ProductCatalogServiceInterface;
 use App\Services\BaseService;
 use App\Models\Product;
 use App\Repositories\Interfaces\ProductRepositoryInterface;
@@ -13,7 +14,7 @@ use Illuminate\Http\Request;
  * Handles product listing, search, filtering and public queries.
  * Optimized for read-heavy operations.
  */
-class ProductCatalogService extends BaseService
+class ProductCatalogService extends BaseService implements ProductCatalogServiceInterface
 {
     protected ProductRepositoryInterface $repo;
 

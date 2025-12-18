@@ -4,14 +4,14 @@ namespace App\Http\Controllers\Api\V1\Vendor;
 
 use App\Http\Controllers\Api\V1\Vendor\BaseVendorController;
 use App\Http\Requests\Api\V1\Vendor\UpdateOrderStatusRequest;
-use App\Services\Vendor\VendorOrderService;
+use App\Interfaces\Services\Vendor\VendorOrderServiceInterface;
 use Illuminate\Http\Request;
 
 class OrderController extends BaseVendorController
 {
-    protected VendorOrderService $service;
+    protected VendorOrderServiceInterface $service;
 
-    public function __construct(VendorOrderService $service)
+    public function __construct(VendorOrderServiceInterface $service)
     {
         $this->service = $service;
     }

@@ -4,14 +4,14 @@ namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\Http\Controllers\Api\V1\Admin\BaseAdminController;
 use App\Http\Requests\Api\V1\Admin\UpdateAdminPermissionsRequest;
-use App\Services\Admin\AdminService;
+use App\Interfaces\Services\Admin\AdminServiceInterface;
 use Illuminate\Http\Request;
 
 class AdminPermissionsController extends BaseAdminController
 {
-    protected AdminService $service;
+    protected AdminServiceInterface $service;
 
-    public function __construct(AdminService $service)
+    public function __construct(AdminServiceInterface $service)
     {
         $this->service = $service;
     }

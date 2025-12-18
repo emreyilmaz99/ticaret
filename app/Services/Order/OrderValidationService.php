@@ -2,6 +2,7 @@
 
 namespace App\Services\Order;
 
+use App\Interfaces\Services\Order\OrderValidationServiceInterface;
 use App\Services\BaseService;
 use App\Models\Cart;
 
@@ -10,7 +11,7 @@ use App\Models\Cart;
  * 
  * Handles cart and order validation logic.
  */
-class OrderValidationService extends BaseService
+class OrderValidationService extends BaseService implements OrderValidationServiceInterface
 {
     /**
      * Validate cart before creating order

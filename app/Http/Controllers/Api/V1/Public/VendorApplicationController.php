@@ -4,8 +4,8 @@ namespace App\Http\Controllers\Api\V1\Public;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\PublicRequests\StorePreApplicationRequest;
-use App\Services\Vendor\VendorApplicationPreService;
-use App\Services\Vendor\VendorApplicationQueryService;
+use App\Interfaces\Services\Vendor\VendorApplicationPreServiceInterface;
+use App\Interfaces\Services\Vendor\VendorApplicationQueryServiceInterface;
 use App\Traits\ResponseHttp;
 
 class VendorApplicationController extends Controller
@@ -13,8 +13,8 @@ class VendorApplicationController extends Controller
     use ResponseHttp;
 
     public function __construct(
-        protected VendorApplicationPreService $preService,
-        protected VendorApplicationQueryService $queryService
+        protected VendorApplicationPreServiceInterface $preService,
+        protected VendorApplicationQueryServiceInterface $queryService
     ) {}
 
     /**

@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Api\V1\Vendor;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Vendor\StoreReviewResponseRequest;
 use App\Http\Resources\Api\V1\Vendor\ReviewResource;
-use App\Services\Review\VendorReviewResponseService;
+use App\Interfaces\Services\Review\VendorReviewResponseServiceInterface;
 use App\Traits\ResponseHttp;
 use Illuminate\Http\Request;
 
@@ -13,9 +13,9 @@ class VendorReviewController extends Controller
 {
     use ResponseHttp;
 
-    protected VendorReviewResponseService $responseService;
+    protected VendorReviewResponseServiceInterface $responseService;
 
-    public function __construct(VendorReviewResponseService $responseService)
+    public function __construct(VendorReviewResponseServiceInterface $responseService)
     {
         $this->responseService = $responseService;
     }

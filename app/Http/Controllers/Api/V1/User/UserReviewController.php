@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Api\V1\User;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\User\StoreReviewRequest;
 use App\Http\Resources\Api\V1\User\ReviewResource;
-use App\Services\Review\ReviewService;
+use App\Interfaces\Services\Review\ReviewServiceInterface;
 use App\Traits\ResponseHttp;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -15,7 +15,7 @@ class UserReviewController extends Controller
     use ResponseHttp;
 
     public function __construct(
-        protected ReviewService $reviewService
+        protected ReviewServiceInterface $reviewService
     ) {}
 
     /**

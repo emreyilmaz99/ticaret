@@ -3,10 +3,11 @@
 namespace App\Services\Product;
 
 use App\Core\ServiceResponse;
+use App\Interfaces\Services\Product\UnitServiceInterface;
 use App\Models\Unit;
 use App\Services\BaseService;
 
-class UnitService extends BaseService
+class UnitService extends BaseService implements UnitServiceInterface
 {
     /**
      * Get all units ordered by ID
