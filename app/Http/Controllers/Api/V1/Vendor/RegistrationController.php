@@ -28,6 +28,10 @@ class RegistrationController extends Controller
         // password mutator will hash
         $vendor = $this->service->create($data);
 
-        return $this->success(new VendorResource($vendor), 'Kayıt alındı. Admin onayı bekleniyor.', 201);
+        return $this->success(
+            ['vendor' => new VendorResource($vendor)],
+            'Kayıt başarıyla alındı. Admin onayı bekleniyor.',
+            201
+        );
     }
 }

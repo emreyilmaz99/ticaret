@@ -344,7 +344,6 @@ Route::prefix('v1/user')->group(function () {
         Route::put('addresses/{address}', [UserAddressController::class, 'update']);
         Route::delete('addresses/{address}', [UserAddressController::class, 'destroy']);
         Route::put('addresses/{address}/default', [UserAddressController::class, 'setDefault']);
-        Route::post('addresses/{id}/restore', [UserAddressController::class, 'restore']);
 
         // Favorites
         Route::get('favorites', [\App\Http\Controllers\Api\V1\User\FavoriteController::class, 'index']);

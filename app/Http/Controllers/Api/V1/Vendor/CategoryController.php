@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api\V1\Vendor;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\Vendor\StoreCategoryRequest;
+use App\Http\Requests\Api\V1\Vendor\UpdateCategoryRequest;
 use App\Services\Product\CategoryService;
 use App\Traits\ResponseHttp;
 use Illuminate\Http\Request;
@@ -26,33 +28,17 @@ class CategoryController extends Controller
         return $this->fromServiceResponse($sr);
     }
 
-    public function store(Request $request)
+    public function store(StoreCategoryRequest $request)
     {
         $vendor = $request->user();
-        $data = $request->validate([
-            'name' => 'required|string|max:191',
-            'parent_id' => 'nullable|exists:categories,id',
-            'description' => 'nullable|string',
-            'is_active' => 'nullable|boolean',
-            'sort_order' => 'nullable|integer',
-        ]);
-
-        $sr = $this->service->createCategory($vendor, $data);
+        $sr = $this->service->createCategory($vendor, $request->validated());
         return $this->fromServiceResponse($sr);
     }
 
-    public function update(Request $request, $id)
+    public function update(UpdateCategoryRequest $request, $id)
     {
         $vendor = $request->user();
-        $data = $request->validate([
-            'name' => 'sometimes|required|string|max:191',
-            'parent_id' => 'nullable|exists:categories,id',
-            'description' => 'nullable|string',
-            'is_active' => 'nullable|boolean',
-            'sort_order' => 'nullable|integer',
-        ]);
-
-        $sr = $this->service->updateCategory($vendor, $id, $data);
+        $sr = $this->service->updateCategory($vendor, $id, $request->validated());
         return $this->fromServiceResponse($sr);
     }
 

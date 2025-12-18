@@ -24,27 +24,37 @@ class AddressController extends Controller
     {
         $vendorId = $request->user()->id;
         $addresses = $this->addressService->list($vendorId);
-        return $this->success(VendorAddressResource::collection($addresses));
+        return $this->success(
+            ['addresses' => VendorAddressResource::collection($addresses)],
+            'Adresler başarıyla getirildi.'
+        );
     }
 
     public function store(StoreVendorAddressRequest $request)
     {
         $vendorId = $request->user()->id;
         $address = $this->addressService->add($vendorId, $request->validated());
-        return $this->success(new VendorAddressResource($address), 'Adres eklendi', 201);
+        return $this->success(
+            ['address' => new VendorAddressResource($address)],
+            'Adres başarıyla eklendi.',
+            201
+        );
     }
 
-    public function update(StoreVendorAddressRequest $request, $addressId)
+    public function update(StoreVendorAddressRequest $request, int $addressId)
     {
         $vendorId = $request->user()->id;
-        $address = $this->addressService->update($vendorId, (int) $addressId, $request->validated());
-        return $this->success(new VendorAddressResource($address), 'Adres güncellendi');
+        $address = $this->addressService->update($vendorId, $addressId, $request->validated());
+        return $this->success(
+            ['address' => new VendorAddressResource($address)],
+            'Adres başarıyla güncellendi.'
+        );
     }
 
-    public function destroy(Request $request, $addressId)
+    public function destroy(Request $request, int $addressId)
     {
         $vendorId = $request->user()->id;
-        $this->addressService->delete($vendorId, (int) $addressId);
-        return $this->success(null, 'Adres silindi');
+        $this->addressService->delete($vendorId, $addressId);
+        return $this->success(null, 'Adres başarıyla silindi.');
     }
 }

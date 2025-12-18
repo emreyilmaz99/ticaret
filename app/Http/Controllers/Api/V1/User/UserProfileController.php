@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\User\UpdateAvatarRequest;
 use App\Http\Requests\Api\V1\User\UpdatePasswordRequest;
 use App\Http\Requests\Api\V1\User\UpdateUserProfileRequest;
+use App\Http\Resources\Api\V1\User\UserProfileResource;
 use App\Services\User\UserProfileService;
 use App\Traits\ResponseHttp;
 use Illuminate\Http\JsonResponse;
@@ -24,8 +25,15 @@ class UserProfileController extends Controller
      */
     public function show(Request $request): JsonResponse
     {
-        return $this->fromServiceResponse(
-            $this->profileService->getProfile($request->user())
+        $result = $this->profileService->getProfile($request->user());
+        
+        if (!$result->isSuccess()) {
+            return $this->fromServiceResponse($result);
+        }
+
+        return $this->success(
+            ['user' => new UserProfileResource($result->getData()['user'])],
+            $result->getMessage()
         );
     }
 
@@ -34,8 +42,15 @@ class UserProfileController extends Controller
      */
     public function update(UpdateUserProfileRequest $request): JsonResponse
     {
-        return $this->fromServiceResponse(
-            $this->profileService->updateProfile($request->user(), $request->validated())
+        $result = $this->profileService->updateProfile($request->user(), $request->validated());
+        
+        if (!$result->isSuccess()) {
+            return $this->fromServiceResponse($result);
+        }
+
+        return $this->success(
+            ['user' => new UserProfileResource($result->getData()['user'])],
+            $result->getMessage()
         );
     }
 

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1\Vendor;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Vendor\StoreProductRequest;
 use App\Http\Requests\Api\V1\Vendor\UpdateProductRequest;
+use App\Http\Requests\Api\V1\Vendor\UpdateProductStatusRequest;
 use App\Http\Resources\Api\V1\Shared\ProductResource;
 use App\Models\Product;
 use App\Services\Product\ProductService;
@@ -30,7 +31,7 @@ class ProductController extends Controller
         
         return $this->paginated(
             ProductResource::collection($list),
-            'Products listed'
+            'Ürünler başarıyla getirildi.'
         );
     }
 
@@ -43,34 +44,41 @@ class ProductController extends Controller
         $data['tags'] = $request->input('tags');
         $data['variants'] = $request->input('variants');
 
-        $product = $this->service->createForVendor($vendor, $data);
+        try {
+            $product = $this->service->createForVendor($vendor, $data);
+            
+            return $this->success(
+                ['product' => new ProductResource($product)],
+                'Ürün başarıyla oluşturuldu.',
+                201
+            );
+        } catch (\Exception $e) {
+            return $this->error($e->getMessage(), 400);
+        }
+    }
+
+    public function show(Request $request, int $id)
+    {
+        $vendor = $request->user();
+        $product = $this->service->findForVendor($vendor, $id);
+        
+        if (!$product) {
+            return $this->error('Ürün bulunamadı', 404);
+        }
         
         return $this->success(
-            new ProductResource($product),
-            'Product created',
-            201
+            ['product' => new ProductResource($product)],
+            'Ürün başarıyla getirildi.'
         );
     }
 
-    public function show(Request $request, $id)
-    {
-        $vendor = $request->user();
-        $product = $this->service->findForVendor($vendor, $id);
-        
-        if (!$product) {
-            return $this->error('Product not found', 404);
-        }
-        
-        return $this->success(new ProductResource($product));
-    }
-
-    public function update(UpdateProductRequest $request, $id)
+    public function update(UpdateProductRequest $request, int $id)
     {
         $vendor = $request->user();
         $product = $this->service->findForVendor($vendor, $id);
 
         if (!$product) {
-            return $this->error('Product not found', 404);
+            return $this->error('Ürün bulunamadı', 404);
         }
         
         try {
@@ -88,58 +96,55 @@ class ProductController extends Controller
             }
 
             $updated = $this->service->updateForVendor($vendor, $product, $data);
+            
             return $this->success(
-                new ProductResource($updated),
-                'Product updated'
+                ['product' => new ProductResource($updated)],
+                'Ürün başarıyla güncellendi.'
             );
         } catch (\Exception $e) {
-            return $this->error($e->getMessage(), 403);
+            return $this->error($e->getMessage(), 400);
         }
     }
 
-    public function destroy(Request $request, $id)
+    public function destroy(Request $request, int $id)
     {
         $vendor = $request->user();
         $product = $this->service->findForVendor($vendor, $id);
 
         if (!$product) {
-            return $this->error('Product not found', 404);
+            return $this->error('Ürün bulunamadı', 404);
         }
         
         try {
             $this->service->deleteForVendor($vendor, $product);
-            return $this->success(null, 'Product deleted', 204);
+            return $this->success(null, 'Ürün başarıyla silindi.');
         } catch (\Exception $e) {
-            return $this->error($e->getMessage(), 403);
+            return $this->error($e->getMessage(), 400);
         }
     }
 
-    public function destroyPhoto(Request $request, $id, $photoId)
+    public function destroyPhoto(Request $request, int $id, int $photoId)
     {
         $vendor = $request->user();
         $product = $this->service->findForVendor($vendor, $id);
 
         if (!$product) {
-            return $this->error('Product not found', 404);
+            return $this->error('Ürün bulunamadı', 404);
         }
         
         try {
-            $this->service->deletePhotoForVendor($vendor, $product, (int)$photoId);
-            return $this->success(null, 'Photo deleted', 204);
+            $this->service->deletePhotoForVendor($vendor, $product, $photoId);
+            return $this->success(null, 'Fotoğraf başarıyla silindi.');
         } catch (\Exception $e) {
-            return $this->error($e->getMessage(), 403);
+            return $this->error($e->getMessage(), 400);
         }
     }
 
     /**
      * Update product status (vendor can only toggle between active/inactive)
      */
-    public function updateStatus(Request $request, $id)
+    public function updateStatus(UpdateProductStatusRequest $request, int $id)
     {
-        $request->validate([
-            'status' => 'required|in:active,inactive'
-        ]);
-
         $vendor = $request->user();
         $product = $this->service->findForVendor($vendor, $id);
 
@@ -152,13 +157,13 @@ class ProductController extends Controller
             return $this->error('Bu ürünün durumu değiştirilemez. Sadece yayında veya pasif durumundaki ürünlerin durumu değiştirilebilir.', 403);
         }
 
-        $product->status = $request->status;
+        $product->status = $request->validated()['status'];
         $product->save();
 
-        $message = $request->status === 'active' ? 'Ürün yayına alındı' : 'Ürün pasife alındı';
+        $message = $request->validated()['status'] === 'active' ? 'Ürün yayına alındı' : 'Ürün pasife alındı';
 
         return $this->success(
-            new ProductResource($product->fresh(['vendor', 'category', 'photos', 'variants', 'tags'])),
+            ['product' => new ProductResource($product->fresh(['vendor', 'category', 'photos', 'variants', 'tags']))],
             $message
         );
     }

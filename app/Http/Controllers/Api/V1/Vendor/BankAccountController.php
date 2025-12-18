@@ -24,27 +24,37 @@ class BankAccountController extends Controller
     {
         $vendorId = $request->user()->id;
         $accounts = $this->bankAccountService->list($vendorId);
-        return $this->success(VendorBankAccountResource::collection($accounts));
+        return $this->success(
+            ['accounts' => VendorBankAccountResource::collection($accounts)],
+            'Banka hesapları başarıyla getirildi.'
+        );
     }
 
     public function store(StoreVendorBankAccountRequest $request)
     {
         $vendorId = $request->user()->id;
         $account = $this->bankAccountService->add($vendorId, $request->validated());
-        return $this->success(new VendorBankAccountResource($account), 'Banka hesabı eklendi', 201);
+        return $this->success(
+            ['account' => new VendorBankAccountResource($account)],
+            'Banka hesabı başarıyla eklendi.',
+            201
+        );
     }
 
-    public function update(StoreVendorBankAccountRequest $request, $accountId)
+    public function update(StoreVendorBankAccountRequest $request, int $accountId)
     {
         $vendorId = $request->user()->id;
-        $account = $this->bankAccountService->update($vendorId, (int) $accountId, $request->validated());
-        return $this->success(new VendorBankAccountResource($account), 'Banka hesabı güncellendi');
+        $account = $this->bankAccountService->update($vendorId, $accountId, $request->validated());
+        return $this->success(
+            ['account' => new VendorBankAccountResource($account)],
+            'Banka hesabı başarıyla güncellendi.'
+        );
     }
 
-    public function destroy(Request $request, $accountId)
+    public function destroy(Request $request, int $accountId)
     {
         $vendorId = $request->user()->id;
-        $this->bankAccountService->delete($vendorId, (int) $accountId);
-        return $this->success(null, 'Banka hesabı silindi');
+        $this->bankAccountService->delete($vendorId, $accountId);
+        return $this->success(null, 'Banka hesabı başarıyla silindi.');
     }
 }

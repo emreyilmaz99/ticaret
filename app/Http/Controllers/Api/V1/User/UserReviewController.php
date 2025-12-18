@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1\User;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\User\StoreReviewRequest;
+use App\Http\Resources\Api\V1\User\ReviewResource;
 use App\Services\Review\ReviewService;
 use App\Traits\ResponseHttp;
 use Illuminate\Http\JsonResponse;
@@ -42,7 +43,15 @@ class UserReviewController extends Controller
             $request->file('photos', [])
         );
 
-        return $this->fromServiceResponse($result);
+        if (!$result->isSuccess()) {
+            return $this->fromServiceResponse($result);
+        }
+
+        return $this->success(
+            ['review' => new ReviewResource($result->getData())],
+            $result->getMessage(),
+            201
+        );
     }
 
     /**
@@ -51,9 +60,23 @@ class UserReviewController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        return $this->fromServiceResponse(
-            $this->reviewService->getUserReviews($request->user()->id, $request->integer('per_page', 10))
-        );
+        $result = $this->reviewService->getUserReviews($request->user()->id, $request->integer('per_page', 10));
+        
+        if (!$result->isSuccess()) {
+            return $this->fromServiceResponse($result);
+        }
+
+        $reviews = $result->getData();
+
+        return $this->success([
+            'reviews' => ReviewResource::collection($reviews->items()),
+            'pagination' => [
+                'current_page' => $reviews->currentPage(),
+                'last_page' => $reviews->lastPage(),
+                'per_page' => $reviews->perPage(),
+                'total' => $reviews->total(),
+            ],
+        ], $result->getMessage());
     }
 
     /**

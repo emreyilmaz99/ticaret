@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1\User;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\Api\V1\User\OrderResource;
 use App\Services\Order\OrderService;
 use App\Traits\ResponseHttp;
 use Illuminate\Http\JsonResponse;
@@ -33,14 +34,14 @@ class OrderController extends Controller
         $orders = $result->getData();
 
         return $this->success([
-            'orders' => $orders->items(),
+            'orders' => OrderResource::collection($orders->items()),
             'pagination' => [
                 'current_page' => $orders->currentPage(),
                 'last_page' => $orders->lastPage(),
                 'per_page' => $orders->perPage(),
                 'total' => $orders->total(),
             ],
-        ], 'Siparişler getirildi');
+        ], $result->getMessage());
     }
 
     /**
@@ -49,8 +50,15 @@ class OrderController extends Controller
      */
     public function show(Request $request, string $orderNumber): JsonResponse
     {
-        return $this->fromServiceResponse(
-            $this->orderService->getUserOrder($request->user()->id, $orderNumber)
+        $result = $this->orderService->getUserOrder($request->user()->id, $orderNumber);
+        
+        if (!$result->isSuccess()) {
+            return $this->fromServiceResponse($result);
+        }
+
+        return $this->success(
+            ['order' => new OrderResource($result->getData())],
+            $result->getMessage()
         );
     }
 

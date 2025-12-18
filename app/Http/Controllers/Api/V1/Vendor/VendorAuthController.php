@@ -4,11 +4,7 @@ namespace App\Http\Controllers\Api\V1\Vendor;
 
 use App\Http\Controllers\Api\V1\Vendor\BaseVendorController;
 use App\Http\Requests\Api\V1\Admin\LoginRequest;
-use App\Http\Resources\Api\V1\Admin\UserResource;
-use App\Models\Vendor;
 use App\Services\Auth\AuthService;
-
-use Illuminate\Support\Facades\Hash;
 
 class VendorAuthController extends BaseVendorController
 {
@@ -37,7 +33,7 @@ class VendorAuthController extends BaseVendorController
 
         return $this->success(
             ['vendor' => new \App\Http\Resources\Api\V1\Shared\VendorResource($vendor)],
-            'Vendor retrieved'
+            'Satıcı bilgileri başarıyla getirildi.'
         );
     }
 

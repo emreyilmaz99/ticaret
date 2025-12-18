@@ -4,12 +4,10 @@ namespace App\Http\Controllers\Api\V1\Vendor;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Vendor\StoreReviewResponseRequest;
-use App\Models\ProductReview;
-use App\Models\ReviewResponse;
+use App\Http\Resources\Api\V1\Vendor\ReviewResource;
 use App\Services\Review\VendorReviewResponseService;
 use App\Traits\ResponseHttp;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 
 class VendorReviewController extends Controller
 {
@@ -29,20 +27,20 @@ class VendorReviewController extends Controller
     public function index(Request $request, string $productId)
     {
         $vendor = $request->user();
+        $perPage = $request->integer('per_page', 20);
 
-        // Verify product belongs to vendor
-        $product = $vendor->products()->findOrFail($productId);
+        $result = $this->responseService->getProductReviews($vendor, $productId, $perPage);
+        
+        if (!$result->isSuccess()) {
+            return $this->fromServiceResponse($result);
+        }
 
-        $reviews = ProductReview::where('product_id', $productId)
-            ->approved()
-            ->with(['user', 'media', 'response'])
-            ->latest()
-            ->paginate($request->integer('per_page', 20));
+        $data = $result->getData();
 
-        return $this->success(
-            $reviews,
-            'Ürün yorumları başarıyla getirildi.'
-        );
+        return $this->success([
+            'reviews' => ReviewResource::collection($data['reviews']),
+            'pagination' => $data['pagination'],
+        ], $result->getMessage());
     }
 
     /**
@@ -52,76 +50,32 @@ class VendorReviewController extends Controller
     public function allReviews(Request $request)
     {
         $vendor = $request->user();
-        $productIds = $vendor->products()->pluck('id');
 
-        Log::info('Vendor Reviews Debug', [
-            'vendor_id' => $vendor->id,
-            'product_ids' => $productIds->toArray(),
-            'product_count' => $productIds->count(),
-        ]);
+        $filters = [
+            'has_response' => $request->has('has_response') ? $request->boolean('has_response') : null,
+            'rating' => $request->has('rating') ? $request->integer('rating') : null,
+            'product_id' => $request->input('product_id'),
+            'search' => $request->input('search'),
+            'sort_by' => $request->input('sort_by', 'recent'),
+        ];
 
-        $query = ProductReview::whereIn('product_id', $productIds)
-            ->where('status', 'approved')
-            ->with(['user', 'product.photos', 'media', 'response']);
+        // Remove null values
+        $filters = array_filter($filters, fn($value) => $value !== null);
 
-        // Filter by response status
-        if ($request->has('has_response')) {
-            if ($request->boolean('has_response')) {
-                $query->has('response');
-            } else {
-                $query->doesntHave('response');
-            }
+        $perPage = $request->integer('per_page', 20);
+
+        $result = $this->responseService->getAllVendorReviews($vendor, $filters, $perPage);
+        
+        if (!$result->isSuccess()) {
+            return $this->fromServiceResponse($result);
         }
 
-        // Filter by rating
-        if ($request->has('rating')) {
-            $query->where('rating', $request->integer('rating'));
-        }
+        $data = $result->getData();
 
-        // Filter by product
-        if ($request->has('product_id')) {
-            $query->where('product_id', $request->input('product_id'));
-        }
-
-        // Search
-        if ($request->has('search')) {
-            $search = $request->input('search');
-            $query->where(function ($q) use ($search) {
-                $q->where('title', 'like', "%{$search}%")
-                  ->orWhere('comment', 'like', "%{$search}%")
-                  ->orWhereHas('user', function ($uq) use ($search) {
-                      $uq->where('name', 'like', "%{$search}%");
-                  });
-            });
-        }
-
-        // Sort
-        $sortBy = $request->input('sort_by', 'recent');
-        switch ($sortBy) {
-            case 'oldest':
-                $query->oldest();
-                break;
-            case 'highest':
-                $query->orderBy('rating', 'desc');
-                break;
-            case 'lowest':
-                $query->orderBy('rating', 'asc');
-                break;
-            default:
-                $query->latest();
-        }
-
-        $reviews = $query->paginate($request->integer('per_page', 20));
-
-        Log::info('Vendor Reviews Result', [
-            'total_reviews' => $reviews->total(),
-            'current_page' => $reviews->currentPage(),
-        ]);
-
-        return $this->success(
-            $reviews,
-            'Yorumlar başarıyla getirildi.'
-        );
+        return $this->success([
+            'reviews' => ReviewResource::collection($data['reviews']),
+            'pagination' => $data['pagination'],
+        ], $result->getMessage());
     }
 
     /**
@@ -132,25 +86,21 @@ class VendorReviewController extends Controller
     {
         $vendor = $request->user();
 
-        Log::info('Store Response Request', [
-            'vendor_id' => $vendor->id,
-            'review_id' => $reviewId,
-            'request_data' => $request->all(),
-            'response_text' => $request->input('response_text'),
-        ]);
-
         $result = $this->responseService->createResponse(
             $vendor,
             $reviewId,
             $request->input('response_text')
         );
 
-        Log::info('Store Response Result', [
-            'success' => $result->isSuccess(),
-            'message' => $result->getMessage(),
-        ]);
+        if (!$result->isSuccess()) {
+            return $this->fromServiceResponse($result);
+        }
 
-        return $this->fromServiceResponse($result, 201);
+        return $this->success(
+            $result->getData(),
+            $result->getMessage(),
+            201
+        );
     }
 
     /**
@@ -174,44 +124,8 @@ class VendorReviewController extends Controller
     {
         $vendor = $request->user();
 
-        $productIds = $vendor->products()->pluck('id');
-
-        $reviews = ProductReview::whereIn('product_id', $productIds)->approved();
-        $totalReviews = $reviews->count();
-        $avgRating = round($reviews->avg('rating') ?? 0, 1);
-
-        // Rating breakdown
-        $ratingBreakdown = [];
-        for ($i = 1; $i <= 5; $i++) {
-            $ratingBreakdown[$i] = ProductReview::whereIn('product_id', $productIds)
-                ->approved()
-                ->where('rating', $i)
-                ->count();
-        }
-
-        // Reviews with media
-        $withMedia = ProductReview::whereIn('product_id', $productIds)
-            ->approved()
-            ->has('media')
-            ->count();
-
-        $stats = [
-            'total_reviews' => $totalReviews,
-            'average_rating' => $avgRating,
-            'pending_responses' => ProductReview::whereIn('product_id', $productIds)
-                ->approved()
-                ->doesntHave('response')
-                ->count(),
-            'responded' => ReviewResponse::whereHas('review', function ($query) use ($productIds) {
-                $query->whereIn('product_id', $productIds);
-            })->count(),
-            'rating_breakdown' => $ratingBreakdown,
-            'with_media' => $withMedia,
-        ];
-
-        return $this->success(
-            $stats,
-            'Yorum istatistikleri başarıyla getirildi.'
+        return $this->fromServiceResponse(
+            $this->responseService->getVendorReviewStats($vendor)
         );
     }
 }

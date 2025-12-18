@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1\User;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\User\StoreUserAddressRequest;
 use App\Http\Requests\Api\V1\User\UpdateUserAddressRequest;
+use App\Http\Resources\Api\V1\User\UserAddressResource;
 use App\Services\User\UserAddressService;
 use App\Traits\ResponseHttp;
 use Illuminate\Http\JsonResponse;
@@ -23,8 +24,15 @@ class UserAddressController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        return $this->fromServiceResponse(
-            $this->addressService->getUserAddresses($request->user()->id)
+        $result = $this->addressService->getUserAddresses($request->user()->id);
+        
+        if (!$result->isSuccess()) {
+            return $this->fromServiceResponse($result);
+        }
+
+        return $this->success(
+            ['addresses' => UserAddressResource::collection($result->getData()['addresses'])],
+            $result->getMessage()
         );
     }
 
@@ -33,8 +41,16 @@ class UserAddressController extends Controller
      */
     public function store(StoreUserAddressRequest $request): JsonResponse
     {
-        return $this->fromServiceResponse(
-            $this->addressService->createAddress($request->user()->id, $request->validated())
+        $result = $this->addressService->createAddress($request->user()->id, $request->validated());
+        
+        if (!$result->isSuccess()) {
+            return $this->fromServiceResponse($result);
+        }
+
+        return $this->success(
+            ['address' => new UserAddressResource($result->getData()['address'])],
+            $result->getMessage(),
+            201
         );
     }
 
@@ -43,8 +59,15 @@ class UserAddressController extends Controller
      */
     public function show(Request $request, int $addressId): JsonResponse
     {
-        return $this->fromServiceResponse(
-            $this->addressService->getAddress($request->user()->id, $addressId)
+        $result = $this->addressService->getAddress($request->user()->id, $addressId);
+        
+        if (!$result->isSuccess()) {
+            return $this->fromServiceResponse($result);
+        }
+
+        return $this->success(
+            ['address' => new UserAddressResource($result->getData()['address'])],
+            $result->getMessage()
         );
     }
 
@@ -53,8 +76,15 @@ class UserAddressController extends Controller
      */
     public function update(UpdateUserAddressRequest $request, int $addressId): JsonResponse
     {
-        return $this->fromServiceResponse(
-            $this->addressService->updateAddress($request->user()->id, $addressId, $request->validated())
+        $result = $this->addressService->updateAddress($request->user()->id, $addressId, $request->validated());
+        
+        if (!$result->isSuccess()) {
+            return $this->fromServiceResponse($result);
+        }
+
+        return $this->success(
+            ['address' => new UserAddressResource($result->getData()['address'])],
+            $result->getMessage()
         );
     }
 

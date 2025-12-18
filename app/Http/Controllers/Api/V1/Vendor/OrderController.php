@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1\Vendor;
 
 use App\Http\Controllers\Api\V1\Vendor\BaseVendorController;
+use App\Http\Requests\Api\V1\Vendor\UpdateOrderStatusRequest;
 use App\Services\Vendor\VendorOrderService;
 use Illuminate\Http\Request;
 
@@ -55,16 +56,12 @@ class OrderController extends BaseVendorController
     /**
      * Update order status
      */
-    public function updateStatus(Request $request, int $orderId)
+    public function updateStatus(UpdateOrderStatusRequest $request, int $orderId)
     {
         $vendor = $request->user();
         if (!$vendor) {
             return $this->error('Yetkisiz', 401);
         }
-
-        $request->validate([
-            'status' => 'required|in:pending,processing,shipped,delivered,cancelled,refunded'
-        ]);
 
         $result = $this->service->updateOrderStatus(
             $vendor->id,

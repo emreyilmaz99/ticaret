@@ -17,24 +17,8 @@ class UserProfileService extends BaseService
     {
         try {
             $user->load('addresses');
-
-            $profile = [
-                'user' => [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    'phone' => $user->phone,
-                    'identity_number' => $user->identity_number,
-                    'avatar' => $user->avatar_url,
-                    'birth_date' => $user->birth_date?->format('Y-m-d'),
-                    'gender' => $user->gender,
-                    'email_verified_at' => $user->email_verified_at,
-                    'created_at' => $user->created_at,
-                    'addresses' => $user->addresses,
-                ],
-            ];
-
-            return $this->successResponse($profile, 'Profil getirildi');
+            
+            return $this->successResponse(['user' => $user], 'Profil getirildi');
         } catch (\Exception $e) {
             return $this->handleException($e, 'Profil alınamadı');
         }
@@ -48,20 +32,7 @@ class UserProfileService extends BaseService
         try {
             $user->update($data);
 
-            $profile = [
-                'user' => [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    'phone' => $user->phone,
-                    'identity_number' => $user->identity_number,
-                    'avatar' => $user->avatar_url,
-                    'birth_date' => $user->birth_date?->format('Y-m-d'),
-                    'gender' => $user->gender,
-                ],
-            ];
-
-            return $this->successResponse($profile, 'Profil bilgileri güncellendi');
+            return $this->successResponse(['user' => $user->fresh()], 'Profil bilgileri güncellendi');
         } catch (\Exception $e) {
             return $this->handleException($e, 'Profil güncellenemedi');
         }

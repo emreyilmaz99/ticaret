@@ -24,13 +24,20 @@ class PayoutController extends Controller
     {
         $vendorId = $request->user()->id;
         $payouts = $this->payoutService->list($vendorId);
-        return $this->success(VendorPayoutResource::collection($payouts));
+        return $this->success(
+            ['payouts' => VendorPayoutResource::collection($payouts)],
+            'Ödemeler başarıyla getirildi.'
+        );
     }
 
     public function store(RequestPayoutRequest $request)
     {
         $vendorId = $request->user()->id;
         $payout = $this->payoutService->request($vendorId, (float) $request->input('amount'), $request->validated());
-        return $this->success(new VendorPayoutResource($payout), 'Payout isteği oluşturuldu', 201);
+        return $this->success(
+            ['payout' => new VendorPayoutResource($payout)],
+            'Ödeme talebi başarıyla oluşturuldu.',
+            201
+        );
     }
 }

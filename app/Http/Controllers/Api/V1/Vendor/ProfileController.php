@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1\Vendor;
 
 use App\Http\Controllers\Api\V1\Vendor\BaseVendorController;
 use App\Http\Requests\Api\V1\Vendor\UpdateProfileRequest;
+use App\Http\Requests\Api\V1\Vendor\UpdateVendorCategoriesRequest;
 use App\Http\Resources\Api\V1\Admin\VendorResource;
 use App\Services\Vendor\VendorService;
 use App\Services\Vendor\VendorCategoryService;
@@ -130,25 +131,14 @@ class ProfileController extends BaseVendorController
     /**
      * Update vendor's selected categories (vendor can freely choose)
      */
-    public function updateMyCategories(Request $request)
+    public function updateMyCategories(UpdateVendorCategoriesRequest $request)
     {
         $vendor = $request->user();
         if (! $vendor) {
             return $this->error('Yetkisiz', 401);
         }
 
-        $request->validate([
-            'category_ids' => 'required|array|min:1',
-            'category_ids.*' => 'exists:categories,id'
-        ], [
-            'category_ids.required' => 'En az bir kategori seçmelisiniz',
-            'category_ids.min' => 'En az bir kategori seçmelisiniz',
-            'category_ids.*.exists' => 'Geçersiz kategori'
-        ]);
-
-        $categoryIds = $request->input('category_ids');
-
-        $result = $this->categoryService->updateMyCategories($vendor->id, $categoryIds);
+        $result = $this->categoryService->updateMyCategories($vendor->id, $request->input('category_ids'));
 
         return $this->fromServiceResponse($result);
     }
