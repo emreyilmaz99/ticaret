@@ -2,10 +2,11 @@
 
 namespace App\Services\Review;
 
+use App\Interfaces\Services\Review\BannedWordServiceInterface;
 use App\Models\BannedWord;
 use Illuminate\Support\Facades\Cache;
 
-class BannedWordService
+class BannedWordService implements BannedWordServiceInterface
 {
     /**
      * Check if text contains banned words

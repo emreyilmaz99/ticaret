@@ -3,10 +3,10 @@
 namespace App\Services\Payment;
 
 use App\Interfaces\Services\Payment\IyzicoServiceInterface;
+use App\Interfaces\Services\Payment\IyzicoSubMerchantServiceInterface;
+use App\Interfaces\Services\Payment\IyzicoCheckoutServiceInterface;
+use App\Interfaces\Services\Payment\IyzicoUtilityServiceInterface;
 use App\Services\BaseService;
-use App\Services\Payment\IyzicoSubMerchantService;
-use App\Services\Payment\IyzicoCheckoutService;
-use App\Services\Payment\IyzicoUtilityService;
 use App\Models\Vendor;
 use App\Models\Order;
 use App\Models\User;
@@ -22,14 +22,14 @@ use App\Models\UserAddress;
  */
 class IyzicoService extends BaseService implements IyzicoServiceInterface
 {
-    protected IyzicoSubMerchantService $subMerchantService;
-    protected IyzicoCheckoutService $checkoutService;
-    protected IyzicoUtilityService $utilityService;
+    protected IyzicoSubMerchantServiceInterface $subMerchantService;
+    protected IyzicoCheckoutServiceInterface $checkoutService;
+    protected IyzicoUtilityServiceInterface $utilityService;
 
     public function __construct(
-        IyzicoSubMerchantService $subMerchantService,
-        IyzicoCheckoutService $checkoutService,
-        IyzicoUtilityService $utilityService
+        IyzicoSubMerchantServiceInterface $subMerchantService,
+        IyzicoCheckoutServiceInterface $checkoutService,
+        IyzicoUtilityServiceInterface $utilityService
     ) {
         $this->subMerchantService = $subMerchantService;
         $this->checkoutService = $checkoutService;

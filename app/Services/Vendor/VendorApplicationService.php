@@ -2,6 +2,7 @@
 
 namespace App\Services\Vendor;
 
+use App\Interfaces\Services\Vendor\VendorApplicationServiceInterface;
 use App\Services\BaseService;
 use App\Services\Vendor\VendorApplicationPreService;
 use App\Services\Vendor\VendorApplicationFullService;
@@ -14,7 +15,7 @@ use App\Models\Vendor;
  * This is a backward-compatible facade that delegates to specialized sub-services.
  * All methods are marked as @deprecated to encourage direct use of sub-services.
  */
-class VendorApplicationService extends BaseService
+class VendorApplicationService extends BaseService implements VendorApplicationServiceInterface
 {
     protected VendorApplicationPreService $preService;
     protected VendorApplicationFullService $fullService;

@@ -2,12 +2,13 @@
 
 namespace App\Services\Media;
 
+use App\Interfaces\Services\Media\ImageServiceInterface;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Intervention\Image\ImageManager;
 use Intervention\Image\Drivers\Gd\Driver;
 
-class ImageService
+class ImageService implements ImageServiceInterface
 {
     protected ImageManager $imageManager;
 

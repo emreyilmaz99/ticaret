@@ -2,6 +2,7 @@
 
 namespace App\Services\Vendor;
 
+use App\Interfaces\Services\Vendor\VendorMediaServiceInterface;
 use App\Services\BaseService;
 use App\Core\ServiceResponse;
 use App\Models\VendorMedia;
@@ -9,7 +10,7 @@ use App\Repositories\Interfaces\VendorMediaRepositoryInterface;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 
-class VendorMediaService extends BaseService
+class VendorMediaService extends BaseService implements VendorMediaServiceInterface
 {
     protected VendorMediaRepositoryInterface $mediaRepo;
 

@@ -2,12 +2,13 @@
 
 namespace App\Services\Vendor;
 
+use App\Interfaces\Services\Vendor\VendorRatingServiceInterface;
 use App\Services\BaseService;
 use App\Core\ServiceResponse;
 use App\Models\Vendor;
 use App\Repositories\Interfaces\VendorRatingRepositoryInterface;
 
-class VendorRatingService extends BaseService
+class VendorRatingService extends BaseService implements VendorRatingServiceInterface
 {
     protected VendorRatingRepositoryInterface $ratingRepo;
 

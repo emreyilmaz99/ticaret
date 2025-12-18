@@ -2,6 +2,7 @@
 
 namespace App\Services\Product;
 
+use App\Interfaces\Services\Product\ProductCrudServiceInterface;
 use App\Services\BaseService;
 use App\Models\Product;
 use App\Models\Vendor;
@@ -15,7 +16,7 @@ use Illuminate\Support\Str;
  * Handles product create, update, delete operations.
  * Used by vendor controllers and admin controllers.
  */
-class ProductCrudService extends BaseService
+class ProductCrudService extends BaseService implements ProductCrudServiceInterface
 {
     protected ProductRepositoryInterface $repo;
     protected TagRepositoryInterface $tagRepo;

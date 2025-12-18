@@ -2,10 +2,11 @@
 
 namespace App\Services\Cart;
 
+use App\Interfaces\Services\Cart\CartResponseFormatterInterface;
 use App\Models\Cart;
 use App\Models\VendorShippingSetting;
 
-class CartResponseFormatter
+class CartResponseFormatter implements CartResponseFormatterInterface
 {
     /**
      * Format cart response with vendor grouping

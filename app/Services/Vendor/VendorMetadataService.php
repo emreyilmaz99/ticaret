@@ -2,11 +2,12 @@
 
 namespace App\Services\Vendor;
 
+use App\Interfaces\Services\Vendor\VendorMetadataServiceInterface;
 use App\Services\BaseService;
 use App\Core\ServiceResponse;
 use App\Repositories\Interfaces\VendorMetadataRepositoryInterface;
 
-class VendorMetadataService extends BaseService
+class VendorMetadataService extends BaseService implements VendorMetadataServiceInterface
 {
     protected VendorMetadataRepositoryInterface $metadataRepo;
 

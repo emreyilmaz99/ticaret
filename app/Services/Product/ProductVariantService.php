@@ -2,6 +2,7 @@
 
 namespace App\Services\Product;
 
+use App\Interfaces\Services\Product\ProductVariantServiceInterface;
 use App\Services\BaseService;
 use App\Models\Product;
 use App\Models\ProductVariant;
@@ -17,7 +18,7 @@ use Illuminate\Support\Facades\Log;
  * 
  * Handles product variant create, update, stock, SKU management.
  */
-class ProductVariantService extends BaseService
+class ProductVariantService extends BaseService implements ProductVariantServiceInterface
 {
     use ManagesVariantStock;
 

@@ -2,6 +2,7 @@
 
 namespace App\Services\Cart;
 
+use App\Interfaces\Services\Cart\CartCouponManagerInterface;
 use App\Core\ServiceResponse;
 use App\Models\Cart;
 use App\Models\User;
@@ -9,7 +10,7 @@ use App\Models\VendorCoupon;
 use App\Services\BaseService;
 use App\Repositories\CartRepository;
 
-class CartCouponManager extends BaseService
+class CartCouponManager extends BaseService implements CartCouponManagerInterface
 {
     protected CartRepository $cartRepo;
     protected CartResponseFormatter $formatter;

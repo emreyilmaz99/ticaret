@@ -2,6 +2,7 @@
 
 namespace App\Services\Product;
 
+use App\Interfaces\Services\Product\ProductMediaServiceInterface;
 use App\Services\BaseService;
 use App\Models\ProductPhoto;
 use App\Repositories\Interfaces\ProductPhotoRepositoryInterface;
@@ -13,7 +14,7 @@ use App\Repositories\Interfaces\ProductPhotoRepositoryInterface;
  * Note: Some features like setPrimary and updateOrder are simplified
  * due to repository interface limitations.
  */
-class ProductMediaService extends BaseService
+class ProductMediaService extends BaseService implements ProductMediaServiceInterface
 {
     protected ProductPhotoRepositoryInterface $photoRepo;
 

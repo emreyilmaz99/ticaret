@@ -2,6 +2,8 @@
 
 namespace App\Services\Payment;
 
+use App\Interfaces\Services\Payment\IyzicoUtilityServiceInterface;
+
 /**
  * IyzicoUtilityService
  * 
@@ -11,7 +13,7 @@ namespace App\Services\Payment;
  * - Name parsing
  * - Conversation ID generation
  */
-class IyzicoUtilityService
+class IyzicoUtilityService implements IyzicoUtilityServiceInterface
 {
     /**
      * Generate unique conversation ID for API calls

@@ -2,6 +2,8 @@
 
 namespace App\Services\Payment;
 
+use App\Interfaces\Services\Payment\IyzicoSubMerchantServiceInterface;
+use App\Interfaces\Services\Payment\IyzicoUtilityServiceInterface;
 use App\Services\BaseService;
 use App\Models\Vendor;
 use Iyzipay\Model\Locale;
@@ -21,12 +23,12 @@ use Illuminate\Support\Facades\Log;
  * - Create, update, retrieve submerchants
  * - Vendor registration management
  */
-class IyzicoSubMerchantService extends BaseService
+class IyzicoSubMerchantService extends BaseService implements IyzicoSubMerchantServiceInterface
 {
     protected Options $options;
-    protected IyzicoUtilityService $utility;
+    protected IyzicoUtilityServiceInterface $utility;
 
-    public function __construct(IyzicoUtilityService $utility)
+    public function __construct(IyzicoUtilityServiceInterface $utility)
     {
         $this->utility = $utility;
         $this->options = new Options();

@@ -2,6 +2,8 @@
 
 namespace App\Services\Payment;
 
+use App\Interfaces\Services\Payment\IyzicoCheckoutServiceInterface;
+use App\Interfaces\Services\Payment\IyzicoUtilityServiceInterface;
 use App\Services\BaseService;
 use App\Models\Order;
 use App\Models\User;
@@ -28,12 +30,12 @@ use Illuminate\Support\Facades\Log;
  * - Retrieve payment result
  * - Build buyer, address, basket items
  */
-class IyzicoCheckoutService extends BaseService
+class IyzicoCheckoutService extends BaseService implements IyzicoCheckoutServiceInterface
 {
     protected Options $options;
-    protected IyzicoUtilityService $utility;
+    protected IyzicoUtilityServiceInterface $utility;
 
-    public function __construct(IyzicoUtilityService $utility)
+    public function __construct(IyzicoUtilityServiceInterface $utility)
     {
         $this->utility = $utility;
         $this->options = new Options();

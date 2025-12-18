@@ -2,6 +2,7 @@
 
 namespace App\Services\Product;
 
+use App\Interfaces\Services\Product\ProductMetadataServiceInterface;
 use App\Services\BaseService;
 use App\Repositories\Interfaces\ProductSettingRepositoryInterface;
 use App\Repositories\Interfaces\ProductMetadataRepositoryInterface;
@@ -11,7 +12,7 @@ use App\Repositories\Interfaces\ProductMetadataRepositoryInterface;
  * 
  * Handles product settings and metadata (SEO, custom fields).
  */
-class ProductMetadataService extends BaseService
+class ProductMetadataService extends BaseService implements ProductMetadataServiceInterface
 {
     protected ProductSettingRepositoryInterface $settingRepo;
     protected ProductMetadataRepositoryInterface $metadataRepo;

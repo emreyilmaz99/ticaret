@@ -109,15 +109,36 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(\App\Interfaces\Services\Vendor\VendorCouponServiceInterface::class, \App\Services\Vendor\VendorCouponService::class);
         $this->app->bind(\App\Interfaces\Services\Vendor\VendorCampaignServiceInterface::class, \App\Services\Vendor\VendorCampaignService::class);
         $this->app->bind(\App\Interfaces\Services\Vendor\VendorApplicationQueryServiceInterface::class, \App\Services\Vendor\VendorApplicationQueryService::class);
+        $this->app->bind(\App\Interfaces\Services\Vendor\VendorApplicationServiceInterface::class, \App\Services\Vendor\VendorApplicationService::class);
+        $this->app->bind(\App\Interfaces\Services\Vendor\VendorMediaServiceInterface::class, \App\Services\Vendor\VendorMediaService::class);
+        $this->app->bind(\App\Interfaces\Services\Vendor\VendorMetadataServiceInterface::class, \App\Services\Vendor\VendorMetadataService::class);
+        $this->app->bind(\App\Interfaces\Services\Vendor\VendorRatingServiceInterface::class, \App\Services\Vendor\VendorRatingService::class);
         
         // Product Additional Services
         $this->app->bind(\App\Interfaces\Services\Product\UnitServiceInterface::class, \App\Services\Product\UnitService::class);
         $this->app->bind(\App\Interfaces\Services\Product\PublicProductServiceInterface::class, \App\Services\Product\PublicProductService::class);
         $this->app->bind(\App\Interfaces\Services\Product\FeaturedDealServiceInterface::class, \App\Services\Product\FeaturedDealService::class);
         $this->app->bind(\App\Interfaces\Services\Product\SearchServiceInterface::class, \App\Services\Product\SearchService::class);
+        $this->app->bind(\App\Interfaces\Services\Product\ProductVariantServiceInterface::class, \App\Services\Product\ProductVariantService::class);
+        $this->app->bind(\App\Interfaces\Services\Product\ProductMetadataServiceInterface::class, \App\Services\Product\ProductMetadataService::class);
+        $this->app->bind(\App\Interfaces\Services\Product\ProductMediaServiceInterface::class, \App\Services\Product\ProductMediaService::class);
+        $this->app->bind(\App\Interfaces\Services\Product\ProductCrudServiceInterface::class, \App\Services\Product\ProductCrudService::class);
         
         // Review Services
         $this->app->bind(\App\Interfaces\Services\Review\VendorReviewResponseServiceInterface::class, \App\Services\Review\VendorReviewResponseService::class);
+        $this->app->bind(\App\Interfaces\Services\Review\BannedWordServiceInterface::class, \App\Services\Review\BannedWordService::class);
+        
+        // Payment Services
+        $this->app->bind(\App\Interfaces\Services\Payment\IyzicoUtilityServiceInterface::class, \App\Services\Payment\IyzicoUtilityService::class);
+        $this->app->bind(\App\Interfaces\Services\Payment\IyzicoSubMerchantServiceInterface::class, \App\Services\Payment\IyzicoSubMerchantService::class);
+        $this->app->bind(\App\Interfaces\Services\Payment\IyzicoCheckoutServiceInterface::class, \App\Services\Payment\IyzicoCheckoutService::class);
+        
+        // Cart Helpers
+        $this->app->bind(\App\Interfaces\Services\Cart\CartResponseFormatterInterface::class, \App\Services\Cart\CartResponseFormatter::class);
+        $this->app->bind(\App\Interfaces\Services\Cart\CartCouponManagerInterface::class, \App\Services\Cart\CartCouponManager::class);
+        
+        // Media Services
+        $this->app->bind(\App\Interfaces\Services\Media\ImageServiceInterface::class, \App\Services\Media\ImageService::class);
         
         // Elasticsearch HTTP Client ve Transport bindings
         $this->app->bind(\Psr\Http\Client\ClientInterface::class, function ($app) {
