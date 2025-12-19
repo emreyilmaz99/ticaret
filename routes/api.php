@@ -223,6 +223,15 @@ Route::prefix('v1/vendor')->group(function () {
         Route::delete('campaigns/{campaign}', [\App\Http\Controllers\Api\V1\Vendor\CampaignController::class, 'destroy']);
         Route::put('campaigns/{campaign}/toggle', [\App\Http\Controllers\Api\V1\Vendor\CampaignController::class, 'toggle']);
 
+        // vendor products
+        Route::get('products', [\App\Http\Controllers\Api\V1\Vendor\ProductController::class, 'index']);
+        Route::post('products', [\App\Http\Controllers\Api\V1\Vendor\ProductController::class, 'store']);
+        Route::get('products/{id}', [\App\Http\Controllers\Api\V1\Vendor\ProductController::class, 'show'])->where('id', '[A-Z0-9]+');
+        Route::put('products/{id}', [\App\Http\Controllers\Api\V1\Vendor\ProductController::class, 'update'])->where('id', '[A-Z0-9]+');
+        Route::put('products/{id}/status', [\App\Http\Controllers\Api\V1\Vendor\ProductController::class, 'updateStatus'])->where('id', '[A-Z0-9]+');
+        Route::delete('products/{id}', [\App\Http\Controllers\Api\V1\Vendor\ProductController::class, 'destroy'])->where('id', '[A-Z0-9]+');
+        Route::delete('products/{id}/photos/{photoId}', [\App\Http\Controllers\Api\V1\Vendor\ProductController::class, 'destroyPhoto'])->where(['id' => '[A-Z0-9]+', 'photoId' => '[0-9]+']);
+
         // vendor review responses
         Route::get('products/{productId}/reviews', [VendorReviewController::class, 'index'])->where('productId', '[A-Z0-9]+');
     });
@@ -313,6 +322,7 @@ Route::post('v1/checkout/callback', [CheckoutController::class, 'callback']);
 Route::prefix('v1')->middleware(['auth:sanctum', 'detect.user.type'])->group(function () {
     // Profile endpoints - automatically detects user type from token
     Route::get('me', [UnifiedProfileController::class, 'show']);
+    Route::get('profile', [UnifiedProfileController::class, 'show']); // Alias for /me
     Route::put('profile', [UnifiedProfileController::class, 'update']);
 
     // Orders - User: their orders, Vendor: orders with their products, Admin: all orders

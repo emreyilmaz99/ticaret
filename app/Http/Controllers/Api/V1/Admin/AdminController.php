@@ -37,7 +37,7 @@ class AdminController extends BaseAdminController
         return $this->fromServiceResponse($this->service->createWithRoles($data, $roles));
     }
 
-    public function update(\App\Http\Requests\Api\V1\Admin\UpdateAdminRequest $request, string|int $id)
+    public function update(Request $request, string $id)
     {
         $data = $request->validated();
         $roles = $data['roles'] ?? [];

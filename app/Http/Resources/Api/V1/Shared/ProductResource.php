@@ -44,10 +44,19 @@ class ProductResource extends JsonResource
             'compare_at_price' => $this->compare_at_price,
             'is_featured' => $this->is_featured,
             'media' => $this->whenLoaded('media'),
-            'photos' => $this->whenLoaded('photos'),
+            'photos' => $this->whenLoaded('photos', function () {
+                return $this->photos->map(function ($photo) {
+                    return [
+                        'id' => $photo->id,
+                        'url' => $photo->file_path,
+                        'alt' => $photo->alt,
+                        'sort_order' => $photo->sort_order,
+                    ];
+                });
+            }),
             'thumbnail' => $this->whenLoaded('photos', function () { 
-                $photo = $this->photos->first();
-                return $photo ? (filter_var($photo->url, FILTER_VALIDATE_URL) ? $photo->url : url($photo->url ?? 'storage/' . $photo->path)) : null;
+                $photo = $this->photos->sortBy('sort_order')->first();
+                return $photo ? $photo->file_path : null;
             }),
             'variants' => $this->whenLoaded('variants'),
             'tags' => $this->whenLoaded('tags'),

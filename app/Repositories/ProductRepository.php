@@ -26,10 +26,28 @@ class ProductRepository extends EloquentBaseRepository implements ProductReposit
     public function listForVendor(int $vendorId, int $perPage = 15): LengthAwarePaginator
     {
         // eager-load category so API resources can include category data without N+1
-        return $this->model->with(['photos','variants','tags','category'])
+        $products = $this->model->with(['photos','variants','tags','category'])
             ->where('vendor_id', $vendorId)
             ->orderByDesc('created_at')
             ->paginate($perPage);
+        
+        // Debug: Log first product photos
+        if ($products->count() > 0) {
+            $first = $products->first();
+            \Log::info('Product Photos Debug', [
+                'product_id' => $first->id,
+                'product_name' => $first->name,
+                'photos_count' => $first->photos->count(),
+                'photos_data' => $first->photos->map(fn($p) => [
+                    'id' => $p->id,
+                    'path' => $p->path,
+                    'url' => $p->url,
+                    'file_path' => $p->file_path
+                ])->toArray()
+            ]);
+        }
+        
+        return $products;
     }
 
     public function existsBySlug(string $slug): bool

@@ -54,7 +54,7 @@ class UserController extends BaseAdminController
         return $this->success(new UserResource($user));
     }
 
-    public function update(\App\Http\Requests\Api\V1\Admin\UpdateUserRequest $request, string|int $id)
+    public function update(Request $request, string $id)
     {
         $data = $request->validated();
         $user = $this->service->find((int)$id);

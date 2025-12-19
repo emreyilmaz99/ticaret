@@ -26,8 +26,24 @@ class ProductController extends Controller
     public function index(Request $request)
     {
         $vendor = $request->user();
+        
+        // Debug: Log vendor information
+        \Log::info('Vendor Products List Request', [
+            'vendor_id' => $vendor->id,
+            'vendor_email' => $vendor->email,
+            'vendor_name' => $vendor->name,
+            'model_class' => get_class($vendor),
+        ]);
+        
         $perPage = (int) $request->query('per_page', 15);
         $list = $this->service->listForVendor($vendor, $perPage);
+        
+        // Debug: Log product count
+        \Log::info('Products Retrieved', [
+            'vendor_id' => $vendor->id,
+            'product_count' => $list->total(),
+            'current_page' => $list->currentPage(),
+        ]);
         
         return $this->paginated(
             ProductResource::collection($list),

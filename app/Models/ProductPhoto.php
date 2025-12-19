@@ -24,8 +24,17 @@ class ProductPhoto extends Model
             return $this->url;
         }
         
-        // url veya path varsa tam URL'e çevir (PublicProductService ile aynı mantık)
-        return url($this->url ?? 'storage/' . $this->path);
+        // Eğer url slash ile başlıyorsa (örn: /storage/...), URL base'i ekle
+        if ($this->url && str_starts_with($this->url, '/')) {
+            return url($this->url);
+        }
+        
+        // path varsa storage'a ekle
+        if ($this->path) {
+            return url('storage/' . $this->path);
+        }
+        
+        return null;
     }
 
     public function product()

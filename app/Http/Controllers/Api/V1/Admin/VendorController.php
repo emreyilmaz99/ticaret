@@ -48,7 +48,7 @@ class VendorController extends BaseAdminController
         return $this->success(new VendorResource($vendor->load('roles')), 'Satıcı oluşturuldu', 201);
     }
 
-    public function update(Request $request, string|int $id)
+    public function update(Request $request, string $id)
     {
         $data = $request->all();
         $vendor = $this->service->find((int)$id);
@@ -76,7 +76,7 @@ class VendorController extends BaseAdminController
         return $this->success(null, 'Satıcı silindi', 200);
     }
 
-    public function updateStatus(Request $request, string|int $id)
+    public function updateStatus(Request $request, string $id)
     {
         $vendor = $this->service->find((int)$id);
         if (! $vendor) {
