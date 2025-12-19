@@ -12,6 +12,8 @@ use App\Http\Controllers\Api\V1\Unified\UnifiedReviewsController;
 use App\Http\Controllers\Api\V1\Unified\UnifiedProductsController;
 use App\Http\Controllers\Api\V1\Unified\UnifiedVendorsController;
 use App\Http\Controllers\Api\V1\Unified\UnifiedCategoriesController;
+use App\Http\Controllers\Api\V1\Unified\UnifiedUsersController;
+use App\Http\Controllers\Api\V1\Unified\UnifiedAdminsController;
 
 // Admin controllers
 use App\Http\Controllers\Api\V1\Admin\AdminAuthController;
@@ -233,10 +235,9 @@ Route::get('v1/vendor-applications/{id}', [PublicVendorApplicationController::cl
 // units (public)
 Route::get('v1/units', [\App\Http\Controllers\Api\V1\Public\UnitsController::class, 'index']);
 
-// categories (public)
+// categories (public) - index and tree only, slug routes moved to end of file
 Route::get('v1/categories', [\App\Http\Controllers\Api\V1\Public\CategoryController::class, 'index']);
 Route::get('v1/categories/tree', [\App\Http\Controllers\Api\V1\Public\CategoryController::class, 'tree']);
-Route::get('v1/categories/{slug}', [\App\Http\Controllers\Api\V1\Public\CategoryController::class, 'show']);
 
 // tax classes (public - for vendors and product display)
 Route::get('v1/tax-classes', [PublicTaxClassController::class, 'index']);
@@ -245,12 +246,10 @@ Route::post('v1/tax-classes/calculate', [PublicTaxClassController::class, 'calcu
 // search (public)
 Route::get('v1/search', [SearchController::class, 'search']);
 
-// products (public)
+// products (public) - index, categories, featured only. Slug routes moved to end of file
 Route::get('v1/products', [PublicProductController::class, 'index']);
 Route::get('v1/products/categories', [PublicProductController::class, 'categories']);
 Route::get('v1/products/featured', [PublicProductController::class, 'featured']);
-Route::get('v1/products/{slug}', [PublicProductController::class, 'show']);
-Route::get('v1/products/{slug}/related', [PublicProductController::class, 'related']);
 
 // product reviews (public)
 Route::get('v1/products/{productId}/reviews', [ProductReviewController::class, 'index']);
@@ -369,11 +368,36 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'detect.user.type'])->group(fun
     Route::get('categories/statistics', [UnifiedCategoriesController::class, 'statistics']); // Admin only
     Route::get('categories/tree', [UnifiedCategoriesController::class, 'tree']); // All users
     Route::get('categories/{category}', [UnifiedCategoriesController::class, 'show']); // All users
+
+    // Users - Admin only
+    Route::get('users', [UnifiedUsersController::class, 'index']); // Admin only
+    Route::get('users/{user}', [UnifiedUsersController::class, 'show']); // Admin only
+    Route::put('users/{user}', [UnifiedUsersController::class, 'update']); // Admin only
+    Route::delete('users/{user}', [UnifiedUsersController::class, 'destroy']); // Admin only
+    Route::put('users/{user}/toggle-status', [UnifiedUsersController::class, 'toggleStatus']); // Admin only
+    Route::get('users/{user}/orders', [UnifiedUsersController::class, 'getUserOrders']); // Admin only
+
+    // Admins - Admin only (super-admin for create/delete)
+    Route::get('admins', [UnifiedAdminsController::class, 'index']); // Admin only
+    Route::post('admins', [UnifiedAdminsController::class, 'store']); // Super-admin only
+    Route::get('admins/{admin}', [UnifiedAdminsController::class, 'show']); // Admin only
+    Route::put('admins/{admin}', [UnifiedAdminsController::class, 'update']); // Admin only
+    Route::delete('admins/{admin}', [UnifiedAdminsController::class, 'destroy']); // Super-admin only
 });
 
-// Public vendor store routes (public) - slug only, NOT numeric IDs
-// These must be AFTER unified routes so numeric IDs go to authenticated routes first
+// ============================================================================
+// PUBLIC SLUG ROUTES - Must be LAST so authenticated/unified routes match first
+// ============================================================================
+
+// Public vendor store routes (slug only, NOT numeric IDs)
 Route::get('v1/vendors/{slug}', [PublicVendorController::class, 'show'])->where('slug', '(?![0-9]+$)[a-zA-Z0-9\-_]+');
 Route::get('v1/vendors/{slug}/products', [PublicVendorController::class, 'products'])->where('slug', '(?![0-9]+$)[a-zA-Z0-9\-_]+');
 Route::get('v1/vendors/{slug}/categories', [PublicVendorController::class, 'categories'])->where('slug', '(?![0-9]+$)[a-zA-Z0-9\-_]+');
 Route::get('v1/vendors/{slug}/reviews', [PublicVendorController::class, 'reviews'])->where('slug', '(?![0-9]+$)[a-zA-Z0-9\-_]+');
+
+// Public product slug routes
+Route::get('v1/products/{slug}', [PublicProductController::class, 'show']);
+Route::get('v1/products/{slug}/related', [PublicProductController::class, 'related']);
+
+// Public category slug routes
+Route::get('v1/categories/{slug}', [\App\Http\Controllers\Api\V1\Public\CategoryController::class, 'show']);

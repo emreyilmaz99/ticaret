@@ -23,9 +23,9 @@ class AdminController extends BaseAdminController
         return $this->fromServiceResponse($this->service->list($perPage));
     }
 
-    public function show(int $id)
+    public function show(string|int $id)
     {
-        return $this->fromServiceResponse($this->service->find($id));
+        return $this->fromServiceResponse($this->service->find((int)$id));
     }
 
     public function store(\App\Http\Requests\Api\V1\Admin\StoreAdminRequest $request)
@@ -37,14 +37,14 @@ class AdminController extends BaseAdminController
         return $this->fromServiceResponse($this->service->createWithRoles($data, $roles));
     }
 
-    public function update(\App\Http\Requests\Api\V1\Admin\UpdateAdminRequest $request, int $id)
+    public function update(\App\Http\Requests\Api\V1\Admin\UpdateAdminRequest $request, string|int $id)
     {
         $data = $request->validated();
         $roles = $data['roles'] ?? [];
         unset($data['roles']);
 
         // Update basic fields first
-        $updateResult = $this->service->update($id, $data);
+        $updateResult = $this->service->update((int)$id, $data);
         
         if (!$updateResult->isSuccess()) {
             return $this->fromServiceResponse($updateResult);
@@ -52,12 +52,12 @@ class AdminController extends BaseAdminController
 
         // Then update roles and status
         return $this->fromServiceResponse(
-            $this->service->updateRolesAndStatus($id, $roles, $data['is_active'] ?? null)
+            $this->service->updateRolesAndStatus((int)$id, $roles, $data['is_active'] ?? null)
         );
     }
 
-    public function destroy(int $id)
+    public function destroy(string|int $id)
     {
-        return $this->fromServiceResponse($this->service->delete($id));
+        return $this->fromServiceResponse($this->service->delete((int)$id));
     }
 }

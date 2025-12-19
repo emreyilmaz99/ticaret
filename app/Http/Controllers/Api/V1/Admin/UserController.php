@@ -44,9 +44,9 @@ class UserController extends BaseAdminController
         ]);
     }
 
-    public function show(int $id)
+    public function show(string|int $id)
     {
-        $user = $this->service->find($id);
+        $user = $this->service->find((int)$id);
         if (! $user) {
             return $this->error('User not found', 404);
         }
@@ -54,41 +54,41 @@ class UserController extends BaseAdminController
         return $this->success(new UserResource($user));
     }
 
-    public function update(\App\Http\Requests\Api\V1\Admin\UpdateUserRequest $request, int $id)
+    public function update(\App\Http\Requests\Api\V1\Admin\UpdateUserRequest $request, string|int $id)
     {
         $data = $request->validated();
-        $user = $this->service->find($id);
+        $user = $this->service->find((int)$id);
         if (! $user) {
             return $this->error('User not found', 404);
         }
 
-        $updated = $this->service->update($id, $data);
+        $updated = $this->service->update((int)$id, $data);
 
-        return $this->success(new UserResource($this->service->find($id)),
+        return $this->success(new UserResource($this->service->find((int)$id)),
             'User updated', 200);
     }
 
-    public function destroy(int $id)
+    public function destroy(string|int $id)
     {
-        $user = $this->service->find($id);
+        $user = $this->service->find((int)$id);
         if (! $user) {
             return $this->error('User not found', 404);
         }
 
-        $this->service->delete($id);
+        $this->service->delete((int)$id);
 
         return $this->success(null, 'User deleted', 200);
     }
 
-    public function toggleStatus(int $id)
+    public function toggleStatus(string|int $id)
     {
-        $user = $this->service->find($id);
+        $user = $this->service->find((int)$id);
         if (! $user) {
             return $this->error('User not found', 404);
         }
 
-        $this->service->toggleStatus($id);
-        $updatedUser = $this->service->find($id);
+        $this->service->toggleStatus((int)$id);
+        $updatedUser = $this->service->find((int)$id);
 
         return $this->success(
             new UserResource($updatedUser),
@@ -96,9 +96,9 @@ class UserController extends BaseAdminController
         );
     }
 
-    public function getUserOrders(int $id)
+    public function getUserOrders(string|int $id)
     {
-        $user = $this->service->find($id);
+        $user = $this->service->find((int)$id);
         if (! $user) {
             return $this->error('User not found', 404);
         }
