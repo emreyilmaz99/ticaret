@@ -48,6 +48,11 @@ class AdminService extends BaseService implements AdminServiceInterface
         return $this->successResponse($admin, 'Admin found');
     }
 
+    public function getCurrentAdmin($admin): ServiceResponse
+    {
+        return $this->find($admin->id);
+    }
+
     public function create(array $data): ServiceResponse
     {
         $admin = $this->repo->create($data);

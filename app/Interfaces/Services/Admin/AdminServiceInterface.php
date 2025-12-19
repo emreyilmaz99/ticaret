@@ -17,6 +17,11 @@ interface AdminServiceInterface
     public function find(int $id): ServiceResponse;
 
     /**
+     * Get current authenticated admin
+     */
+    public function getCurrentAdmin($admin): ServiceResponse;
+
+    /**
      * Create admin
      */
     public function create(array $data): ServiceResponse;

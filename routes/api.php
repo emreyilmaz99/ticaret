@@ -4,6 +4,13 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Middleware\EnsureAdmin;
 use App\Http\Middleware\EnsureVendor;
 
+// Unified controllers
+use App\Http\Controllers\Api\V1\Unified\UnifiedProfileController;
+use App\Http\Controllers\Api\V1\Unified\UnifiedOrdersController;
+use App\Http\Controllers\Api\V1\Unified\UnifiedAddressesController;
+use App\Http\Controllers\Api\V1\Unified\UnifiedReviewsController;
+use App\Http\Controllers\Api\V1\Unified\UnifiedProductsController;
+
 // Admin controllers
 use App\Http\Controllers\Api\V1\Admin\AdminAuthController;
 use App\Http\Controllers\Api\V1\Admin\UserController;
@@ -115,14 +122,6 @@ Route::prefix('v1/admin')->group(function () {
         Route::post('vendors/{vendorId}/approve-full', [AdminVendorApplicationController::class, 'approveVendorFull']);
         Route::post('vendors/{vendorId}/reject-full', [AdminVendorApplicationController::class, 'rejectVendorFull']);
 
-        // products management
-        Route::get('products', [AdminProductController::class, 'index']);
-        Route::get('products/statistics', [AdminProductController::class, 'statistics']);
-        Route::get('products/{id}', [AdminProductController::class, 'show']);
-        Route::put('products/{id}/status', [AdminProductController::class, 'updateStatus']);
-        Route::post('products/bulk-status', [AdminProductController::class, 'bulkUpdateStatus']);
-        Route::delete('products/{id}', [AdminProductController::class, 'destroy']);
-
         // categories management
         Route::get('categories', [AdminCategoryController::class, 'index']);
         Route::get('categories/tree', [AdminCategoryController::class, 'tree']);
@@ -141,27 +140,11 @@ Route::prefix('v1/admin')->group(function () {
         Route::put('tax-classes/{id}', [AdminTaxClassController::class, 'update']);
         Route::delete('tax-classes/{id}', [AdminTaxClassController::class, 'destroy']);
 
-        // orders management
-        Route::get('orders', [\App\Http\Controllers\Api\V1\Admin\OrderController::class, 'index']);
-        Route::get('orders/stats', [\App\Http\Controllers\Api\V1\Admin\OrderController::class, 'stats']);
-        Route::put('orders/{orderId}/status', [\App\Http\Controllers\Api\V1\Admin\OrderController::class, 'updateStatus']);
-        Route::post('orders/{orderId}/cancel', [\App\Http\Controllers\Api\V1\Admin\OrderController::class, 'cancel']);
-        Route::post('orders/{orderId}/notes', [\App\Http\Controllers\Api\V1\Admin\OrderController::class, 'addNote']);
-        Route::get('orders/{orderId}/notes', [\App\Http\Controllers\Api\V1\Admin\OrderController::class, 'getNotes']);
         Route::get('orders/{orderId}/user-orders', [\App\Http\Controllers\Api\V1\Admin\OrderController::class, 'getUserOrders']);
 
         // featured deals management
         Route::get('featured-deals', [AdminFeaturedDealController::class, 'index']);
         Route::get('featured-deals/create', [AdminFeaturedDealController::class, 'create']);
-
-        // review management
-        Route::get('reviews', [AdminReviewController::class, 'index']);
-        Route::get('reviews/stats', [AdminReviewController::class, 'stats']);
-        Route::get('reviews/trashed', [AdminReviewController::class, 'trashed']);
-        Route::post('reviews/bulk-approve', [AdminReviewController::class, 'bulkApprove']);
-        Route::post('reviews/bulk-reject', [AdminReviewController::class, 'bulkReject']);
-        Route::post('reviews/{id}/approve', [AdminReviewController::class, 'approve']);
-        Route::post('reviews/{id}/reject', [AdminReviewController::class, 'reject']);
 
         // banned words management
         Route::get('banned-words', [\App\Http\Controllers\Api\V1\Admin\AdminBannedWordController::class, 'index']);
@@ -198,32 +181,11 @@ Route::prefix('v1/vendor')->group(function () {
         Route::get('application/status', [\App\Http\Controllers\Api\V1\Vendor\ApplicationController::class, 'status']);
         Route::post('application/submit-full', [\App\Http\Controllers\Api\V1\Vendor\ApplicationController::class, 'submitFullApplication']);
         
-        // vendor products (self-service)
-        Route::get('products', [\App\Http\Controllers\Api\V1\Vendor\ProductController::class, 'index']);
-        Route::post('products', [\App\Http\Controllers\Api\V1\Vendor\ProductController::class, 'store']);
-        Route::get('products/{product}', [\App\Http\Controllers\Api\V1\Vendor\ProductController::class, 'show']);
-        Route::put('products/{product}', [\App\Http\Controllers\Api\V1\Vendor\ProductController::class, 'update']);
-        Route::put('products/{product}/status', [\App\Http\Controllers\Api\V1\Vendor\ProductController::class, 'updateStatus']);
-        Route::delete('products/{product}', [\App\Http\Controllers\Api\V1\Vendor\ProductController::class, 'destroy']);
-        Route::delete('products/{product}/photos/{photo}', [\App\Http\Controllers\Api\V1\Vendor\ProductController::class, 'destroyPhoto']);
         // vendor profile endpoints (self-service)
-        Route::put('profile', [VendorProfileController::class, 'update']);
         Route::delete('profile', [VendorProfileController::class, 'destroy']);
         Route::get('my-categories', [VendorProfileController::class, 'myCategories']);
         Route::get('my-categories/for-products', [VendorProfileController::class, 'myCategoriesForProducts']);
         Route::put('my-categories', [VendorProfileController::class, 'updateMyCategories']);
-
-        // vendor orders
-        Route::get('orders', [\App\Http\Controllers\Api\V1\Vendor\OrderController::class, 'index']);
-        Route::get('orders/stats', [\App\Http\Controllers\Api\V1\Vendor\OrderController::class, 'stats']);
-        Route::put('orders/{orderId}/status', [\App\Http\Controllers\Api\V1\Vendor\OrderController::class, 'updateStatus']);
-        Route::post('orders/{orderId}/cancel', [\App\Http\Controllers\Api\V1\Vendor\OrderController::class, 'cancel']);
-
-        // vendor addresses
-        Route::get('addresses', [VendorAddressController::class, 'index']);
-        Route::post('addresses', [VendorAddressController::class, 'store']);
-        Route::put('addresses/{address}', [VendorAddressController::class, 'update']);
-        Route::delete('addresses/{address}', [VendorAddressController::class, 'destroy']);
 
         // vendor bank accounts
         Route::get('bank-accounts', [VendorBankAccountController::class, 'index']);
@@ -258,11 +220,7 @@ Route::prefix('v1/vendor')->group(function () {
         Route::put('campaigns/{campaign}/toggle', [\App\Http\Controllers\Api\V1\Vendor\CampaignController::class, 'toggle']);
 
         // vendor review responses
-        Route::get('reviews', [VendorReviewController::class, 'allReviews']);
         Route::get('products/{productId}/reviews', [VendorReviewController::class, 'index']);
-        Route::post('reviews/{reviewId}/response', [VendorReviewController::class, 'storeResponse']);
-        Route::delete('review-responses/{responseId}', [VendorReviewController::class, 'destroyResponse']);
-        Route::get('review-stats', [VendorReviewController::class, 'stats']);
     });
 });
 
@@ -331,19 +289,9 @@ Route::prefix('v1/user')->group(function () {
         Route::get('me', [UserAuthController::class, 'me']);
 
         // Profile
-        Route::get('profile', [UserProfileController::class, 'show']);
-        Route::put('profile', [UserProfileController::class, 'update']);
         Route::put('password', [UserProfileController::class, 'updatePassword']);
         Route::post('avatar', [UserProfileController::class, 'updateAvatar']);
         Route::delete('avatar', [UserProfileController::class, 'deleteAvatar']);
-
-        // Addresses
-        Route::get('addresses', [UserAddressController::class, 'index']);
-        Route::post('addresses', [UserAddressController::class, 'store']);
-        Route::get('addresses/{address}', [UserAddressController::class, 'show']);
-        Route::put('addresses/{address}', [UserAddressController::class, 'update']);
-        Route::delete('addresses/{address}', [UserAddressController::class, 'destroy']);
-        Route::put('addresses/{address}/default', [UserAddressController::class, 'setDefault']);
 
         // Favorites
         Route::get('favorites', [\App\Http\Controllers\Api\V1\User\FavoriteController::class, 'index']);
@@ -357,21 +305,60 @@ Route::prefix('v1/user')->group(function () {
         // Checkout - iyzico payment
         Route::post('checkout/initialize', [CheckoutController::class, 'initialize']);
         Route::get('checkout/status/{orderNumber}', [CheckoutController::class, 'status']);
-
-        // Orders
-        Route::get('orders', [OrderController::class, 'index']);
-        Route::get('orders/{orderNumber}', [OrderController::class, 'show']);
-        Route::post('orders/{orderNumber}/cancel', [OrderController::class, 'cancel']);
-
-        // Reviews - user can create, view, and delete their reviews
-        Route::get('reviewable-orders', [UserReviewController::class, 'reviewableOrders']);
-        Route::post('orders/{orderId}/items/{orderItemId}/review', [UserReviewController::class, 'store'])
-            ->middleware('throttle:10,1'); // Rate limit: 10 reviews per minute
-        Route::get('reviews', [UserReviewController::class, 'index']);
-        Route::delete('reviews/{reviewId}', [UserReviewController::class, 'destroy']);
     });
 });
 
 // iyzico callback (public - no auth required)
 // Bu route iyzico tarafından çağrılır, kullanıcı auth'u yoktur
 Route::post('v1/checkout/callback', [CheckoutController::class, 'callback']);
+
+// ============================================================================
+// UNIFIED ENDPOINTS (Works for User, Vendor, Admin based on token)
+// ============================================================================
+Route::prefix('v1')->middleware(['auth:sanctum', 'detect.user.type'])->group(function () {
+    // Profile endpoints - automatically detects user type from token
+    Route::get('me', [UnifiedProfileController::class, 'show']);
+    Route::put('profile', [UnifiedProfileController::class, 'update']);
+
+    // Orders - User: their orders, Vendor: orders with their products, Admin: all orders
+    Route::get('orders', [UnifiedOrdersController::class, 'index']);
+    Route::get('orders/stats', [UnifiedOrdersController::class, 'stats']);
+    Route::get('orders/{orderNumber}', [UnifiedOrdersController::class, 'show']);
+    Route::put('orders/{orderId}/status', [UnifiedOrdersController::class, 'updateStatus']);
+    Route::post('orders/{orderNumberOrId}/cancel', [UnifiedOrdersController::class, 'cancel']);
+    Route::post('orders/{orderId}/notes', [UnifiedOrdersController::class, 'addNote']); // Admin only
+    Route::get('orders/{orderId}/notes', [UnifiedOrdersController::class, 'getNotes']); // Admin only
+
+    // Addresses - User & Vendor only
+    Route::get('addresses', [UnifiedAddressesController::class, 'index']);
+    Route::post('addresses', [UnifiedAddressesController::class, 'store']);
+    Route::get('addresses/{address}', [UnifiedAddressesController::class, 'show']);
+    Route::put('addresses/{address}', [UnifiedAddressesController::class, 'update']);
+    Route::delete('addresses/{address}', [UnifiedAddressesController::class, 'destroy']);
+    Route::put('addresses/{address}/default', [UnifiedAddressesController::class, 'setDefault']); // User only
+
+    // Reviews - User: their reviews, Vendor: product reviews, Admin: all reviews
+    Route::get('reviews', [UnifiedReviewsController::class, 'index']);
+    Route::get('reviews/stats', [UnifiedReviewsController::class, 'stats']); // Vendor & Admin
+    Route::get('reviews/trashed', [UnifiedReviewsController::class, 'trashed']); // Admin only
+    Route::get('reviewable-orders', [UnifiedReviewsController::class, 'reviewableOrders']); // User only
+    Route::post('orders/{orderId}/items/{orderItemId}/review', [UnifiedReviewsController::class, 'store'])->middleware('throttle:10,1'); // User only
+    Route::delete('reviews/{reviewId}', [UnifiedReviewsController::class, 'destroy']); // User & Admin
+    Route::post('reviews/{id}/approve', [UnifiedReviewsController::class, 'approve']); // Admin only
+    Route::post('reviews/{id}/reject', [UnifiedReviewsController::class, 'reject']); // Admin only
+    Route::post('reviews/bulk-approve', [UnifiedReviewsController::class, 'bulkApprove']); // Admin only
+    Route::post('reviews/bulk-reject', [UnifiedReviewsController::class, 'bulkReject']); // Admin only
+    Route::post('reviews/{reviewId}/response', [UnifiedReviewsController::class, 'storeResponse']); // Vendor only
+    Route::delete('review-responses/{responseId}', [UnifiedReviewsController::class, 'destroyResponse']); // Vendor only
+
+    // Products - Vendor: their products, Admin: all products
+    Route::get('products', [UnifiedProductsController::class, 'index']); // Vendor & Admin
+    Route::get('products/statistics', [UnifiedProductsController::class, 'statistics']); // Admin only
+    Route::post('products', [UnifiedProductsController::class, 'store']); // Vendor only
+    Route::get('products/{id}', [UnifiedProductsController::class, 'show']); // Vendor & Admin
+    Route::put('products/{id}', [UnifiedProductsController::class, 'update']); // Vendor & Admin
+    Route::put('products/{id}/status', [UnifiedProductsController::class, 'updateStatus']); // Vendor & Admin
+    Route::delete('products/{id}', [UnifiedProductsController::class, 'destroy']); // Vendor & Admin
+    Route::delete('products/{product}/photos/{photo}', [UnifiedProductsController::class, 'destroyPhoto']); // Vendor only
+    Route::post('products/bulk-status', [UnifiedProductsController::class, 'bulkUpdateStatus']); // Admin only
+});

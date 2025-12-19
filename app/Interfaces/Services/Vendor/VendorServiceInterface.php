@@ -27,6 +27,11 @@ interface VendorServiceInterface
     public function find(int $id);
 
     /**
+     * Get current authenticated vendor
+     */
+    public function getCurrentVendor($vendor);
+
+    /**
      * Create vendor
      */
     public function create(array $data);

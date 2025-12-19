@@ -85,6 +85,11 @@ class VendorService extends BaseService implements VendorServiceInterface
         return $this->repo->find($id);
     }
 
+    public function getCurrentVendor($vendor)
+    {
+        return $this->find($vendor->id);
+    }
+
     public function create(array $data)
     {
         return $this->repo->create($data);

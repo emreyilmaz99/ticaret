@@ -31,6 +31,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'auth.optional' => \App\Http\Middleware\OptionalAuth::class,
             'ability' => \App\Http\Middleware\CheckSanctumAbilities::class,
+            'detect.user.type' => \App\Http\Middleware\DetectUserType::class,
         ]);
         
         // Configure stateful API authentication - prevent redirect to 'login' route

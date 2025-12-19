@@ -54,6 +54,30 @@ class OrderController extends BaseVendorController
     }
 
     /**
+     * Show single order by ID or order number
+     */
+    public function show(Request $request, $orderNumberOrId)
+    {
+        $vendor = $request->user();
+        if (!$vendor) {
+            return $this->error('Yetkisiz', 401);
+        }
+
+        // Find order that contains vendor's products
+        $order = \App\Models\Order::where('order_number', $orderNumberOrId)
+            ->orWhere('id', $orderNumberOrId)
+            ->whereHas('items', function($q) use ($vendor) {
+                $q->where('vendor_id', $vendor->id);
+            })
+            ->with(['user', 'items' => function($q) use ($vendor) {
+                $q->where('vendor_id', $vendor->id);
+            }, 'items.product'])
+            ->firstOrFail();
+
+        return $this->success(['order' => $order], 'Sipariş başarıyla getirildi.');
+    }
+
+    /**
      * Update order status
      */
     public function updateStatus(UpdateOrderStatusRequest $request, int $orderId)

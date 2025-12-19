@@ -28,4 +28,9 @@ interface UserServiceInterface
      * Toggle user status
      */
     public function toggleStatus(int $id): bool;
+
+    /**
+     * Get current authenticated user
+     */
+    public function getCurrentUser($user);
 }

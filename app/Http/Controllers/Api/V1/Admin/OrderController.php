@@ -41,6 +41,20 @@ class OrderController extends BaseAdminController
     }
 
     /**
+     * Show single order by ID or order number
+     */
+    public function show($orderNumberOrId)
+    {
+        // Try to find by order number first, then by ID
+        $order = \App\Models\Order::where('order_number', $orderNumberOrId)
+            ->orWhere('id', $orderNumberOrId)
+            ->with(['user', 'items.product', 'items.vendor', 'statusHistory'])
+            ->firstOrFail();
+
+        return $this->success(['order' => $order], 'Sipariş başarıyla getirildi.');
+    }
+
+    /**
      * Update order status
      */
     public function updateStatus(UpdateOrderStatusRequest $request, int $orderId)

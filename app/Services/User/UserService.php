@@ -45,4 +45,9 @@ class UserService extends BaseService implements UserServiceInterface
         $user->save();
         return true;
     }
+
+    public function getCurrentUser($user)
+    {
+        return $this->find($user->id);
+    }
 }
