@@ -44,6 +44,16 @@ return Application::configure(basePath: dirname(__DIR__))
         });
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        // Log all exceptions
+        $exceptions->reportable(function (\Throwable $e) {
+            \Log::error('Exception occurred', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+        });
+
         // Handle unauthenticated responses for API
         $exceptions->renderable(function (\Illuminate\Auth\AuthenticationException $e, $request) {
             if ($request->is('api/*') || $request->expectsJson()) {

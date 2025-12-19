@@ -12,6 +12,18 @@ class VendorRepository extends EloquentBaseRepository
         parent::__construct($model);
     }
 
+    public function create(array $data): Vendor
+    {
+        return $this->model->create($data);
+    }
+
+    public function update($id, array $data): Vendor
+    {
+        $record = $this->model->findOrFail($id);
+        $record->update($data);
+        return $record;
+    }
+
     // Vendor specific queries can be added here
 
     /**

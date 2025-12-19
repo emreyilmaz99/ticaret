@@ -29,6 +29,7 @@ class AuthService extends BaseService implements AuthServiceInterface
             $token = $user->createToken('user-token', ['user:*'])->plainTextToken;
 
             $payload = [
+                'user_type' => 'user',
                 'user' => [
                     'id' => $user->id,
                     'name' => $user->name,
@@ -67,6 +68,8 @@ class AuthService extends BaseService implements AuthServiceInterface
             $token = $user->createToken('user-token', ['user:*'])->plainTextToken;
 
             $payload = [
+                'token' => $token,
+                'user_type' => 'user',
                 'user' => [
                     'id' => $user->id,
                     'name' => $user->name,
@@ -77,7 +80,6 @@ class AuthService extends BaseService implements AuthServiceInterface
                     'birth_date' => $user->birth_date?->format('Y-m-d'),
                     'gender' => $user->gender,
                 ],
-                'token' => $token,
             ];
 
             return $this->successResponse($payload, 'Giriş başarılı.');
@@ -130,6 +132,7 @@ class AuthService extends BaseService implements AuthServiceInterface
 
         $payload = [
             'token' => $token,
+            'user_type' => 'admin',
             'admin' => [
                 'id' => $admin->id,
                 'name' => $admin->name,
@@ -159,6 +162,7 @@ class AuthService extends BaseService implements AuthServiceInterface
 
             $payload = [
                 'token' => $token,
+                'user_type' => 'vendor',
                 'vendor' => [
                     'id' => $vendor->id,
                     'name' => $vendor->name,

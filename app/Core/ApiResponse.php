@@ -20,7 +20,7 @@ class ApiResponse
             'success' => true,
             'message' => $message,
             'data' => $data,
-        ], $status);
+        ], $status, [], JSON_UNESCAPED_UNICODE);
     }
 
     /**
@@ -38,7 +38,7 @@ class ApiResponse
             $response['errors'] = $errors;
         }
 
-        return response()->json($response, $status);
+        return response()->json($response, $status, [], JSON_UNESCAPED_UNICODE);
     }
 
     /**
@@ -57,7 +57,7 @@ class ApiResponse
                 'per_page' => $resourceCollection->perPage(),
                 'total' => $resourceCollection->total(),
             ],
-        ], $status);
+        ], $status, [], JSON_UNESCAPED_UNICODE);
     }
 
     /**

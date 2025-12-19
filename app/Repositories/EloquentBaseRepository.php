@@ -24,11 +24,17 @@ abstract class EloquentBaseRepository implements BaseRepositoryInterface
         return $this->model->find($id);
     }
 
+    /**
+     * @return mixed
+     */
     public function create(array $data)
     {
         return $this->model->create($data);
     }
 
+    /**
+     * @return mixed
+     */
     public function update($id, array $data)
     {
         $record = $this->model->findOrFail($id);

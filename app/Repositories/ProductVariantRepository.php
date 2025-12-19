@@ -20,7 +20,7 @@ class ProductVariantRepository implements ProductVariantRepositoryInterface
         return $this->model->create($data);
     }
 
-    public function update(int $id, array $data): ProductVariant
+    public function update($id, array $data): ProductVariant
     {
         $variant = $this->model->findOrFail($id);
         $variant->update($data);

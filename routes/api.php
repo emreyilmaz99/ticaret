@@ -10,6 +10,8 @@ use App\Http\Controllers\Api\V1\Unified\UnifiedOrdersController;
 use App\Http\Controllers\Api\V1\Unified\UnifiedAddressesController;
 use App\Http\Controllers\Api\V1\Unified\UnifiedReviewsController;
 use App\Http\Controllers\Api\V1\Unified\UnifiedProductsController;
+use App\Http\Controllers\Api\V1\Unified\UnifiedVendorsController;
+use App\Http\Controllers\Api\V1\Unified\UnifiedCategoriesController;
 
 // Admin controllers
 use App\Http\Controllers\Api\V1\Admin\AdminAuthController;
@@ -224,12 +226,6 @@ Route::prefix('v1/vendor')->group(function () {
     });
 });
 
-// Public vendor store routes (public)
-Route::get('v1/vendors/{slug}', [PublicVendorController::class, 'show']);
-Route::get('v1/vendors/{slug}/products', [PublicVendorController::class, 'products']);
-Route::get('v1/vendors/{slug}/categories', [PublicVendorController::class, 'categories']);
-Route::get('v1/vendors/{slug}/reviews', [PublicVendorController::class, 'reviews']);
-
 // Public vendor application submission (only pre-application)
 Route::post('v1/vendor-applications', [PublicVendorApplicationController::class, 'store']);
 Route::get('v1/vendor-applications/{id}', [PublicVendorApplicationController::class, 'show']);
@@ -361,4 +357,23 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'detect.user.type'])->group(fun
     Route::delete('products/{id}', [UnifiedProductsController::class, 'destroy']); // Vendor & Admin
     Route::delete('products/{product}/photos/{photo}', [UnifiedProductsController::class, 'destroyPhoto']); // Vendor only
     Route::post('products/bulk-status', [UnifiedProductsController::class, 'bulkUpdateStatus']); // Admin only
+
+    // Vendors - Admin only (numeric IDs only)
+    Route::get('vendors', [UnifiedVendorsController::class, 'index']); // Admin only
+    Route::get('vendors/{vendor}', [UnifiedVendorsController::class, 'show'])->where('vendor', '[0-9]+'); // Admin only
+    Route::get('vendors/{vendor}/categories', [UnifiedVendorsController::class, 'getVendorCategories'])->where('vendor', '[0-9]+'); // Admin only
+    Route::put('vendors/{vendor}/status', [UnifiedVendorsController::class, 'updateStatus'])->where('vendor', '[0-9]+'); // Admin only
+
+    // Categories - All users can read, Admin can manage
+    Route::get('categories', [UnifiedCategoriesController::class, 'index']); // All users
+    Route::get('categories/statistics', [UnifiedCategoriesController::class, 'statistics']); // Admin only
+    Route::get('categories/tree', [UnifiedCategoriesController::class, 'tree']); // All users
+    Route::get('categories/{category}', [UnifiedCategoriesController::class, 'show']); // All users
 });
+
+// Public vendor store routes (public) - slug only, NOT numeric IDs
+// These must be AFTER unified routes so numeric IDs go to authenticated routes first
+Route::get('v1/vendors/{slug}', [PublicVendorController::class, 'show'])->where('slug', '(?![0-9]+$)[a-zA-Z0-9\-_]+');
+Route::get('v1/vendors/{slug}/products', [PublicVendorController::class, 'products'])->where('slug', '(?![0-9]+$)[a-zA-Z0-9\-_]+');
+Route::get('v1/vendors/{slug}/categories', [PublicVendorController::class, 'categories'])->where('slug', '(?![0-9]+$)[a-zA-Z0-9\-_]+');
+Route::get('v1/vendors/{slug}/reviews', [PublicVendorController::class, 'reviews'])->where('slug', '(?![0-9]+$)[a-zA-Z0-9\-_]+');

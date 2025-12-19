@@ -21,7 +21,7 @@ class VendorRatingRepository implements VendorRatingRepositoryInterface
         return $this->model->create($data);
     }
 
-    public function update(int $id, array $data): VendorRating
+    public function update($id, array $data): VendorRating
     {
         $rating = $this->model->findOrFail($id);
         $rating->update($data);

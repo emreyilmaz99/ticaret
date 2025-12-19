@@ -20,7 +20,7 @@ class CategoryRepository implements CategoryRepositoryInterface
         return $this->model->create($data);
     }
 
-    public function update(int $id, array $data): Category
+    public function update($id, array $data): Category
     {
         $category = $this->model->findOrFail($id);
         $category->update($data);

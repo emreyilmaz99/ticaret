@@ -20,7 +20,7 @@ class VendorPayoutRepository implements VendorPayoutRepositoryInterface
         return $this->model->create($data);
     }
 
-    public function update(int $id, array $data): VendorPayout
+    public function update($id, array $data): VendorPayout
     {
         $payout = $this->model->findOrFail($id);
         $payout->update($data);

@@ -13,6 +13,18 @@ class ProductVariantMetadataRepository extends EloquentBaseRepository implements
         parent::__construct($model);
     }
 
+    public function create(array $data): ProductVariantMetadata
+    {
+        return $this->model->create($data);
+    }
+
+    public function update($id, array $data): ProductVariantMetadata
+    {
+        $record = $this->model->findOrFail($id);
+        $record->update($data);
+        return $record;
+    }
+
     public function findById(int $id): ?ProductVariantMetadata
     {
         return $this->model->find($id);

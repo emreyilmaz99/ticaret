@@ -13,6 +13,18 @@ class VendorSettingRepository extends EloquentBaseRepository implements VendorSe
         parent::__construct($model);
     }
 
+    public function create(array $data): VendorSetting
+    {
+        return $this->model->create($data);
+    }
+
+    public function update($id, array $data): VendorSetting
+    {
+        $record = $this->model->findOrFail($id);
+        $record->update($data);
+        return $record;
+    }
+
     public function findById(int $id): ?VendorSetting
     {
         return $this->model->find($id);

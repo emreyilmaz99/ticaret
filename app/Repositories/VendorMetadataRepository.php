@@ -13,6 +13,18 @@ class VendorMetadataRepository extends EloquentBaseRepository implements VendorM
         parent::__construct($model);
     }
 
+    public function create(array $data): VendorMetadata
+    {
+        return $this->model->create($data);
+    }
+
+    public function update($id, array $data): VendorMetadata
+    {
+        $record = $this->model->findOrFail($id);
+        $record->update($data);
+        return $record;
+    }
+
     public function findById(int $id): ?VendorMetadata
     {
         return $this->model->find($id);

@@ -13,6 +13,18 @@ class VendorMediaRepository extends EloquentBaseRepository implements VendorMedi
         parent::__construct($model);
     }
 
+    public function create(array $data): VendorMedia
+    {
+        return $this->model->create($data);
+    }
+
+    public function update($id, array $data): VendorMedia
+    {
+        $record = $this->model->findOrFail($id);
+        $record->update($data);
+        return $record;
+    }
+
     public function findById(int $id): ?VendorMedia
     {
         return $this->model->find($id);

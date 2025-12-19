@@ -13,6 +13,18 @@ class ProductMetadataRepository extends EloquentBaseRepository implements Produc
         parent::__construct($model);
     }
 
+    public function create(array $data): ProductMetadata
+    {
+        return $this->model->create($data);
+    }
+
+    public function update($id, array $data): ProductMetadata
+    {
+        $record = $this->model->findOrFail($id);
+        $record->update($data);
+        return $record;
+    }
+
     public function findById(int $id): ?ProductMetadata
     {
         return $this->model->find($id);

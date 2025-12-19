@@ -13,6 +13,18 @@ class VendorBankAccountRepository extends EloquentBaseRepository implements Vend
         parent::__construct($model);
     }
 
+    public function create(array $data): VendorBankAccount
+    {
+        return $this->model->create($data);
+    }
+
+    public function update($id, array $data): VendorBankAccount
+    {
+        $record = $this->model->findOrFail($id);
+        $record->update($data);
+        return $record;
+    }
+
     public function findById(int $id): ?VendorBankAccount
     {
         return $this->model->find($id);

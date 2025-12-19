@@ -11,6 +11,18 @@ class UserRepository extends EloquentBaseRepository
         parent::__construct($model);
     }
 
+    public function create(array $data): User
+    {
+        return $this->model->create($data);
+    }
+
+    public function update($id, array $data): User
+    {
+        $record = $this->model->findOrFail($id);
+        $record->update($data);
+        return $record;
+    }
+
     /**
      * Paginate users with filters and search
      */
