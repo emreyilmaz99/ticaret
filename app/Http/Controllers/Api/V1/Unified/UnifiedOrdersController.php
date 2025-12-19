@@ -6,9 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Middleware\DetectUserType;
 use App\Core\ApiResponse;
 use Illuminate\Http\Request;
-use App\Http\Requests\Api\V1\Unified\UpdateOrderStatusRequest;
-use App\Http\Requests\Api\V1\Unified\CancelOrderRequest;
-use App\Http\Requests\Api\V1\Unified\AddOrderNoteRequest;
 
 class UnifiedOrdersController extends Controller
 {
@@ -94,20 +91,32 @@ class UnifiedOrdersController extends Controller
      * - Vendor: Can update their order items
      * - Admin: Can update any order
      * 
-     * @param UpdateOrderStatusRequest $request Laravel will auto-resolve specific FormRequest based on route
+     * @param Request $request
      * @param int $orderId
      * @return mixed
      */
-    public function updateStatus(UpdateOrderStatusRequest $request, int $orderId)
+    public function updateStatus(Request $request, int $orderId)
     {
         $userType = DetectUserType::getUserType($request);
         
-        // Laravel's DI will resolve the correct FormRequest type in target controller
-        /** @phpstan-ignore-next-line */
+        // Create appropriate FormRequest instance based on user type
+        $formRequest = match($userType) {
+            'vendor' => app(\App\Http\Requests\Api\V1\Vendor\UpdateOrderStatusRequest::class),
+            'admin' => app(\App\Http\Requests\Api\V1\Admin\UpdateOrderStatusRequest::class),
+            default => null,
+        };
+        
+        if (!$formRequest) {
+            return ApiResponse::error('Users cannot update order status', 403);
+        }
+        
+        // Validate using the appropriate request class
+        $formRequest->setContainer(app())->setRedirector(app('redirect'));
+        $formRequest->validateResolved();
+        
         return match($userType) {
-            'vendor' => $this->vendorOrderController->updateStatus($request, $orderId),
-            'admin' => $this->adminOrderController->updateStatus($request, $orderId),
-            'user' => ApiResponse::error('Users cannot update order status', 403),
+            'vendor' => $this->vendorOrderController->updateStatus($formRequest, $orderId),
+            'admin' => $this->adminOrderController->updateStatus($formRequest, $orderId),
             default => ApiResponse::error('Unknown user type', 400),
         };
     }
@@ -120,15 +129,14 @@ class UnifiedOrdersController extends Controller
      * - Vendor: Can cancel their order items
      * - Admin: Can cancel any order
      * 
-     * @param CancelOrderRequest $request
+     * @param Request $request
      * @param mixed $orderNumberOrId
      * @return mixed
      */
-    public function cancel(CancelOrderRequest $request, $orderNumberOrId)
+    public function cancel(Request $request, $orderNumberOrId)
     {
         $userType = DetectUserType::getUserType($request);
         
-        /** @phpstan-ignore-next-line */
         return match($userType) {
             'user' => $this->userOrderController->cancel($request, $orderNumberOrId),
             'vendor' => $this->vendorOrderController->cancel($request, $orderNumberOrId),
@@ -142,11 +150,11 @@ class UnifiedOrdersController extends Controller
      * 
      * POST /api/v1/orders/{orderId}/notes
      * 
-     * @param AddOrderNoteRequest $request
+     * @param Request $request
      * @param int $orderId
      * @return mixed
      */
-    public function addNote(AddOrderNoteRequest $request, int $orderId)
+    public function addNote(Request $request, int $orderId)
     {
         $userType = DetectUserType::getUserType($request);
 
@@ -154,7 +162,6 @@ class UnifiedOrdersController extends Controller
             return ApiResponse::error('Only admins can add order notes', 403);
         }
         
-        /** @phpstan-ignore-next-line */
         return $this->adminOrderController->addNote($request, $orderId);
     }
 
