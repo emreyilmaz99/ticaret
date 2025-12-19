@@ -74,6 +74,38 @@ class UnifiedVendorsController extends Controller
     }
 
     /**
+     * Update vendor
+     * 
+     * Works for: Admin only
+     * Endpoint: PUT /api/v1/vendors/{vendor}
+     */
+    public function update(Request $request, $vendor)
+    {
+        $userType = DetectUserType::getUserType($request);
+
+        return match($userType) {
+            'admin' => $this->adminVendorController->update($request, $vendor),
+            default => ApiResponse::error('Unauthorized access', 403),
+        };
+    }
+
+    /**
+     * Delete vendor
+     * 
+     * Works for: Admin only
+     * Endpoint: DELETE /api/v1/vendors/{vendor}
+     */
+    public function destroy(Request $request, $vendor)
+    {
+        $userType = DetectUserType::getUserType($request);
+
+        return match($userType) {
+            'admin' => $this->adminVendorController->destroy($vendor),
+            default => ApiResponse::error('Unauthorized access', 403),
+        };
+    }
+
+    /**
      * Get vendor categories
      * 
      * Works for: Admin only

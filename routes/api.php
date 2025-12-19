@@ -347,7 +347,8 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'detect.user.type'])->group(fun
     Route::delete('review-responses/{responseId}', [UnifiedReviewsController::class, 'destroyResponse']); // Vendor only
 
     // Products - Vendor: their products, Admin: all products
-    Route::get('products', [UnifiedProductsController::class, 'index']); // Vendor & Admin
+    // Note: GET /products for authenticated users is handled separately to avoid conflict with public route
+    Route::get('products/my-products', [UnifiedProductsController::class, 'index']); // Vendor & Admin - use this for authenticated product list
     Route::get('products/statistics', [UnifiedProductsController::class, 'statistics']); // Admin only
     Route::post('products/bulk-status', [UnifiedProductsController::class, 'bulkUpdateStatus']); // Admin only
     Route::post('products', [UnifiedProductsController::class, 'store']); // Vendor only
@@ -360,6 +361,8 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'detect.user.type'])->group(fun
     // Vendors - Admin only (numeric IDs only)
     Route::get('vendors', [UnifiedVendorsController::class, 'index']); // Admin only
     Route::get('vendors/{vendor}', [UnifiedVendorsController::class, 'show'])->where('vendor', '[0-9]+'); // Admin only
+    Route::put('vendors/{vendor}', [UnifiedVendorsController::class, 'update'])->where('vendor', '[0-9]+'); // Admin only
+    Route::delete('vendors/{vendor}', [UnifiedVendorsController::class, 'destroy'])->where('vendor', '[0-9]+'); // Admin only
     Route::get('vendors/{vendor}/categories', [UnifiedVendorsController::class, 'getVendorCategories'])->where('vendor', '[0-9]+'); // Admin only
     Route::put('vendors/{vendor}/status', [UnifiedVendorsController::class, 'updateStatus'])->where('vendor', '[0-9]+'); // Admin only
 
