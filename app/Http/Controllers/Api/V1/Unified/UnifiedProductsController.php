@@ -6,9 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Middleware\DetectUserType;
 use App\Core\ApiResponse;
 use Illuminate\Http\Request;
-use App\Http\Requests\Api\V1\Unified\StoreProductRequest;
-use App\Http\Requests\Api\V1\Unified\UpdateProductRequest;
-use App\Http\Requests\Api\V1\Unified\BulkUpdateProductStatusRequest;
 
 class UnifiedProductsController extends Controller
 {
@@ -81,10 +78,10 @@ class UnifiedProductsController extends Controller
      * 
      * POST /api/v1/products
      * 
-     * @param StoreProductRequest $request
+     * @param Request $request
      * @return mixed
      */
-    public function store(StoreProductRequest $request)
+    public function store(Request $request)
     {
         $userType = DetectUserType::getUserType($request);
 
@@ -92,8 +89,12 @@ class UnifiedProductsController extends Controller
             return ApiResponse::error('Only vendors can create products', 403);
         }
         
-        /** @phpstan-ignore-next-line */
-        return $this->vendorProductController->store($request);
+        // Create Vendor-specific FormRequest
+        $formRequest = app(\App\Http\Requests\Api\V1\Vendor\StoreProductRequest::class);
+        $formRequest->setContainer(app())->setRedirector(app('redirect'));
+        $formRequest->validateResolved();
+        
+        return $this->vendorProductController->store($formRequest);
     }
 
     /**
@@ -103,17 +104,24 @@ class UnifiedProductsController extends Controller
      * - Vendor: Can update their own products
      * - Admin: Can update any product
      * 
-     * @param UpdateProductRequest $request
+     * @param Request $request
      * @param string|int $id
      * @return mixed
      */
-    public function update(UpdateProductRequest $request, string $id)
+    public function update(Request $request, string $id)
     {
         $userType = DetectUserType::getUserType($request);
         
-        /** @phpstan-ignore-next-line */
+        if ($userType === 'vendor') {
+            // Create Vendor-specific FormRequest
+            $formRequest = app(\App\Http\Requests\Api\V1\Vendor\UpdateProductRequest::class);
+            $formRequest->setContainer(app())->setRedirector(app('redirect'));
+            $formRequest->validateResolved();
+            
+            return $this->vendorProductController->update($formRequest, $id);
+        }
+        
         return match($userType) {
-            'vendor' => $this->vendorProductController->update($request, $id),
             'admin' => ApiResponse::error('Admin product update not implemented', 501),
             'user' => ApiResponse::error('Users cannot update products', 403),
             default => ApiResponse::error('Unknown user type', 400),
@@ -180,10 +188,10 @@ class UnifiedProductsController extends Controller
      * 
      * POST /api/v1/products/bulk-status
      * 
-     * @param BulkUpdateProductStatusRequest $request
+     * @param Request $request
      * @return mixed
      */
-    public function bulkUpdateStatus(BulkUpdateProductStatusRequest $request)
+    public function bulkUpdateStatus(Request $request)
     {
         $userType = DetectUserType::getUserType($request);
 
@@ -191,7 +199,11 @@ class UnifiedProductsController extends Controller
             return ApiResponse::error('Only admins can bulk update product status', 403);
         }
         
-        /** @phpstan-ignore-next-line */
-        return $this->adminProductController->bulkUpdateStatus($request);
+        // Create Admin-specific FormRequest
+        $formRequest = app(\App\Http\Requests\Api\V1\Admin\BulkUpdateProductStatusRequest::class);
+        $formRequest->setContainer(app())->setRedirector(app('redirect'));
+        $formRequest->validateResolved();
+        
+        return $this->adminProductController->bulkUpdateStatus($formRequest);
     }
 }

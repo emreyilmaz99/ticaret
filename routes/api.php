@@ -316,6 +316,9 @@ Route::prefix('v1/user')->group(function () {
 // Bu route iyzico tarafından çağrılır, kullanıcı auth'u yoktur
 Route::post('v1/checkout/callback', [CheckoutController::class, 'callback']);
 
+// Categories tree (public - no auth required for this specific endpoint)
+Route::get('v1/categories/tree', [\App\Http\Controllers\Api\V1\Public\CategoryController::class, 'tree']);
+
 // ============================================================================
 // UNIFIED ENDPOINTS (Works for User, Vendor, Admin based on token)
 // ============================================================================
@@ -379,7 +382,7 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'detect.user.type'])->group(fun
     // Categories - All users can read, Admin can manage
     Route::get('categories', [UnifiedCategoriesController::class, 'index']); // All users
     Route::get('categories/statistics', [UnifiedCategoriesController::class, 'statistics']); // Admin only
-    Route::get('categories/tree', [UnifiedCategoriesController::class, 'tree']); // All users
+    // Route::get('categories/tree', [UnifiedCategoriesController::class, 'tree']); // Moved to public routes above
     Route::get('categories/{category}', [UnifiedCategoriesController::class, 'show']); // All users
 
     // Users - Admin only
@@ -408,9 +411,11 @@ Route::get('v1/vendors/{slug}/products', [PublicVendorController::class, 'produc
 Route::get('v1/vendors/{slug}/categories', [PublicVendorController::class, 'categories'])->where('slug', '(?![0-9]+$)[a-zA-Z0-9\-_]+');
 Route::get('v1/vendors/{slug}/reviews', [PublicVendorController::class, 'reviews'])->where('slug', '(?![0-9]+$)[a-zA-Z0-9\-_]+');
 
-// Public product slug routes (lowercase slugs only, excludes ULIDs)
-Route::get('v1/products/{slug}', [PublicProductController::class, 'show'])->where('slug', '(?![A-Z0-9]+)[a-z0-9\-_]+');
-Route::get('v1/products/{slug}/related', [PublicProductController::class, 'related'])->where('slug', '(?![A-Z0-9]+)[a-z0-9\-_]+');
+// Public product slug routes (slugs with hyphens/underscores, excludes pure uppercase ULIDs)
+// Matches: tekno-mobile-telefon, iphone-15, product_name
+// Excludes: 01KCJZVBNGYNMVQBE98738ND7H (pure uppercase ULID)
+Route::get('v1/products/{slug}', [PublicProductController::class, 'show'])->where('slug', '(?!^[A-Z0-9]+$)[a-zA-Z0-9\-_]+');
+Route::get('v1/products/{slug}/related', [PublicProductController::class, 'related'])->where('slug', '(?!^[A-Z0-9]+$)[a-zA-Z0-9\-_]+');
 
 // Public category slug routes
 Route::get('v1/categories/{slug}', [\App\Http\Controllers\Api\V1\Public\CategoryController::class, 'show']);

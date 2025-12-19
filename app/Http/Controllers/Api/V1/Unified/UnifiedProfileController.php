@@ -60,6 +60,11 @@ class UnifiedProfileController extends Controller
             return ApiResponse::success($result->getData());
         }
 
+        // Transform User model to UserProfileResource
+        if ($userType === 'user' && $result instanceof \App\Models\User) {
+            return ApiResponse::success(new \App\Http\Resources\Api\V1\User\UserProfileResource($result));
+        }
+
         return ApiResponse::success($result);
     }
 

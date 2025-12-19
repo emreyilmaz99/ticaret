@@ -6,8 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Middleware\DetectUserType;
 use App\Core\ApiResponse;
 use Illuminate\Http\Request;
-use App\Http\Requests\Api\V1\Unified\StoreAddressRequest;
-use App\Http\Requests\Api\V1\Unified\UpdateAddressRequest;
 
 class UnifiedAddressesController extends Controller
 {
@@ -44,18 +42,35 @@ class UnifiedAddressesController extends Controller
      * 
      * POST /api/v1/addresses
      * 
-     * @param StoreAddressRequest $request
+     * @param Request $request
      * @return mixed
      */
-    public function store(StoreAddressRequest $request)
+    public function store(Request $request)
     {
         $userType = DetectUserType::getUserType($request);
         
-        /** @phpstan-ignore-next-line */
+        if ($userType === 'admin') {
+            return ApiResponse::error('Admins do not have addresses', 403);
+        }
+        
+        // Create appropriate FormRequest based on user type
+        $formRequestClass = match($userType) {
+            'user' => \App\Http\Requests\Api\V1\User\StoreUserAddressRequest::class,
+            'vendor' => \App\Http\Requests\Api\V1\Vendor\StoreVendorAddressRequest::class,
+            default => null,
+        };
+        
+        if (!$formRequestClass) {
+            return ApiResponse::error('Unknown user type', 400);
+        }
+        
+        $formRequest = app($formRequestClass);
+        $formRequest->setContainer(app())->setRedirector(app('redirect'));
+        $formRequest->validateResolved();
+        
         return match($userType) {
-            'user' => $this->userAddressController->store($request),
-            'vendor' => $this->vendorAddressController->store($request),
-            'admin' => ApiResponse::error('Admins do not have addresses', 403),
+            'user' => $this->userAddressController->store($formRequest),
+            'vendor' => $this->vendorAddressController->store($formRequest),
             default => ApiResponse::error('Unknown user type', 400),
         };
     }
@@ -82,19 +97,36 @@ class UnifiedAddressesController extends Controller
      * 
      * PUT /api/v1/addresses/{address}
      * 
-     * @param UpdateAddressRequest $request
+     * @param Request $request
      * @param int $address
      * @return mixed
      */
-    public function update(UpdateAddressRequest $request, int $address)
+    public function update(Request $request, int $address)
     {
         $userType = DetectUserType::getUserType($request);
         
-        /** @phpstan-ignore-next-line */
+        if ($userType === 'admin') {
+            return ApiResponse::error('Admins do not have addresses', 403);
+        }
+        
+        // Create appropriate FormRequest based on user type
+        $formRequestClass = match($userType) {
+            'user' => \App\Http\Requests\Api\V1\User\UpdateUserAddressRequest::class,
+            'vendor' => \App\Http\Requests\Api\V1\Vendor\UpdateVendorAddressRequest::class,
+            default => null,
+        };
+        
+        if (!$formRequestClass) {
+            return ApiResponse::error('Unknown user type', 400);
+        }
+        
+        $formRequest = app($formRequestClass);
+        $formRequest->setContainer(app())->setRedirector(app('redirect'));
+        $formRequest->validateResolved();
+        
         return match($userType) {
-            'user' => $this->userAddressController->update($request, $address),
-            'vendor' => $this->vendorAddressController->update($request, $address),
-            'admin' => ApiResponse::error('Admins do not have addresses', 403),
+            'user' => $this->userAddressController->update($formRequest, $address),
+            'vendor' => $this->vendorAddressController->update($formRequest, $address),
             default => ApiResponse::error('Unknown user type', 400),
         };
     }
