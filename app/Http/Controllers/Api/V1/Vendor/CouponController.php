@@ -60,7 +60,7 @@ class CouponController extends Controller
     /**
      * Kupon detayını göster
      */
-    public function show(Request $request, int $coupon): JsonResponse
+    public function show(Request $request, string|int $coupon): JsonResponse
     {
         $result = $this->couponService->getCoupon($request->user()->id, $coupon);
 
@@ -77,7 +77,7 @@ class CouponController extends Controller
     /**
      * Kuponu güncelle
      */
-    public function update(UpdateCouponRequest $request, int $coupon): JsonResponse
+    public function update(UpdateCouponRequest $request, string|int $coupon): JsonResponse
     {
         $result = $this->couponService->updateCoupon(
             $request->user()->id,
@@ -98,7 +98,7 @@ class CouponController extends Controller
     /**
      * Kuponu sil
      */
-    public function destroy(Request $request, int $coupon): JsonResponse
+    public function destroy(Request $request, string|int $coupon): JsonResponse
     {
         return $this->fromServiceResponse(
             $this->couponService->deleteCoupon($request->user()->id, $coupon)
@@ -108,7 +108,7 @@ class CouponController extends Controller
     /**
      * Kupon durumunu değiştir (aktif/pasif)
      */
-    public function toggle(Request $request, int $coupon): JsonResponse
+    public function toggle(Request $request, string|int $coupon): JsonResponse
     {
         $result = $this->couponService->toggleCoupon($request->user()->id, $coupon);
 

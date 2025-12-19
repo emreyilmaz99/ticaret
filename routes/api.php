@@ -224,7 +224,7 @@ Route::prefix('v1/vendor')->group(function () {
         Route::put('campaigns/{campaign}/toggle', [\App\Http\Controllers\Api\V1\Vendor\CampaignController::class, 'toggle']);
 
         // vendor review responses
-        Route::get('products/{productId}/reviews', [VendorReviewController::class, 'index']);
+        Route::get('products/{productId}/reviews', [VendorReviewController::class, 'index'])->where('productId', '[A-Z0-9]+');
     });
 });
 
@@ -251,9 +251,9 @@ Route::get('v1/products', [PublicProductController::class, 'index']);
 Route::get('v1/products/categories', [PublicProductController::class, 'categories']);
 Route::get('v1/products/featured', [PublicProductController::class, 'featured']);
 
-// product reviews (public)
-Route::get('v1/products/{productId}/reviews', [ProductReviewController::class, 'index']);
-Route::get('v1/products/{productId}/review-summary', [ProductReviewController::class, 'summary']);
+// product reviews (public) - only numeric product IDs
+Route::get('v1/products/{productId}/reviews', [ProductReviewController::class, 'index'])->where('productId', '[0-9]+');
+Route::get('v1/products/{productId}/review-summary', [ProductReviewController::class, 'summary'])->where('productId', '[0-9]+');
 Route::post('v1/reviews/{reviewId}/helpful', [ProductReviewController::class, 'voteHelpful']);
 
 // featured deals (public)
@@ -349,13 +349,13 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'detect.user.type'])->group(fun
     // Products - Vendor: their products, Admin: all products
     Route::get('products', [UnifiedProductsController::class, 'index']); // Vendor & Admin
     Route::get('products/statistics', [UnifiedProductsController::class, 'statistics']); // Admin only
-    Route::post('products', [UnifiedProductsController::class, 'store']); // Vendor only
-    Route::get('products/{id}', [UnifiedProductsController::class, 'show']); // Vendor & Admin
-    Route::put('products/{id}', [UnifiedProductsController::class, 'update']); // Vendor & Admin
-    Route::put('products/{id}/status', [UnifiedProductsController::class, 'updateStatus']); // Vendor & Admin
-    Route::delete('products/{id}', [UnifiedProductsController::class, 'destroy']); // Vendor & Admin
-    Route::delete('products/{product}/photos/{photo}', [UnifiedProductsController::class, 'destroyPhoto']); // Vendor only
     Route::post('products/bulk-status', [UnifiedProductsController::class, 'bulkUpdateStatus']); // Admin only
+    Route::post('products', [UnifiedProductsController::class, 'store']); // Vendor only
+    Route::get('products/{id}', [UnifiedProductsController::class, 'show'])->where('id', '[A-Z0-9]+'); // Vendor & Admin
+    Route::put('products/{id}', [UnifiedProductsController::class, 'update'])->where('id', '[A-Z0-9]+'); // Vendor & Admin
+    Route::put('products/{id}/status', [UnifiedProductsController::class, 'updateStatus'])->where('id', '[A-Z0-9]+'); // Vendor & Admin
+    Route::delete('products/{id}', [UnifiedProductsController::class, 'destroy'])->where('id', '[A-Z0-9]+'); // Vendor & Admin
+    Route::delete('products/{id}/photos/{photoId}', [UnifiedProductsController::class, 'destroyPhoto'])->where(['id' => '[A-Z0-9]+', 'photoId' => '[0-9]+']); // Vendor only
 
     // Vendors - Admin only (numeric IDs only)
     Route::get('vendors', [UnifiedVendorsController::class, 'index']); // Admin only
@@ -395,9 +395,9 @@ Route::get('v1/vendors/{slug}/products', [PublicVendorController::class, 'produc
 Route::get('v1/vendors/{slug}/categories', [PublicVendorController::class, 'categories'])->where('slug', '(?![0-9]+$)[a-zA-Z0-9\-_]+');
 Route::get('v1/vendors/{slug}/reviews', [PublicVendorController::class, 'reviews'])->where('slug', '(?![0-9]+$)[a-zA-Z0-9\-_]+');
 
-// Public product slug routes
-Route::get('v1/products/{slug}', [PublicProductController::class, 'show']);
-Route::get('v1/products/{slug}/related', [PublicProductController::class, 'related']);
+// Public product slug routes (lowercase slugs only, excludes ULIDs)
+Route::get('v1/products/{slug}', [PublicProductController::class, 'show'])->where('slug', '(?![A-Z0-9]+)[a-z0-9\-_]+');
+Route::get('v1/products/{slug}/related', [PublicProductController::class, 'related'])->where('slug', '(?![A-Z0-9]+)[a-z0-9\-_]+');
 
 // Public category slug routes
 Route::get('v1/categories/{slug}', [\App\Http\Controllers\Api\V1\Public\CategoryController::class, 'show']);

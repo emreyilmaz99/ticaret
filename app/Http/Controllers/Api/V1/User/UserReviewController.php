@@ -33,12 +33,12 @@ class UserReviewController extends Controller
      * Create review for order item
      * POST /api/v1/orders/{orderId}/items/{orderItemId}/review
      */
-    public function store(StoreReviewRequest $request, int $orderId, int $orderItemId): JsonResponse
+    public function store(StoreReviewRequest $request, string|int $orderId, string|int $orderItemId): JsonResponse
     {
         $result = $this->reviewService->createReview(
             $request->user(),
-            $orderId,
-            $orderItemId,
+            (int)$orderId,
+            (int)$orderItemId,
             $request->validated(),
             $request->file('photos', [])
         );
@@ -83,10 +83,10 @@ class UserReviewController extends Controller
      * Delete review (soft delete)
      * DELETE /api/v1/reviews/{reviewId}
      */
-    public function destroy(Request $request, int $reviewId): JsonResponse
+    public function destroy(Request $request, string|int $reviewId): JsonResponse
     {
         return $this->fromServiceResponse(
-            $this->reviewService->deleteReview($request->user(), $reviewId)
+            $this->reviewService->deleteReview($request->user(), (int)$reviewId)
         );
     }
 }

@@ -43,7 +43,7 @@ class AdminProductManagementService extends BaseService implements AdminProductM
         }
     }
 
-    public function find(int $id): ServiceResponse
+    public function find(string $id): ServiceResponse
     {
         try {
             $product = Product::with(['vendor', 'category', 'photos', 'variants', 'tags'])->findOrFail($id);
@@ -54,7 +54,7 @@ class AdminProductManagementService extends BaseService implements AdminProductM
         }
     }
 
-    public function updateStatus(int $id, string $status, ?string $rejectionReason, ?int $adminId): ServiceResponse
+    public function updateStatus(string $id, string $status, ?string $rejectionReason, ?int $adminId): ServiceResponse
     {
         try {
             $product = Product::findOrFail($id);
@@ -119,7 +119,7 @@ class AdminProductManagementService extends BaseService implements AdminProductM
         }
     }
 
-    public function delete(int $id): ServiceResponse
+    public function delete(string $id): ServiceResponse
     {
         try {
             $product = Product::findOrFail($id);

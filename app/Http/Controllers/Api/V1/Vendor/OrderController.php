@@ -80,7 +80,7 @@ class OrderController extends BaseVendorController
     /**
      * Update order status
      */
-    public function updateStatus(UpdateOrderStatusRequest $request, int $orderId)
+    public function updateStatus(UpdateOrderStatusRequest $request, string|int $orderId)
     {
         $vendor = $request->user();
         if (!$vendor) {
@@ -99,7 +99,7 @@ class OrderController extends BaseVendorController
     /**
      * Cancel order
      */
-    public function cancel(Request $request, int $orderId)
+    public function cancel(Request $request, string|int $orderId)
     {
         $vendor = $request->user();
         if (!$vendor) {

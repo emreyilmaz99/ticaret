@@ -57,7 +57,7 @@ class ProductController extends Controller
         }
     }
 
-    public function show(Request $request, int $id)
+    public function show(Request $request, string $id)
     {
         $vendor = $request->user();
         $product = $this->service->findForVendor($vendor, $id);
@@ -72,7 +72,7 @@ class ProductController extends Controller
         );
     }
 
-    public function update(UpdateProductRequest $request, int $id)
+    public function update(UpdateProductRequest $request, string $id)
     {
         $vendor = $request->user();
         $product = $this->service->findForVendor($vendor, $id);
@@ -106,7 +106,7 @@ class ProductController extends Controller
         }
     }
 
-    public function destroy(Request $request, int $id)
+    public function destroy(Request $request, string $id)
     {
         $vendor = $request->user();
         $product = $this->service->findForVendor($vendor, $id);
@@ -123,7 +123,7 @@ class ProductController extends Controller
         }
     }
 
-    public function destroyPhoto(Request $request, int $id, int $photoId)
+    public function destroyPhoto(Request $request, string $id, string|int $photoId)
     {
         $vendor = $request->user();
         $product = $this->service->findForVendor($vendor, $id);
@@ -133,7 +133,7 @@ class ProductController extends Controller
         }
         
         try {
-            $this->service->deletePhotoForVendor($vendor, $product, $photoId);
+            $this->service->deletePhotoForVendor($vendor, $product, (int)$photoId);
             return $this->success(null, 'Fotoğraf başarıyla silindi.');
         } catch (\Exception $e) {
             return $this->error($e->getMessage(), 400);
@@ -143,7 +143,7 @@ class ProductController extends Controller
     /**
      * Update product status (vendor can only toggle between active/inactive)
      */
-    public function updateStatus(UpdateProductStatusRequest $request, int $id)
+    public function updateStatus(Request $request, string $id)
     {
         $vendor = $request->user();
         $product = $this->service->findForVendor($vendor, $id);
@@ -157,10 +157,11 @@ class ProductController extends Controller
             return $this->error('Bu ürünün durumu değiştirilemez. Sadece yayında veya pasif durumundaki ürünlerin durumu değiştirilebilir.', 403);
         }
 
-        $product->status = $request->validated()['status'];
+        $status = $request->input('status');
+        $product->status = $status;
         $product->save();
 
-        $message = $request->validated()['status'] === 'active' ? 'Ürün yayına alındı' : 'Ürün pasife alındı';
+        $message = $status === 'active' ? 'Ürün yayına alındı' : 'Ürün pasife alındı';
 
         return $this->success(
             ['product' => new ProductResource($product->fresh(['vendor', 'category', 'photos', 'variants', 'tags']))],

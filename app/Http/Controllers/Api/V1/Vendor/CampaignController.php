@@ -60,7 +60,7 @@ class CampaignController extends Controller
     /**
      * Kampanya detayını göster
      */
-    public function show(Request $request, int $campaign): JsonResponse
+    public function show(Request $request, string|int $campaign): JsonResponse
     {
         $result = $this->campaignService->getCampaign($request->user()->id, $campaign);
 
@@ -77,7 +77,7 @@ class CampaignController extends Controller
     /**
      * Kampanyayı güncelle
      */
-    public function update(UpdateCampaignRequest $request, int $campaign): JsonResponse
+    public function update(UpdateCampaignRequest $request, string|int $campaign): JsonResponse
     {
         $result = $this->campaignService->updateCampaign(
             $request->user()->id,
@@ -98,7 +98,7 @@ class CampaignController extends Controller
     /**
      * Kampanyayı sil
      */
-    public function destroy(Request $request, int $campaign): JsonResponse
+    public function destroy(Request $request, string|int $campaign): JsonResponse
     {
         return $this->fromServiceResponse(
             $this->campaignService->deleteCampaign($request->user()->id, $campaign)

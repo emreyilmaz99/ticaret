@@ -37,7 +37,7 @@ class ProductController extends Controller
         return $this->fromServiceResponse($this->service->find($id));
     }
 
-    public function updateStatus(UpdateProductStatusRequest $request, $id)
+    public function updateStatus(Request $request, $id)
     {
         return $this->fromServiceResponse(
             $this->service->updateStatus(

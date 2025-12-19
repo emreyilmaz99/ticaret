@@ -8,7 +8,6 @@ use App\Core\ApiResponse;
 use Illuminate\Http\Request;
 use App\Http\Requests\Api\V1\Unified\StoreProductRequest;
 use App\Http\Requests\Api\V1\Unified\UpdateProductRequest;
-use App\Http\Requests\Api\V1\Unified\UpdateProductStatusRequest;
 use App\Http\Requests\Api\V1\Unified\BulkUpdateProductStatusRequest;
 
 class UnifiedProductsController extends Controller
@@ -65,13 +64,13 @@ class UnifiedProductsController extends Controller
      * 
      * GET /api/v1/products/{id}
      */
-    public function show(Request $request, int $id)
+    public function show(Request $request, string $id)
     {
         $userType = DetectUserType::getUserType($request);
 
         return match($userType) {
             'vendor' => $this->vendorProductController->show($request, $id),
-            'admin' => $this->adminProductController->show($id), // Only needs id
+            'admin' => $this->adminProductController->show($id),
             'user' => ApiResponse::error('Users should use public product endpoints', 403),
             default => ApiResponse::error('Unknown user type', 400),
         };
@@ -105,10 +104,10 @@ class UnifiedProductsController extends Controller
      * - Admin: Can update any product
      * 
      * @param UpdateProductRequest $request
-     * @param int $id
+     * @param string|int $id
      * @return mixed
      */
-    public function update(UpdateProductRequest $request, int $id)
+    public function update(UpdateProductRequest $request, string $id)
     {
         $userType = DetectUserType::getUserType($request);
         
@@ -126,11 +125,11 @@ class UnifiedProductsController extends Controller
      * 
      * PUT /api/v1/products/{id}/status
      * 
-     * @param UpdateProductStatusRequest $request
-     * @param int $id
+     * @param Request $request
+     * @param string|int $id
      * @return mixed
      */
-    public function updateStatus(UpdateProductStatusRequest $request, int $id)
+    public function updateStatus(Request $request, string $id)
     {
         $userType = DetectUserType::getUserType($request);
         
@@ -148,13 +147,13 @@ class UnifiedProductsController extends Controller
      * 
      * DELETE /api/v1/products/{id}
      */
-    public function destroy(Request $request, int $id)
+    public function destroy(Request $request, string $id)
     {
         $userType = DetectUserType::getUserType($request);
 
         return match($userType) {
             'vendor' => $this->vendorProductController->destroy($request, $id),
-            'admin' => $this->adminProductController->destroy($id), // Only needs id
+            'admin' => $this->adminProductController->destroy($id),
             'user' => ApiResponse::error('Users cannot delete products', 403),
             default => ApiResponse::error('Unknown user type', 400),
         };
@@ -163,9 +162,9 @@ class UnifiedProductsController extends Controller
     /**
      * Delete product photo (Vendor only)
      * 
-     * DELETE /api/v1/products/{product}/photos/{photo}
+     * DELETE /api/v1/products/{id}/photos/{photoId}
      */
-    public function destroyPhoto(Request $request, int $product, int $photo)
+    public function destroyPhoto(Request $request, string $id, string|int $photoId)
     {
         $userType = DetectUserType::getUserType($request);
 
@@ -173,7 +172,7 @@ class UnifiedProductsController extends Controller
             return ApiResponse::error('Only vendors can delete product photos', 403);
         }
 
-        return $this->vendorProductController->destroyPhoto($request, $product, $photo);
+        return $this->vendorProductController->destroyPhoto($request, $id, (int)$photoId);
     }
 
     /**
