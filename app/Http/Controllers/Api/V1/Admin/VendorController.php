@@ -27,15 +27,7 @@ class VendorController extends BaseAdminController
         $paginator = $result->getData();
 
         // Transform with Resource in Controller (not Service)
-        return $this->success([
-            'data' => VendorResource::collection($paginator),
-            'meta' => [
-                'current_page' => $paginator->currentPage(),
-                'last_page' => $paginator->lastPage(),
-                'per_page' => $paginator->perPage(),
-                'total' => $paginator->total(),
-            ],
-        ], $result->getMessage());
+        return VendorResource::collection($paginator);
     }
 
     public function show(string|int $id)
