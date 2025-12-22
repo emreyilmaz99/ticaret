@@ -236,6 +236,22 @@ class IyzicoCheckoutService extends BaseService implements IyzicoCheckoutService
             $basketItem->setSubMerchantPrice($this->utility->formatPrice($item['submerchant_price']));
         }
 
+        // İyzico stopaj entegrasyonu (config aktifse)
+        if (config('finance.iyzico.send_withholding_tax', true) && !empty($item['withholding_tax'])) {
+            try {
+                // İyzico SDK'da setWithholdingTax metodu varsa kullan
+                if (method_exists($basketItem, 'setWithholdingTax')) {
+                    $basketItem->setWithholdingTax($this->utility->formatPrice($item['withholding_tax']));
+                }
+            } catch (\Exception $e) {
+                // SDK desteklemiyorsa log at ve devam et
+                \Log::warning('İyzico withholding tax set edilemedi', [
+                    'item_id' => $item['id'],
+                    'error' => $e->getMessage()
+                ]);
+            }
+        }
+
         return $basketItem;
     }
 }

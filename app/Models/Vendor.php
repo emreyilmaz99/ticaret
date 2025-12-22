@@ -183,6 +183,14 @@ class Vendor extends Authenticatable
     }
 
     /**
+     * Get all earnings for vendor
+     */
+    public function earnings()
+    {
+        return $this->hasMany(VendorEarning::class);
+    }
+
+    /**
      * Satıcının yetkili olduğu kategoriler
      */
     public function categories()
@@ -422,4 +430,84 @@ class Vendor extends Authenticatable
     {
         return $this->status === self::STATUS_ACTIVE && $this->hasCompletedOnboarding();
     }
+
+    /**
+     * Get available balance (earnings ready for withdrawal)
+     */
+    public function getAvailableBalanceAttribute(): float
+    {
+        $cacheKey = "vendor.{$this->id}.available_balance";
+        $cacheTtl = config('finance.cache.balance_ttl', 300);
+
+        if (config('finance.cache.enabled', true)) {
+            return cache()->remember($cacheKey, $cacheTtl, function () {
+                return $this->earnings()->available()->sum('net_earning') ?? 0;
+            });
+        }
+
+        return $this->earnings()->available()->sum('net_earning') ?? 0;
+    }
+
+    /**
+     * Get pending balance (earnings not yet available)
+     */
+    public function getPendingBalanceAttribute(): float
+    {
+        $cacheKey = "vendor.{$this->id}.pending_balance";
+        $cacheTtl = config('finance.cache.balance_ttl', 300);
+
+        if (config('finance.cache.enabled', true)) {
+            return cache()->remember($cacheKey, $cacheTtl, function () {
+                return $this->earnings()->pending()->sum('net_earning') ?? 0;
+            });
+        }
+
+        return $this->earnings()->pending()->sum('net_earning') ?? 0;
+    }
+
+    /**
+     * Get total earned (all time)
+     */
+    public function getTotalEarnedAttribute(): float
+    {
+        $cacheKey = "vendor.{$this->id}.total_earned";
+        $cacheTtl = config('finance.cache.balance_ttl', 300);
+
+        if (config('finance.cache.enabled', true)) {
+            return cache()->remember($cacheKey, $cacheTtl, function () {
+                return $this->earnings()->whereIn('earning_status', ['available', 'settled'])->sum('net_earning') ?? 0;
+            });
+        }
+
+        return $this->earnings()->whereIn('earning_status', ['available', 'settled'])->sum('net_earning') ?? 0;
+    }
+
+    /**
+     * Get total withdrawn (all settled payouts)
+     */
+    public function getTotalWithdrawnAttribute(): float
+    {
+        $cacheKey = "vendor.{$this->id}.total_withdrawn";
+        $cacheTtl = config('finance.cache.balance_ttl', 300);
+
+        if (config('finance.cache.enabled', true)) {
+            return cache()->remember($cacheKey, $cacheTtl, function () {
+                return $this->earnings()->settled()->sum('net_earning') ?? 0;
+            });
+        }
+
+        return $this->earnings()->settled()->sum('net_earning') ?? 0;
+    }
+
+    /**
+     * Clear vendor balance cache
+     */
+    public function clearBalanceCache(): void
+    {
+        cache()->forget("vendor.{$this->id}.available_balance");
+        cache()->forget("vendor.{$this->id}.pending_balance");
+        cache()->forget("vendor.{$this->id}.total_earned");
+        cache()->forget("vendor.{$this->id}.total_withdrawn");
+    }
 }
+

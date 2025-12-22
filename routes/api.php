@@ -21,6 +21,7 @@ use App\Http\Controllers\Api\V1\Admin\UserController;
 use App\Http\Controllers\Api\V1\Admin\VendorController as AdminVendorController;
 use App\Http\Controllers\Api\V1\Admin\AdminController;
 use App\Http\Controllers\Api\V1\Admin\AdminPermissionsController;
+use App\Http\Controllers\Api\V1\Admin\AdminVendorFinancialController;
 use App\Http\Controllers\Api\V1\Admin\VendorPayoutController as AdminVendorPayoutController;
 use App\Http\Controllers\Api\V1\Admin\CommissionPlanController;
 use App\Http\Controllers\Api\V1\Admin\ProductController as AdminProductController;
@@ -100,6 +101,13 @@ Route::prefix('v1/admin')->group(function () {
         Route::get('vendors/payouts', [AdminVendorPayoutController::class, 'index']);
         Route::get('vendors/payouts/{payout}', [AdminVendorPayoutController::class, 'show']);
         Route::put('vendors/payouts/{payout}', [AdminVendorPayoutController::class, 'update']);
+
+        // admin vendor financial management
+        Route::get('finance/dashboard', [AdminVendorFinancialController::class, 'platformDashboard']);
+        Route::get('finance/commission-report', [AdminVendorFinancialController::class, 'commissionReport']);
+        Route::get('finance/withholding-tax-report', [AdminVendorFinancialController::class, 'withholdingTaxReport']);
+        Route::get('finance/vendor/{vendorId}', [AdminVendorFinancialController::class, 'vendorFinancials']);
+        Route::get('finance/earning/{earningId}', [AdminVendorFinancialController::class, 'earningDetail']);
 
         // commission plans management
         Route::get('commission-plans', [CommissionPlanController::class, 'index']);
@@ -238,6 +246,12 @@ Route::prefix('v1/vendor')->group(function () {
         Route::get('review-stats', [VendorReviewController::class, 'stats']);
         Route::post('reviews/{reviewId}/response', [VendorReviewController::class, 'storeResponse']);
         Route::delete('review-responses/{responseId}', [VendorReviewController::class, 'destroyResponse']);
+
+        // vendor financials
+        Route::get('finance/dashboard', [\App\Http\Controllers\Api\V1\Vendor\VendorFinancialController::class, 'dashboard']);
+        Route::get('finance/earnings', [\App\Http\Controllers\Api\V1\Vendor\VendorFinancialController::class, 'earnings']);
+        Route::get('finance/chart', [\App\Http\Controllers\Api\V1\Vendor\VendorFinancialController::class, 'chart']);
+        Route::get('finance/tax-report', [\App\Http\Controllers\Api\V1\Vendor\VendorFinancialController::class, 'taxReport']);
     });
 });
 
