@@ -58,9 +58,23 @@ class OrderObserver
     {
         try {
             DB::transaction(function () use ($order) {
+                // Load orderItems if not already loaded
+                if (!$order->relationLoaded('orderItems')) {
+                    $order->load('orderItems');
+                }
+
                 foreach ($order->orderItems as $orderItem) {
                     // Skip if earning already exists for this order item
                     if (VendorEarning::where('order_item_id', $orderItem->id)->exists()) {
+                        continue;
+                    }
+
+                    // Skip if orderItem has no vendor_id
+                    if (!$orderItem->vendor_id) {
+                        Log::warning('OrderItem has no vendor_id, skipping earning creation', [
+                            'order_item_id' => $orderItem->id,
+                            'order_id' => $order->id,
+                        ]);
                         continue;
                     }
 

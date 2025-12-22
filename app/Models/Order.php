@@ -126,6 +126,14 @@ class Order extends Model
         return $this->hasMany(OrderItem::class);
     }
 
+    /**
+     * Alias for items() relationship
+     */
+    public function orderItems(): HasMany
+    {
+        return $this->items();
+    }
+
     public function statusHistory(): HasMany
     {
         return $this->hasMany(OrderStatusHistory::class)->orderBy('created_at', 'desc');
