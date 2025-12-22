@@ -56,8 +56,9 @@ class OrderController extends Controller
             return $this->fromServiceResponse($result);
         }
 
+        // Service already returns transformed data, no need for OrderResource
         return $this->success(
-            ['order' => new OrderResource($result->getData())],
+            ['order' => $result->getData()],
             $result->getMessage()
         );
     }
