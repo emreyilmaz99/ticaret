@@ -17,14 +17,14 @@ interface VendorServiceInterface
     public function listOptimized(int $perPage, array $filters, array $select);
 
     /**
-     * List vendors for admin response
-     */
-    public function listForAdminResponse(int $perPage, ?string $status);
-
-    /**
      * Find vendor by ID
      */
     public function find(int $id);
+
+    /**
+     * Find vendor with stats
+     */
+    public function findWithStats(int $id);
 
     /**
      * Get current authenticated vendor
@@ -46,63 +46,45 @@ interface VendorServiceInterface
      */
     public function delete(int $id): bool;
 
+    // ==================== Deprecated Methods (Backward Compatibility) ====================
+
     /**
-     * Add vendor address
+     * @deprecated Use VendorAddressService::add() instead
      */
     public function addAddress(int $vendorId, array $data);
 
     /**
-     * List vendor addresses
+     * @deprecated Use VendorAddressService::list() instead
      */
     public function listAddresses(int $vendorId);
 
     /**
-     * Update vendor address
+     * @deprecated Use VendorAddressService::update() instead
      */
     public function updateAddress(int $vendorId, int $addressId, array $data);
 
     /**
-     * Delete vendor address
+     * @deprecated Use VendorAddressService::delete() instead
      */
     public function deleteAddress(int $vendorId, int $addressId);
 
     /**
-     * Add vendor bank account
+     * @deprecated Use VendorBankAccountService::add() instead
      */
     public function addBankAccount(int $vendorId, array $data);
 
     /**
-     * List vendor bank accounts
+     * @deprecated Use VendorBankAccountService::list() instead
      */
     public function listBankAccounts(int $vendorId);
 
     /**
-     * Update vendor bank account
+     * @deprecated Use VendorBankAccountService::update() instead
      */
     public function updateBankAccount(int $vendorId, int $accountId, array $data);
 
     /**
-     * Delete vendor bank account
+     * @deprecated Use VendorBankAccountService::delete() instead
      */
     public function deleteBankAccount(int $vendorId, int $accountId);
-
-    /**
-     * Get public vendor profile
-     */
-    public function getPublicProfile(string $slug): ServiceResponse;
-
-    /**
-     * Get vendor products
-     */
-    public function getProducts(string $slug, array $filters): ServiceResponse;
-
-    /**
-     * Get vendor categories
-     */
-    public function getCategories(string $slug): ServiceResponse;
-
-    /**
-     * Get vendor reviews
-     */
-    public function getReviews(string $slug, array $filters): ServiceResponse;
 }

@@ -5,12 +5,38 @@ namespace App\Services\Admin;
 use App\Core\ServiceResponse;
 use App\Repositories\VendorRepository;
 use App\Services\BaseService;
+use App\Services\Vendor\VendorService;
 
 class AdminVendorService extends BaseService
 {
     public function __construct(
-        protected VendorRepository $repo
+        protected VendorRepository $repo,
+        protected VendorService $vendorService
     ) {}
+
+    // ==================== Core CRUD (Delegate to VendorService) ====================
+
+    public function find(int $id)
+    {
+        return $this->vendorService->find($id);
+    }
+
+    public function create(array $data)
+    {
+        return $this->vendorService->create($data);
+    }
+
+    public function update(int $id, array $data): ServiceResponse
+    {
+        return $this->vendorService->update($id, $data);
+    }
+
+    public function delete(int $id): bool
+    {
+        return $this->vendorService->delete($id);
+    }
+
+    // ==================== Admin-Specific Operations ====================
 
     /**
      * Get vendors list for admin with stats

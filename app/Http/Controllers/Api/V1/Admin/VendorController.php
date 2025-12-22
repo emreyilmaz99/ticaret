@@ -60,21 +60,26 @@ class VendorController extends BaseAdminController
     {
         $data = $request->all();
         $vendor = $this->service->find((int)$id);
+        
         if (! $vendor) {
             return $this->error('Satıcı bulunamadı', 404);
         }
 
-        // Password hashing is handled by the Vendor model mutator (`setPasswordAttribute`).
-        // Do not pre-hash here to avoid double hashing.
+        $result = $this->service->update((int)$id, $data);
 
-        $updated = $this->service->update((int)$id, $data);
+        if (!$result->isSuccess()) {
+            return $this->fromServiceResponse($result);
+        }
 
-        return $this->success(new VendorResource($updated->load('roles')), 'Satıcı güncellendi', 200);
+        $updatedVendor = $result->getData();
+
+        return $this->success(new VendorResource($updatedVendor->load('roles')), 'Satıcı güncellendi', 200);
     }
 
     public function destroy(string|int $id)
     {
         $vendor = $this->service->find((int)$id);
+        
         if (! $vendor) {
             return $this->error('Satıcı bulunamadı', 404);
         }
@@ -87,14 +92,21 @@ class VendorController extends BaseAdminController
     public function updateStatus(Request $request, string $id)
     {
         $vendor = $this->service->find((int)$id);
+        
         if (! $vendor) {
             return $this->error('Satıcı bulunamadı', 404);
         }
 
         $status = $request->input('status');
-        $vendor = $this->service->update((int)$id, ['status' => $status]);
+        $result = $this->service->update((int)$id, ['status' => $status]);
 
-        return $this->success(new VendorResource($vendor), 'Satıcı durumu güncellendi');
+        if (!$result->isSuccess()) {
+            return $this->fromServiceResponse($result);
+        }
+
+        $updatedVendor = $result->getData();
+
+        return $this->success(new VendorResource($updatedVendor), 'Satıcı durumu güncellendi');
     }
 
     /**
