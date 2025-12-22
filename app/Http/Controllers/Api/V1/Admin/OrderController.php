@@ -70,10 +70,16 @@ class OrderController extends BaseAdminController
     /**
      * Cancel order
      */
-    public function cancel(CancelOrderRequest $request, int $orderId)
+    public function cancel(Request $request, int $orderId)
     {
+        // Validate using CancelOrderRequest
+        $formRequest = app(CancelOrderRequest::class);
+        $formRequest->setContainer(app());
+        $formRequest->setRedirector(app('redirect'));
+        $formRequest->validateResolved();
+
         $adminId = $request->user()->id;
-        $result = $this->service->cancelOrder($orderId, $request->reason, $adminId);
+        $result = $this->service->cancelOrder($orderId, $request->input('reason'), $adminId);
 
         return $this->fromServiceResponse($result);
     }

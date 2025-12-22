@@ -77,6 +77,11 @@ class Order extends Model
     protected $appends = ['can_cancel'];
 
     /**
+     * Temporary attribute to pass metadata to observer (not persisted to database)
+     */
+    public ?array $statusChangeMetadata = null;
+
+    /**
      * Boot the model
      */
     protected static function boot()
