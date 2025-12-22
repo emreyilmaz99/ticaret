@@ -84,19 +84,33 @@ class VendorReviewController extends Controller
      */
     public function storeResponse(Request $request, string $reviewId)
     {
-        // Dynamic validation with StoreReviewResponseRequest
-        $formRequest = app(StoreReviewResponseRequest::class);
-        $formRequest->setContainer(app());
-        $formRequest->setRedirector(app('redirect'));
-        $formRequest->validateResolved();
+        \Log::info('VendorReviewController::storeResponse called', [
+            'reviewId' => $reviewId,
+            'response_text' => $request->input('response_text'),
+        ]);
+
+        // Validate using StoreReviewResponseRequest rules
+        $validated = $request->validate(
+            (new StoreReviewResponseRequest())->rules(),
+            (new StoreReviewResponseRequest())->messages()
+        );
 
         $vendor = $request->user();
+
+        \Log::info('Calling createResponse service', [
+            'vendor_id' => $vendor->id ?? 'null',
+        ]);
 
         $result = $this->responseService->createResponse(
             $vendor,
             $reviewId,
-            $request->input('response_text')
+            $validated['response_text']
         );
+
+        \Log::info('Service returned', [
+            'success' => $result->isSuccess(),
+            'message' => $result->getMessage(),
+        ]);
 
         if (!$result->isSuccess()) {
             return $this->fromServiceResponse($result);

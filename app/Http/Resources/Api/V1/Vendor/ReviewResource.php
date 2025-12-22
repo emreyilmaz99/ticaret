@@ -26,6 +26,7 @@ class ReviewResource extends JsonResource
             'product' => $this->when($this->relationLoaded('product'), $this->formatProduct()),
             'has_media' => $this->when($this->relationLoaded('media'), $this->media ? $this->media->isNotEmpty() : false),
             'has_response' => $this->when($this->relationLoaded('response'), $this->response !== null),
+            'response' => $this->when($this->relationLoaded('response'), $this->formatResponse()),
         ];
     }
 
@@ -53,6 +54,20 @@ class ReviewResource extends JsonResource
             'name' => $this->product->name,
             'slug' => $this->product->slug,
             'image' => $this->product->image ?? null, // Main product image from accessor
+        ];
+    }
+
+    protected function formatResponse(): ?array
+    {
+        if (!$this->response) {
+            return null;
+        }
+
+        return [
+            'id' => $this->response->id,
+            'response_text' => $this->response->response_text,
+            'created_at' => $this->response->created_at?->toISOString(),
+            'updated_at' => $this->response->updated_at?->toISOString(),
         ];
     }
 }

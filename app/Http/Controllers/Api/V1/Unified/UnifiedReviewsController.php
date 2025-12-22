@@ -9,7 +9,6 @@ use Illuminate\Http\Request;
 use App\Http\Requests\Api\V1\Unified\StoreReviewRequest;
 use App\Http\Requests\Api\V1\Unified\RejectReviewRequest;
 use App\Http\Requests\Api\V1\Unified\BulkReviewActionRequest;
-use App\Http\Requests\Api\V1\Unified\StoreReviewResponseRequest;
 
 class UnifiedReviewsController extends Controller
 {
@@ -207,20 +206,47 @@ class UnifiedReviewsController extends Controller
      * 
      * POST /api/v1/reviews/{reviewId}/response
      * 
-     * @param StoreReviewResponseRequest $request
+     * @param Request $request
      * @param int $reviewId
      * @return mixed
      */
-    public function storeResponse(StoreReviewResponseRequest $request, int $reviewId)
+    public function storeResponse(Request $request, string $reviewId)
     {
+        \Log::info('UnifiedReviewsController::storeResponse called', [
+            'reviewId' => $reviewId,
+            'all_input' => $request->all(),
+        ]);
+        
         $userType = DetectUserType::getUserType($request);
 
         if ($userType !== 'vendor') {
             return ApiResponse::error('Only vendors can respond to reviews', 403);
         }
+
+        // Map 'response' to 'response_text' for compatibility
+        if ($request->has('response') && !$request->has('response_text')) {
+            $request->merge([
+                'response_text' => $request->input('response')
+            ]);
+        }
         
-        /** @phpstan-ignore-next-line */
-        return $this->vendorReviewController->storeResponse($request, $reviewId);
+        \Log::info('Before calling VendorReviewController', [
+            'response_text' => $request->input('response_text'),
+        ]);
+        
+        try {
+            /** @phpstan-ignore-next-line */
+            $result = $this->vendorReviewController->storeResponse($request, $reviewId);
+            \Log::info('VendorReviewController returned', ['result' => 'success']);
+            return $result;
+        } catch (\Throwable $e) {
+            \Log::error('VendorReviewController exception', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+            ]);
+            throw $e;
+        }
     }
 
     /**

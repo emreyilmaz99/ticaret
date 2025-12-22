@@ -82,6 +82,14 @@ class Handler extends ExceptionHandler
      */
     protected function renderApiException($request, Throwable $e)
     {
+        // Log all API exceptions for debugging
+        \Log::error('API Exception', [
+            'type' => get_class($e),
+            'message' => $e->getMessage(),
+            'url' => $request->url(),
+            'method' => $request->method(),
+        ]);
+
         // Authentication Exception (401)
         if ($e instanceof AuthenticationException) {
             return ApiResponse::error('Unauthenticated.', 401);
