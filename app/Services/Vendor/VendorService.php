@@ -50,8 +50,9 @@ class VendorService extends BaseService implements VendorServiceInterface
                 $q->where('is_primary', true);
             }, 'commissionPlan'])
             ->withSum('payouts', 'amount')
-            ->withAvg('ratings', 'rating')
-            ->withCount('ratings')
+            ->withCount('products')
+            ->withAvg('productReviews', 'rating')
+            ->withCount('productReviews')
             ->latest();
 
         if ($status) {

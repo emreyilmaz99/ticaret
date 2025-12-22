@@ -168,6 +168,21 @@ class Vendor extends Authenticatable
     }
 
     /**
+     * Get all reviews for vendor's products
+     */
+    public function productReviews()
+    {
+        return $this->hasManyThrough(
+            ProductReview::class,
+            Product::class,
+            'vendor_id',    // Foreign key on products table
+            'product_id',   // Foreign key on product_reviews table
+            'id',           // Local key on vendors table
+            'id'            // Local key on products table
+        );
+    }
+
+    /**
      * Satıcının yetkili olduğu kategoriler
      */
     public function categories()
