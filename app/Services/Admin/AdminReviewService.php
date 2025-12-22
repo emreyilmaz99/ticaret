@@ -13,7 +13,7 @@ class AdminReviewService extends BaseService implements AdminReviewServiceInterf
     public function list(array $filters): ServiceResponse
     {
         try {
-            $query = ProductReview::with(['user', 'product.vendor', 'media', 'response.vendor'])
+            $query = ProductReview::with(['user', 'product.vendor', 'product.photos', 'media', 'response.vendor'])
                 ->when(isset($filters['status']), fn($q) => $q->where('status', $filters['status']))
                 ->when(isset($filters['rating']), fn($q) => $q->where('rating', $filters['rating']))
                 ->when(isset($filters['search']), function ($q) use ($filters) {
@@ -119,7 +119,7 @@ class AdminReviewService extends BaseService implements AdminReviewServiceInterf
     {
         try {
             $reviews = ProductReview::onlyTrashed()
-                ->with(['user', 'product', 'media'])
+                ->with(['user', 'product.photos', 'media'])
                 ->latest('deleted_at')
                 ->paginate($perPage);
 

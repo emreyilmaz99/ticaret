@@ -52,6 +52,7 @@ class ReviewResource extends JsonResource
             'id' => $this->product->id,
             'name' => $this->product->name,
             'slug' => $this->product->slug,
+            'image' => $this->product->image ?? null, // Main product image from accessor
         ];
     }
 }

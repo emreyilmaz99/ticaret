@@ -82,8 +82,14 @@ class VendorReviewController extends Controller
      * POST /api/v1/vendor/reviews/{reviewId}/response
      * Create a response to a review
      */
-    public function storeResponse(StoreReviewResponseRequest $request, string $reviewId)
+    public function storeResponse(Request $request, string $reviewId)
     {
+        // Dynamic validation with StoreReviewResponseRequest
+        $formRequest = app(StoreReviewResponseRequest::class);
+        $formRequest->setContainer(app());
+        $formRequest->setRedirector(app('redirect'));
+        $formRequest->validateResolved();
+
         $vendor = $request->user();
 
         $result = $this->responseService->createResponse(

@@ -234,6 +234,10 @@ Route::prefix('v1/vendor')->group(function () {
 
         // vendor review responses
         Route::get('products/{productId}/reviews', [VendorReviewController::class, 'index'])->where('productId', '[A-Z0-9]+');
+        Route::get('reviews', [VendorReviewController::class, 'allReviews']);
+        Route::get('review-stats', [VendorReviewController::class, 'stats']);
+        Route::post('reviews/{reviewId}/response', [VendorReviewController::class, 'storeResponse']);
+        Route::delete('review-responses/{responseId}', [VendorReviewController::class, 'destroyResponse']);
     });
 });
 
