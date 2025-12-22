@@ -4,32 +4,44 @@ namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\Http\Controllers\Api\V1\Admin\BaseAdminController;
 use App\Http\Resources\Api\V1\Admin\VendorResource;
-use App\Interfaces\Services\Vendor\VendorServiceInterface;
+use App\Services\Admin\AdminVendorService;
 use Illuminate\Http\Request;
 
 class VendorController extends BaseAdminController
 {
-    protected VendorServiceInterface $service;
-
-    public function __construct(VendorServiceInterface $service)
-    {
-        $this->service = $service;
-    }
+    public function __construct(
+        protected AdminVendorService $service
+    ) {}
 
     public function index(Request $request)
     {
         $perPage = (int) $request->query('per_page', 15);
         $status = $request->query('status');
 
-        // Use service that returns a ServiceResponse-compatible object
-        $serviceResponse = $this->service->listForAdminResponse($perPage, $status);
+        $result = $this->service->list($perPage, $status);
 
-        return $this->fromServiceResponse($serviceResponse);
+        if (!$result->isSuccess()) {
+            return $this->fromServiceResponse($result);
+        }
+
+        $paginator = $result->getData();
+
+        // Transform with Resource in Controller (not Service)
+        return $this->success([
+            'data' => VendorResource::collection($paginator),
+            'meta' => [
+                'current_page' => $paginator->currentPage(),
+                'last_page' => $paginator->lastPage(),
+                'per_page' => $paginator->perPage(),
+                'total' => $paginator->total(),
+            ],
+        ], $result->getMessage());
     }
 
     public function show(string|int $id)
     {
         $vendor = $this->service->find((int)$id);
+        
         if (! $vendor) {
             return $this->error('Satıcı bulunamadı', 404);
         }
@@ -40,15 +52,11 @@ class VendorController extends BaseAdminController
     public function store(\App\Http\Requests\Api\V1\Admin\StoreVendorRequest $request)
     {
         $data = $request->validated();
-        // Password hashing is handled by the Vendor model mutator (`setPasswordAttribute`).
-        // Do not pre-hash here to avoid double hashing.
 
         $vendor = $this->service->create($data);
 
         return $this->success(new VendorResource($vendor->load('roles')), 'Satıcı oluşturuldu', 201);
-    }
-
-    public function update(Request $request, string $id)
+    }    public function update(Request $request, string $id)
     {
         $data = $request->all();
         $vendor = $this->service->find((int)$id);

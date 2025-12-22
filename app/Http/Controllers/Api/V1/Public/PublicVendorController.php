@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\PublicRequests\FilterVendorProductsRequest;
 use App\Http\Resources\Api\V1\Public\PublicVendorResource;
 use App\Http\Resources\Api\V1\Public\PublicReviewResource;
-use App\Interfaces\Services\Vendor\VendorServiceInterface;
+use App\Services\Public\PublicVendorService;
 use App\Traits\FormatsProductData;
 use App\Traits\ResponseHttp;
 use Illuminate\Http\JsonResponse;
@@ -16,15 +16,16 @@ class PublicVendorController extends Controller
     use FormatsProductData, ResponseHttp;
     
     public function __construct(
-        protected VendorServiceInterface $vendorService
+        protected PublicVendorService $service
     ) {}
+    
     /**
      * Get vendor profile by slug
      * GET /api/v1/vendors/{slug}
      */
     public function show(string $slug): JsonResponse
     {
-        $result = $this->vendorService->getPublicProfile($slug);
+        $result = $this->service->getProfile($slug);
         
         if (!$result->isSuccess()) {
             return $this->fromServiceResponse($result);
@@ -57,7 +58,7 @@ class PublicVendorController extends Controller
             'per_page' => 20,
         ];
 
-        $result = $this->vendorService->getProducts($slug, $filters);
+        $result = $this->service->getProducts($slug, $filters);
         
         if (!$result->isSuccess()) {
             return $this->fromServiceResponse($result);
@@ -126,7 +127,7 @@ class PublicVendorController extends Controller
     public function categories(string $slug): JsonResponse
     {
         return $this->fromServiceResponse(
-            $this->vendorService->getCategories($slug)
+            $this->service->getCategories($slug)
         );
     }
 
@@ -142,7 +143,7 @@ class PublicVendorController extends Controller
             'per_page' => 10,
         ];
 
-        $result = $this->vendorService->getReviews($slug, $filters);
+        $result = $this->service->getReviews($slug, $filters);
         
         if (!$result->isSuccess()) {
             return $this->fromServiceResponse($result);
