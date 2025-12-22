@@ -30,13 +30,25 @@ class AdminReviewController extends Controller
         return $this->fromServiceResponse($this->service->list($filters));
     }
 
-    public function bulkApprove(BulkReviewActionRequest $request)
+    public function bulkApprove(Request $request)
     {
+        // Validate using BulkReviewActionRequest
+        $formRequest = app(BulkReviewActionRequest::class);
+        $formRequest->setContainer(app());
+        $formRequest->setRedirector(app('redirect'));
+        $formRequest->validateResolved();
+
         return $this->fromServiceResponse($this->service->bulkApprove($request->input('review_ids')));
     }
 
-    public function bulkReject(BulkReviewActionRequest $request)
+    public function bulkReject(Request $request)
     {
+        // Validate using BulkReviewActionRequest
+        $formRequest = app(BulkReviewActionRequest::class);
+        $formRequest->setContainer(app());
+        $formRequest->setRedirector(app('redirect'));
+        $formRequest->validateResolved();
+
         return $this->fromServiceResponse(
             $this->service->bulkReject($request->input('review_ids'), $request->input('rejection_reason'))
         );
@@ -47,8 +59,14 @@ class AdminReviewController extends Controller
         return $this->fromServiceResponse($this->service->approve($id));
     }
 
-    public function reject(RejectReviewRequest $request, string $id)
+    public function reject(Request $request, string $id)
     {
+        // Validate using RejectReviewRequest
+        $formRequest = app(RejectReviewRequest::class);
+        $formRequest->setContainer(app());
+        $formRequest->setRedirector(app('redirect'));
+        $formRequest->validateResolved();
+
         return $this->fromServiceResponse($this->service->reject($id, $request->input('rejection_reason')));
     }
 
