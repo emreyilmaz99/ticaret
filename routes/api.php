@@ -306,6 +306,10 @@ Route::prefix('v1/user')->group(function () {
         Route::get('favorites/count', [\App\Http\Controllers\Api\V1\User\FavoriteController::class, 'count']);
         Route::delete('favorites/{productId}', [\App\Http\Controllers\Api\V1\User\FavoriteController::class, 'destroy']);
 
+        // Reviews
+        Route::get('reviewable-orders', [UserReviewController::class, 'reviewableOrders']);
+        Route::get('reviews', [UserReviewController::class, 'index']);
+
         // Checkout - iyzico payment
         Route::post('checkout/initialize', [CheckoutController::class, 'initialize']);
         Route::get('checkout/status/{orderNumber}', [CheckoutController::class, 'status']);

@@ -33,13 +33,19 @@ class UserReviewController extends Controller
      * Create review for order item
      * POST /api/v1/orders/{orderId}/items/{orderItemId}/review
      */
-    public function store(StoreReviewRequest $request, string|int $orderId, string|int $orderItemId): JsonResponse
+    public function store(Request $request, string|int $orderId, string|int $orderItemId): JsonResponse
     {
+        // Validate request using User-specific FormRequest
+        $formRequest = app(StoreReviewRequest::class);
+        $formRequest->setContainer(app());
+        $formRequest->setRedirector(app('redirect'));
+        $formRequest->validateResolved();
+
         $result = $this->reviewService->createReview(
             $request->user(),
             (int)$orderId,
             (int)$orderItemId,
-            $request->validated(),
+            $request->all(),
             $request->file('photos', [])
         );
 
@@ -47,8 +53,13 @@ class UserReviewController extends Controller
             return $this->fromServiceResponse($result);
         }
 
+        $data = $result->getData();
+        
         return $this->success(
-            ['review' => new ReviewResource($result->getData())],
+            [
+                'review' => new ReviewResource($data['review']),
+                'status' => $data['status']
+            ],
             $result->getMessage(),
             201
         );
