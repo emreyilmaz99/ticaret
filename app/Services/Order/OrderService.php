@@ -92,8 +92,10 @@ class OrderService extends BaseService implements OrderServiceInterface
             $order = Order::where('user_id', $userId)
                 ->where('order_number', $orderNumber)
                 ->with([
+                    'user:id,name,email,phone',
                     'items.product.photos',
                     'items.product.taxClass',
+                    'items.product.vendor:id,company_name,tax_id,phone,email',
                     'items.product.vendor.commissionPlan',
                     'items.variant',
                     'statusHistory',
@@ -122,6 +124,30 @@ class OrderService extends BaseService implements OrderServiceInterface
                 return ($priceAfterCoupon * $taxRate) / (100 + $taxRate);
             });
 
+            // Get unique vendors from order items
+            $vendors = $order->items->map(function ($item) {
+                $vendor = $item->product?->vendor;
+                if (!$vendor) {
+                    return null;
+                }
+                
+                return [
+                    'id' => $vendor->id,
+                    'company_name' => $vendor->company_name ?? 'Bilinmeyen Satıcı',
+                    'tax_id' => $vendor->tax_id ?? '',
+                    'phone' => $vendor->phone ?? '',
+                    'email' => $vendor->email ?? '',
+                ];
+            })->filter()->unique('id')->values();
+
+            // Get payment method label
+            $paymentMethod = 'Bilinmiyor';
+            if (!empty($order->card_association)) {
+                $paymentMethod = 'Kredi Kartı';
+            } elseif ($order->payment_method === 'bank_transfer') {
+                $paymentMethod = 'Havale/EFT';
+            }
+
             $transformedOrder = [
                 'order_number' => $order->order_number,
                 'order_id' => $order->id,
@@ -138,10 +164,17 @@ class OrderService extends BaseService implements OrderServiceInterface
                     'discount_amount' => $order->coupon->discount_amount,
                     'min_order_amount' => $order->coupon->min_order_amount,
                 ] : null,
+                'customer' => [
+                    'id' => $order->user->id ?? null,
+                    'name' => $order->user->name ?? $order->customer_name ?? 'Misafir',
+                    'email' => $order->user->email ?? $order->customer_email ?? '',
+                    'phone' => $order->user->phone ?? $order->shipping_address['phone'] ?? '',
+                ],
+                'vendors' => $vendors,
                 'shipping_address' => $order->shipping_address,
                 'billing_address' => $order->billing_address,
                 'shipping_cost' => (float) ($order->shipping_total ?? 0),
-                'payment_method' => $order->payment_method,
+                'payment_method' => $paymentMethod,
                 'products' => $order->items->map(function ($item) use ($totalBeforeDiscount, $couponDiscount) {
                     $imageUrl = $item->product?->photos?->first()?->file_path ?? 'https://via.placeholder.com/200';
                     
