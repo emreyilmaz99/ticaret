@@ -12,8 +12,6 @@ use Illuminate\Support\Facades\DB;
 
 class AdminVendorFinancialController extends Controller
 {
-    use ApiResponse;
-
     /**
      * Platform genel finansal dashboard
      * GET /admin/finance/dashboard
@@ -49,7 +47,7 @@ class AdminVendorFinancialController extends Controller
                 ->sum('withholding_tax_amount'),
         ];
 
-        return $this->success('Platform finansal özet', $stats);
+        return ApiResponse::success($stats, 'Platform finansal özet');
     }
 
     /**
@@ -86,7 +84,7 @@ class AdminVendorFinancialController extends Controller
             ->orderByDesc('total_commission')
             ->paginate($request->input('per_page', 20));
 
-        return $this->success('Komisyon raporu', $report);
+        return ApiResponse::success($report, 'Komisyon raporu');
     }
 
     /**
@@ -121,7 +119,7 @@ class AdminVendorFinancialController extends Controller
             ->orderByDesc('total_withholding_tax')
             ->paginate($request->input('per_page', 20));
 
-        return $this->success('Stopaj raporu', $report);
+        return ApiResponse::success($report, 'Stopaj raporu');
     }
 
     /**
@@ -177,7 +175,7 @@ class AdminVendorFinancialController extends Controller
         $earnings = $earningsQuery->latest()
             ->paginate($request->input('per_page', 20));
 
-        return $this->success('Vendor finansal detayları', [
+        return ApiResponse::success([
             'summary' => $summary,
             'earnings' => VendorEarningResource::collection($earnings),
             'pagination' => [
@@ -186,7 +184,7 @@ class AdminVendorFinancialController extends Controller
                 'per_page' => $earnings->perPage(),
                 'total' => $earnings->total(),
             ],
-        ]);
+        ], 'Vendor finansal detayları');
     }
 
     /**
@@ -202,6 +200,6 @@ class AdminVendorFinancialController extends Controller
             'payout:id,amount,status,created_at'
         ])->findOrFail($earningId);
 
-        return $this->success('Kazanç detayı', new VendorEarningResource($earning));
+        return ApiResponse::success(new VendorEarningResource($earning), 'Kazanç detayı');
     }
 }
