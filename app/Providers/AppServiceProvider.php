@@ -147,17 +147,26 @@ class AppServiceProvider extends ServiceProvider
 
         $this->app->singleton(\Elastic\Transport\NodePool\NodePoolInterface::class, function ($app) {
             $hosts = [];
-            $esHost = config('scout.elasticsearch.hosts.0') ?? env('ES_HOST', '127.0.0.1') . ':' . env('ES_PORT', '9200');
+            $hostConfig = config('scout.elasticsearch.hosts.0');
             
-            $scheme = 'http://';
-            $esUser = config('scout.elasticsearch.user') ?? env('ES_USER');
-            $esPass = config('scout.elasticsearch.pass') ?? env('ES_PASSWORD');
-            
-            $auth = '';
-            if (!empty($esUser)) {
-                $auth = rawurlencode($esUser) . ':' . rawurlencode($esPass) . '@';
+            if (is_array($hostConfig)) {
+                // Config'den array olarak geliyorsa
+                $scheme = ($hostConfig['scheme'] ?? 'http') . '://';
+                $esHost = $hostConfig['host'] ?? '127.0.0.1';
+                $esPort = $hostConfig['port'] ?? 9200;
+                $esUser = $hostConfig['user'] ?? '';
+                $esPass = $hostConfig['pass'] ?? '';
+                
+                $auth = '';
+                if (!empty($esUser)) {
+                    $auth = rawurlencode($esUser) . ':' . rawurlencode($esPass) . '@';
+                }
+                $hosts[] = $scheme . $auth . $esHost . ':' . $esPort;
+            } else {
+                // Fallback: Eski format
+                $esHost = env('ES_HOST', '127.0.0.1') . ':' . env('ES_PORT', '9200');
+                $hosts[] = 'http://' . $esHost;
             }
-            $hosts[] = $scheme . $auth . $esHost;
 
             $builder = \Elastic\Transport\TransportBuilder::create();
             $nodePool = $builder->getNodePool();

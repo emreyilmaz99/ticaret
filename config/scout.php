@@ -255,4 +255,27 @@ return [
         ],
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Elasticsearch Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Here you may configure your Elasticsearch settings. This is used when
+    | SCOUT_DRIVER is set to 'elasticsearch' or 'elastic'.
+    |
+    */
+
+    'elasticsearch' => [
+        'hosts' => [
+            [
+                'host' => env('ELASTICSEARCH_HOST', 'localhost'),
+                'port' => env('ELASTICSEARCH_PORT', 9200),
+                'scheme' => env('ELASTICSEARCH_SCHEME', 'http'),
+                'user' => env('ELASTICSEARCH_USER', ''),
+                'pass' => env('ELASTICSEARCH_PASS', ''),
+            ],
+        ],
+        'index' => env('ELASTICSEARCH_INDEX_PREFIX', 'laravel_'),
+    ],
+
 ];
