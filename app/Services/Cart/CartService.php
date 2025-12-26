@@ -295,10 +295,18 @@ class CartService extends BaseService implements CartServiceInterface
      */
     public function clearCartByUserId(int $userId): void
     {
-        $cart = $this->cartRepo->findByUserId($userId);
-        if ($cart) {
-            $this->cartRepo->clearItems($cart);
-            $this->cartRepo->updateCoupon($cart, null, 0);
+        try {
+            $cart = $this->cartRepo->findByUserId($userId);
+            if ($cart) {
+                $this->cartRepo->clearItems($cart);
+                $this->cartRepo->updateCoupon($cart, null, 0);
+            }
+        } catch (\Exception $e) {
+            // Cart silme başarısız olsa bile siparişi etkilememeli
+            Log::warning('Failed to clear cart after order', [
+                'user_id' => $userId,
+                'error' => $e->getMessage(),
+            ]);
         }
     }
 

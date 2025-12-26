@@ -7,4 +7,6 @@ use App\Core\ServiceResponse;
 interface SearchServiceInterface
 {
     public function searchProducts(string $query): ServiceResponse;
+    
+    public function advancedSearch(array $filters): ServiceResponse;
 }

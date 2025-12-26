@@ -3,6 +3,7 @@
 namespace App\Services\Vendor;
 
 use App\Core\ServiceResponse;
+use App\Http\Resources\Api\V1\Vendor\VendorEarningResource;
 use App\Models\Vendor;
 use App\Models\VendorEarning;
 use Carbon\Carbon;
@@ -72,11 +73,14 @@ class VendorFinancialService
 
             $earnings = $query->latest()->paginate($perPage);
 
+            // Transform with Resource
+            $transformed = VendorEarningResource::collection($earnings);
+
             return (new ServiceResponse())
                 ->setSuccess(true)
                 ->setStatusCode(200)
                 ->setMessage('Kazançlar başarıyla alındı')
-                ->setData($earnings);
+                ->setData($transformed);
         } catch (\Exception $e) {
             return (new ServiceResponse())
                 ->setSuccess(false)

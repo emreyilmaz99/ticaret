@@ -4,6 +4,7 @@ namespace App\Services\Product;
 
 use App\Core\ServiceResponse;
 use App\Interfaces\Services\Product\PublicProductServiceInterface;
+use App\Interfaces\Services\Review\ReviewServiceInterface;
 use App\Models\Category;
 use App\Models\Product;
 use App\Services\BaseService;
@@ -20,6 +21,10 @@ class PublicProductService extends BaseService implements PublicProductServiceIn
     protected const MAX_PER_PAGE = 50;
     protected const FEATURED_CACHE_TTL = 900; // 15 minutes
     protected const CATEGORIES_CACHE_TTL = 3600; // 1 hour
+
+    public function __construct(
+        private ReviewServiceInterface $reviewService
+    ) {}
     /**
      * Get public product listing with filters
      */
@@ -219,8 +224,8 @@ class PublicProductService extends BaseService implements PublicProductServiceIn
             'images' => $product->photos->sortBy('sort_order')->map(fn($p) => $this->formatImageUrl($p))->filter()->values(),
             'is_featured' => $product->is_featured,
             'variants_count' => $product->variants->count(),
-            'rating_avg' => $product->average_rating ?? 0,
-            'review_count' => $product->review_count ?? 0,
+            'rating_avg' => $this->getProductRating($product->id),
+            'review_count' => $this->getProductReviewCount($product->id),
             'created_at' => $product->created_at,
         ];
     }
@@ -296,8 +301,8 @@ class PublicProductService extends BaseService implements PublicProductServiceIn
             'specifications' => $specifications,
             'settings' => $productSettings,
             'is_featured' => $product->is_featured,
-            'rating_avg' => $product->average_rating ?? 0,
-            'review_count' => $product->review_count ?? 0,
+            'rating_avg' => $this->getProductRating($product->id),
+            'review_count' => $this->getProductReviewCount($product->id),
             'created_at' => $product->created_at,
         ];
     }
@@ -495,8 +500,8 @@ class PublicProductService extends BaseService implements PublicProductServiceIn
                 'color' => $featuredDeal->badge_color,
             ] : null,
             'image' => $this->formatImageUrl($mainPhoto),
-            'rating_avg' => $product->average_rating ?? 0,
-            'review_count' => $product->review_count ?? 0,
+            'rating_avg' => $this->getProductRating($product->id),
+            'review_count' => $this->getProductReviewCount($product->id),
         ];
     }
 
@@ -580,4 +585,24 @@ class PublicProductService extends BaseService implements PublicProductServiceIn
             return $this->handleException($e, 'Ana kategoriler alınamadı');
         }
     }
-}
+    /**
+     * Get product average rating (cached)
+     */
+    protected function getProductRating(string $productId): float
+    {
+        $summary = $this->reviewService->getSummary($productId);
+        return $summary->isSuccess() 
+            ? ($summary->getData()['average_rating'] ?? 0) 
+            : 0;
+    }
+
+    /**
+     * Get product review count (cached)
+     */
+    protected function getProductReviewCount(string $productId): int
+    {
+        $summary = $this->reviewService->getSummary($productId);
+        return $summary->isSuccess() 
+            ? ($summary->getData()['total_reviews'] ?? 0) 
+            : 0;
+    }}

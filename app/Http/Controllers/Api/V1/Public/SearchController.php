@@ -25,4 +25,14 @@ class SearchController extends Controller
             $this->searchService->searchProducts($request->input('q', ''))
         );
     }
+
+    /**
+     * Gelişmiş ürün araması - filtreleme ile
+     */
+    public function advancedSearch(SearchProductsRequest $request): JsonResponse
+    {
+        return $this->fromServiceResponse(
+            $this->searchService->advancedSearch($request->toFilters())
+        );
+    }
 }

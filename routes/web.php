@@ -14,3 +14,8 @@ Route::get('/admin/login', function () {
 Route::get('/admin/dashboard', function () {
     return view('admin.dashboard');
 })->name('admin.dashboard');
+
+// Elasticsearch Search Test with Debugbar
+Route::get('/search-test', function () {
+    return view('search-test');
+})->name('search.test');

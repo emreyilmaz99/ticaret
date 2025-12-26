@@ -139,45 +139,6 @@ class AppServiceProvider extends ServiceProvider
         
         // Media Services
         $this->app->bind(\App\Interfaces\Services\Media\ImageServiceInterface::class, \App\Services\Media\ImageService::class);
-        
-        // Elasticsearch HTTP Client ve Transport bindings
-        $this->app->bind(\Psr\Http\Client\ClientInterface::class, function ($app) {
-            return new \Http\Client\Curl\Client();
-        });
-
-        $this->app->singleton(\Elastic\Transport\NodePool\NodePoolInterface::class, function ($app) {
-            $hosts = [];
-            $hostConfig = config('scout.elasticsearch.hosts.0');
-            
-            if (is_array($hostConfig)) {
-                // Config'den array olarak geliyorsa
-                $scheme = ($hostConfig['scheme'] ?? 'http') . '://';
-                $esHost = $hostConfig['host'] ?? '127.0.0.1';
-                $esPort = $hostConfig['port'] ?? 9200;
-                $esUser = $hostConfig['user'] ?? '';
-                $esPass = $hostConfig['pass'] ?? '';
-                
-                $auth = '';
-                if (!empty($esUser)) {
-                    $auth = rawurlencode($esUser) . ':' . rawurlencode($esPass) . '@';
-                }
-                $hosts[] = $scheme . $auth . $esHost . ':' . $esPort;
-            } else {
-                // Fallback: Eski format
-                $esHost = env('ES_HOST', '127.0.0.1') . ':' . env('ES_PORT', '9200');
-                $hosts[] = 'http://' . $esHost;
-            }
-
-            $builder = \Elastic\Transport\TransportBuilder::create();
-            $nodePool = $builder->getNodePool();
-            $nodePool = $nodePool->setHosts($hosts);
-
-            return $nodePool;
-        });
-
-        $this->app->singleton(\Psr\Log\LoggerInterface::class, function () {
-            return new \Psr\Log\NullLogger();
-        });
     }
 
     /**
@@ -196,6 +157,7 @@ class AppServiceProvider extends ServiceProvider
         // Register observers for automatic event handling
         \App\Models\Order::observe(\App\Observers\OrderObserver::class);
         \App\Models\Product::observe(\App\Observers\ProductObserver::class);
+        \App\Models\Product::observe(\App\Observers\ProductElasticsearchObserver::class);
         \App\Models\Vendor::observe(\App\Observers\VendorObserver::class);
         \App\Models\Cart::observe(\App\Observers\CartObserver::class);
         \App\Models\ProductReview::observe(\App\Observers\ProductReviewObserver::class);

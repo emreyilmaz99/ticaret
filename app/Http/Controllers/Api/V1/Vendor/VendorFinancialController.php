@@ -51,13 +51,7 @@ class VendorFinancialController extends Controller
 
         $result = $this->financialService->getEarnings($vendor, $filters, $perPage);
 
-        if (!$result->isSuccess()) {
-            return $this->fromServiceResponse($result);
-        }
-
-        $paginator = $result->getData();
-
-        return VendorEarningResource::collection($paginator);
+        return $this->fromServiceResponse($result);
     }
 
     /**

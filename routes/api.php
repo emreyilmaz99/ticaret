@@ -76,6 +76,12 @@ Route::prefix('v1/admin')->group(function () {
         Route::put('users/{user}/toggle-status', [UserController::class, 'toggleStatus']);
         Route::delete('users/{user}', [UserController::class, 'destroy']);
         Route::get('users/{user}/orders', [UserController::class, 'getUserOrders']);
+        
+        // admin vendor payouts management (MUST be before vendors/{vendor} routes)
+        Route::get('vendors/payouts', [AdminVendorPayoutController::class, 'index']);
+        Route::get('vendors/payouts/{payout}', [AdminVendorPayoutController::class, 'show']);
+        Route::put('vendors/payouts/{payout}', [AdminVendorPayoutController::class, 'update']);
+        
         // vendors CRUD (admin)
         Route::get('vendors', [AdminVendorController::class, 'index']);
         Route::post('vendors', [AdminVendorController::class, 'store']);
@@ -96,11 +102,6 @@ Route::prefix('v1/admin')->group(function () {
             Route::get('admins/{admin}/permissions', [AdminPermissionsController::class, 'index']);
             Route::put('admins/{admin}/permissions', [AdminPermissionsController::class, 'update']);
         });
-
-        // admin vendor payouts management
-        Route::get('vendors/payouts', [AdminVendorPayoutController::class, 'index']);
-        Route::get('vendors/payouts/{payout}', [AdminVendorPayoutController::class, 'show']);
-        Route::put('vendors/payouts/{payout}', [AdminVendorPayoutController::class, 'update']);
 
         // admin vendor financial management
         Route::get('finance/dashboard', [AdminVendorFinancialController::class, 'platformDashboard']);
@@ -272,15 +273,16 @@ Route::post('v1/tax-classes/calculate', [PublicTaxClassController::class, 'calcu
 
 // search (public)
 Route::get('v1/search', [SearchController::class, 'search']);
+Route::get('v1/products/search', [SearchController::class, 'advancedSearch']);
 
 // products (public) - index, categories, featured only. Slug routes moved to end of file
 Route::get('v1/products', [PublicProductController::class, 'index']);
 Route::get('v1/products/categories', [PublicProductController::class, 'categories']);
 Route::get('v1/products/featured', [PublicProductController::class, 'featured']);
 
-// product reviews (public) - only numeric product IDs
-Route::get('v1/products/{productId}/reviews', [ProductReviewController::class, 'index'])->where('productId', '[0-9]+');
-Route::get('v1/products/{productId}/review-summary', [ProductReviewController::class, 'summary'])->where('productId', '[0-9]+');
+// product reviews (public) - ULID product IDs
+Route::get('v1/products/{productId}/reviews', [ProductReviewController::class, 'index'])->where('productId', '[A-Z0-9]+');
+Route::get('v1/products/{productId}/review-summary', [ProductReviewController::class, 'summary'])->where('productId', '[A-Z0-9]+');
 Route::post('v1/reviews/{reviewId}/helpful', [ProductReviewController::class, 'voteHelpful']);
 
 // featured deals (public)

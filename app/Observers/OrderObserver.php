@@ -4,97 +4,66 @@ namespace App\Observers;
 
 use App\Models\Order;
 use App\Models\OrderStatusHistory;
-use App\Models\VendorEarning;
-use Illuminate\Support\Facades\DB;
+use App\Services\Order\OrderFinancialService;
 use Illuminate\Support\Facades\Log;
 
+/**
+ * OrderObserver
+ * 
+ * Listens to Order model events and delegates operations.
+ * Tracks status changes and delegates financial operations to service.
+ */
 class OrderObserver
 {
+    public function __construct(
+        private OrderFinancialService $financialService
+    ) {}
+
     /**
      * Handle the Order "updated" event.
      * Automatically track status changes in history
      */
     public function updated(Order $order): void
     {
-        // Check if status was changed
+        // Track status changes
         if ($order->isDirty('status')) {
-            $oldStatus = $order->getOriginal('status');
-            $newStatus = $order->status;
-
-            // Get metadata if provided via updateStatus method
-            $metadata = $order->statusChangeMetadata ?? [];
-
-            // Create status history record
-            OrderStatusHistory::create([
-                'order_id' => $order->id,
-                'old_status' => $oldStatus,
-                'new_status' => $newStatus,
-                'note' => $metadata['note'] ?? null,
-                'changed_by_type' => $metadata['changed_by_type'] ?? null,
-                'changed_by_id' => $metadata['changed_by_id'] ?? null,
-            ]);
+            $this->recordStatusChange($order);
+            
+            // Create vendor earnings when order is delivered
+            if ($order->status === 'delivered') {
+                $this->financialService->createVendorEarnings($order);
+            }
         }
 
         // Track payment status changes
         if ($order->isDirty('payment_status')) {
-            // Log payment status change if needed
             Log::info('Payment status changed', [
                 'order_id' => $order->id,
                 'old' => $order->getOriginal('payment_status'),
                 'new' => $order->payment_status,
             ]);
         }
-
-        // Create vendor earnings when order is delivered
-        if ($order->isDirty('status') && $order->status === 'delivered') {
-            $this->createVendorEarnings($order);
-        }
     }
 
     /**
-     * Create vendor earnings for all order items when order is delivered
+     * Record status change in history
      */
-    protected function createVendorEarnings(Order $order): void
+    private function recordStatusChange(Order $order): void
     {
-        try {
-            DB::transaction(function () use ($order) {
-                // Load orderItems if not already loaded
-                if (!$order->relationLoaded('orderItems')) {
-                    $order->load('orderItems');
-                }
+        $oldStatus = $order->getOriginal('status');
+        $newStatus = $order->status;
 
-                foreach ($order->orderItems as $orderItem) {
-                    // Skip if earning already exists for this order item
-                    if (VendorEarning::where('order_item_id', $orderItem->id)->exists()) {
-                        continue;
-                    }
+        // Get metadata if provided via updateStatus method
+        $metadata = $order->statusChangeMetadata ?? [];
 
-                    // Skip if orderItem has no vendor_id
-                    if (!$orderItem->vendor_id) {
-                        Log::warning('OrderItem has no vendor_id, skipping earning creation', [
-                            'order_item_id' => $orderItem->id,
-                            'order_id' => $order->id,
-                        ]);
-                        continue;
-                    }
-
-                    // Create earning record
-                    $earning = VendorEarning::createFromOrderItem($orderItem);
-
-                    Log::info('Vendor earning created', [
-                        'earning_id' => $earning->id,
-                        'vendor_id' => $earning->vendor_id,
-                        'order_id' => $order->id,
-                        'order_item_id' => $orderItem->id,
-                        'net_earning' => $earning->net_earning,
-                    ]);
-                }
-            });
-        } catch (\Exception $e) {
-            Log::error('Failed to create vendor earnings', [
-                'order_id' => $order->id,
-                'error' => $e->getMessage(),
-            ]);
-        }
+        // Create status history record
+        OrderStatusHistory::create([
+            'order_id' => $order->id,
+            'old_status' => $oldStatus,
+            'new_status' => $newStatus,
+            'note' => $metadata['note'] ?? null,
+            'changed_by_type' => $metadata['changed_by_type'] ?? null,
+            'changed_by_id' => $metadata['changed_by_id'] ?? null,
+        ]);
     }
 }

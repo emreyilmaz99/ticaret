@@ -35,4 +35,13 @@ return [
         ],
     ],
 
+    'elasticsearch' => [
+        'host' => env('ELASTICSEARCH_HOST', 'elasticsearch'),
+        'port' => env('ELASTICSEARCH_PORT', 9200),
+        'scheme' => env('ELASTICSEARCH_SCHEME', 'http'),
+        'user' => env('ELASTICSEARCH_USER', ''),
+        'pass' => env('ELASTICSEARCH_PASS', ''),
+        'index_prefix' => env('ELASTICSEARCH_INDEX_PREFIX', 'ticaret_'),
+    ],
+
 ];

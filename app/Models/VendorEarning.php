@@ -154,8 +154,8 @@ class VendorEarning extends Model
             'withholding_tax_rate' => $withholdingTaxRate,
             'withholding_tax_amount' => round($withholdingTaxAmount, 2),
             'net_earning' => round($netEarning, 2),
-            'earning_status' => 'pending',
-            'available_at' => now()->addDays((int) config('finance.settlement.auto_available_after_days', 7)),
+            'earning_status' => 'available', // Direkt çekilebilir - settlement süresi yok
+            'available_at' => now(), // Hemen çekilebilir
         ]);
     }
 
