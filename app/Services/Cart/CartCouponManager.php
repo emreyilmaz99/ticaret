@@ -6,18 +6,23 @@ use App\Interfaces\Services\Cart\CartCouponManagerInterface;
 use App\Core\ServiceResponse;
 use App\Models\Cart;
 use App\Models\User;
-use App\Models\VendorCoupon;
 use App\Services\BaseService;
 use App\Repositories\CartRepository;
+use App\Repositories\VendorCouponRepository;
 
 class CartCouponManager extends BaseService implements CartCouponManagerInterface
 {
     protected CartRepository $cartRepo;
+    protected VendorCouponRepository $couponRepo;
     protected CartResponseFormatter $formatter;
 
-    public function __construct(CartRepository $cartRepo, CartResponseFormatter $formatter)
-    {
+    public function __construct(
+        CartRepository $cartRepo,
+        VendorCouponRepository $couponRepo,
+        CartResponseFormatter $formatter
+    ) {
         $this->cartRepo = $cartRepo;
+        $this->couponRepo = $couponRepo;
         $this->formatter = $formatter;
     }
 
@@ -27,12 +32,10 @@ class CartCouponManager extends BaseService implements CartCouponManagerInterfac
     public function applyCoupon(Cart $cart, string $code, ?User $user): ServiceResponse
     {
         try {
-            $cart->load('items.product');
+            $cart = $this->cartRepo->getWithItems($cart);
             $code = strtoupper($code);
             
-            $coupon = VendorCoupon::where('code', $code)
-                ->where('is_active', true)
-                ->first();
+            $coupon = $this->couponRepo->findActiveByCode($code);
 
             if (!$coupon) {
                 return $this->errorResponse('Geçersiz kupon kodu', 400);
@@ -79,9 +82,7 @@ class CartCouponManager extends BaseService implements CartCouponManagerInterfac
      */
     public function validateCoupon(string $code, float $subtotal, ?int $userId): array
     {
-        $coupon = VendorCoupon::where('code', $code)
-            ->where('is_active', true)
-            ->first();
+        $coupon = $this->couponRepo->findActiveByCode($code);
 
         if (!$coupon) {
             return ['valid' => false, 'message' => 'Geçersiz kupon kodu'];

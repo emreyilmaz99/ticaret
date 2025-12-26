@@ -17,4 +17,12 @@ class AdminRepository extends EloquentBaseRepository
     {
         return $this->model->with('roles')->paginate($perPage);
     }
+
+    /**
+     * Find admin by email with roles
+     */
+    public function findByEmail(string $email): ?Admin
+    {
+        return $this->model->with('roles')->where('email', $email)->first();
+    }
 }

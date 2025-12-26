@@ -5,25 +5,27 @@ namespace App\Services\Product;
 use App\Core\ServiceResponse;
 use App\Http\Resources\Api\V1\Public\FeaturedDealResource;
 use App\Interfaces\Services\Product\FeaturedDealServiceInterface;
-use App\Models\FeaturedDeal;
+use App\Repositories\FeaturedDealRepository;
 use App\Services\BaseService;
 
 class FeaturedDealService extends BaseService implements FeaturedDealServiceInterface
 {
+    public function __construct(
+        protected FeaturedDealRepository $repo
+    ) {}
+
     /**
      * Get current active featured deals
      */
     public function getActiveDeals(): ServiceResponse
     {
         try {
-            $deals = FeaturedDeal::with(['product.photos', 'product.vendor', 'variant'])
-                ->current()
-                ->ordered()
-                ->get()
-                ->each(function ($deal) {
-                    // Increment view count
-                    $deal->incrementViews();
-                });
+            $deals = $this->repo->getCurrentActive();
+            
+            // Increment view counts
+            $deals->each(function ($deal) {
+                $this->repo->incrementViews($deal->id);
+            });
 
             $data = ['deals' => FeaturedDealResource::collection($deals)];
 
@@ -39,8 +41,7 @@ class FeaturedDealService extends BaseService implements FeaturedDealServiceInte
     public function trackClick(int $dealId): ServiceResponse
     {
         try {
-            $deal = FeaturedDeal::findOrFail($dealId);
-            $deal->incrementClicks();
+            $this->repo->incrementClicks($dealId);
 
             return $this->successResponse(null, 'Click tracked');
         } catch (\Exception $e) {
@@ -54,8 +55,7 @@ class FeaturedDealService extends BaseService implements FeaturedDealServiceInte
     public function trackConversion(int $dealId): ServiceResponse
     {
         try {
-            $deal = FeaturedDeal::findOrFail($dealId);
-            $deal->incrementConversions();
+            $this->repo->incrementConversions($dealId);
 
             return $this->successResponse(null, 'Conversion tracked');
         } catch (\Exception $e) {

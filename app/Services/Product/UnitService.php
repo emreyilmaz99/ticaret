@@ -4,18 +4,22 @@ namespace App\Services\Product;
 
 use App\Core\ServiceResponse;
 use App\Interfaces\Services\Product\UnitServiceInterface;
-use App\Models\Unit;
+use App\Repositories\UnitRepository;
 use App\Services\BaseService;
 
 class UnitService extends BaseService implements UnitServiceInterface
 {
+    public function __construct(
+        protected UnitRepository $repo
+    ) {}
+
     /**
      * Get all units ordered by ID
      */
     public function list(): ServiceResponse
     {
         try {
-            $units = Unit::orderBy('id')->get();
+            $units = $this->repo->all();
             
             return $this->successResponse($units, 'Birimler başarıyla getirildi');
         } catch (\Exception $e) {

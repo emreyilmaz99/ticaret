@@ -36,6 +36,14 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(\App\Repositories\Interfaces\CartRepositoryInterface::class, \App\Repositories\CartRepository::class);
         $this->app->bind(\App\Repositories\Interfaces\CartItemRepositoryInterface::class, \App\Repositories\CartItemRepository::class);
         $this->app->bind(\App\Repositories\Interfaces\FavoriteRepositoryInterface::class, \App\Repositories\FavoriteRepository::class);
+        $this->app->bind(\App\Repositories\Interfaces\UserAddressRepositoryInterface::class, \App\Repositories\UserAddressRepository::class);
+        $this->app->bind(\App\Repositories\Interfaces\ProductReviewRepositoryInterface::class, \App\Repositories\ProductReviewRepository::class);
+        $this->app->bind(\App\Repositories\Interfaces\ReviewMediaRepositoryInterface::class, \App\Repositories\ReviewMediaRepository::class);
+        $this->app->bind(\App\Repositories\Interfaces\ReviewResponseRepositoryInterface::class, \App\Repositories\ReviewResponseRepository::class);
+        $this->app->bind(\App\Repositories\Interfaces\BannedWordRepositoryInterface::class, \App\Repositories\BannedWordRepository::class);
+        $this->app->bind(\App\Repositories\Interfaces\OrderRepositoryInterface::class, \App\Repositories\OrderRepository::class);
+        $this->app->bind(\App\Repositories\Interfaces\OrderItemRepositoryInterface::class, \App\Repositories\OrderItemRepository::class);
+        $this->app->bind(\App\Repositories\Interfaces\TaxClassRepositoryInterface::class, \App\Repositories\TaxClassRepository::class);
 
         // Service bindings - Core Services (18)
         // Auth

@@ -4,21 +4,31 @@ namespace App\Services\Auth;
 
 use App\Interfaces\Services\Auth\AuthServiceInterface;
 use App\Core\ServiceResponse;
-use App\Models\Admin;
 use App\Models\User;
 use App\Models\Vendor;
+use App\Repositories\AdminRepository;
+use App\Repositories\UserRepository;
+use App\Repositories\VendorApplicationRepository;
+use App\Repositories\VendorRepository;
 use App\Services\BaseService;
 use Illuminate\Support\Facades\Hash;
 
 class AuthService extends BaseService implements AuthServiceInterface
 {
+    public function __construct(
+        private readonly UserRepository $userRepository,
+        private readonly AdminRepository $adminRepository,
+        private readonly VendorRepository $vendorRepository,
+        private readonly VendorApplicationRepository $vendorApplicationRepository
+    ) {}
+
     /**
      * User registration
      */
     public function userRegister(array $data): ServiceResponse
     {
         try {
-            $user = User::create([
+            $user = $this->userRepository->create([
                 'name' => $data['name'],
                 'email' => $data['email'],
                 'password' => Hash::make($data['password']),
@@ -52,7 +62,7 @@ class AuthService extends BaseService implements AuthServiceInterface
     public function userLogin(array $data): ServiceResponse
     {
         try {
-            $user = User::where('email', $data['email'])->first();
+            $user = $this->userRepository->findByEmail($data['email']);
 
             if (!$user || !Hash::check($data['password'], $user->password)) {
                 return $this->errorResponse('E-posta veya şifre hatalı.', 401);
@@ -63,7 +73,7 @@ class AuthService extends BaseService implements AuthServiceInterface
             }
 
             // Update last login
-            $user->update(['last_login_at' => now()]);
+            $this->userRepository->updateLastLogin($user->id);
 
             $token = $user->createToken('user-token', ['user:*'])->plainTextToken;
 
@@ -94,7 +104,7 @@ class AuthService extends BaseService implements AuthServiceInterface
     public function getCurrentUser(User $user): ServiceResponse
     {
         try {
-            $user->load('addresses', 'defaultAddress');
+            $user = $this->userRepository->findWithAddresses($user->id);
 
             $payload = [
                 'user' => [
@@ -122,7 +132,7 @@ class AuthService extends BaseService implements AuthServiceInterface
 
     public function adminLogin(array $data): ServiceResponse
     {
-        $admin = Admin::where('email', $data['email'])->first();
+        $admin = $this->adminRepository->findByEmail($data['email']);
 
         if (!$admin || !Hash::check($data['password'], $admin->password)) {
             return $this->errorResponse('Invalid credentials', 401);
@@ -148,7 +158,7 @@ class AuthService extends BaseService implements AuthServiceInterface
     public function vendorLogin(array $data): ServiceResponse
     {
         // First, try to find in vendors table
-        $vendor = Vendor::where('email', $data['email'])->first();
+        $vendor = $this->vendorRepository->findByEmail($data['email']);
 
         if ($vendor && Hash::check($data['password'], $vendor->password)) {
             // Check if vendor is banned
@@ -186,10 +196,7 @@ class AuthService extends BaseService implements AuthServiceInterface
         }
 
         // If not found in vendors, check vendor_applications
-        $application = \App\Models\VendorApplication::where('email', $data['email'])
-            ->where('type', 'pre_application')
-            ->latest()
-            ->first();
+        $application = $this->vendorApplicationRepository->findPreApplicationByEmail($data['email']);
 
         if ($application && Hash::check($data['password'], $application->password)) {
             // Application exists but no vendor account yet

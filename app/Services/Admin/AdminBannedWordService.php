@@ -3,31 +3,20 @@
 namespace App\Services\Admin;
 
 use App\Core\ServiceResponse;
-use App\Http\Resources\Api\V1\Admin\BannedWordResource;
 use App\Interfaces\Services\Admin\AdminBannedWordServiceInterface;
-use App\Models\BannedWord;
+use App\Repositories\BannedWordRepository;
 use App\Services\BaseService;
 
 class AdminBannedWordService extends BaseService implements AdminBannedWordServiceInterface
 {
+    public function __construct(
+        protected BannedWordRepository $bannedWordRepository
+    ) {}
+
     public function list(array $filters): ServiceResponse
     {
         try {
-            $query = BannedWord::query()
-                ->when(isset($filters['search']), function ($q) use ($filters) {
-                    $q->where('word', 'like', "%{$filters['search']}%");
-                })
-                ->when(isset($filters['is_regex']), function ($q) use ($filters) {
-                    $q->where('is_regex', $filters['is_regex']);
-                })
-                ->orderBy('word');
-
-            if ($filters['all'] ?? false) {
-                $bannedWords = $query->get();
-                return $this->successResponse(BannedWordResource::collection($bannedWords), 'Banned words listed');
-            }
-
-            $bannedWords = $query->paginate($filters['per_page'] ?? 50);
+            $bannedWords = $this->bannedWordRepository->getFiltered($filters);
             return $this->successResponse($bannedWords, 'Banned words listed');
         } catch (\Exception $e) {
             return $this->handleException($e, 'Failed to list banned words');
@@ -37,13 +26,8 @@ class AdminBannedWordService extends BaseService implements AdminBannedWordServi
     public function create(array $data): ServiceResponse
     {
         try {
-            $bannedWord = BannedWord::create([
-                'word' => strtolower(trim($data['word'])),
-                'is_regex' => $data['is_regex'] ?? false,
-                'pattern' => $data['pattern'] ?? null,
-            ]);
-
-            return $this->successResponse(new BannedWordResource($bannedWord), 'Yasaklı kelime eklendi.', 201);
+            $bannedWord = $this->bannedWordRepository->create($data);
+            return $this->successResponse($bannedWord, 'Yasaklı kelime eklendi.', 201);
         } catch (\Exception $e) {
             return $this->handleException($e, 'Yasaklı kelime eklenemedi');
         }
@@ -52,15 +36,8 @@ class AdminBannedWordService extends BaseService implements AdminBannedWordServi
     public function update(int $id, array $data): ServiceResponse
     {
         try {
-            $bannedWord = BannedWord::findOrFail($id);
-            
-            $bannedWord->update([
-                'word' => strtolower(trim($data['word'])),
-                'is_regex' => $data['is_regex'] ?? false,
-                'pattern' => $data['pattern'] ?? null,
-            ]);
-
-            return $this->successResponse(new BannedWordResource($bannedWord), 'Yasaklı kelime güncellendi.');
+            $bannedWord = $this->bannedWordRepository->update($id, $data);
+            return $this->successResponse($bannedWord, 'Yasaklı kelime güncellendi.');
         } catch (\Exception $e) {
             return $this->handleException($e, 'Yasaklı kelime güncellenemedi');
         }
@@ -69,9 +46,7 @@ class AdminBannedWordService extends BaseService implements AdminBannedWordServi
     public function delete(int $id): ServiceResponse
     {
         try {
-            $bannedWord = BannedWord::findOrFail($id);
-            $bannedWord->delete();
-
+            $this->bannedWordRepository->delete($id);
             return $this->successResponse(null, 'Yasaklı kelime silindi.');
         } catch (\Exception $e) {
             return $this->handleException($e, 'Yasaklı kelime silinemedi');
@@ -83,19 +58,28 @@ class AdminBannedWordService extends BaseService implements AdminBannedWordServi
         try {
             $normalizedWords = array_unique(array_map(fn($word) => strtolower(trim($word)), $words));
             
-            $existingWords = BannedWord::whereIn('word', $normalizedWords)->pluck('word')->toArray();
-            $newWords = array_diff($normalizedWords, $existingWords);
-
-            $created = 0;
-            foreach ($newWords as $word) {
+            // Check which words already exist
+            $newWords = [];
+            $skipped = 0;
+            foreach ($normalizedWords as $word) {
                 if (!empty($word)) {
-                    BannedWord::create(['word' => $word, 'is_regex' => false]);
-                    $created++;
+                    if ($this->bannedWordRepository->exists($word)) {
+                        $skipped++;
+                    } else {
+                        $newWords[] = $word;
+                    }
                 }
             }
 
+            // Bulk create new words
+            if (!empty($newWords)) {
+                $this->bannedWordRepository->bulkCreate($newWords);
+            }
+
+            $created = count($newWords);
+
             return $this->successResponse(
-                ['created' => $created, 'skipped' => count($existingWords)],
+                ['created' => $created, 'skipped' => $skipped],
                 "{$created} yasaklı kelime eklendi."
             );
         } catch (\Exception $e) {
@@ -106,7 +90,12 @@ class AdminBannedWordService extends BaseService implements AdminBannedWordServi
     public function bulkDelete(array $ids): ServiceResponse
     {
         try {
-            $deleted = BannedWord::whereIn('id', $ids)->delete();
+            $deleted = 0;
+            foreach ($ids as $id) {
+                if ($this->bannedWordRepository->delete($id)) {
+                    $deleted++;
+                }
+            }
 
             return $this->successResponse(['deleted' => $deleted], "{$deleted} yasaklı kelime silindi.");
         } catch (\Exception $e) {
@@ -117,10 +106,13 @@ class AdminBannedWordService extends BaseService implements AdminBannedWordServi
     public function getStats(): ServiceResponse
     {
         try {
+            // Get all words and calculate stats
+            $allWords = $this->bannedWordRepository->getFiltered(['all' => true]);
+            
             $stats = [
-                'total' => BannedWord::count(),
-                'regex' => BannedWord::where('is_regex', true)->count(),
-                'simple' => BannedWord::where('is_regex', false)->count(),
+                'total' => $allWords->count(),
+                'regex' => $allWords->where('is_regex', true)->count(),
+                'simple' => $allWords->where('is_regex', false)->count(),
             ];
 
             return $this->successResponse($stats, 'Statistics retrieved');
@@ -135,7 +127,7 @@ class AdminBannedWordService extends BaseService implements AdminBannedWordServi
             $normalizedText = mb_strtolower($text, 'UTF-8');
             $foundWords = [];
 
-            $bannedWords = BannedWord::all();
+            $bannedWords = $this->bannedWordRepository->getFiltered(['all' => true]);
 
             foreach ($bannedWords as $bannedWord) {
                 if ($bannedWord->is_regex) {

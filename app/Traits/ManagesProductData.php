@@ -87,7 +87,7 @@ trait ManagesProductData
         }
 
         if (!empty($tagIds)) {
-            $product->tags()->sync($tagIds);
+            $this->repo->syncTags($product->id, $tagIds);
         }
     }
 
@@ -172,7 +172,7 @@ trait ManagesProductData
             return;
         }
 
-        $variant = $product->variants()->first();
+        $variant = $this->variantRepo->getFirstForProduct($product->id);
         
         if ($variant) {
             $this->variantRepo->update($variant->id, $variantData);

@@ -6,6 +6,7 @@ use App\Interfaces\Services\Product\ProductCatalogServiceInterface;
 use App\Services\BaseService;
 use App\Models\Product;
 use App\Repositories\Interfaces\ProductRepositoryInterface;
+use App\Repositories\Interfaces\CategoryRepositoryInterface;
 use Illuminate\Http\Request;
 
 /**
@@ -16,74 +17,50 @@ use Illuminate\Http\Request;
  */
 class ProductCatalogService extends BaseService implements ProductCatalogServiceInterface
 {
-    protected ProductRepositoryInterface $repo;
-
-    public function __construct(ProductRepositoryInterface $repo)
-    {
-        $this->repo = $repo;
-    }
+    public function __construct(
+        protected ProductRepositoryInterface $repo,
+        protected CategoryRepositoryInterface $categoryRepo
+    ) {}
 
     /**
      * Get products with filters (public)
      */
     public function getPublicProducts(Request $request)
     {
-        $query = Product::with(['variants', 'photos', 'category', 'vendor:id,name,slug'])
-            ->where('status', 'active')
-            ->whereHas('vendor', fn($q) => $q->where('status', 'active'));
+        $filters = [];
 
-        // Category filter
+        // Category filter - get category IDs including children
         if ($request->filled('category_id')) {
-            $categoryId = $request->category_id;
-            $categoryIds = \App\Models\Category::where('id', $categoryId)
-                ->orWhere('parent_id', $categoryId)
-                ->pluck('id');
-            $query->whereIn('category_id', $categoryIds);
+            $filters['category_ids'] = $this->getCategoryWithChildrenIds($request->category_id);
         }
 
         if ($request->filled('category_slug')) {
-            $category = \App\Models\Category::where('slug', $request->category_slug)->first();
+            $category = $this->categoryRepo->findActiveBySlug($request->category_slug);
             if ($category) {
-                $categoryIds = \App\Models\Category::where('id', $category->id)
-                    ->orWhere('parent_id', $category->id)
-                    ->pluck('id');
-                $query->whereIn('category_id', $categoryIds);
+                $filters['category_ids'] = $this->getCategoryWithChildrenIds($category->id);
             }
         }
 
-        // Price filter
+        // Other filters
         if ($request->filled('min_price')) {
-            $query->whereHas('variants', fn($q) => $q->where('price', '>=', $request->min_price));
+            $filters['min_price'] = $request->min_price;
         }
         if ($request->filled('max_price')) {
-            $query->whereHas('variants', fn($q) => $q->where('price', '<=', $request->max_price));
+            $filters['max_price'] = $request->max_price;
         }
-
-        // Featured filter
         if ($request->boolean('is_featured')) {
-            $query->where('is_featured', true);
+            $filters['is_featured'] = true;
         }
-
-        // Search
         if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%");
-            });
+            $filters['search'] = $request->search;
         }
 
-        // Sorting
-        $sortBy = $request->get('sort_by', 'created_at');
-        $sortOrder = $request->get('sort_order', 'desc');
-        
-        $allowedSorts = ['created_at', 'name', 'views'];
-        if (in_array($sortBy, $allowedSorts)) {
-            $query->orderBy($sortBy, $sortOrder);
-        }
+        $filters['sort_by'] = $request->get('sort_by', 'created_at');
+        $filters['sort_order'] = $request->get('sort_order', 'desc');
 
         $perPage = min((int) $request->get('per_page', 12), 100);
-        return $query->paginate($perPage);
+
+        return $this->repo->getActivePublicProducts($filters, $perPage);
     }
 
     /**
@@ -91,13 +68,7 @@ class ProductCatalogService extends BaseService implements ProductCatalogService
      */
     public function getFeaturedProducts(int $limit = 8)
     {
-        return Product::with(['variants', 'photos', 'vendor:id,name,slug'])
-            ->where('status', 'active')
-            ->where('is_featured', true)
-            ->whereHas('vendor', fn($q) => $q->where('status', 'active'))
-            ->orderBy('created_at', 'desc')
-            ->limit($limit)
-            ->get();
+        return $this->repo->getFeaturedProducts($limit);
     }
 
     /**
@@ -105,14 +76,7 @@ class ProductCatalogService extends BaseService implements ProductCatalogService
      */
     public function getRelatedProducts(Product $product, int $limit = 4)
     {
-        return Product::with(['variants', 'photos', 'vendor:id,name,slug'])
-            ->where('status', 'active')
-            ->where('id', '!=', $product->id)
-            ->where('category_id', $product->category_id)
-            ->whereHas('vendor', fn($q) => $q->where('status', 'active'))
-            ->orderBy('created_at', 'desc')
-            ->limit($limit)
-            ->get();
+        return $this->repo->getRelatedProducts($product->id, $product->category_id, $limit);
     }
 
     /**
@@ -120,24 +84,36 @@ class ProductCatalogService extends BaseService implements ProductCatalogService
      */
     public function getBySlug(string $slug)
     {
-        return Product::with([
-            'variants', 
-            'photos', 
-            'category', 
-            'vendor.addresses' => fn($q) => $q->where('is_primary', true),
-            'tags'
-        ])
-            ->where('slug', $slug)
-            ->where('status', 'active')
-            ->whereHas('vendor', fn($q) => $q->where('status', 'active'))
-            ->first();
+        return $this->repo->findActiveBySlug($slug);
     }
 
     /**
      * Increment view count
      */
-    public function incrementViews(int $productId): void
+    public function incrementViews(string $productId): void
     {
-        Product::where('id', $productId)->increment('views');
+        $this->repo->incrementViews($productId);
+    }
+
+    /**
+     * Get category ID with its children IDs
+     */
+    protected function getCategoryWithChildrenIds(int $categoryId): array
+    {
+        $category = $this->categoryRepo->findById($categoryId);
+        if (!$category) {
+            return [$categoryId];
+        }
+
+        $ids = [$categoryId];
+        
+        // Get direct children IDs
+        if ($category->children) {
+            foreach ($category->children as $child) {
+                $ids[] = $child->id;
+            }
+        }
+
+        return $ids;
     }
 }

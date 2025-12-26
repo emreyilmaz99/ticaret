@@ -4,18 +4,22 @@ namespace App\Services\Tax;
 
 use App\Interfaces\Services\Tax\TaxCalculationServiceInterface;
 use App\Core\ServiceResponse;
-use App\Models\TaxClass;
+use App\Repositories\Interfaces\TaxClassRepositoryInterface;
 use App\Services\BaseService;
 
 class TaxCalculationService extends BaseService implements TaxCalculationServiceInterface
 {
+    public function __construct(
+        protected TaxClassRepositoryInterface $taxClassRepo
+    ) {}
+
     /**
      * Fiyat için vergi hesapla
      */
     public function calculate(int $taxClassId, float $priceExcludingTax): ServiceResponse
     {
         try {
-            $taxClass = TaxClass::find($taxClassId);
+            $taxClass = $this->taxClassRepo->find($taxClassId);
 
             if (!$taxClass) {
                 return $this->errorResponse('Vergi sınıfı bulunamadı', 404);
@@ -41,7 +45,7 @@ class TaxCalculationService extends BaseService implements TaxCalculationService
     public function calculateForOrderItem(int $taxClassId, float $price, int $quantity): ServiceResponse
     {
         try {
-            $taxClass = TaxClass::find($taxClassId);
+            $taxClass = $this->taxClassRepo->find($taxClassId);
 
             if (!$taxClass) {
                 return $this->errorResponse('Vergi sınıfı bulunamadı', 404);

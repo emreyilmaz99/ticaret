@@ -6,28 +6,35 @@ use App\Core\ServiceResponse;
 use App\Interfaces\Services\Cart\CartServiceInterface;
 use App\Models\Cart;
 use App\Services\BaseService;
-use App\Models\Product;
-use App\Models\ProductVariant;
 use App\Models\User;
 use App\Repositories\Interfaces\CartRepositoryInterface;
 use App\Repositories\Interfaces\CartItemRepositoryInterface;
+use App\Repositories\Interfaces\ProductRepositoryInterface;
+use App\Repositories\Interfaces\ProductVariantRepositoryInterface;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class CartService extends BaseService implements CartServiceInterface
 {
     protected CartRepositoryInterface $cartRepo;
     protected CartItemRepositoryInterface $cartItemRepo;
+    protected ProductRepositoryInterface $productRepo;
+    protected ProductVariantRepositoryInterface $variantRepo;
     protected CartResponseFormatter $formatter;
     protected CartCouponManager $couponManager;
 
     public function __construct(
         CartRepositoryInterface $cartRepo,
         CartItemRepositoryInterface $cartItemRepo,
+        ProductRepositoryInterface $productRepo,
+        ProductVariantRepositoryInterface $variantRepo,
         CartResponseFormatter $formatter,
         CartCouponManager $couponManager
     ) {
         $this->cartRepo = $cartRepo;
         $this->cartItemRepo = $cartItemRepo;
+        $this->productRepo = $productRepo;
+        $this->variantRepo = $variantRepo;
         $this->formatter = $formatter;
         $this->couponManager = $couponManager;
     }
@@ -39,6 +46,7 @@ class CartService extends BaseService implements CartServiceInterface
     {
         try {
             $cart = $this->resolveCart($user, $sessionId);
+            $this->syncCartItemPrices($cart);
             return $this->successResponse($this->formatter->format($cart));
         } catch (\Exception $e) {
             return $this->handleException($e, 'Sepet alınamadı');
@@ -57,10 +65,7 @@ class CartService extends BaseService implements CartServiceInterface
             $quantity = $data['quantity'] ?? 1;
 
             // Validate product
-            $product = Product::with('activeFeaturedDeal')
-                ->where('id', $productId)
-                ->where('status', 'active')
-                ->first();
+            $product = $this->productRepo->findActiveWithDeal($productId);
 
             if (!$product) {
                 return $this->errorResponse('Ürün bulunamadı', 404);
@@ -73,16 +78,14 @@ class CartService extends BaseService implements CartServiceInterface
             $variant = null;
             
             if ($variantId) {
-                $variant = ProductVariant::where('id', $variantId)
-                    ->where('product_id', $productId)
-                    ->first();
+                $variant = $this->variantRepo->findByIdAndProduct($variantId, $productId);
 
                 if (!$variant) {
                     return $this->errorResponse('Varyant bulunamadı', 404);
                 }
             } else {
                 // No variant selected, use first variant
-                $variant = $product->variants()->first();
+                $variant = $this->variantRepo->getFirstForProduct($productId);
                 
                 if (!$variant) {
                     return $this->errorResponse('Ürün varyantı bulunamadı', 404);
@@ -159,7 +162,7 @@ class CartService extends BaseService implements CartServiceInterface
 
             // Stock check
             if ($item->variant_id) {
-                $variant = ProductVariant::find($item->variant_id);
+                $variant = $this->variantRepo->findById($item->variant_id);
                 if ($variant && $variant->stock < $quantity) {
                     return $this->errorResponse(
                         'Yetersiz stok. Mevcut stok: ' . $variant->stock,
@@ -324,5 +327,31 @@ class CartService extends BaseService implements CartServiceInterface
         }
 
         return $this->cartRepo->getOrCreateForSession($sessionId);
+    }
+
+    /**
+     * Sync cart item prices with current product/deal prices
+     * This ensures cart always reflects the latest prices
+     */
+    protected function syncCartItemPrices(Cart $cart): void
+    {
+        $cart = $this->cartRepo->loadWithFullRelations($cart);
+
+        foreach ($cart->items as $item) {
+            $featuredDeal = $item->product?->activeFeaturedDeal;
+            
+            if ($featuredDeal) {
+                $currentPrice = (float) $featuredDeal->deal_price;
+            } else {
+                $currentPrice = $item->variant 
+                    ? (float) $item->variant->price 
+                    : (float) ($item->product?->variants?->first()?->price ?? 0);
+            }
+
+            // Only update if price changed
+            if ((float) $item->unit_price !== $currentPrice) {
+                $this->cartItemRepo->updatePrice($item, $currentPrice);
+            }
+        }
     }
 }

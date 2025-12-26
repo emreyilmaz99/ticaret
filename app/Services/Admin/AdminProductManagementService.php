@@ -3,41 +3,23 @@
 namespace App\Services\Admin;
 
 use App\Core\ServiceResponse;
-use App\Http\Resources\Api\V1\Shared\ProductResource;
+use App\Enums\ProductStatus;
 use App\Interfaces\Services\Admin\AdminProductManagementServiceInterface;
-use App\Models\Product;
+use App\Repositories\Interfaces\ProductRepositoryInterface;
 use App\Services\BaseService;
 
 class AdminProductManagementService extends BaseService implements AdminProductManagementServiceInterface
 {
+    public function __construct(
+        protected ProductRepositoryInterface $productRepository
+    ) {}
+
     public function list(array $filters, int $perPage): ServiceResponse
     {
         try {
-            $query = Product::with(['vendor', 'category', 'photos', 'variants', 'tags']);
+            $products = $this->productRepository->getFilteredForAdmin($filters, $perPage);
             
-            if (isset($filters['status']) && $filters['status'] !== 'all') {
-                $query->where('status', $filters['status']);
-            }
-            
-            if (isset($filters['vendor_id']) && $filters['vendor_id']) {
-                $query->where('vendor_id', $filters['vendor_id']);
-            }
-            
-            if (isset($filters['search']) && $filters['search']) {
-                $search = $filters['search'];
-                $query->where(function($q) use ($search) {
-                    $q->where('name', 'like', "%{$search}%")
-                      ->orWhere('sku', 'like', "%{$search}%");
-                });
-            }
-            
-            $sortField = $filters['sort_by'] ?? 'created_at';
-            $sortDirection = $filters['sort_direction'] ?? 'desc';
-            $query->orderBy($sortField, $sortDirection);
-            
-            $products = $query->paginate($perPage);
-            
-            return $this->successResponse(ProductResource::collection($products), 'Products listed');
+            return $this->successResponse($products, 'Products listed');
         } catch (\Exception $e) {
             return $this->handleException($e, 'Ürünler listelenemedi');
         }
@@ -46,9 +28,13 @@ class AdminProductManagementService extends BaseService implements AdminProductM
     public function find(string $id): ServiceResponse
     {
         try {
-            $product = Product::with(['vendor', 'category', 'photos', 'variants', 'tags'])->findOrFail($id);
+            $product = $this->productRepository->findWithAdminDetails($id);
             
-            return $this->successResponse(new ProductResource($product));
+            if (!$product) {
+                return $this->errorResponse('Product not found', 404);
+            }
+            
+            return $this->successResponse($product);
         } catch (\Exception $e) {
             return $this->errorResponse('Product not found', 404);
         }
@@ -57,37 +43,32 @@ class AdminProductManagementService extends BaseService implements AdminProductM
     public function updateStatus(string $id, string $status, ?string $rejectionReason, ?int $adminId): ServiceResponse
     {
         try {
-            $product = Product::findOrFail($id);
+            $product = $this->productRepository->findById($id);
             
-            $oldStatus = $product->status;
-            $product->status = $status;
-            
-            if ($status === 'rejected') {
-                $product->rejection_reason = $rejectionReason;
-                $product->rejected_at = now();
-                $product->rejected_by = $adminId;
+            if (!$product) {
+                return $this->errorResponse('Product not found', 404);
             }
             
-            if ($status === 'active' && $oldStatus === 'rejected') {
-                $product->rejection_reason = null;
-                $product->rejected_at = null;
-                $product->rejected_by = null;
+            $statusEnum = ProductStatus::tryFrom($status);
+            $updateData = ['status' => $status];
+            
+            if ($statusEnum?->requiresRejectionReason()) {
+                $updateData['rejection_reason'] = $rejectionReason;
+                $updateData['rejected_at'] = now();
+                $updateData['rejected_by'] = $adminId;
             }
             
-            $product->save();
+            if ($statusEnum?->clearsRejectionData() && $product->status === ProductStatus::REJECTED->value) {
+                $updateData['rejection_reason'] = null;
+                $updateData['rejected_at'] = null;
+                $updateData['rejected_by'] = null;
+            }
             
-            $statusMessages = [
-                'pending' => 'Ürün onay bekliyor durumuna alındı',
-                'active' => 'Ürün yayına alındı',
-                'rejected' => 'Ürün reddedildi',
-                'draft' => 'Ürün taslak durumuna alındı',
-                'inactive' => 'Ürün pasife alındı',
-                'banned' => 'Ürün yasaklandı'
-            ];
+            $updatedProduct = $this->productRepository->updateStatus($id, $updateData);
             
             return $this->successResponse(
-                new ProductResource($product->fresh(['vendor', 'category', 'photos', 'variants', 'tags'])),
-                $statusMessages[$status] ?? 'Status updated'
+                $updatedProduct,
+                ProductStatus::getChangeMessage($status)
             );
         } catch (\Exception $e) {
             return $this->handleException($e, 'Durum güncellenemedi');
@@ -97,21 +78,22 @@ class AdminProductManagementService extends BaseService implements AdminProductM
     public function bulkUpdateStatus(array $productIds, string $status, ?string $rejectionReason, ?int $adminId): ServiceResponse
     {
         try {
+            $statusEnum = ProductStatus::tryFrom($status);
             $updateData = ['status' => $status];
             
-            if ($status === 'rejected') {
+            if ($statusEnum?->requiresRejectionReason()) {
                 $updateData['rejection_reason'] = $rejectionReason;
                 $updateData['rejected_at'] = now();
                 $updateData['rejected_by'] = $adminId;
             }
             
-            if ($status === 'active') {
+            if ($statusEnum?->clearsRejectionData()) {
                 $updateData['rejection_reason'] = null;
                 $updateData['rejected_at'] = null;
                 $updateData['rejected_by'] = null;
             }
             
-            $count = Product::whereIn('id', $productIds)->update($updateData);
+            $count = $this->productRepository->bulkUpdateWithData($productIds, $updateData);
             
             return $this->successResponse(['updated_count' => $count], "{$count} ürün güncellendi");
         } catch (\Exception $e) {
@@ -122,8 +104,13 @@ class AdminProductManagementService extends BaseService implements AdminProductM
     public function delete(string $id): ServiceResponse
     {
         try {
-            $product = Product::findOrFail($id);
-            $product->delete();
+            $product = $this->productRepository->findById($id);
+            
+            if (!$product) {
+                return $this->errorResponse('Product not found', 404);
+            }
+            
+            $this->productRepository->delete($id);
             
             return $this->successResponse(null, 'Ürün silindi', 204);
         } catch (\Exception $e) {
@@ -134,15 +121,7 @@ class AdminProductManagementService extends BaseService implements AdminProductM
     public function getStatistics(): ServiceResponse
     {
         try {
-            $stats = [
-                'total' => Product::count(),
-                'pending' => Product::where('status', 'pending')->count(),
-                'active' => Product::where('status', 'active')->count(),
-                'rejected' => Product::where('status', 'rejected')->count(),
-                'draft' => Product::where('status', 'draft')->count(),
-                'inactive' => Product::where('status', 'inactive')->count(),
-                'banned' => Product::where('status', 'banned')->count(),
-            ];
+            $stats = $this->productRepository->getStatistics();
             
             return $this->successResponse($stats, 'Product statistics');
         } catch (\Exception $e) {

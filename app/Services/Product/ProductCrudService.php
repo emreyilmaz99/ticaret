@@ -7,6 +7,7 @@ use App\Services\BaseService;
 use App\Models\Product;
 use App\Models\Vendor;
 use App\Repositories\Interfaces\ProductRepositoryInterface;
+use App\Repositories\Interfaces\ProductVariantRepositoryInterface;
 use App\Repositories\Interfaces\TagRepositoryInterface;
 use Illuminate\Support\Str;
 
@@ -18,16 +19,11 @@ use Illuminate\Support\Str;
  */
 class ProductCrudService extends BaseService implements ProductCrudServiceInterface
 {
-    protected ProductRepositoryInterface $repo;
-    protected TagRepositoryInterface $tagRepo;
-
     public function __construct(
-        ProductRepositoryInterface $repo,
-        TagRepositoryInterface $tagRepo
-    ) {
-        $this->repo = $repo;
-        $this->tagRepo = $tagRepo;
-    }
+        protected ProductRepositoryInterface $repo,
+        protected ProductVariantRepositoryInterface $variantRepo,
+        protected TagRepositoryInterface $tagRepo
+    ) {}
 
     /**
      * Create product for vendor
@@ -81,24 +77,15 @@ class ProductCrudService extends BaseService implements ProductCrudServiceInterf
 
         // Attach tags
         if (!empty($tags) && is_array($tags)) {
-            $tagIds = [];
-            foreach ($tags as $t) {
-                if (is_numeric($t)) {
-                    $tagIds[] = (int) $t;
-                } else {
-                    $slug = Str::slug($t);
-                    $tag = $this->tagRepo->firstOrCreateBySlug($slug, ['name' => $t]);
-                    $tagIds[] = $tag->id;
-                }
-            }
+            $tagIds = $this->resolveTagIds($tags);
             if (!empty($tagIds)) {
-                $product->tags()->sync($tagIds);
+                $this->repo->syncTags($product->id, $tagIds);
             }
         }
 
         // Create default variant if legacy fields provided
         if ($defaultPrice !== null) {
-            $variantData = [
+            $this->variantRepo->create([
                 'product_id' => $product->id,
                 'title' => 'Varsayılan',
                 'price' => $defaultPrice,
@@ -110,25 +97,24 @@ class ProductCrudService extends BaseService implements ProductCrudServiceInterf
                 'height' => $defaultHeight,
                 'unit_id' => $defaultUnitId,
                 'is_default' => true,
-            ];
-            $product->variants()->create($variantData);
+            ]);
         }
 
         // Create variants if provided
         if (!empty($variants) && is_array($variants)) {
             foreach ($variants as $vData) {
                 $vData['product_id'] = $product->id;
-                $product->variants()->create($vData);
+                $this->variantRepo->create($vData);
             }
         }
 
-        return $product->fresh(['variants', 'tags', 'photos']);
+        return $this->repo->freshWithRelations($product->id);
     }
 
     /**
      * Update product
      */
-    public function update(int $productId, array $data): Product
+    public function update(string $productId, array $data): Product
     {
         $product = $this->repo->findById($productId);
 
@@ -158,26 +144,17 @@ class ProductCrudService extends BaseService implements ProductCrudServiceInterf
 
         // Update tags
         if ($tags !== null && is_array($tags)) {
-            $tagIds = [];
-            foreach ($tags as $t) {
-                if (is_numeric($t)) {
-                    $tagIds[] = (int) $t;
-                } else {
-                    $slug = Str::slug($t);
-                    $tag = $this->tagRepo->firstOrCreateBySlug($slug, ['name' => $t]);
-                    $tagIds[] = $tag->id;
-                }
-            }
-            $product->tags()->sync($tagIds);
+            $tagIds = $this->resolveTagIds($tags);
+            $this->repo->syncTags($productId, $tagIds);
         }
 
-        return $product->fresh(['variants', 'tags', 'photos']);
+        return $this->repo->freshWithRelations($productId);
     }
 
     /**
      * Delete product
      */
-    public function delete(int $productId): bool
+    public function delete(string $productId): bool
     {
         return $this->repo->delete($productId);
     }
@@ -185,7 +162,7 @@ class ProductCrudService extends BaseService implements ProductCrudServiceInterf
     /**
      * Update product status
      */
-    public function updateStatus(int $productId, string $status): Product
+    public function updateStatus(string $productId, string $status): Product
     {
         $product = $this->repo->findById($productId);
 
@@ -195,7 +172,25 @@ class ProductCrudService extends BaseService implements ProductCrudServiceInterf
 
         $this->repo->update($productId, ['status' => $status]);
 
-        return $product->fresh();
+        return $this->repo->freshWithRelations($productId);
+    }
+
+    /**
+     * Resolve tag IDs from mixed input (IDs or names)
+     */
+    protected function resolveTagIds(array $tags): array
+    {
+        $tagIds = [];
+        foreach ($tags as $t) {
+            if (is_numeric($t)) {
+                $tagIds[] = (int) $t;
+            } else {
+                $slug = Str::slug($t);
+                $tag = $this->tagRepo->firstOrCreateBySlug($slug, ['name' => $t]);
+                $tagIds[] = $tag->id;
+            }
+        }
+        return $tagIds;
     }
 
     /**
@@ -203,6 +198,6 @@ class ProductCrudService extends BaseService implements ProductCrudServiceInterf
      */
     public function bulkUpdateStatus(array $productIds, string $status): int
     {
-        return Product::whereIn('id', $productIds)->update(['status' => $status]);
+        return $this->repo->bulkUpdateStatus($productIds, $status);
     }
 }

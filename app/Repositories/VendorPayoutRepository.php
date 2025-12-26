@@ -38,4 +38,49 @@ class VendorPayoutRepository implements VendorPayoutRepositoryInterface
             ->orderByDesc('created_at')
             ->get();
     }
+
+    /**
+     * Paginate payouts with vendor for admin
+     */
+    public function paginateWithVendor(int $perPage = 15): \Illuminate\Contracts\Pagination\LengthAwarePaginator
+    {
+        return $this->model->with('vendor')
+            ->orderByDesc('created_at')
+            ->paginate($perPage);
+    }
+
+    /**
+     * Find payout with vendor
+     */
+    public function findWithVendor(int $id): ?VendorPayout
+    {
+        return $this->model->with('vendor')->find($id);
+    }
+
+    /**
+     * Find payout with vendor and lock for update
+     */
+    public function findWithVendorForUpdate(int $id): ?VendorPayout
+    {
+        return $this->model->with('vendor')->lockForUpdate()->find($id);
+    }
+
+    /**
+     * Update payout status
+     */
+    public function updateStatus(int $id, string $status, ?string $processedAt = null): ?VendorPayout
+    {
+        $payout = $this->model->find($id);
+        if (!$payout) {
+            return null;
+        }
+
+        $payout->status = $status;
+        if ($processedAt) {
+            $payout->processed_at = $processedAt;
+        }
+        $payout->save();
+
+        return $payout;
+    }
 }

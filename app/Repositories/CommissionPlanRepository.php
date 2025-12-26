@@ -74,4 +74,21 @@ class CommissionPlanRepository extends EloquentBaseRepository implements Commiss
             return false;
         }
     }
+
+    /**
+     * Count vendors using this commission plan
+     */
+    public function countVendors(int $id): int
+    {
+        $plan = $this->model->find($id);
+        return $plan ? $plan->vendors()->count() : 0;
+    }
+
+    /**
+     * Find and refresh the model
+     */
+    public function findFresh(int $id): ?CommissionPlan
+    {
+        return $this->model->find($id);
+    }
 }

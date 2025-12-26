@@ -6,6 +6,7 @@ use App\Interfaces\Services\Payment\IyzicoSubMerchantServiceInterface;
 use App\Interfaces\Services\Payment\IyzicoUtilityServiceInterface;
 use App\Services\BaseService;
 use App\Models\Vendor;
+use App\Repositories\VendorRepository;
 use Iyzipay\Model\Locale;
 use Iyzipay\Model\Currency;
 use Iyzipay\Model\SubMerchant;
@@ -26,11 +27,11 @@ use Illuminate\Support\Facades\Log;
 class IyzicoSubMerchantService extends BaseService implements IyzicoSubMerchantServiceInterface
 {
     protected Options $options;
-    protected IyzicoUtilityServiceInterface $utility;
 
-    public function __construct(IyzicoUtilityServiceInterface $utility)
-    {
-        $this->utility = $utility;
+    public function __construct(
+        protected IyzicoUtilityServiceInterface $utility,
+        protected VendorRepository $vendorRepository
+    ) {
         $this->options = new Options();
         $this->options->setApiKey(config('iyzico.api_key'));
         $this->options->setSecretKey(config('iyzico.secret_key'));
@@ -67,7 +68,7 @@ class IyzicoSubMerchantService extends BaseService implements IyzicoSubMerchantS
             ]);
 
             if ($subMerchant->getStatus() === 'success') {
-                $vendor->update([
+                $this->vendorRepository->update($vendor->id, [
                     'iyzico_submerchant_key' => $subMerchant->getSubMerchantKey(),
                     'iyzico_status' => 'active',
                     'iyzico_registered_at' => now(),
@@ -79,7 +80,7 @@ class IyzicoSubMerchantService extends BaseService implements IyzicoSubMerchantS
                 ], 'SubMerchant başarıyla oluşturuldu');
             }
 
-            $vendor->update(['iyzico_status' => 'rejected']);
+            $this->vendorRepository->update($vendor->id, ['iyzico_status' => 'rejected']);
 
             return $this->errorResponse(
                 'iyzico SubMerchant oluşturulamadı: ' . $subMerchant->getErrorMessage(),

@@ -5,6 +5,7 @@ namespace App\Services\Order;
 use App\Interfaces\Services\Order\OrderValidationServiceInterface;
 use App\Services\BaseService;
 use App\Models\Cart;
+use App\Repositories\CartRepository;
 
 /**
  * OrderValidationService
@@ -13,12 +14,16 @@ use App\Models\Cart;
  */
 class OrderValidationService extends BaseService implements OrderValidationServiceInterface
 {
+    public function __construct(
+        protected CartRepository $cartRepository
+    ) {}
+
     /**
      * Validate cart before creating order
      */
     public function validateCart(Cart $cart)
     {
-        $cart->load(['items.product.vendor', 'items.variant']);
+        $cart = $this->cartRepository->loadForValidation($cart);
         $errors = [];
 
         foreach ($cart->items as $item) {

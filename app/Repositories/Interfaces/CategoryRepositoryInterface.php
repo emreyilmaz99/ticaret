@@ -4,6 +4,7 @@ namespace App\Repositories\Interfaces;
 
 use App\Models\Category;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Collection;
 
 interface CategoryRepositoryInterface
 {
@@ -17,4 +18,13 @@ interface CategoryRepositoryInterface
     public function existsBySlugForVendor(string $slug, int $vendorId): bool;
     public function existsBySlugExcept(string $slug, int $exceptId): bool;
     public function existsBySlugForVendorExcept(string $slug, int $vendorId, int $exceptId): bool;
+    
+    // Public API methods
+    public function listActivePublic(array $filters = []);
+    public function getActiveTree();
+    public function findActiveBySlug(string $slug): ?Category;
+    public function hasChildren(int $id): bool;
+    public function getCategoryWithChildrenIds(int $categoryId): array;
+    public function getCategoryWithChildrenIdsBySlug(string $slug): array;
+    public function getMainCategoriesWithProductCounts();
 }

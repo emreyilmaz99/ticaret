@@ -134,7 +134,7 @@ class CommissionPlanService extends BaseService implements CommissionPlanService
             }
 
             // Check if any vendors are using this plan
-            $vendorCount = $plan->vendors()->count();
+            $vendorCount = $this->commissionPlanRepository->countVendors($id);
             
             if ($vendorCount > 0) {
                 return $this->errorResponse(
@@ -193,7 +193,7 @@ class CommissionPlanService extends BaseService implements CommissionPlanService
                 return $this->errorResponse('Failed to toggle commission plan status');
             }
             
-            $plan->refresh();
+            $plan = $this->commissionPlanRepository->findFresh($id);
             
             return $this->successResponse($plan, 'Commission plan status updated successfully');
         } catch (\Exception $e) {

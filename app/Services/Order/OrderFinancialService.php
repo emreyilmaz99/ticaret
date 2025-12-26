@@ -3,7 +3,8 @@
 namespace App\Services\Order;
 
 use App\Models\Order;
-use App\Models\VendorEarning;
+use App\Repositories\OrderRepository;
+use App\Repositories\VendorEarningRepository;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -15,6 +16,11 @@ use Illuminate\Support\Facades\Log;
  */
 class OrderFinancialService
 {
+    public function __construct(
+        protected OrderRepository $orderRepository,
+        protected VendorEarningRepository $vendorEarningRepository
+    ) {}
+
     /**
      * Create vendor earnings for all order items when order is delivered
      */
@@ -23,13 +29,11 @@ class OrderFinancialService
         try {
             DB::transaction(function () use ($order) {
                 // Load orderItems if not already loaded
-                if (!$order->relationLoaded('orderItems')) {
-                    $order->load('orderItems');
-                }
+                $order = $this->orderRepository->loadWithItemsForPayment($order);
 
                 foreach ($order->orderItems as $orderItem) {
                     // Skip if earning already exists for this order item
-                    if (VendorEarning::where('order_item_id', $orderItem->id)->exists()) {
+                    if ($this->vendorEarningRepository->existsForOrderItem($orderItem->id)) {
                         Log::debug('Earning already exists for order item', [
                             'order_item_id' => $orderItem->id,
                         ]);
@@ -46,7 +50,7 @@ class OrderFinancialService
                     }
 
                     // Create earning record
-                    $earning = VendorEarning::createFromOrderItem($orderItem);
+                    $earning = $this->vendorEarningRepository->createFromOrderItem($orderItem);
 
                     Log::info('Vendor earning created', [
                         'earning_id' => $earning->id,

@@ -4,21 +4,20 @@ namespace App\Services\Admin;
 
 use App\Interfaces\Services\Admin\AdminServiceInterface;
 use App\Repositories\AdminRepository;
+use App\Repositories\VendorPayoutRepository;
+use App\Repositories\PermissionRepository;
 use App\Core\ServiceResponse;
 use App\Services\BaseService;
-use App\Models\VendorPayout;
-use App\Models\Vendor;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class AdminService extends BaseService implements AdminServiceInterface
 {
-    protected AdminRepository $repo;
-
-    public function __construct(AdminRepository $repo)
-    {
-        $this->repo = $repo;
-    }
+    public function __construct(
+        protected AdminRepository $repo,
+        protected VendorPayoutRepository $vendorPayoutRepository,
+        protected PermissionRepository $permissionRepository
+    ) {}
 
     public function list(int $perPage = 15): ServiceResponse
     {
@@ -158,7 +157,7 @@ class AdminService extends BaseService implements AdminServiceInterface
         
         $admin = $findResult->getData();
 
-        $all = \Spatie\Permission\Models\Permission::all()->map(fn($p) => $p->name)->toArray();
+        $all = $this->permissionRepository->getAllNames();
         $assigned = $admin->getAllPermissions()->pluck('name')->toArray();
 
         $list = array_map(function ($name) use ($assigned) {
@@ -182,7 +181,7 @@ class AdminService extends BaseService implements AdminServiceInterface
         $admin = $findResult->getData();
 
         // Validate provided permission names exist; ignore unknown names
-        $valid = \Spatie\Permission\Models\Permission::whereIn('name', $permissions)->pluck('name')->toArray();
+        $valid = $this->permissionRepository->getValidNames($permissions);
 
         // syncDirectPermissions ensures explicit permissions are set on model
         $admin->syncPermissions($valid);
@@ -195,7 +194,7 @@ class AdminService extends BaseService implements AdminServiceInterface
      */
     public function listVendorPayouts(int $perPage = 15)
     {
-        $paginator = VendorPayout::with('vendor')->orderByDesc('created_at')->paginate($perPage);
+        $paginator = $this->vendorPayoutRepository->paginateWithVendor($perPage);
 
         $data = [
             'data' => $paginator->items(),
@@ -212,7 +211,7 @@ class AdminService extends BaseService implements AdminServiceInterface
 
     public function findPayout(int $id): ServiceResponse
     {
-        $payout = VendorPayout::with('vendor')->find($id);
+        $payout = $this->vendorPayoutRepository->findWithVendor($id);
         if (!$payout) {
             return $this->errorResponse('Payout not found', 404);
         }
@@ -231,24 +230,25 @@ class AdminService extends BaseService implements AdminServiceInterface
         }
 
         return DB::transaction(function () use ($payoutId, $status, $adminId) {
-            $payout = VendorPayout::with('vendor')->lockForUpdate()->find($payoutId);
+            $payout = $this->vendorPayoutRepository->findWithVendorForUpdate($payoutId);
             if (!$payout) {
                 return $this->errorResponse('Payout not found', 404);
             }
 
-            // simple state change; admins may want to record reviewer/admin in audit later
-            $payout->status = $status;
-            if ($status === 'processed') {
-                $payout->processed_at = now();
-            }
-            $payout->save();
+            $oldStatus = $payout->status;
+            
+            // Update status via repository
+            $processedAt = $status === 'processed' ? now()->toDateTimeString() : null;
+            $this->vendorPayoutRepository->updateStatus($payoutId, $status, $processedAt);
+            
+            $payout->refresh();
 
             // Log admin action (no DB/audit table created per project request)
             Log::info('admin updated payout status', [
                 'admin_id' => $adminId,
                 'vendor_id' => $payout->vendor_id,
                 'payout_id' => $payout->id,
-                'old_status' => $payout->getOriginal('status'),
+                'old_status' => $oldStatus,
                 'new_status' => $payout->status,
             ]);
 

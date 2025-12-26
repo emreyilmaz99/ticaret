@@ -25,4 +25,14 @@ interface CommissionPlanRepositoryInterface extends BaseRepositoryInterface
      * Toggle active status
      */
     public function toggleActive(int $id): bool;
+
+    /**
+     * Count vendors using this commission plan
+     */
+    public function countVendors(int $id): int;
+
+    /**
+     * Find and return fresh model data
+     */
+    public function findFresh(int $id);
 }

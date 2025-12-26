@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Admin\BulkUpdateProductStatusRequest;
 use App\Http\Requests\Api\V1\Admin\UpdateProductStatusRequest;
+use App\Http\Resources\Api\V1\Shared\ProductResource;
 use App\Interfaces\Services\Admin\AdminProductManagementServiceInterface;
 use App\Traits\ResponseHttp;
 use Illuminate\Http\Request;
@@ -27,25 +28,48 @@ class ProductController extends Controller
             'sort_order' => $request->input('sort_order', 'desc'),
         ];
 
-        return $this->fromServiceResponse(
-            $this->service->list($filters, $request->input('per_page', 15))
+        $response = $this->service->list($filters, $request->input('per_page', 15));
+        
+        if (!$response->isSuccess()) {
+            return $this->fromServiceResponse($response);
+        }
+        
+        return $this->success(
+            ProductResource::collection($response->getData()),
+            $response->getMessage()
         );
     }
 
     public function show($id)
     {
-        return $this->fromServiceResponse($this->service->find($id));
+        $response = $this->service->find($id);
+        
+        if (!$response->isSuccess()) {
+            return $this->fromServiceResponse($response);
+        }
+        
+        return $this->success(
+            new ProductResource($response->getData()),
+            $response->getMessage()
+        );
     }
 
     public function updateStatus(Request $request, $id)
     {
-        return $this->fromServiceResponse(
-            $this->service->updateStatus(
-                $id,
-                $request->input('status'),
-                $request->input('rejection_reason'),
-                $request->user()->id
-            )
+        $response = $this->service->updateStatus(
+            $id,
+            $request->input('status'),
+            $request->input('rejection_reason'),
+            $request->user()->id
+        );
+        
+        if (!$response->isSuccess()) {
+            return $this->fromServiceResponse($response);
+        }
+        
+        return $this->success(
+            new ProductResource($response->getData()),
+            $response->getMessage()
         );
     }
 

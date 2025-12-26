@@ -80,9 +80,9 @@ class AdminVendorService extends BaseService
                 return $this->errorResponse('Satıcı bulunamadı', 404);
             }
 
-            $vendor->update(['status' => $status]);
+            $updatedVendor = $this->repo->update($id, ['status' => $status]);
 
-            return $this->successResponse($vendor, 'Durum güncellendi');
+            return $this->successResponse($updatedVendor, 'Durum güncellendi');
 
         } catch (\Exception $e) {
             return $this->handleException($e, 'Durum güncellenemedi');

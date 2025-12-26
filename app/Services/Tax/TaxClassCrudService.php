@@ -4,36 +4,23 @@ namespace App\Services\Tax;
 
 use App\Interfaces\Services\Tax\TaxClassCrudServiceInterface;
 use App\Core\ServiceResponse;
-use App\Models\TaxClass;
+use App\Repositories\Interfaces\TaxClassRepositoryInterface;
 use App\Services\BaseService;
 use Illuminate\Support\Facades\DB;
 
 class TaxClassCrudService extends BaseService implements TaxClassCrudServiceInterface
 {
+    public function __construct(
+        protected TaxClassRepositoryInterface $taxClassRepo
+    ) {}
+
     /**
      * Tüm vergi sınıflarını listele
      */
     public function list(array $filters = []): ServiceResponse
     {
         try {
-            $query = TaxClass::query()->ordered();
-
-            // Aktif/pasif filtresi
-            if (isset($filters['is_active'])) {
-                $query->where('is_active', $filters['is_active']);
-            }
-
-            // Sadece aktif olanları getir (default behavior for public)
-            if (isset($filters['active_only']) && $filters['active_only']) {
-                $query->active();
-            }
-
-            $taxClasses = $query->get();
-
-            // Her vergi sınıfı için ürün sayısını ekle
-            $taxClasses->each(function ($taxClass) {
-                $taxClass->products_count = $taxClass->products()->count();
-            });
+            $taxClasses = $this->taxClassRepo->getAll($filters);
 
             return $this->successResponse([
                 'tax_classes' => $taxClasses,
@@ -57,7 +44,7 @@ class TaxClassCrudService extends BaseService implements TaxClassCrudServiceInte
     public function getDefault(): ServiceResponse
     {
         try {
-            $taxClass = TaxClass::where('is_default', true)->first();
+            $taxClass = $this->taxClassRepo->getDefault();
 
             if (!$taxClass) {
                 return $this->errorResponse('Varsayılan vergi sınıfı bulunamadı', 404);
@@ -75,13 +62,11 @@ class TaxClassCrudService extends BaseService implements TaxClassCrudServiceInte
     public function find(int $id): ServiceResponse
     {
         try {
-            $taxClass = TaxClass::find($id);
+            $taxClass = $this->taxClassRepo->findWithProductCount($id);
 
             if (!$taxClass) {
                 return $this->errorResponse('Vergi sınıfı bulunamadı', 404);
             }
-
-            $taxClass->products_count = $taxClass->products()->count();
 
             return $this->successResponse(['tax_class' => $taxClass]);
         } catch (\Exception $e) {
@@ -99,10 +84,10 @@ class TaxClassCrudService extends BaseService implements TaxClassCrudServiceInte
 
             // Eğer varsayılan olarak işaretlenmişse, diğerlerini kaldır
             if (isset($data['is_default']) && $data['is_default']) {
-                TaxClass::where('is_default', true)->update(['is_default' => false]);
+                $this->taxClassRepo->clearDefaultExcept();
             }
 
-            $taxClass = TaxClass::create($data);
+            $taxClass = $this->taxClassRepo->create($data);
 
             DB::commit();
 
@@ -125,7 +110,7 @@ class TaxClassCrudService extends BaseService implements TaxClassCrudServiceInte
         try {
             DB::beginTransaction();
 
-            $taxClass = TaxClass::find($id);
+            $taxClass = $this->taxClassRepo->find($id);
 
             if (!$taxClass) {
                 return $this->errorResponse('Vergi sınıfı bulunamadı', 404);
@@ -133,17 +118,15 @@ class TaxClassCrudService extends BaseService implements TaxClassCrudServiceInte
 
             // Eğer varsayılan olarak işaretlenmişse, diğerlerini kaldır
             if (isset($data['is_default']) && $data['is_default']) {
-                TaxClass::where('id', '!=', $id)
-                    ->where('is_default', true)
-                    ->update(['is_default' => false]);
+                $this->taxClassRepo->clearDefaultExcept($id);
             }
 
-            $taxClass->update($data);
+            $taxClass = $this->taxClassRepo->update($id, $data);
 
             DB::commit();
 
             return $this->successResponse(
-                ['tax_class' => $taxClass->fresh()],
+                ['tax_class' => $taxClass],
                 'Vergi sınıfı başarıyla güncellendi'
             );
         } catch (\Exception $e) {
@@ -158,7 +141,7 @@ class TaxClassCrudService extends BaseService implements TaxClassCrudServiceInte
     public function delete(int $id): ServiceResponse
     {
         try {
-            $taxClass = TaxClass::find($id);
+            $taxClass = $this->taxClassRepo->findWithProductCount($id);
 
             if (!$taxClass) {
                 return $this->errorResponse('Vergi sınıfı bulunamadı', 404);
@@ -180,7 +163,7 @@ class TaxClassCrudService extends BaseService implements TaxClassCrudServiceInte
                 );
             }
 
-            $taxClass->delete();
+            $this->taxClassRepo->delete($id);
 
             return $this->successResponse(null, 'Vergi sınıfı başarıyla silindi');
         } catch (\Exception $e) {

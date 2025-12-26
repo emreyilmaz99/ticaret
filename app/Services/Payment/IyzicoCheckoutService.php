@@ -245,7 +245,7 @@ class IyzicoCheckoutService extends BaseService implements IyzicoCheckoutService
                 }
             } catch (\Exception $e) {
                 // SDK desteklemiyorsa log at ve devam et
-                \Log::warning('İyzico withholding tax set edilemedi', [
+                Log::warning('İyzico withholding tax set edilemedi', [
                     'item_id' => $item['id'],
                     'error' => $e->getMessage()
                 ]);

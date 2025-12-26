@@ -66,7 +66,7 @@ class ProductService extends BaseService implements ProductServiceInterface
                 // Process relations
                 $this->processProductRelations($product, $relations, $variantData, $productType);
 
-                return $product->refresh();
+                return $this->repo->freshWithRelations($product->id);
             });
         } catch (\Exception $e) {
             Log::error('Ürün oluşturma hatası: ' . $e->getMessage());
@@ -88,8 +88,8 @@ class ProductService extends BaseService implements ProductServiceInterface
                 $this->processUpdateRelations($product, $data);
 
                 // Update product via repository
-                $updated = $this->repo->update($product->id, $data);
-                return is_object($updated) ? $updated->refresh() : $this->repo->findById($product->id);
+                $this->repo->update($product->id, $data);
+                return $this->repo->freshWithRelations($product->id);
             });
         } catch (\Exception $e) {
             Log::error('Ürün güncelleme hatası: ' . $e->getMessage());

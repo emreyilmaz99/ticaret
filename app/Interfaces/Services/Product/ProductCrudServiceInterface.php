@@ -8,8 +8,8 @@ use App\Models\Vendor;
 interface ProductCrudServiceInterface
 {
     public function createForVendor(Vendor $vendor, array $data): Product;
-    public function update(int $productId, array $data): Product;
-    public function delete(int $productId): bool;
-    public function updateStatus(int $productId, string $status): Product;
+    public function update(string $productId, array $data): Product;
+    public function delete(string $productId): bool;
+    public function updateStatus(string $productId, string $status): Product;
     public function bulkUpdateStatus(array $productIds, string $status): int;
 }

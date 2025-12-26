@@ -2,10 +2,12 @@
 
 namespace App\Repositories;
 
+use App\Models\ProductReview;
 use App\Models\Vendor;
+use App\Repositories\Interfaces\VendorRepositoryInterface;
 use Illuminate\Support\Facades\DB;
 
-class VendorRepository extends EloquentBaseRepository
+class VendorRepository extends EloquentBaseRepository implements VendorRepositoryInterface
 {
     public function __construct(Vendor $model)
     {
@@ -27,11 +29,38 @@ class VendorRepository extends EloquentBaseRepository
     // ==================== Finder Methods ====================
 
     /**
+     * Find vendor by ID
+     */
+    public function findById($id): ?Vendor
+    {
+        return $this->model->find($id);
+    }
+
+    /**
      * Find vendor by slug
      */
     public function findBySlug(string $slug): ?Vendor
     {
         return $this->model->where('slug', $slug)->first();
+    }
+
+    /**
+     * Find active vendor by slug (for public API)
+     */
+    public function findActiveBySlug(string $slug): ?Vendor
+    {
+        return $this->model
+            ->where('slug', $slug)
+            ->where('status', 'active')
+            ->first();
+    }
+
+    /**
+     * Find vendor by email with roles
+     */
+    public function findByEmail(string $email): ?Vendor
+    {
+        return $this->model->with('roles')->where('email', $email)->first();
     }
 
     /**
@@ -206,7 +235,7 @@ class VendorRepository extends EloquentBaseRepository
             ->where('vendor_id', $vendorId)
             ->pluck('id');
 
-        $query = \App\Models\ProductReview::with(['user', 'product'])
+        $query = ProductReview::with(['user', 'product'])
             ->whereIn('product_id', $productIds)
             ->where('status', 'approved');
 
@@ -288,4 +317,13 @@ class VendorRepository extends EloquentBaseRepository
 
         return $query->paginate($perPage);
     }
-}
+    /**
+     * Get product IDs for vendor
+     */
+    public function getProductIds(int $vendorId): array
+    {
+        return $this->model->findOrFail($vendorId)
+            ->products()
+            ->pluck('id')
+            ->toArray();
+    }}

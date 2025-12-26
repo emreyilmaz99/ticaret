@@ -2,12 +2,14 @@
 
 namespace App\Services\Order;
 
+use App\Enums\OrderStatus;
 use App\Interfaces\Services\Order\OrderServiceInterface;
 use App\Services\BaseService;
 use App\Models\Cart;
 use App\Models\Order;
 use App\Models\User;
 use App\Models\UserAddress;
+use App\Repositories\OrderRepository;
 
 /**
  * OrderService (Facade)
@@ -19,19 +21,12 @@ use App\Models\UserAddress;
  */
 class OrderService extends BaseService implements OrderServiceInterface
 {
-    protected OrderValidationService $validationService;
-    protected OrderCreationService $creationService;
-    protected OrderPaymentService $paymentService;
-
     public function __construct(
-        OrderValidationService $validationService,
-        OrderCreationService $creationService,
-        OrderPaymentService $paymentService
-    ) {
-        $this->validationService = $validationService;
-        $this->creationService = $creationService;
-        $this->paymentService = $paymentService;
-    }
+        protected OrderValidationService $validationService,
+        protected OrderCreationService $creationService,
+        protected OrderPaymentService $paymentService,
+        protected OrderRepository $orderRepository
+    ) {}
 
     /**
      * Validate cart before order creation
@@ -71,11 +66,7 @@ class OrderService extends BaseService implements OrderServiceInterface
     public function getUserOrders(int $userId, int $perPage = 10)
     {
         try {
-            $orders = Order::where('user_id', $userId)
-                ->with(['items.product.photos'])
-                ->withCount('items')
-                ->orderBy('created_at', 'desc')
-                ->paginate($perPage);
+            $orders = $this->orderRepository->getUserOrdersPaginated($userId, $perPage);
 
             return $this->successResponse($orders, 'Siparişler getirildi');
         } catch (\Exception $e) {
@@ -89,19 +80,7 @@ class OrderService extends BaseService implements OrderServiceInterface
     public function getUserOrder(int $userId, string $orderNumber)
     {
         try {
-            $order = Order::where('user_id', $userId)
-                ->where('order_number', $orderNumber)
-                ->with([
-                    'user:id,name,email,phone',
-                    'items.product.photos',
-                    'items.product.taxClass',
-                    'items.product.vendor:id,company_name,tax_id,phone,email',
-                    'items.product.vendor.commissionPlan',
-                    'items.variant',
-                    'statusHistory',
-                    'coupon'
-                ])
-                ->first();
+            $order = $this->orderRepository->findUserOrderByNumber($userId, $orderNumber);
 
             if (!$order) {
                 return $this->errorResponse('Sipariş bulunamadı', 404);
@@ -227,9 +206,7 @@ class OrderService extends BaseService implements OrderServiceInterface
     public function cancelOrder(int $userId, string $orderNumber, string $reason = 'Kullanıcı tarafından iptal edildi')
     {
         try {
-            $order = Order::where('user_id', $userId)
-                ->where('order_number', $orderNumber)
-                ->first();
+            $order = $this->orderRepository->findUserOrderByNumber($userId, $orderNumber);
 
             if (!$order) {
                 return $this->errorResponse('Sipariş bulunamadı', 404);
@@ -239,14 +216,17 @@ class OrderService extends BaseService implements OrderServiceInterface
                 return $this->errorResponse('Bu sipariş iptal edilemez', 400);
             }
 
-            $order->updateStatus(
-                Order::STATUS_CANCELLED,
+            $this->orderRepository->updateStatusWithHistory(
+                $order->id,
+                OrderStatus::CANCELLED->value,
                 $reason,
                 'user',
                 $userId
             );
 
-            return $this->successResponse($order->fresh(), 'Sipariş iptal edildi');
+            $order = $this->orderRepository->findFreshWithItems($order->id);
+
+            return $this->successResponse($order, 'Sipariş iptal edildi');
         } catch (\Exception $e) {
             return $this->handleException($e, 'Sipariş iptal edilemedi');
         }

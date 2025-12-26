@@ -87,4 +87,25 @@ class CartRepository extends EloquentBaseRepository implements CartRepositoryInt
         
         return $this->findByUserId($userId);
     }
+
+    /**
+     * Load cart with full relations for response formatting
+     */
+    public function loadWithFullRelations(Cart $cart): Cart
+    {
+        return $cart->load([
+            'items.product.photos',
+            'items.product.vendor',
+            'items.variant',
+            'items.product.activeFeaturedDeal'
+        ]);
+    }
+
+    /**
+     * Load cart with items for validation
+     */
+    public function loadForValidation(Cart $cart): Cart
+    {
+        return $cart->load(['items.product.vendor', 'items.variant']);
+    }
 }

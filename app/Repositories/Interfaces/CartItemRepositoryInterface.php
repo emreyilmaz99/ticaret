@@ -37,4 +37,9 @@ interface CartItemRepositoryInterface extends BaseRepositoryInterface
      * Get all items for cart
      */
     public function getItemsForCart(int $cartId): \Illuminate\Database\Eloquent\Collection;
+
+    /**
+     * Update cart item price
+     */
+    public function updatePrice(CartItem $item, float $unitPrice): CartItem;
 }

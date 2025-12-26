@@ -28,7 +28,7 @@ class ProductMetadataService extends BaseService implements ProductMetadataServi
     /**
      * Set product setting
      */
-    public function setSetting(int $productId, string $key, $value)
+    public function setSetting(string $productId, string $key, $value)
     {
         return $this->settingRepo->upsert($productId, $key, $value);
     }
@@ -36,7 +36,7 @@ class ProductMetadataService extends BaseService implements ProductMetadataServi
     /**
      * Get product setting
      */
-    public function getSetting(int $productId, string $key, $default = null)
+    public function getSetting(string $productId, string $key, $default = null)
     {
         $setting = $this->settingRepo->findByProductAndKey($productId, $key);
         return $setting ? $setting->getTypedValueAttribute() : $default;
@@ -45,7 +45,7 @@ class ProductMetadataService extends BaseService implements ProductMetadataServi
     /**
      * Get all product settings
      */
-    public function getAllSettings(int $productId): array
+    public function getAllSettings(string $productId): array
     {
         $settings = $this->settingRepo->listByProduct($productId);
         $result = [];
@@ -60,7 +60,7 @@ class ProductMetadataService extends BaseService implements ProductMetadataServi
     /**
      * Set product metadata
      */
-    public function setMetadata(int $productId, string $key, string $value)
+    public function setMetadata(string $productId, string $key, string $value)
     {
         return $this->metadataRepo->upsert($productId, $key, $value);
     }
@@ -68,7 +68,7 @@ class ProductMetadataService extends BaseService implements ProductMetadataServi
     /**
      * Get product metadata
      */
-    public function getMetadata(int $productId, string $key, $default = null)
+    public function getMetadata(string $productId, string $key, $default = null)
     {
         $metadata = $this->metadataRepo->findByProductAndKey($productId, $key);
         return $metadata ? $metadata->meta_value : $default;
@@ -77,7 +77,7 @@ class ProductMetadataService extends BaseService implements ProductMetadataServi
     /**
      * Get all product metadata
      */
-    public function getAllMetadata(int $productId): array
+    public function getAllMetadata(string $productId): array
     {
         $metadata = $this->metadataRepo->listByProduct($productId);
         $result = [];
@@ -92,7 +92,7 @@ class ProductMetadataService extends BaseService implements ProductMetadataServi
     /**
      * Set many settings at once
      */
-    public function setManySettings(int $productId, array $settings): void
+    public function setManySettings(string $productId, array $settings): void
     {
         foreach ($settings as $key => $value) {
             $this->settingRepo->upsert($productId, $key, $value);
@@ -102,7 +102,7 @@ class ProductMetadataService extends BaseService implements ProductMetadataServi
     /**
      * Set many metadata at once
      */
-    public function setManyMetadata(int $productId, array $metadata): void
+    public function setManyMetadata(string $productId, array $metadata): void
     {
         foreach ($metadata as $key => $value) {
             $this->metadataRepo->upsert($productId, $key, $value);
@@ -112,7 +112,7 @@ class ProductMetadataService extends BaseService implements ProductMetadataServi
     /**
      * Delete setting
      */
-    public function deleteSetting(int $productId, string $key): bool
+    public function deleteSetting(string $productId, string $key): bool
     {
         return $this->settingRepo->deleteByProductAndKey($productId, $key);
     }
@@ -120,7 +120,7 @@ class ProductMetadataService extends BaseService implements ProductMetadataServi
     /**
      * Delete metadata
      */
-    public function deleteMetadata(int $productId, string $key): bool
+    public function deleteMetadata(string $productId, string $key): bool
     {
         return $this->metadataRepo->deleteByProductAndKey($productId, $key);
     }

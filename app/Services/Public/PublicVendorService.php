@@ -3,16 +3,14 @@
 namespace App\Services\Public;
 
 use App\Core\ServiceResponse;
-use App\Models\Product;
-use App\Models\ProductReview;
 use App\Models\Vendor;
-use App\Repositories\VendorRepository;
+use App\Repositories\Interfaces\VendorRepositoryInterface;
 use App\Services\BaseService;
 
 class PublicVendorService extends BaseService
 {
     public function __construct(
-        protected VendorRepository $repo
+        protected VendorRepositoryInterface $repo
     ) {}
 
     /**
@@ -21,9 +19,9 @@ class PublicVendorService extends BaseService
     public function getProfile(string $slug): ServiceResponse
     {
         try {
-            $vendor = $this->repo->findBySlug($slug);
+            $vendor = $this->repo->findActiveBySlug($slug);
 
-            if (!$vendor || $vendor->status !== 'active') {
+            if (!$vendor) {
                 return $this->errorResponse('Satıcı bulunamadı', 404);
             }
 
@@ -51,10 +49,9 @@ class PublicVendorService extends BaseService
     public function getProducts(string $slug, array $filters = []): ServiceResponse
     {
         try {
-            $vendor = $this->repo->findBySlug($slug);
-
-            if (!$vendor || $vendor->status !== 'active') {
-                return $this->errorResponse('Satıcı bulunamadı', 404);
+            $vendor = $this->getActiveVendorOrFail($slug);
+            if ($vendor instanceof ServiceResponse) {
+                return $vendor;
             }
 
             $perPage = $filters['per_page'] ?? 20;
@@ -73,10 +70,9 @@ class PublicVendorService extends BaseService
     public function getCategories(string $slug): ServiceResponse
     {
         try {
-            $vendor = $this->repo->findBySlug($slug);
-
-            if (!$vendor || $vendor->status !== 'active') {
-                return $this->errorResponse('Satıcı bulunamadı', 404);
+            $vendor = $this->getActiveVendorOrFail($slug);
+            if ($vendor instanceof ServiceResponse) {
+                return $vendor;
             }
 
             $categories = $this->repo->getVendorCategoriesWithCount($vendor->id);
@@ -94,10 +90,9 @@ class PublicVendorService extends BaseService
     public function getReviews(string $slug, array $filters = []): ServiceResponse
     {
         try {
-            $vendor = $this->repo->findBySlug($slug);
-
-            if (!$vendor || $vendor->status !== 'active') {
-                return $this->errorResponse('Satıcı bulunamadı', 404);
+            $vendor = $this->getActiveVendorOrFail($slug);
+            if ($vendor instanceof ServiceResponse) {
+                return $vendor;
             }
 
             $perPage = $filters['per_page'] ?? 10;
@@ -116,5 +111,19 @@ class PublicVendorService extends BaseService
         } catch (\Exception $e) {
             return $this->handleException($e, 'Satıcı yorumları alınamadı');
         }
+    }
+
+    /**
+     * Get active vendor or return error response
+     */
+    protected function getActiveVendorOrFail(string $slug): Vendor|ServiceResponse
+    {
+        $vendor = $this->repo->findActiveBySlug($slug);
+
+        if (!$vendor) {
+            return $this->errorResponse('Satıcı bulunamadı', 404);
+        }
+
+        return $vendor;
     }
 }

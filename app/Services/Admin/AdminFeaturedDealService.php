@@ -4,40 +4,24 @@ namespace App\Services\Admin;
 
 use App\Core\ServiceResponse;
 use App\Interfaces\Services\Admin\AdminFeaturedDealServiceInterface;
-use App\Models\FeaturedDeal;
-use App\Models\Product;
+use App\Repositories\FeaturedDealRepository;
+use App\Repositories\ProductRepository;
 use App\Services\BaseService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class AdminFeaturedDealService extends BaseService implements AdminFeaturedDealServiceInterface
 {
+    public function __construct(
+        protected FeaturedDealRepository $featuredDealRepository,
+        protected ProductRepository $productRepository
+    ) {}
+
     public function list(array $filters): ServiceResponse
     {
         try {
-            $query = FeaturedDeal::with(['product.photos', 'product.vendor', 'variant'])->ordered();
-
-            if (isset($filters['status'])) {
-                match ($filters['status']) {
-                    'active' => $query->where('is_active', true),
-                    'current' => $query->current(),
-                    'expired' => $query->expired(),
-                    'upcoming' => $query->upcoming(),
-                    'inactive' => $query->where('is_active', false),
-                    default => null
-                };
-            }
-
-            $deals = $query->paginate($filters['per_page'] ?? 15);
-
-            $stats = [
-                'total' => FeaturedDeal::count(),
-                'active' => FeaturedDeal::where('is_active', true)->count(),
-                'current' => FeaturedDeal::current()->count(),
-                'upcoming' => FeaturedDeal::upcoming()->count(),
-                'expired' => FeaturedDeal::expired()->count(),
-                'inactive' => FeaturedDeal::where('is_active', false)->count(),
-            ];
+            $deals = $this->featuredDealRepository->getFiltered($filters);
+            $stats = $this->featuredDealRepository->getStatistics();
 
             return $this->successResponse([
                 'deals' => $deals->items(),
@@ -57,10 +41,7 @@ class AdminFeaturedDealService extends BaseService implements AdminFeaturedDealS
     public function getProductsForCreate(): ServiceResponse
     {
         try {
-            $products = Product::where('status', 'active')
-                ->with(['variants', 'photos', 'vendor'])
-                ->orderBy('name')
-                ->get()
+            $products = $this->productRepository->getActiveProductsForSelection()
                 ->map(function ($product) {
                     $defaultVariant = $product->variants->first();
                     return [
@@ -90,11 +71,11 @@ class AdminFeaturedDealService extends BaseService implements AdminFeaturedDealS
     public function create(array $data): ServiceResponse
     {
         try {
-            $deal = FeaturedDeal::create($data);
+            $deal = $this->featuredDealRepository->create($data);
             Log::info('Featured deal created', ['deal_id' => $deal->id]);
 
             return $this->successResponse(
-                ['deal' => $deal->load(['product.photos', 'product.vendor', 'variant'])],
+                ['deal' => $this->featuredDealRepository->find($deal->id)],
                 'Öne çıkan ürün başarıyla oluşturuldu.',
                 201
             );
@@ -107,7 +88,12 @@ class AdminFeaturedDealService extends BaseService implements AdminFeaturedDealS
     public function find(int $id): ServiceResponse
     {
         try {
-            $deal = FeaturedDeal::with(['product.photos', 'product.vendor', 'variant'])->findOrFail($id);
+            $deal = $this->featuredDealRepository->find($id);
+            
+            if (!$deal) {
+                return $this->errorResponse('Ürün bulunamadı', 404);
+            }
+            
             return $this->successResponse(['deal' => $deal], 'Öne çıkan ürün detayı başarıyla getirildi.');
         } catch (\Exception $e) {
             return $this->handleException($e, 'Ürün bulunamadı');
@@ -117,12 +103,11 @@ class AdminFeaturedDealService extends BaseService implements AdminFeaturedDealS
     public function update(int $id, array $data): ServiceResponse
     {
         try {
-            $deal = FeaturedDeal::findOrFail($id);
-            $deal->update($data);
+            $deal = $this->featuredDealRepository->update($id, $data);
             Log::info('Featured deal updated', ['deal_id' => $deal->id]);
 
             return $this->successResponse(
-                ['deal' => $deal->fresh(['product.photos', 'product.vendor', 'variant'])],
+                ['deal' => $this->featuredDealRepository->find($deal->id)],
                 'Öne çıkan ürün başarıyla güncellendi.'
             );
         } catch (\Exception $e) {
@@ -134,9 +119,8 @@ class AdminFeaturedDealService extends BaseService implements AdminFeaturedDealS
     public function delete(int $id): ServiceResponse
     {
         try {
-            $deal = FeaturedDeal::findOrFail($id);
-            $deal->delete();
-            Log::info('Featured deal deleted', ['deal_id' => $deal->id]);
+            $this->featuredDealRepository->delete($id);
+            Log::info('Featured deal deleted', ['deal_id' => $id]);
 
             return $this->successResponse(null, 'Öne çıkan ürün başarıyla silindi.');
         } catch (\Exception $e) {
@@ -148,8 +132,7 @@ class AdminFeaturedDealService extends BaseService implements AdminFeaturedDealS
     public function toggle(int $id): ServiceResponse
     {
         try {
-            $deal = FeaturedDeal::findOrFail($id);
-            $deal->update(['is_active' => !$deal->is_active]);
+            $deal = $this->featuredDealRepository->toggleActive($id);
 
             return $this->successResponse(
                 ['deal' => $deal],
@@ -164,9 +147,7 @@ class AdminFeaturedDealService extends BaseService implements AdminFeaturedDealS
     {
         try {
             DB::transaction(function () use ($deals) {
-                foreach ($deals as $dealData) {
-                    FeaturedDeal::where('id', $dealData['id'])->update(['sort_order' => $dealData['sort_order']]);
-                }
+                $this->featuredDealRepository->updateSortOrder($deals);
             });
 
             return $this->successResponse(null, 'Sıralama başarıyla güncellendi.');

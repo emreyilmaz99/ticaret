@@ -7,17 +7,24 @@ use App\Services\BaseService;
 use App\Exceptions\InsufficientStockException;
 use App\Models\Order;
 use App\Models\ProductVariant;
+use App\Repositories\Interfaces\ProductVariantRepositoryInterface;
+use App\Repositories\OrderRepository;
 use Illuminate\Support\Facades\Log;
 
 class StockService extends BaseService implements StockServiceInterface
 {
+    public function __construct(
+        protected ProductVariantRepositoryInterface $variantRepo,
+        protected OrderRepository $orderRepo
+    ) {}
+
     /**
      * Sipariş için stokları düşür
      * @throws InsufficientStockException
      */
     public function decrementStocksForOrder(Order $order): void
     {
-        $order->load('items.variant');
+        $order = $this->orderRepo->loadWithItemsAndVariants($order);
 
         foreach ($order->items as $item) {
             if ($item->variant) {
@@ -40,11 +47,11 @@ class StockService extends BaseService implements StockServiceInterface
      */
     public function restoreStocksForOrder(Order $order): void
     {
-        $order->load('items.variant');
+        $order = $this->orderRepo->loadWithItemsAndVariants($order);
 
         foreach ($order->items as $item) {
             if ($item->variant) {
-                $item->variant->incrementStock($item->quantity);
+                $this->variantRepo->incrementStock($item->variant->id, $item->quantity);
             }
         }
 
@@ -60,15 +67,15 @@ class StockService extends BaseService implements StockServiceInterface
      */
     public function decrementStock(ProductVariant $variant, int $quantity, ?string $productName = null): bool
     {
-        $success = $variant->decrementStock($quantity);
+        $success = $this->variantRepo->decrementStock($variant->id, $quantity);
 
         if (!$success) {
             // Fresh data ile güncel stoku al
-            $variant->refresh();
+            $currentStock = $this->variantRepo->getStock($variant->id);
 
             throw new InsufficientStockException(
                 $productName ?? "Variant #{$variant->id}",
-                $variant->stock,
+                $currentStock,
                 $quantity
             );
         }
@@ -81,7 +88,7 @@ class StockService extends BaseService implements StockServiceInterface
      */
     public function incrementStock(ProductVariant $variant, int $quantity): bool
     {
-        return $variant->incrementStock($quantity);
+        return $this->variantRepo->incrementStock($variant->id, $quantity);
     }
 
     /**
@@ -89,7 +96,7 @@ class StockService extends BaseService implements StockServiceInterface
      */
     public function hasEnoughStock(ProductVariant $variant, int $quantity): bool
     {
-        return $variant->hasStock($quantity);
+        return $this->variantRepo->hasStock($variant->id, $quantity);
     }
 
     /**
@@ -98,16 +105,16 @@ class StockService extends BaseService implements StockServiceInterface
      */
     public function validateStocksForOrder(Order $order): array
     {
-        $order->load('items.variant');
+        $order = $this->orderRepo->loadWithItemsAndVariants($order);
         $insufficientItems = [];
 
         foreach ($order->items as $item) {
-            if ($item->variant && !$item->variant->hasStock($item->quantity)) {
+            if ($item->variant && !$this->variantRepo->hasStock($item->variant->id, $item->quantity)) {
                 $insufficientItems[] = [
                     'product_name' => $item->product_name,
                     'variant_title' => $item->variant_title,
                     'requested' => $item->quantity,
-                    'available' => $item->variant->stock,
+                    'available' => $this->variantRepo->getStock($item->variant->id),
                 ];
             }
         }

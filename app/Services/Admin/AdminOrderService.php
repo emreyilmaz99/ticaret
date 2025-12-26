@@ -7,7 +7,8 @@ use App\Interfaces\Services\Order\OrderFinancialCalculatorInterface;
 use App\Services\BaseService;
 use App\Models\Order;
 use App\Models\OrderItem;
-use App\Models\OrderNote;
+use App\Repositories\OrderRepository;
+use App\Repositories\OrderNoteRepository;
 use App\Traits\FormatsOrderData;
 use App\Traits\FormatsProductData;
 use Illuminate\Support\Facades\DB;
@@ -16,12 +17,11 @@ class AdminOrderService extends BaseService implements AdminOrderServiceInterfac
 {
     use FormatsOrderData, FormatsProductData;
     
-    protected OrderFinancialCalculatorInterface $financialCalculator;
-    
-    public function __construct(OrderFinancialCalculatorInterface $financialCalculator)
-    {
-        $this->financialCalculator = $financialCalculator;
-    }
+    public function __construct(
+        protected OrderFinancialCalculatorInterface $financialCalculator,
+        protected OrderRepository $orderRepository,
+        protected OrderNoteRepository $orderNoteRepository
+    ) {}
     
     /**
      * Override payment method label to include card types
@@ -48,47 +48,7 @@ class AdminOrderService extends BaseService implements AdminOrderServiceInterfac
     public function getOrders(array $filters = [])
     {
         try {
-            $query = Order::with([
-                'user:id,name,email',
-                'coupon:id,code,discount_amount,min_order_amount',
-                'items.product:id,name,slug,vendor_id,tax_class_id',
-                'items.product.photos:id,product_id,url,sort_order',
-                'items.product.vendor:id,company_name,email,phone,tax_id,commission_plan_id',
-                'items.product.vendor.commissionPlan:id,rate',
-                'items.product.taxClass:id,name,rate',
-                'items.variant:id,title,sku',
-                'statusHistory'
-            ])->orderBy('created_at', 'desc');
-
-            // Filters
-            if (!empty($filters['search'])) {
-                $search = $filters['search'];
-                $query->where(function ($q) use ($search) {
-                    $q->where('order_number', 'like', "%{$search}%")
-                        ->orWhereHas('user', function ($uq) use ($search) {
-                            $uq->where('name', 'like', "%{$search}%")
-                                ->orWhere('email', 'like', "%{$search}%");
-                        });
-                });
-            }
-
-            if (!empty($filters['status']) && $filters['status'] !== 'all') {
-                $query->where('status', $filters['status']);
-            }
-
-            if (!empty($filters['payment_status']) && $filters['payment_status'] !== 'all') {
-                $query->where('payment_status', $filters['payment_status']);
-            }
-
-            if (!empty($filters['min_amount'])) {
-                $query->where('total', '>=', $filters['min_amount']);
-            }
-
-            if (!empty($filters['max_amount'])) {
-                $query->where('total', '<=', $filters['max_amount']);
-            }
-
-            $orders = $query->get();
+            $orders = $this->orderRepository->getWithFilters($filters);
 
             // Transform to admin-centric structure
             $transformedOrders = $orders->map(function ($order) {
@@ -205,12 +165,12 @@ class AdminOrderService extends BaseService implements AdminOrderServiceInterfac
     {
         try {
             // Total orders
-            $totalOrders = Order::count();
+            $totalOrders = $this->orderRepository->count();
 
             // Pending orders
-            $pendingOrders = Order::where('status', Order::STATUS_PENDING)->count();
+            $pendingOrders = $this->orderRepository->countByStatus(Order::STATUS_PENDING);
 
-            // Total revenue (platform commission)
+            // Total revenue (platform commission) - complex query remains as DB facade
             $totalRevenue = DB::table('order_items')
                 ->join('products', 'order_items.product_id', '=', 'products.id')
                 ->join('vendors', 'products.vendor_id', '=', 'vendors.id')
@@ -270,7 +230,11 @@ class AdminOrderService extends BaseService implements AdminOrderServiceInterfac
     public function updateOrderStatus(int $orderId, string $newStatus)
     {
         try {
-            $order = Order::findOrFail($orderId);
+            $order = $this->orderRepository->findById($orderId);
+            
+            if (!$order) {
+                return $this->errorResponse('Sipariş bulunamadı', 404);
+            }
 
             $order->updateStatus($newStatus);
 
@@ -286,7 +250,11 @@ class AdminOrderService extends BaseService implements AdminOrderServiceInterfac
     public function cancelOrder(int $orderId, string $reason = null, int $adminId = null)
     {
         try {
-            $order = Order::findOrFail($orderId);
+            $order = $this->orderRepository->findById($orderId);
+            
+            if (!$order) {
+                return $this->errorResponse('Sipariş bulunamadı', 404);
+            }
 
             if (!in_array($order->status, [Order::STATUS_PENDING, Order::STATUS_CONFIRMED, Order::STATUS_PROCESSING])) {
                 return $this->errorResponse('Bu sipariş iptal edilemez', 400);
@@ -321,9 +289,13 @@ class AdminOrderService extends BaseService implements AdminOrderServiceInterfac
      */
     public function addNote(int $orderId, string $note, int $adminId, bool $visibleToVendor = true, bool $visibleToCustomer = false)
     {
-        $order = Order::findOrFail($orderId);
+        $order = $this->orderRepository->findById($orderId);
+        
+        if (!$order) {
+            throw new \Exception('Sipariş bulunamadı');
+        }
 
-        $orderNote = OrderNote::create([
+        $orderNote = $this->orderNoteRepository->create([
             'order_id' => $orderId,
             'admin_id' => $adminId,
             'note' => $note,
@@ -346,10 +318,7 @@ class AdminOrderService extends BaseService implements AdminOrderServiceInterfac
      */
     public function getNotes(int $orderId)
     {
-        return OrderNote::where('order_id', $orderId)
-            ->with('admin:id,name')
-            ->orderBy('created_at', 'desc')
-            ->get()
+        return $this->orderNoteRepository->getByOrderId($orderId)
             ->map(function ($note) {
                 return [
                     'id' => $note->id,
@@ -367,25 +336,16 @@ class AdminOrderService extends BaseService implements AdminOrderServiceInterfac
      */
     public function getUserOrders(int $userId, int $excludeOrderId = null)
     {
-        $query = Order::where('user_id', $userId)
-            ->select('id', 'order_number', 'status', 'payment_status', 'total', 'created_at')
-            ->orderBy('created_at', 'desc');
-
-        if ($excludeOrderId) {
-            $query->where('id', '!=', $excludeOrderId);
-        }
-
-        return $query->limit(10)->get()->map(function ($order) {
-            return [
-                'id' => $order->id,
-                'order_number' => $order->order_number,
-                'status' => $order->status,
-                'payment_status' => $order->payment_status,
-                'total' => (float) $order->total,
-                'created_at' => $order->created_at->format('d.m.Y H:i'),
-            ];
-        })->toArray();
+        return $this->orderRepository->getUserOrdersLimited($userId, $excludeOrderId)
+            ->map(function ($order) {
+                return [
+                    'id' => $order->id,
+                    'order_number' => $order->order_number,
+                    'status' => $order->status,
+                    'payment_status' => $order->payment_status,
+                    'total' => (float) $order->total,
+                    'created_at' => $order->created_at->format('d.m.Y H:i'),
+                ];
+            })->toArray();
     }
 }
-
-

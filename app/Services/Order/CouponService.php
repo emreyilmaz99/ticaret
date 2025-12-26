@@ -4,13 +4,19 @@ namespace App\Services\Order;
 
 use App\Interfaces\Services\Order\CouponServiceInterface;
 use App\Services\BaseService;
-use App\Models\CouponUsage;
 use App\Models\Order;
 use App\Models\VendorCoupon;
+use App\Repositories\VendorCouponRepository;
+use App\Repositories\CouponUsageRepository;
 use Illuminate\Support\Facades\Log;
 
 class CouponService extends BaseService implements CouponServiceInterface
 {
+    public function __construct(
+        protected VendorCouponRepository $vendorCouponRepository,
+        protected CouponUsageRepository $couponUsageRepository
+    ) {}
+
     /**
      * Sipariş için kupon kullanımını kaydet
      */
@@ -20,13 +26,13 @@ class CouponService extends BaseService implements CouponServiceInterface
             return;
         }
 
-        $coupon = VendorCoupon::find($order->coupon_id);
+        $coupon = $this->vendorCouponRepository->findById($order->coupon_id);
         if (!$coupon) {
             return;
         }
 
         // Kullanım kaydı oluştur
-        CouponUsage::create([
+        $this->couponUsageRepository->create([
             'coupon_id' => $coupon->id,
             'user_id' => $order->user_id,
             'order_id' => $order->id,
@@ -34,7 +40,7 @@ class CouponService extends BaseService implements CouponServiceInterface
         ]);
 
         // Kupon kullanım sayısını artır
-        $coupon->increment('usage_count');
+        $this->vendorCouponRepository->incrementUsageCount($coupon->id);
 
         Log::info('Coupon usage recorded', [
             'coupon_id' => $coupon->id,
@@ -48,9 +54,7 @@ class CouponService extends BaseService implements CouponServiceInterface
      */
     public function validateCoupon(string $code, ?int $userId = null, float $subtotal = 0): array
     {
-        $coupon = VendorCoupon::where('code', strtoupper($code))
-            ->where('is_active', true)
-            ->first();
+        $coupon = $this->vendorCouponRepository->findActiveByCode(strtoupper($code));
 
         if (!$coupon) {
             return [
@@ -75,8 +79,6 @@ class CouponService extends BaseService implements CouponServiceInterface
      */
     public function getCouponByCode(string $code): ?VendorCoupon
     {
-        return VendorCoupon::where('code', strtoupper($code))
-            ->where('is_active', true)
-            ->first();
+        return $this->vendorCouponRepository->findActiveByCode(strtoupper($code));
     }
 }

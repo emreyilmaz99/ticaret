@@ -5,8 +5,9 @@ namespace App\Services\Product;
 use App\Core\ServiceResponse;
 use App\Interfaces\Services\Product\PublicProductServiceInterface;
 use App\Interfaces\Services\Review\ReviewServiceInterface;
-use App\Models\Category;
 use App\Models\Product;
+use App\Repositories\Interfaces\CategoryRepositoryInterface;
+use App\Repositories\Interfaces\ProductRepositoryInterface;
 use App\Services\BaseService;
 use App\Traits\FormatsProductData;
 use Illuminate\Http\Request;
@@ -23,7 +24,9 @@ class PublicProductService extends BaseService implements PublicProductServiceIn
     protected const CATEGORIES_CACHE_TTL = 3600; // 1 hour
 
     public function __construct(
-        private ReviewServiceInterface $reviewService
+        private ReviewServiceInterface $reviewService,
+        private ProductRepositoryInterface $productRepo,
+        private CategoryRepositoryInterface $categoryRepo
     ) {}
     /**
      * Get public product listing with filters
@@ -31,32 +34,16 @@ class PublicProductService extends BaseService implements PublicProductServiceIn
     public function getProducts(Request $request): ServiceResponse
     {
         try {
-            $query = Product::with(['variants', 'photos', 'category', 'vendor:id,name,slug', 'activeFeaturedDeal'])
-                ->where('status', 'active')
-                ->whereHas('vendor', fn($q) => $q->where('status', 'active'));
-
-            // Apply filters
-            $this->applyCategoryFilter($query, $request);
-            $this->applyPriceFilter($query, $request);
-            $this->applySearchFilter($query, $request);
-
-            // Featured filter
-            if ($request->boolean('is_featured')) {
-                $query->where('is_featured', true);
-            }
-
-            // Apply sorting
-            $this->applySorting($query, $request);
-
+            $filters = $this->buildFilters($request);
             $perPage = min($request->get('per_page', self::DEFAULT_PER_PAGE), self::MAX_PER_PAGE);
-            $products = $query->paginate($perPage);
+            
+            $products = $this->productRepo->getPublicProductsWithFilters($filters, $perPage);
 
-            $transformedProducts = $products->getCollection()->map(function ($product) {
-                return $this->transformProductForList($product);
-            });
+            // Use through() for paginator transformation
+            $products->through(fn($product) => $this->transformProductForList($product));
 
             return $this->successResponse([
-                'data' => $transformedProducts,
+                'data' => $products->items(),
                 'meta' => [
                     'current_page' => $products->currentPage(),
                     'last_page' => $products->lastPage(),
@@ -75,23 +62,7 @@ class PublicProductService extends BaseService implements PublicProductServiceIn
     public function getProductBySlug(string $slug): ServiceResponse
     {
         try {
-            $product = Product::with([
-                'variants.unit', 
-                'variants.variantMetadata',
-                'photos', 
-                'category.parent', 
-                'vendor:id,name,slug,company_name,phone,rating_avg,rating_count,created_at',
-                'vendor.media',
-                'vendor.metadata',
-                'tags',
-                'productMetadata',
-                'settings',
-                'activeFeaturedDeal'
-            ])
-                ->where('slug', $slug)
-                ->where('status', 'active')
-                ->whereHas('vendor', fn($q) => $q->where('status', 'active'))
-                ->first();
+            $product = $this->productRepo->getProductDetailBySlug($slug);
 
             if (!$product) {
                 return $this->errorResponse('Ürün bulunamadı', 404);
@@ -111,7 +82,7 @@ class PublicProductService extends BaseService implements PublicProductServiceIn
     public function getRelatedProducts(string $slug, int $limit = 4): ServiceResponse
     {
         try {
-            $product = Product::where('slug', $slug)->where('status', 'active')->first();
+            $product = $this->productRepo->findActiveBySlugSimple($slug);
 
             if (!$product) {
                 return $this->errorResponse('Ürün bulunamadı', 404);
@@ -119,17 +90,12 @@ class PublicProductService extends BaseService implements PublicProductServiceIn
             
             $limit = min($limit, 12);
 
-            $relatedProducts = Product::with(['variants', 'photos', 'category', 'activeFeaturedDeal'])
-                ->where('status', 'active')
-                ->where('id', '!=', $product->id)
-                ->where(function($q) use ($product) {
-                    $q->where('category_id', $product->category_id)
-                      ->orWhere('vendor_id', $product->vendor_id);
-                })
-                ->whereHas('vendor', fn($q) => $q->where('status', 'active'))
-                ->inRandomOrder()
-                ->limit($limit)
-                ->get();
+            $relatedProducts = $this->productRepo->getRelatedProductsExtended(
+                $product->id, 
+                $product->category_id, 
+                $product->vendor_id, 
+                $limit
+            );
 
             $transformed = $relatedProducts->map(fn($p) => $this->transformProductForCard($p));
 
@@ -151,13 +117,7 @@ class PublicProductService extends BaseService implements PublicProductServiceIn
             $cacheKey = "featured_products:{$limit}";
 
             $transformedProducts = Cache::remember($cacheKey, self::FEATURED_CACHE_TTL, function () use ($limit) {
-                $products = Product::with(['variants', 'photos', 'category', 'activeFeaturedDeal'])
-                    ->where('status', 'active')
-                    ->where('is_featured', true)
-                    ->whereHas('vendor', fn($q) => $q->where('status', 'active'))
-                    ->orderBy('created_at', 'desc')
-                    ->limit($limit)
-                    ->get();
+                $products = $this->productRepo->getFeaturedProductsWithDeals($limit);
 
                 return $products->map(function ($product) {
                     $cardData = $this->transformProductForCard($product);
@@ -331,9 +291,7 @@ class PublicProductService extends BaseService implements PublicProductServiceIn
         }
         
         // Get vendor product count
-        $vendorProductCount = Product::where('vendor_id', $vendor->id)
-            ->where('status', 'active')
-            ->count();
+        $vendorProductCount = $this->productRepo->countActiveByVendor($vendor->id);
         
         // Get vendor description from metadata
         if ($vendor->metadata) {
@@ -384,95 +342,53 @@ class PublicProductService extends BaseService implements PublicProductServiceIn
     // ==================== Helper Methods ====================
 
     /**
-     * Apply category filter to query
-     * Accepts both category ID (integer) and slug (string)
+     * Build filters array from request
      */
-    protected function applyCategoryFilter($query, Request $request): void
+    protected function buildFilters(Request $request): array
     {
+        $filters = [];
+
+        // Category filter - supports both ID and slug
         if ($request->filled('category_id')) {
             $categoryValue = $request->category_id;
             
-            // Check if it's a numeric ID or a slug
             if (is_numeric($categoryValue)) {
-                // Numeric ID
-                $categoryIds = Category::where('id', $categoryValue)
-                    ->orWhere('parent_id', $categoryValue)
-                    ->pluck('id');
-                $query->whereIn('category_id', $categoryIds);
+                $filters['category_ids'] = $this->categoryRepo->getCategoryWithChildrenIds((int) $categoryValue);
             } else {
-                // Slug string (like 'elektronik', 'moda')
-                $category = Category::where('slug', $categoryValue)->first();
-                if ($category) {
-                    $categoryIds = Category::where('id', $category->id)
-                        ->orWhere('parent_id', $category->id)
-                        ->pluck('id');
-                    $query->whereIn('category_id', $categoryIds);
-                }
+                $filters['category_ids'] = $this->categoryRepo->getCategoryWithChildrenIdsBySlug($categoryValue);
             }
         }
 
         if ($request->filled('category_slug')) {
-            $category = Category::where('slug', $request->category_slug)->first();
-            if ($category) {
-                $categoryIds = Category::where('id', $category->id)
-                    ->orWhere('parent_id', $category->id)
-                    ->pluck('id');
-                $query->whereIn('category_id', $categoryIds);
+            $categoryIds = $this->categoryRepo->getCategoryWithChildrenIdsBySlug($request->category_slug);
+            if (!empty($categoryIds)) {
+                $filters['category_ids'] = $categoryIds;
             }
         }
-    }
 
-    /**
-     * Apply price filter to query
-     */
-    protected function applyPriceFilter($query, Request $request): void
-    {
+        // Price filters
         if ($request->filled('min_price')) {
-            $query->whereHas('variants', fn($q) => $q->where('price', '>=', $request->min_price));
+            $filters['min_price'] = $request->min_price;
         }
         if ($request->filled('max_price')) {
-            $query->whereHas('variants', fn($q) => $q->where('price', '<=', $request->max_price));
+            $filters['max_price'] = $request->max_price;
         }
-    }
 
-    /**
-     * Apply search filter to query
-     */
-    protected function applySearchFilter($query, Request $request): void
-    {
+        // Featured filter
+        if ($request->boolean('is_featured')) {
+            $filters['is_featured'] = true;
+        }
+
+        // Search filter
         if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('short_description', 'like', "%{$search}%");
-            });
+            $filters['search'] = $request->search;
         }
-    }
 
-    /**
-     * Apply sorting to query
-     */
-    protected function applySorting($query, Request $request): void
-    {
-        $sortBy = $request->get('sort_by', 'created_at');
-        $sortOrder = $request->get('sort_order', 'desc');
+        // Sorting
+        $filters['sort_by'] = $request->get('sort_by', 'created_at');
+        $filters['sort_order'] = $request->get('sort_order', 'desc');
 
-        switch ($sortBy) {
-            case 'price_asc':
-                $query->orderByRaw('(SELECT MIN(price) FROM product_variants WHERE product_variants.product_id = products.id) ASC');
-                break;
-            case 'price_desc':
-                $query->orderByRaw('(SELECT MIN(price) FROM product_variants WHERE product_variants.product_id = products.id) DESC');
-                break;
-            case 'name':
-                $query->orderBy('name', $sortOrder);
-                break;
-            case 'featured':
-                $query->orderBy('is_featured', 'desc')->orderBy('created_at', 'desc');
-                break;
-            default:
-                $query->orderBy('created_at', 'desc');
-        }
+        return $filters;
     }
 
     /**
@@ -560,13 +476,7 @@ class PublicProductService extends BaseService implements PublicProductServiceIn
     {
         try {
             $categories = Cache::remember('main_categories_with_active_counts', self::CATEGORIES_CACHE_TTL, function () {
-                return Category::whereNull('parent_id')
-                    ->where('is_active', true)
-                    ->with(['children' => fn($q) => $q->withCount('activeDirectProducts')])
-                    ->withCount('activeDirectProducts')
-                    ->orderBy('sort_order')
-                    ->orderBy('name')
-                    ->get()
+                return $this->categoryRepo->getMainCategoriesWithProductCounts()
                     ->map(function ($category) {
                         $directCount = $category->active_direct_products_count ?? 0;
                         $childrenCount = $category->children->sum('active_direct_products_count') ?? 0;

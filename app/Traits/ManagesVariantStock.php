@@ -94,7 +94,7 @@ trait ManagesVariantStock
     /**
      * Get cache key for product variants
      */
-    protected function getVariantsCacheKey(int $productId): string
+    protected function getVariantsCacheKey(string $productId): string
     {
         return "product:{$productId}:variants";
     }

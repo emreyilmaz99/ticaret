@@ -5,12 +5,13 @@ namespace App\Services\Vendor;
 use App\Interfaces\Services\Vendor\VendorApplicationFullServiceInterface;
 use App\Services\BaseService;
 use App\Services\Payment\IyzicoService;
-use App\Repositories\VendorApplicationRepository;
-use App\Repositories\VendorRepository;
+use App\Repositories\Interfaces\VendorApplicationRepositoryInterface;
+use App\Repositories\Interfaces\VendorRepositoryInterface;
+use App\Repositories\Interfaces\VendorAddressRepositoryInterface;
+use App\Repositories\Interfaces\VendorBankAccountRepositoryInterface;
+use App\Repositories\Interfaces\CommissionPlanRepositoryInterface;
 use App\Models\VendorApplication;
 use App\Models\Vendor;
-use App\Models\VendorAddress;
-use App\Models\VendorBankAccount;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -25,19 +26,14 @@ use Illuminate\Support\Facades\Log;
  */
 class VendorApplicationFullService extends BaseService implements VendorApplicationFullServiceInterface
 {
-    protected VendorApplicationRepository $applicationRepo;
-    protected VendorRepository $vendorRepo;
-    protected IyzicoService $iyzicoService;
-
     public function __construct(
-        VendorApplicationRepository $applicationRepo,
-        VendorRepository $vendorRepo,
-        IyzicoService $iyzicoService
-    ) {
-        $this->applicationRepo = $applicationRepo;
-        $this->vendorRepo = $vendorRepo;
-        $this->iyzicoService = $iyzicoService;
-    }
+        private readonly VendorApplicationRepositoryInterface $applicationRepo,
+        private readonly VendorRepositoryInterface $vendorRepo,
+        private readonly VendorAddressRepositoryInterface $addressRepo,
+        private readonly VendorBankAccountRepositoryInterface $bankRepo,
+        private readonly CommissionPlanRepositoryInterface $commissionPlanRepo,
+        private readonly IyzicoService $iyzicoService
+    ) {}
 
     /**
      * Submit full application (vendor)
@@ -248,7 +244,7 @@ class VendorApplicationFullService extends BaseService implements VendorApplicat
      */
     public function approveVendorFullApplication(int $vendorId, int $adminId, ?int $commissionPlanId = null)
     {
-        $vendor = $this->vendorRepo->find($vendorId);
+        $vendor = $this->vendorRepo->findById($vendorId);
 
         if (!$vendor) {
             return $this->errorResponse('Satıcı bulunamadı', 404);
@@ -272,7 +268,7 @@ class VendorApplicationFullService extends BaseService implements VendorApplicat
      */
     public function rejectVendorFullApplication(int $vendorId, int $adminId, string $reason)
     {
-        $vendor = $this->vendorRepo->find($vendorId);
+        $vendor = $this->vendorRepo->findById($vendorId);
 
         if (!$vendor) {
             return $this->errorResponse('Satıcı bulunamadı', 404);
@@ -295,7 +291,7 @@ class VendorApplicationFullService extends BaseService implements VendorApplicat
      */
     protected function updateOrCreateAddress(Vendor $vendor, array $data): void
     {
-        $existingAddress = $vendor->addresses()->where('is_primary', true)->first();
+        $existingAddress = $this->addressRepo->findPrimaryForVendor($vendor->id);
         
         $addressData = [
             'address_line' => $data['address'],
@@ -305,9 +301,9 @@ class VendorApplicationFullService extends BaseService implements VendorApplicat
         ];
 
         if ($existingAddress) {
-            $existingAddress->update($addressData);
+            $this->addressRepo->update($existingAddress->id, $addressData);
         } else {
-            VendorAddress::create(array_merge($addressData, [
+            $this->addressRepo->create(array_merge($addressData, [
                 'vendor_id' => $vendor->id,
                 'is_primary' => true,
             ]));
@@ -323,7 +319,7 @@ class VendorApplicationFullService extends BaseService implements VendorApplicat
             return;
         }
 
-        $existingBank = $vendor->bankAccounts()->where('is_primary', true)->first();
+        $existingBank = $this->bankRepo->findPrimaryForVendor($vendor->id);
         
         $bankData = [
             'bank_name' => $data['bank_name'] ?? 'Belirtilmedi',
@@ -334,9 +330,9 @@ class VendorApplicationFullService extends BaseService implements VendorApplicat
         ];
 
         if ($existingBank) {
-            $existingBank->update($bankData);
+            $this->bankRepo->update($existingBank->id, $bankData);
         } else {
-            VendorBankAccount::create(array_merge($bankData, [
+            $this->bankRepo->create(array_merge($bankData, [
                 'vendor_id' => $vendor->id,
             ]));
         }
@@ -358,7 +354,7 @@ class VendorApplicationFullService extends BaseService implements VendorApplicat
      */
     protected function getDefaultCommissionPlanId(): ?int
     {
-        $defaultPlan = \App\Models\CommissionPlan::where('is_default', true)->first();
+        $defaultPlan = $this->commissionPlanRepo->findDefault();
         return $defaultPlan?->id;
     }
 }

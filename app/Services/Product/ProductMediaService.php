@@ -26,7 +26,7 @@ class ProductMediaService extends BaseService implements ProductMediaServiceInte
     /**
      * Upload product photo
      */
-    public function uploadPhoto(int $productId, string $path, ?int $order = null, bool $isPrimary = false): ProductPhoto
+    public function uploadPhoto(string $productId, string $path, ?int $order = null, bool $isPrimary = false): ProductPhoto
     {
         $photos = $this->photoRepo->listByProduct($productId);
         
@@ -51,7 +51,7 @@ class ProductMediaService extends BaseService implements ProductMediaServiceInte
     /**
      * Get all photos for a product
      */
-    public function getProductPhotos(int $productId)
+    public function getProductPhotos(string $productId)
     {
         return $this->photoRepo->listByProduct($productId);
     }

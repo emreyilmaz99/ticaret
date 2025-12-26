@@ -58,4 +58,11 @@ class VendorBankAccountRepository extends EloquentBaseRepository implements Vend
         return $this->model->where('vendor_id', $vendorId)
             ->update(['is_primary' => false]);
     }
+
+    public function findPrimaryForVendor(int $vendorId): ?VendorBankAccount
+    {
+        return $this->model->where('vendor_id', $vendorId)
+            ->where('is_primary', true)
+            ->first();
+    }
 }

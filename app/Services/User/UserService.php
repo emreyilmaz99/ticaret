@@ -3,17 +3,14 @@
 namespace App\Services\User;
 
 use App\Interfaces\Services\User\UserServiceInterface;
-use App\Repositories\UserRepository;
+use App\Repositories\Interfaces\UserRepositoryInterface;
 use App\Services\BaseService;
 
 class UserService extends BaseService implements UserServiceInterface
 {
-    protected UserRepository $repo;
-
-    public function __construct(UserRepository $repo)
-    {
-        $this->repo = $repo;
-    }
+    public function __construct(
+        private readonly UserRepositoryInterface $repo
+    ) {}
 
     public function list(int $perPage = 15, array $filters = [])
     {
@@ -37,13 +34,7 @@ class UserService extends BaseService implements UserServiceInterface
 
     public function toggleStatus(int $id): bool
     {
-        $user = $this->repo->find($id);
-        if (!$user) {
-            return false;
-        }
-        $user->is_active = !$user->is_active;
-        $user->save();
-        return true;
+        return $this->repo->toggleStatus($id);
     }
 
     public function getCurrentUser($user)

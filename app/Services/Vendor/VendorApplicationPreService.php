@@ -4,8 +4,8 @@ namespace App\Services\Vendor;
 
 use App\Interfaces\Services\Vendor\VendorApplicationPreServiceInterface;
 use App\Services\BaseService;
-use App\Repositories\VendorApplicationRepository;
-use App\Repositories\VendorRepository;
+use App\Repositories\Interfaces\VendorApplicationRepositoryInterface;
+use App\Repositories\Interfaces\VendorRepositoryInterface;
 use App\Models\VendorApplication;
 use App\Models\Vendor;
 use Illuminate\Support\Facades\DB;
@@ -21,16 +21,10 @@ use Illuminate\Support\Str;
  */
 class VendorApplicationPreService extends BaseService implements VendorApplicationPreServiceInterface
 {
-    protected VendorApplicationRepository $applicationRepo;
-    protected VendorRepository $vendorRepo;
-
     public function __construct(
-        VendorApplicationRepository $applicationRepo,
-        VendorRepository $vendorRepo
-    ) {
-        $this->applicationRepo = $applicationRepo;
-        $this->vendorRepo = $vendorRepo;
-    }
+        private readonly VendorApplicationRepositoryInterface $applicationRepo,
+        private readonly VendorRepositoryInterface $vendorRepo
+    ) {}
 
     /**
      * Submit pre-application (public)
@@ -46,7 +40,7 @@ class VendorApplicationPreService extends BaseService implements VendorApplicati
             }
 
             // Check if vendor already exists
-            $existingVendor = Vendor::where('email', $data['email'])->first();
+            $existingVendor = $this->vendorRepo->findByEmail($data['email']);
             if ($existingVendor) {
                 return $this->errorResponse('Bu e-posta ile zaten bir satıcı hesabı mevcut. Lütfen giriş yapın.', 400, [
                     'redirect_to_login' => true
@@ -92,7 +86,7 @@ class VendorApplicationPreService extends BaseService implements VendorApplicati
             }
 
             // Check if vendor already exists
-            $existingVendor = Vendor::where('email', $application->email)->first();
+            $existingVendor = $this->vendorRepo->findByEmail($application->email);
             if ($existingVendor) {
                 return $this->errorResponse('Bu e-posta ile zaten bir satıcı hesabı mevcut', 400);
             }

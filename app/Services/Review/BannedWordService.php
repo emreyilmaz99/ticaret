@@ -4,10 +4,15 @@ namespace App\Services\Review;
 
 use App\Interfaces\Services\Review\BannedWordServiceInterface;
 use App\Models\BannedWord;
+use App\Repositories\Interfaces\BannedWordRepositoryInterface;
 use Illuminate\Support\Facades\Cache;
 
 class BannedWordService implements BannedWordServiceInterface
 {
+    public function __construct(
+        protected BannedWordRepositoryInterface $repo
+    ) {}
+
     /**
      * Check if text contains banned words
      * 
@@ -61,9 +66,7 @@ class BannedWordService implements BannedWordServiceInterface
     public function getBannedWordsList(): array
     {
         return Cache::remember('banned_words_list', 3600, function () {
-            return BannedWord::select('word', 'is_regex', 'pattern')
-                ->get()
-                ->toArray();
+            return $this->repo->getAllForChecking();
         });
     }
 
@@ -77,7 +80,7 @@ class BannedWordService implements BannedWordServiceInterface
      */
     public function addBannedWord(string $word, bool $isRegex = false, ?string $pattern = null): BannedWord
     {
-        $bannedWord = BannedWord::create([
+        $bannedWord = $this->repo->create([
             'word' => $word,
             'is_regex' => $isRegex,
             'pattern' => $pattern,
@@ -96,11 +99,11 @@ class BannedWordService implements BannedWordServiceInterface
      */
     public function removeBannedWord(int $id): bool
     {
-        $result = BannedWord::where('id', $id)->delete();
+        $result = $this->repo->delete($id);
         
         // Cache is automatically cleared by BannedWordObserver
 
-        return (bool) $result;
+        return $result;
     }
 
     /**
@@ -111,7 +114,7 @@ class BannedWordService implements BannedWordServiceInterface
      */
     public function isBannedWordExists(string $word): bool
     {
-        return BannedWord::where('word', $word)->exists();
+        return $this->repo->exists($word);
     }
 
     /**

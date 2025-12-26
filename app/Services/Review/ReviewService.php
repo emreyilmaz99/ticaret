@@ -4,12 +4,11 @@ namespace App\Services\Review;
 
 use App\Interfaces\Services\Review\ReviewServiceInterface;
 use App\Core\ServiceResponse;
-use App\Models\Order;
-use App\Models\OrderItem;
-use App\Models\Product;
-use App\Models\ProductReview;
-use App\Models\ReviewMedia;
 use App\Models\User;
+use App\Repositories\Interfaces\ProductReviewRepositoryInterface;
+use App\Repositories\Interfaces\ReviewMediaRepositoryInterface;
+use App\Repositories\Interfaces\OrderItemRepositoryInterface;
+use App\Repositories\Interfaces\OrderRepositoryInterface;
 use App\Services\BaseService;
 use App\Services\Media\ImageService;
 use Illuminate\Support\Facades\DB;
@@ -17,14 +16,14 @@ use Illuminate\Support\Facades\Cache;
 
 class ReviewService extends BaseService implements ReviewServiceInterface
 {
-    protected BannedWordService $bannedWordService;
-    protected ImageService $imageService;
-
-    public function __construct(BannedWordService $bannedWordService, ImageService $imageService)
-    {
-        $this->bannedWordService = $bannedWordService;
-        $this->imageService = $imageService;
-    }
+    public function __construct(
+        protected ProductReviewRepositoryInterface $reviewRepo,
+        protected ReviewMediaRepositoryInterface $mediaRepo,
+        protected OrderRepositoryInterface $orderRepo,
+        protected OrderItemRepositoryInterface $orderItemRepo,
+        protected BannedWordService $bannedWordService,
+        protected ImageService $imageService
+    ) {}
 
     /**
      * Check if user can review product for this order item
@@ -32,9 +31,7 @@ class ReviewService extends BaseService implements ReviewServiceInterface
     public function canUserReviewProduct(User $user, int $orderId, int $orderItemId): ServiceResponse
     {
         // Check order exists and belongs to user
-        $order = Order::where('id', $orderId)
-            ->where('user_id', $user->id)
-            ->first();
+        $order = $this->orderRepo->findForUser($orderId, $user->id);
 
         if (!$order) {
             return $this->errorResponse('Sipariş bulunamadı', 404);
@@ -46,18 +43,14 @@ class ReviewService extends BaseService implements ReviewServiceInterface
         }
 
         // Check order item exists
-        $orderItem = OrderItem::where('id', $orderItemId)
-            ->where('order_id', $orderId)
-            ->first();
+        $orderItem = $this->orderItemRepo->findForOrder($orderItemId, $orderId);
 
         if (!$orderItem) {
             return $this->errorResponse('Sipariş kalemi bulunamadı', 404);
         }
 
         // Check if already reviewed (including soft deleted)
-        $existingReview = ProductReview::withTrashed()
-            ->where('order_item_id', $orderItemId)
-            ->first();
+        $existingReview = $this->reviewRepo->findByOrderItemIdWithTrashed($orderItemId);
 
         if ($existingReview) {
             return $this->errorResponse('Bu ürün için zaten yorum yaptınız', 400);
@@ -82,7 +75,7 @@ class ReviewService extends BaseService implements ReviewServiceInterface
                 return $canReview;
             }
 
-            $orderItem = OrderItem::find($orderItemId);
+            $orderItem = $this->orderItemRepo->findForOrder($orderItemId, $orderId);
 
             // Check for banned words
             $bannedCheck = $this->bannedWordService->checkForBannedWords(
@@ -100,7 +93,7 @@ class ReviewService extends BaseService implements ReviewServiceInterface
             DB::beginTransaction();
 
             // Create review
-            $review = ProductReview::create([
+            $review = $this->reviewRepo->create([
                 'user_id' => $user->id,
                 'product_id' => $orderItem->product_id,
                 'order_id' => $orderId,
@@ -117,15 +110,7 @@ class ReviewService extends BaseService implements ReviewServiceInterface
             // Upload photos if provided
             if (!empty($photos) && count($photos) <= 5) {
                 $uploadedPaths = $this->imageService->uploadReviewPhotos($photos);
-                
-                foreach ($uploadedPaths as $index => $path) {
-                    ReviewMedia::create([
-                        'review_id' => $review->id,
-                        'media_type' => 'photo',
-                        'path' => $path,
-                        'sort_order' => $index,
-                    ]);
-                }
+                $this->mediaRepo->bulkCreate($review->id, $uploadedPaths);
             }
 
             DB::commit();
@@ -134,8 +119,11 @@ class ReviewService extends BaseService implements ReviewServiceInterface
                 ? 'Yorumunuz uygunsuz kelimeler içerdiği için otomatik olarak reddedildi.'
                 : 'Yorumunuz başarıyla gönderildi. Admin onayından sonra yayınlanacaktır.';
 
+            // Refresh review with media relation
+            $review = $this->reviewRepo->find($review->id);
+
             return $this->successResponse([
-                'review' => $review->load('media'),
+                'review' => $review,
                 'status' => $status,
             ], $message);
 
@@ -151,15 +139,13 @@ class ReviewService extends BaseService implements ReviewServiceInterface
     public function deleteReview(User $user, int $reviewId): ServiceResponse
     {
         try {
-            $review = ProductReview::where('id', $reviewId)
-                ->where('user_id', $user->id)
-                ->first();
+            $review = $this->reviewRepo->findForUser($reviewId, $user->id);
 
             if (!$review) {
                 return $this->errorResponse('Yorum bulunamadı', 404);
             }
 
-            $review->delete();
+            $this->reviewRepo->delete($reviewId);
 
             return $this->successResponse(null, 'Yorum silindi');
 
@@ -174,25 +160,7 @@ class ReviewService extends BaseService implements ReviewServiceInterface
     public function getProductReviews(string|int $productId, array $filters = []): ServiceResponse
     {
         try {
-            $query = ProductReview::with(['user', 'media', 'response.vendor'])
-                ->where('product_id', $productId)
-                ->approved();
-
-            // Filter by rating
-            if (isset($filters['rating']) && $filters['rating'] > 0) {
-                $query->where('rating', $filters['rating']);
-            }
-
-            // Sort
-            $sort = $filters['sort_by'] ?? $filters['sort'] ?? 'recent';
-            if ($sort === 'rating') {
-                $query->orderBy('rating', 'desc');
-            } else {
-                $query->orderBy('created_at', 'desc');
-            }
-
-            $perPage = $filters['per_page'] ?? 20;
-            $reviews = $query->paginate($perPage);
+            $reviews = $this->reviewRepo->getApprovedForProduct($productId, $filters);
 
             return $this->successResponse($reviews);
 
@@ -207,17 +175,19 @@ class ReviewService extends BaseService implements ReviewServiceInterface
     public function voteHelpful(string|int $reviewId, bool $isHelpful): ServiceResponse
     {
         try {
-            $review = ProductReview::find($reviewId);
+            $review = $this->reviewRepo->find($reviewId);
 
             if (!$review) {
                 return $this->errorResponse('Yorum bulunamadı', 404);
             }
 
             if ($isHelpful) {
-                $review->increment('helpful_count');
+                $this->reviewRepo->incrementHelpful($reviewId);
             } else {
-                $review->increment('unhelpful_count');
+                $this->reviewRepo->incrementUnhelpful($reviewId);
             }
+
+            $review = $this->reviewRepo->find($reviewId);
 
             $data = [
                 'helpful_count' => $review->helpful_count,
@@ -240,24 +210,7 @@ class ReviewService extends BaseService implements ReviewServiceInterface
             $cacheKey = "product:{$productId}:review_summary";
 
             $summary = Cache::remember($cacheKey, 600, function () use ($productId) {
-                $reviews = ProductReview::where('product_id', $productId)
-                    ->where('status', 'approved')
-                    ->get();
-
-                $totalReviews = $reviews->count();
-                $averageRating = $totalReviews > 0 ? round($reviews->avg('rating'), 1) : 0;
-
-                // Rating breakdown
-                $ratingBreakdown = [];
-                for ($i = 1; $i <= 5; $i++) {
-                    $ratingBreakdown[$i] = $reviews->where('rating', $i)->count();
-                }
-
-                return [
-                    'total_reviews' => $totalReviews,
-                    'average_rating' => $averageRating,
-                    'rating_breakdown' => $ratingBreakdown,
-                ];
+                return $this->reviewRepo->getProductSummary($productId);
             });
 
             return $this->successResponse($summary, 'Yorum özeti getirildi');
@@ -273,11 +226,7 @@ class ReviewService extends BaseService implements ReviewServiceInterface
     public function getReviewableOrders(int $userId): ServiceResponse
     {
         try {
-            $orders = Order::where('user_id', $userId)
-                ->with(['items.product.photos', 'items.review'])
-                ->where('status', 'delivered')
-                ->latest()
-                ->get()
+            $orders = $this->orderRepo->getDeliveredForUserWithItems($userId)
                 ->map(function ($order) {
                     $reviewableItems = $order->items
                         ->filter(fn($item) => !$item->review)
@@ -312,11 +261,7 @@ class ReviewService extends BaseService implements ReviewServiceInterface
     public function getUserReviews(int $userId, int $perPage = 10): ServiceResponse
     {
         try {
-            $reviews = ProductReview::withTrashed()
-                ->with(['product.photos', 'media', 'response.vendor'])
-                ->where('user_id', $userId)
-                ->latest()
-                ->paginate($perPage);
+            $reviews = $this->reviewRepo->getUserReviewsWithTrashed($userId, $perPage);
 
             return $this->successResponse($reviews, 'Yorumlar getirildi');
 

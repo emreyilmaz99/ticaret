@@ -70,4 +70,16 @@ class CartItemRepository extends EloquentBaseRepository implements CartItemRepos
             ->with(['product.photos', 'variant'])
             ->get();
     }
+
+    /**
+     * Update cart item price
+     */
+    public function updatePrice(CartItem $item, float $unitPrice): CartItem
+    {
+        $item->update([
+            'unit_price' => $unitPrice,
+            'line_total' => $unitPrice * $item->quantity,
+        ]);
+        return $item->refresh();
+    }
 }

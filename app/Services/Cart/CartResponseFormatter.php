@@ -4,10 +4,16 @@ namespace App\Services\Cart;
 
 use App\Interfaces\Services\Cart\CartResponseFormatterInterface;
 use App\Models\Cart;
-use App\Models\VendorShippingSetting;
+use App\Repositories\CartRepository;
+use App\Repositories\VendorShippingSettingRepository;
 
 class CartResponseFormatter implements CartResponseFormatterInterface
 {
+    public function __construct(
+        private readonly CartRepository $cartRepo,
+        private readonly VendorShippingSettingRepository $shippingSettingRepo
+    ) {}
+
     /**
      * Format cart response with vendor grouping
      */
@@ -17,7 +23,7 @@ class CartResponseFormatter implements CartResponseFormatterInterface
             return $this->emptyCartResponse();
         }
 
-        $cart->load(['items.product.photos', 'items.product.vendor', 'items.variant', 'items.product.activeFeaturedDeal']);
+        $cart = $this->cartRepo->loadWithFullRelations($cart);
 
         $vendorGroups = [];
         $allItems = [];
@@ -58,14 +64,6 @@ class CartResponseFormatter implements CartResponseFormatterInterface
     {
         $imageUrl = $this->getItemImageUrl($item);
         $priceInfo = $this->getPriceInfo($item);
-
-        // Update cart item price if needed
-        if ($priceInfo['needs_update']) {
-            $item->update([
-                'unit_price' => $priceInfo['current_price'],
-                'line_total' => $priceInfo['current_price'] * $item->quantity,
-            ]);
-        }
 
         return [
             'id' => $item->id,
@@ -129,7 +127,7 @@ class CartResponseFormatter implements CartResponseFormatterInterface
     protected function calculateShippingForVendors(array &$vendorGroups): void
     {
         foreach ($vendorGroups as $vendorId => &$group) {
-            $shippingSettings = VendorShippingSetting::getSettingsForVendor($vendorId);
+            $shippingSettings = $this->shippingSettingRepo->getForVendor($vendorId);
             
             $shippingCost = $shippingSettings->calculateShippingCost($group['subtotal']);
             $remainingForFree = $shippingSettings->getRemainingForFreeShipping($group['subtotal']);

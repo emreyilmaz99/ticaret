@@ -15,4 +15,5 @@ interface VendorBankAccountRepositoryInterface
     public function listByVendor(int $vendorId): Collection;
     public function deleteByVendor(int $vendorId, array $exceptIds = []): int;
     public function clearPrimaryForVendor(int $vendorId): int;
+    public function findPrimaryForVendor(int $vendorId): ?VendorBankAccount;
 }

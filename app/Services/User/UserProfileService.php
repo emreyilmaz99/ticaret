@@ -5,12 +5,17 @@ namespace App\Services\User;
 use App\Interfaces\Services\User\UserProfileServiceInterface;
 use App\Core\ServiceResponse;
 use App\Models\User;
+use App\Repositories\Interfaces\UserRepositoryInterface;
 use App\Services\BaseService;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 
 class UserProfileService extends BaseService implements UserProfileServiceInterface
 {
+    public function __construct(
+        private readonly UserRepositoryInterface $userRepo
+    ) {}
+
     /**
      * Get user profile
      */
@@ -31,7 +36,7 @@ class UserProfileService extends BaseService implements UserProfileServiceInterf
     public function updateProfile(User $user, array $data): ServiceResponse
     {
         try {
-            $user->update($data);
+            $this->userRepo->update($user, $data);
 
             return $this->successResponse(['user' => $user->fresh()], 'Profil bilgileri güncellendi');
         } catch (\Exception $e) {
@@ -49,7 +54,7 @@ class UserProfileService extends BaseService implements UserProfileServiceInterf
                 return $this->errorResponse('Mevcut şifre hatalı', 422);
             }
 
-            $user->update([
+            $this->userRepo->update($user, [
                 'password' => Hash::make($newPassword),
             ]);
 
@@ -73,12 +78,12 @@ class UserProfileService extends BaseService implements UserProfileServiceInterf
             // Store new avatar
             $path = $avatarFile->store('avatars', 'public');
 
-            $user->update([
+            $this->userRepo->update($user, [
                 'avatar_path' => $path,
             ]);
 
             return $this->successResponse([
-                'avatar_url' => $user->avatar_url,
+                'avatar_url' => $user->fresh()->avatar_url,
             ], 'Avatar güncellendi');
         } catch (\Exception $e) {
             return $this->handleException($e, 'Avatar güncellenemedi');
@@ -95,7 +100,7 @@ class UserProfileService extends BaseService implements UserProfileServiceInterf
                 Storage::disk('public')->delete($user->avatar_path);
             }
 
-            $user->update([
+            $this->userRepo->update($user, [
                 'avatar_path' => null,
             ]);
 

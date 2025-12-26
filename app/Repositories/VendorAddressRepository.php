@@ -58,4 +58,11 @@ class VendorAddressRepository extends EloquentBaseRepository implements VendorAd
         return $this->model->where('vendor_id', $vendorId)
             ->update(['is_primary' => false]);
     }
+
+    public function findPrimaryForVendor(int $vendorId): ?VendorAddress
+    {
+        return $this->model->where('vendor_id', $vendorId)
+            ->where('is_primary', true)
+            ->first();
+    }
 }

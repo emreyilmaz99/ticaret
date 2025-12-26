@@ -2,14 +2,19 @@
 
 namespace App\Services\Order;
 
+use App\Enums\OrderStatus;
+use App\Enums\PaymentStatus;
 use App\Interfaces\Services\Order\OrderCreationServiceInterface;
 use App\Services\BaseService;
 use App\Models\Cart;
 use App\Models\Order;
-use App\Models\OrderItem;
 use App\Models\User;
 use App\Models\UserAddress;
-use App\Models\VendorCoupon;
+use App\Repositories\CartRepository;
+use App\Repositories\OrderRepository;
+use App\Repositories\OrderItemRepository;
+use App\Repositories\OrderStatusHistoryRepository;
+use App\Repositories\VendorCouponRepository;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -20,12 +25,14 @@ use Illuminate\Support\Facades\Log;
  */
 class OrderCreationService extends BaseService implements OrderCreationServiceInterface
 {
-    protected OrderValidationService $validationService;
-
-    public function __construct(OrderValidationService $validationService)
-    {
-        $this->validationService = $validationService;
-    }
+    public function __construct(
+        protected OrderValidationService $validationService,
+        protected OrderRepository $orderRepository,
+        protected OrderItemRepository $orderItemRepository,
+        protected OrderStatusHistoryRepository $statusHistoryRepository,
+        protected VendorCouponRepository $vendorCouponRepository,
+        protected CartRepository $cartRepository
+    ) {}
 
     /**
      * Create order from cart
@@ -40,11 +47,7 @@ class OrderCreationService extends BaseService implements OrderCreationServiceIn
         try {
             return DB::transaction(function () use ($user, $cart, $shippingAddress, $billingAddress) {
                 // DUPLICATE PREVENTION: Aynı kullanıcının son 5 dakikada pending siparişi varsa onu kullan
-                $existingOrder = Order::where('user_id', $user->id)
-                    ->where('payment_status', Order::PAYMENT_PENDING)
-                    ->where('created_at', '>=', now()->subMinutes(5))
-                    ->latest()
-                    ->first();
+                $existingOrder = $this->orderRepository->findRecentPendingForUser($user->id);
 
                 if ($existingOrder) {
                     Log::warning('Duplicate order attempt prevented', [
@@ -70,7 +73,7 @@ class OrderCreationService extends BaseService implements OrderCreationServiceIn
                     ], 'Mevcut sipariş kullanılıyor');
                 }
 
-                $cart->load(['items.product.vendor', 'items.variant']);
+                $cart = $this->cartRepository->loadForValidation($cart);
                 $totals = $cart->totals;
 
                 $order = $this->createOrderRecord($user, $cart, $shippingAddress, $billingAddress, $totals);
@@ -104,10 +107,10 @@ class OrderCreationService extends BaseService implements OrderCreationServiceIn
      */
     protected function createOrderRecord(User $user, Cart $cart, UserAddress $shippingAddress, ?UserAddress $billingAddress, array $totals): Order
     {
-        $order = Order::create([
+        $orderData = [
             'user_id' => $user->id,
-            'status' => Order::STATUS_PENDING,
-            'payment_status' => Order::PAYMENT_PENDING,
+            'status' => OrderStatus::PENDING->value,
+            'payment_status' => PaymentStatus::PENDING->value,
             'shipping_address' => $this->snapshotAddress($shippingAddress),
             'billing_address' => $billingAddress ? $this->snapshotAddress($billingAddress) : null,
             'subtotal' => $totals['subtotal'],
@@ -119,13 +122,14 @@ class OrderCreationService extends BaseService implements OrderCreationServiceIn
             'currency' => 'TRY',
             'coupon_code' => $cart->coupon_code,
             'iyzico_conversation_id' => $this->generateConversationId(),
-        ]);
+        ];
+
+        $order = $this->orderRepository->create($orderData);
 
         if ($cart->coupon_code) {
-            $coupon = VendorCoupon::where('code', $cart->coupon_code)->first();
+            $coupon = $this->vendorCouponRepository->findActiveByCode($cart->coupon_code);
             if ($coupon) {
-                $order->coupon_id = $coupon->id;
-                $order->save();
+                $this->orderRepository->update($order->id, ['coupon_id' => $coupon->id]);
             }
         }
 
@@ -146,7 +150,7 @@ class OrderCreationService extends BaseService implements OrderCreationServiceIn
             $commissionAmount = ($item->line_total * $commissionRate) / 100;
             $submerchantPrice = $item->line_total - $commissionAmount;
 
-            $orderItem = OrderItem::create([
+            $orderItem = $this->orderItemRepository->create([
                 'order_id' => $order->id,
                 'vendor_id' => $vendor->id,
                 'product_id' => $item->product_id,
@@ -162,7 +166,7 @@ class OrderCreationService extends BaseService implements OrderCreationServiceIn
                 'commission_rate' => $commissionRate,
                 'commission_amount' => $commissionAmount,
                 'iyzico_item_id' => 'ITEM_' . $order->id . '_' . $item->id,
-                'status' => OrderItem::STATUS_PENDING,
+                'status' => 'pending',
             ]);
 
             $basketItems[] = [
@@ -183,9 +187,10 @@ class OrderCreationService extends BaseService implements OrderCreationServiceIn
      */
     protected function createInitialStatusHistory(Order $order): void
     {
-        $order->statusHistory()->create([
+        $this->statusHistoryRepository->create([
+            'order_id' => $order->id,
             'old_status' => null,
-            'new_status' => Order::STATUS_PENDING,
+            'new_status' => OrderStatus::PENDING->value,
             'note' => 'Sipariş oluşturuldu',
             'changed_by_type' => 'system',
             'changed_by_id' => null,

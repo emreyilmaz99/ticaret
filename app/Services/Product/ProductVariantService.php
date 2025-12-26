@@ -4,8 +4,8 @@ namespace App\Services\Product;
 
 use App\Interfaces\Services\Product\ProductVariantServiceInterface;
 use App\Services\BaseService;
-use App\Models\Product;
 use App\Models\ProductVariant;
+use App\Repositories\Interfaces\ProductRepositoryInterface;
 use App\Repositories\Interfaces\ProductVariantRepositoryInterface;
 use App\Traits\ManagesVariantStock;
 use App\Exceptions\InsufficientStockException;
@@ -29,24 +29,22 @@ class ProductVariantService extends BaseService implements ProductVariantService
     // Cache TTL
     private const VARIANTS_CACHE_TTL = 3600; // 1 hour
 
-    protected ProductVariantRepositoryInterface $variantRepo;
-
-    public function __construct(ProductVariantRepositoryInterface $variantRepo)
-    {
-        $this->variantRepo = $variantRepo;
-    }
+    public function __construct(
+        protected ProductVariantRepositoryInterface $variantRepo,
+        protected ProductRepositoryInterface $productRepo
+    ) {}
 
     /**
      * Create variant for product
      */
-    public function createVariant(int $productId, array $data): ProductVariant
+    public function createVariant(string $productId, array $data): ProductVariant
     {
         $data['product_id'] = $productId;
 
         // Generate SKU if not provided
         if (empty($data['sku'])) {
-            $product = Product::find($productId);
-            $data['sku'] = $this->generateSKU($product->slug, $data['attributes'] ?? null);
+            $product = $this->productRepo->findById($productId);
+            $data['sku'] = $this->generateSKU($product?->slug ?? 'product', $data['attributes'] ?? null);
         }
 
         $variant = $this->variantRepo->create($data);
@@ -100,7 +98,7 @@ class ProductVariantService extends BaseService implements ProductVariantService
     /**
      * Get product variants
      */
-    public function getProductVariants(int $productId)
+    public function getProductVariants(string $productId)
     {
         return Cache::remember(
             $this->getVariantsCacheKey($productId),
@@ -183,7 +181,7 @@ class ProductVariantService extends BaseService implements ProductVariantService
     /**
      * Process variant updates and creations
      */
-    protected function processVariantUpdates(int $productId, array $variants): array
+    protected function processVariantUpdates(string $productId, array $variants): array
     {
         $createdCount = 0;
         $updatedCount = 0;
@@ -241,7 +239,7 @@ class ProductVariantService extends BaseService implements ProductVariantService
     /**
      * Sync variants for product (bulk update/create/delete)
      */
-    public function syncVariants(int $productId, array $variants): void
+    public function syncVariants(string $productId, array $variants): void
     {
         try {
             DB::transaction(function () use ($productId, $variants) {

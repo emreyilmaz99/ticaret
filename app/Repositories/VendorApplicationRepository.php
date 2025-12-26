@@ -47,6 +47,18 @@ class VendorApplicationRepository extends EloquentBaseRepository implements Vend
     }
 
     /**
+     * Find pre-application by email
+     */
+    public function findPreApplicationByEmail(string $email)
+    {
+        return $this->model
+            ->where('email', $email)
+            ->where('type', 'pre_application')
+            ->latest()
+            ->first();
+    }
+
+    /**
      * Get applications by status
      */
     public function getByStatus(string $status, int $perPage = 15)

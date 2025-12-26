@@ -2,36 +2,34 @@
 
 namespace App\Services\Order;
 
+use App\Enums\PaymentStatus;
 use App\Interfaces\Services\Order\CheckoutServiceInterface;
 use App\Services\BaseService;
 use App\Models\Cart;
 use App\Models\Order;
-use App\Models\OrderItem;
 use App\Models\User;
 use App\Models\UserAddress;
-use App\Models\VendorCoupon;
-use Illuminate\Support\Facades\DB;
+use App\Repositories\CartRepository;
+use App\Repositories\OrderRepository;
 use Illuminate\Support\Facades\Log;
 use App\Services\Order\OrderService;
 use App\Services\Payment\PaymentGatewayService;
 
 class CheckoutService extends BaseService implements CheckoutServiceInterface
 {
-    protected OrderService $orderService;
-    protected PaymentGatewayService $paymentGateway;
-
-    public function __construct(OrderService $orderService, PaymentGatewayService $paymentGateway)
-    {
-        $this->orderService = $orderService;
-        $this->paymentGateway = $paymentGateway;
-    }
+    public function __construct(
+        protected OrderService $orderService,
+        protected PaymentGatewayService $paymentGateway,
+        protected OrderRepository $orderRepository,
+        protected CartRepository $cartRepository
+    ) {}
 
     /**
      * Sepeti doğrula (stok, fiyat, vendor durumu)
      */
     public function validateCart(Cart $cart)
     {
-        $cart->load(['items.product.vendor', 'items.variant']);
+        $cart = $this->cartRepository->loadForValidation($cart);
         
         $errors = [];
         
@@ -91,9 +89,9 @@ class CheckoutService extends BaseService implements CheckoutServiceInterface
         $result = $this->paymentGateway->initializeCheckoutForm($order, $user, $shippingAddress, $gatewayItems);
 
         if ($result->isSuccess()) {
-            $order->update([
+            $this->orderRepository->update($order->id, [
                 'iyzico_token' => $result->getData()['token'],
-                'payment_status' => Order::PAYMENT_PROCESSING,
+                'payment_status' => PaymentStatus::PROCESSING->value,
             ]);
         }
 
@@ -105,7 +103,7 @@ class CheckoutService extends BaseService implements CheckoutServiceInterface
      */
     public function handlePaymentCallback(string $token)
     {
-        $order = Order::where('iyzico_token', $token)->first();
+        $order = $this->orderRepository->findByIyzicoToken($token);
 
         if (!$order) {
             Log::error('Order not found for token', ['token' => $token]);
@@ -115,7 +113,9 @@ class CheckoutService extends BaseService implements CheckoutServiceInterface
         $result = $this->paymentGateway->retrieveCheckoutForm($token);
 
         if (!$result->isSuccess()) {
-            $order->updatePaymentStatus(Order::PAYMENT_FAILED);
+            $this->orderRepository->update($order->id, [
+                'payment_status' => PaymentStatus::FAILED->value,
+            ]);
             return $result;
         }
 

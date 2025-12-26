@@ -2,9 +2,14 @@
 
 namespace App\Services\Order;
 
+use App\Enums\OrderStatus;
+use App\Enums\PaymentStatus;
 use App\Interfaces\Services\Order\OrderPaymentServiceInterface;
 use App\Services\BaseService;
 use App\Models\Order;
+use App\Repositories\OrderRepository;
+use App\Repositories\OrderItemRepository;
+use App\Repositories\OrderStatusHistoryRepository;
 use App\Services\Product\StockService;
 use App\Services\Order\CouponService;
 use App\Services\Cart\CartService;
@@ -18,19 +23,14 @@ use Illuminate\Support\Facades\Log;
  */
 class OrderPaymentService extends BaseService implements OrderPaymentServiceInterface
 {
-    protected StockService $stockService;
-    protected CouponService $couponService;
-    protected CartService $cartService;
-
     public function __construct(
-        StockService $stockService,
-        CouponService $couponService,
-        CartService $cartService
-    ) {
-        $this->stockService = $stockService;
-        $this->couponService = $couponService;
-        $this->cartService = $cartService;
-    }
+        protected StockService $stockService,
+        protected CouponService $couponService,
+        protected CartService $cartService,
+        protected OrderRepository $orderRepository,
+        protected OrderItemRepository $orderItemRepository,
+        protected OrderStatusHistoryRepository $statusHistoryRepository
+    ) {}
 
     /**
      * Process successful payment
@@ -52,8 +52,10 @@ class OrderPaymentService extends BaseService implements OrderPaymentServiceInte
                     'total' => $order->total,
                 ]);
 
+                $freshOrder = $this->orderRepository->findFreshWithItems($order->id);
+
                 return $this->successResponse([
-                    'order' => $order->fresh(['items']),
+                    'order' => $freshOrder,
                     'payment_id' => $data['payment_id'],
                 ], 'Ödeme başarılı');
             });
@@ -71,7 +73,7 @@ class OrderPaymentService extends BaseService implements OrderPaymentServiceInte
      */
     protected function updateOrderWithPaymentData(Order $order, array $data): void
     {
-        $order->update([
+        $this->orderRepository->update($order->id, [
             'iyzico_payment_id' => $data['payment_id'],
             'iyzico_fraud_status' => $data['fraud_status'],
             'iyzico_raw_response' => $data['raw_result'] ?? null,
@@ -81,8 +83,8 @@ class OrderPaymentService extends BaseService implements OrderPaymentServiceInte
             'card_bin' => $data['bin_number'],
             'card_last_four' => $data['last_four_digits'],
             'installment_count' => $data['installment'] ?? 1,
-            'payment_status' => Order::PAYMENT_PAID,
-            'status' => Order::STATUS_CONFIRMED, // Ödeme alındı, sipariş onaylandı
+            'payment_status' => PaymentStatus::PAID->value,
+            'status' => OrderStatus::CONFIRMED->value,
             'paid_at' => now(),
         ]);
     }
@@ -97,12 +99,10 @@ class OrderPaymentService extends BaseService implements OrderPaymentServiceInte
         }
 
         foreach ($data['payment_items'] as $paymentItem) {
-            $orderItem = $order->items()
-                ->where('iyzico_item_id', $paymentItem->getItemId())
-                ->first();
+            $orderItem = $this->orderItemRepository->findByIyzicoItemId($order->id, $paymentItem->getItemId());
 
             if ($orderItem) {
-                $orderItem->update([
+                $this->orderItemRepository->update($orderItem->id, [
                     'iyzico_payment_transaction_id' => $paymentItem->getPaymentTransactionId(),
                     'iyzico_transaction_status' => $paymentItem->getTransactionStatus(),
                 ]);
@@ -137,14 +137,15 @@ class OrderPaymentService extends BaseService implements OrderPaymentServiceInte
      */
     protected function cancelOrderDueToStockIssue(Order $order, string $errorMessage): void
     {
-        $order->update([
-            'status' => Order::STATUS_CANCELLED,
-            'payment_status' => Order::PAYMENT_FAILED,
+        $this->orderRepository->update($order->id, [
+            'status' => OrderStatus::CANCELLED->value,
+            'payment_status' => PaymentStatus::FAILED->value,
         ]);
 
-        $order->statusHistory()->create([
-            'old_status' => Order::STATUS_CONFIRMED,
-            'new_status' => Order::STATUS_CANCELLED,
+        $this->statusHistoryRepository->create([
+            'order_id' => $order->id,
+            'old_status' => OrderStatus::CONFIRMED->value,
+            'new_status' => OrderStatus::CANCELLED->value,
             'note' => 'Stok yetersiz - Otomatik iptal: ' . $errorMessage,
             'changed_by_type' => 'system',
             'changed_by_id' => null,
@@ -172,9 +173,10 @@ class OrderPaymentService extends BaseService implements OrderPaymentServiceInte
      */
     protected function createPaymentSuccessHistory(Order $order, array $data): void
     {
-        $order->statusHistory()->create([
-            'old_status' => Order::STATUS_PENDING,
-            'new_status' => Order::STATUS_CONFIRMED,
+        $this->statusHistoryRepository->create([
+            'order_id' => $order->id,
+            'old_status' => OrderStatus::PENDING->value,
+            'new_status' => OrderStatus::CONFIRMED->value,
             'note' => 'Ödeme başarılı - Payment ID: ' . $data['payment_id'],
             'changed_by_type' => 'system',
             'changed_by_id' => null,

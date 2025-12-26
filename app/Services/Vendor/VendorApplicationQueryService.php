@@ -4,7 +4,7 @@ namespace App\Services\Vendor;
 
 use App\Interfaces\Services\Vendor\VendorApplicationQueryServiceInterface;
 use App\Services\BaseService;
-use App\Repositories\VendorApplicationRepository;
+use App\Repositories\Interfaces\VendorApplicationRepositoryInterface;
 use App\Models\VendorApplication;
 use App\Models\Vendor;
 
@@ -19,12 +19,9 @@ use App\Models\Vendor;
  */
 class VendorApplicationQueryService extends BaseService implements VendorApplicationQueryServiceInterface
 {
-    protected VendorApplicationRepository $applicationRepo;
-
-    public function __construct(VendorApplicationRepository $applicationRepo)
-    {
-        $this->applicationRepo = $applicationRepo;
-    }
+    public function __construct(
+        private readonly VendorApplicationRepositoryInterface $applicationRepo
+    ) {}
 
     /**
      * Get all applications (admin)

@@ -30,5 +30,5 @@ interface ProductCatalogServiceInterface
     /**
      * Increment product views
      */
-    public function incrementViews(int $productId): void;
+    public function incrementViews(string $productId): void;
 }

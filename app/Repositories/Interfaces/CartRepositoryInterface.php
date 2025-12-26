@@ -47,4 +47,9 @@ interface CartRepositoryInterface extends BaseRepositoryInterface
      * Merge guest cart into user cart
      */
     public function mergeGuestCartToUser(string $sessionId, int $userId): ?Cart;
+
+    /**
+     * Load cart with full relations for response formatting
+     */
+    public function loadWithFullRelations(Cart $cart): Cart;
 }
